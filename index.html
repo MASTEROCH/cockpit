@@ -1009,6 +1009,13 @@ body.light .focusrun{background:rgba(255,255,255,.7)}
 .pulse-card .pbar2 span{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,var(--ok),#10b981)}
 .now-sec{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--mut);margin:4px 2px 13px;display:flex;align-items:center;gap:9px}
 .now-sec span{text-transform:none;letter-spacing:0;font-weight:500;color:var(--mut2)}
+.fold{margin-bottom:6px}
+.fold>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--mut2);padding:9px 2px;transition:color .15s}
+.fold>summary::-webkit-details-marker{display:none}
+.fold>summary::after{content:'▾';margin-left:auto;font-size:13px;transition:transform .2s}
+.fold:not([open])>summary::after{transform:rotate(-90deg)}
+.fold>summary:hover{color:var(--mut)}
+.fold[open]>summary{margin-bottom:4px}
 .insights{display:grid;grid-template-columns:1fr 1fr;gap:11px}
 .insight{display:flex;align-items:center;gap:13px;background:var(--sheen),var(--glass);border:1px solid var(--gbrd);border-radius:16px;padding:14px 16px;box-shadow:var(--ghi)}
 .insight.click{cursor:pointer;transition:transform .16s var(--ease),border-color .16s}
@@ -1754,6 +1761,7 @@ function renderNow(){
   const next=[...pool].sort((a,b)=>relScore(b)-relScore(a))[0];
   const h=new Date().getHours();const greet=h<6?'Доброй ночи':h<12?'Доброе утро':h<18?'Добрый день':'Добрый вечер';
   const ins=buildInsights(T);const running=!!(focus.tid&&task(focus.tid));
+  const foldOpen=localStorage.getItem('cockpit_now_fold')!=='0';
   let hero;
   if(next){const ovn=isOverdue(next);const dl=daysLeft(next);const isFoc=focus.tid===next.id;const m=next.assigneeId?member(next.assigneeId):null;
     hero=`<div class="now-hero ${ovn?'over':''}">
@@ -1780,8 +1788,7 @@ function renderNow(){
       <div class="pulse-card"><div class="pv" style="color:${ov?'var(--bad)':'var(--mut)'}">${ov}</div><div class="pl">просрочено</div></div>
       <div class="pulse-card"><div class="pv">${vel}</div><div class="pl">закрыто за 7 дней</div></div>
     </div>
-    ${momentumSpark()}
-    ${milestoneRadar()}
+    <details class="fold" id="nowFold" ${foldOpen?'open':''}><summary>📈 Темп и сроки проекта</summary>${momentumSpark()}${milestoneRadar()}</details>
     ${claudeNowCard()}
     <div class="now-sec">🧠 Что важно знать <span>проактивно — пока другие тулзы молчат</span>
       <button class="btn" id="claudeBtn" style="margin-left:auto;padding:8px 13px;font-size:12.5px">🤖 Claude</button>
@@ -1795,8 +1802,8 @@ function renderNow(){
     t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;logAct('✅','«'+t.title+'» → Готово');const v=awardForDone(S,t);celebrateAt(ev);save();render();toast(v?('+'+v+' 🪙 за «'+t.title+'»'):'Готово ✅',v?'🪙':'✅');};
   ins.forEach((x,i)=>{const c=el.querySelector(`.insight[data-i="${i}"]`);if(c&&x.act)c.onclick=x.act;});
   const ap=$('#aiPlanBtn');if(ap)ap.onclick=openAiPlan;
-  const nm=$('#nowMic');if(nm)nm.onclick=()=>{const c=$('#cmd');if(c)c.focus();const mb=$('#micBtn');if(mb)mb.click();};
   const cb=$('#claudeBtn');if(cb)cb.onclick=()=>fetchClaudeInsight(cb);
+  const nf=$('#nowFold');if(nf)nf.ontoggle=()=>localStorage.setItem('cockpit_now_fold',nf.open?'1':'0');
 }
 
 /* ---- AI-План проекта (Claude разбивает цель на задачи → Приёмка) ---- */
@@ -3222,6 +3229,7 @@ function syncFilterUI(){
   $('#fq').value=filter.q;
   $('#fMine').classList.toggle('on',filter.mine);
   $('#fOver').classList.toggle('on',filter.overdue);
+  $('#fReset').style.display=filterActive()?'':'none';
 }
 $('#fq').oninput=e=>{filter.q=e.target.value;rerenderView();};
 $('#fAssignee').onchange=e=>{filter.assignee=e.target.value;rerenderView();};
