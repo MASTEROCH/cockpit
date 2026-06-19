@@ -1039,6 +1039,62 @@ body.light .focusrun{background:rgba(255,255,255,.7)}
 /* smooth screen transitions (opacity-only — safe for sticky/fixed) */
 .view.active{animation:viewIn .2s var(--ease)}
 @keyframes viewIn{from{opacity:0}to{opacity:1}}
+
+/* burndown radar (на «Сейчас») */
+.radar{display:flex;align-items:center;gap:18px;flex-wrap:wrap;border-radius:18px;padding:15px 18px;margin-bottom:24px;border:1px solid var(--gbrd);box-shadow:var(--ghi);background:var(--sheen),var(--glass)}
+.radar.risk{background:var(--sheen),linear-gradient(120deg,rgba(248,113,113,.16),transparent 70%),var(--glass);border-color:rgba(248,113,113,.34)}
+.radar.okk{background:var(--sheen),linear-gradient(120deg,rgba(52,211,153,.13),transparent 70%),var(--glass);border-color:rgba(52,211,153,.28)}
+.rd-l{flex:0 0 auto;min-width:140px}
+.rd-k{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--mut2)}
+.rd-t{font-size:16px;font-weight:800;margin-top:3px}
+.rd-s{font-size:12px;color:var(--mut2);margin-top:2px}
+.rd-mid{flex:1;min-width:160px}
+.rd-bar{height:9px;border-radius:20px;background:var(--bg2);overflow:hidden}
+.rd-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--acc2),var(--acc3));transition:width .6s var(--ease)}
+.rd-pct{font-size:11.5px;color:var(--mut2);margin-top:6px}
+.rd-r{flex:0 0 auto;text-align:right;min-width:150px}
+.rd-v{font-size:20px;font-weight:850}.rd-v span{font-size:12px;color:var(--mut2);font-weight:600}
+.rd-verdict{font-size:12.5px;font-weight:700;margin-top:3px}
+.radar.risk .rd-verdict{color:var(--bad)}.radar.okk .rd-verdict{color:var(--ok)}
+@media(max-width:680px){.rd-r,.rd-l{text-align:left;min-width:0}.rd-r{width:100%}}
+
+/* rebalance modal */
+.balist{display:flex;flex-direction:column;gap:9px;margin-top:14px}
+.balrow{display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--line);border-radius:13px;padding:12px 14px}
+.balmain{flex:1;min-width:0}.balmain b{font-size:14px}
+.bsub{font-size:12px;color:var(--mut2);margin-top:2px}
+.balrow .btn{flex:0 0 auto;padding:8px 13px;font-size:12.5px}
+
+/* presentation mode (синк) */
+.present{position:fixed;inset:0;z-index:300;display:none;flex-direction:column;padding:5vh 6vw;overflow:auto;
+  background:radial-gradient(1200px 800px at 80% -10%,rgba(167,139,250,.22),transparent 60%),radial-gradient(900px 700px at -5% 10%,rgba(56,189,248,.14),transparent 55%),var(--bg);animation:fade .25s}
+.present.show{display:flex}
+.pr-close{position:absolute;top:22px;right:26px;background:var(--glass);border:1px solid var(--gbrd);color:var(--mut);border-radius:11px;padding:9px 14px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px}
+.pr-close:hover{color:var(--txt);border-color:var(--acc2)}
+.pr-head{display:flex;align-items:center;gap:18px;margin-bottom:5vh}
+.pr-emoji{font-size:54px;line-height:1}
+.pr-head h1{font-size:46px;font-weight:850;letter-spacing:-1.2px;margin:0;line-height:1}
+.pr-head span{color:var(--mut2);font-size:15px;font-weight:600}
+.pr-mid{display:flex;align-items:center;gap:6vw;flex-wrap:wrap;margin-bottom:5vh}
+.pr-ring{--p:0;width:200px;height:200px;border-radius:50%;flex:0 0 auto;
+  background:conic-gradient(var(--acc2) calc(var(--p)*1%),rgba(255,255,255,.08) 0);display:grid;place-items:center;
+  box-shadow:0 0 50px rgba(167,139,250,.3),inset 0 0 0 1px rgba(255,255,255,.06);animation:ringspin 1s var(--ease)}
+@keyframes ringspin{from{transform:rotate(-8deg) scale(.94);opacity:0}to{transform:none;opacity:1}}
+.pr-ring-in{width:158px;height:158px;border-radius:50%;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.pr-ring-in b{font-size:48px;font-weight:850;letter-spacing:-2px;line-height:1}
+.pr-ring-in small{color:var(--mut2);font-size:14px;font-weight:600;margin-top:4px}
+.pr-stats{display:grid;grid-template-columns:1fr 1fr;gap:26px 50px}
+.pr-stat b{font-size:42px;font-weight:850;letter-spacing:-1.5px;line-height:1;display:block}
+.pr-stat span{color:var(--mut2);font-size:14px;font-weight:600}
+.pr-cols{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.pr-col h3{font-size:15px;text-transform:uppercase;letter-spacing:.6px;color:var(--mut);margin:0 0 16px}
+.pr-line{display:flex;align-items:center;gap:12px;font-size:19px;padding:11px 0;border-bottom:1px solid var(--line);line-height:1.35}
+.pr-line:last-child{border-bottom:none}
+.pr-line .av{width:30px;height:30px;font-size:13px;flex:0 0 auto}
+.pr-line em{font-style:normal;font-size:14px}
+.pr-empty{color:var(--mut2);font-size:16px;padding:14px 0}
+body.light .pr-ring-in{background:#f4f6fc}
+@media(max-width:760px){.pr-head h1{font-size:32px}.pr-mid{gap:30px}.pr-ring{width:150px;height:150px}.pr-ring-in{width:118px;height:118px}.pr-ring-in b{font-size:34px}.pr-stat b{font-size:30px}.pr-cols{grid-template-columns:1fr}.pr-line{font-size:16px}}
 @media (max-width:680px){
   .now{padding:16px 14px 40px}
   .now-greet h1{font-size:26px}
@@ -1216,6 +1272,8 @@ body.light .focusrun{background:rgba(255,255,255,.7)}
 <div class="menu" id="menu">
   <button data-act="connect">🔌 Подключить Claude</button>
   <button data-act="autoschedule">🗓 Авто-расписание</button>
+  <button data-act="present">📺 Презентация (синк)</button>
+  <button data-act="rebalance">🪄 Разгрузить команду</button>
   <button data-act="sound">🔔 Звук вкл/выкл</button>
   <div class="sep"></div>
   <button data-act="export">💾 Экспорт в файл</button>
@@ -1228,6 +1286,8 @@ body.light .focusrun{background:rgba(255,255,255,.7)}
 
 <div class="modal-scrim" id="connectScrim"><div class="modal" id="connectModal"></div></div>
 <div class="modal-scrim" id="planScrim"><div class="modal" id="planModal"></div></div>
+<div class="modal-scrim" id="balScrim"><div class="modal" id="balModal"></div></div>
+<div class="present" id="present"></div>
 
 <div class="pal-scrim" id="palScrim">
   <div class="pal" id="pal">
@@ -1541,7 +1601,7 @@ function buildInsights(T){
   const wom=T.filter(t=>t.waitingOn===me&&t.status!=='done');
   if(wom.length)out.push({ic:'⏳',title:`Висит на тебе: ${wom.length}`,sub:wom.slice(0,2).map(t=>t.title).join(' · '),act:()=>openTask(wom[0].id)});
   S.members.forEach(m=>{const load=T.filter(t=>t.assigneeId===m.id&&t.status!=='done').reduce((a,t)=>a+(t.estimate||0),0);
-    if(m.capacity&&load>m.capacity*1.15)out.push({ic:'🥵',title:`${m.name} перегружен`,sub:`${load}/${m.capacity}ч — перекинь часть или сдвинь сроки`,act:()=>openMember(m.id)});});
+    if(m.capacity&&load>m.capacity*1.15)out.push({ic:'🥵',title:`${m.name} перегружен`,sub:`${load}/${m.capacity}ч — жми, чтобы разгрузить автоматически`,act:()=>openRebalance()});});
   const rot=T.filter(t=>t.status!=='done'&&(t.status==='backlog'||t.status==='todo')&&(t.spent||0)===0&&t.createdTs&&(Date.now()-t.createdTs>10*dayMs));
   if(rot.length)out.push({ic:'🕸',title:`${rot.length} ${plural(rot.length,'задача застряла','задачи застряли','задач застряло')}`,sub:'больше 10 дней без движения — сделать, делегировать или удалить',act:()=>openTask(rot[0].id)});
   const last=(S.activity||[])[0];
@@ -1611,6 +1671,7 @@ function renderNow(){
       <div class="pulse-card"><div class="pv">${vel}</div><div class="pl">закрыто за 7 дней</div></div>
     </div>
     ${momentumSpark()}
+    ${milestoneRadar()}
     <div class="now-sec">🧠 Что важно знать <span>проактивно — пока другие тулзы молчат</span>
       <button class="btn" id="nowMic" style="margin-left:auto;padding:8px 13px;font-size:12.5px">🎙 Сказать задачу</button>
       <button class="btn" id="aiPlanBtn" style="padding:8px 13px;font-size:12.5px">🧠 AI-План</button></div>
@@ -1728,6 +1789,97 @@ function autoSchedule(){
   if(view!=='gantt')setView('gantt');else render();
   toast('Расписание построено: '+sched.length+' задач 🗓','🗓','Отменить',()=>undo());
 }
+
+/* ---- burndown к ближайшей вехе (radar на «Сейчас») ---- */
+function milestoneRadar(){
+  const tISO=todayISO();
+  const mile=S.tasks.filter(t=>t.isMilestone&&parseD(t.end)>=parseD(tISO)).sort((a,b)=>parseD(a.end)-parseD(b.end))[0];
+  if(!mile)return '';
+  const end=parseD(mile.end);
+  const scope=S.tasks.filter(t=>!t.isMilestone&&parseD(t.end)<=end);
+  const remain=scope.filter(t=>t.status!=='done').reduce((a,t)=>a+(t.estimate||0),0);
+  const totalEst=scope.reduce((a,t)=>a+(t.estimate||0),0);
+  const pct=totalEst?Math.round((totalEst-remain)/totalEst*100):100;
+  let wd=0;for(let m=parseD(tISO);m<=end;m+=dayMs){const d=new Date(m).getUTCDay();if(d!==0&&d!==6)wd++;}
+  const need=wd?remain/wd:remain;
+  const teamDaily=S.members.reduce((a,m)=>a+(m.capacity?m.capacity/5:6),0)||6;
+  const risk=need>teamDaily*0.9;
+  const days=Math.max(0,Math.round((end-parseD(tISO))/dayMs));
+  return `<div class="radar ${risk?'risk':'okk'}">
+    <div class="rd-l"><div class="rd-k">🚩 Ближайшая веха</div><div class="rd-t">${esc(mile.title)}</div><div class="rd-s">${days} дн · ${mile.end.slice(8)}.${mile.end.slice(5,7)}</div></div>
+    <div class="rd-mid"><div class="rd-bar"><div class="rd-fill" style="width:${pct}%"></div></div><div class="rd-pct">${pct}% объёма закрыто</div></div>
+    <div class="rd-r"><div class="rd-v">${remain}ч <span>осталось</span></div><div class="rd-verdict">${risk?`⚠️ нужно ~${need.toFixed(1)}ч/день — не успеваем`:`✅ в графике (~${need.toFixed(1)}ч/день)`}</div></div>
+  </div>`;
+}
+
+/* ---- «Разгрузить меня» — предложить перекидки при перегрузе ---- */
+function computeRebalance(){
+  const T=S.tasks.filter(t=>!t.isMilestone&&t.status!=='done');
+  const load={},cap={};S.members.forEach(m=>{load[m.id]=0;cap[m.id]=m.capacity||30;});
+  T.forEach(t=>{if(t.assigneeId&&load[t.assigneeId]!=null)load[t.assigneeId]+=(t.estimate||0);});
+  const pr={low:0,med:1,high:2,urgent:3},moves=[];
+  for(let i=0;i<40;i++){
+    let over=null,ovr=0;S.members.forEach(m=>{const r=load[m.id]-cap[m.id];if(r>ovr){ovr=r;over=m.id;}});
+    if(!over)break;
+    let to=null,best=1e9;S.members.forEach(m=>{if(m.id===over)return;if(cap[m.id]-load[m.id]>0&&load[m.id]<best){best=load[m.id];to=m.id;}});
+    if(!to)break;
+    const cand=T.filter(t=>t.assigneeId===over&&!moves.find(v=>v.taskId===t.id)).sort((a,b)=>(pr[a.priority]??1)-(pr[b.priority]??1))[0];
+    if(!cand)break;
+    moves.push({taskId:cand.id,title:cand.title,fromId:over,toId:to,est:cand.estimate||0});
+    load[over]-=cand.estimate||0;load[to]+=cand.estimate||0;
+  }
+  return moves;
+}
+function openRebalance(){$('#balScrim').classList.add('show');renderBal();}
+function closeBal(){$('#balScrim').classList.remove('show');}
+$('#balScrim').onclick=e=>{if(e.target===$('#balScrim'))closeBal();};
+function applyMove(mv){const t=task(mv.taskId);if(!t)return;t.assigneeId=mv.toId;logAct('🪄','разгрузка: «'+t.title+'» → '+((member(mv.toId)||{}).name||''));save();render();}
+function renderBal(){
+  const moves=computeRebalance();const m=$('#balModal');const nm=id=>(member(id)||{}).name||'?';
+  m.innerHTML=`<div class="ob-art" style="font-size:46px">🪄</div>
+   <div class="ob-body">
+     <h2>Разгрузить команду</h2>
+     <p>${moves.length?'Cockpit нашёл перекосы по загрузке. Перекинь — нагрузка выровняется. Можно по одной или всё сразу.':'Нагрузка сбалансирована — перекидывать нечего ✅'}</p>
+     ${moves.length?`<div class="balist">${moves.map((mv,i)=>`<div class="balrow" data-i="${i}">
+        <div class="balmain"><b>${esc(mv.title)}</b><div class="bsub">${esc(nm(mv.fromId))} → <span style="color:var(--acc2)">${esc(nm(mv.toId))}</span> · ${mv.est}ч</div></div>
+        <button class="btn" data-apply="${i}">Перекинуть</button></div>`).join('')}</div>`:''}
+   </div>
+   <div class="ob-foot"><button class="btn" id="balClose">Закрыть</button><div class="spacer"></div>${moves.length?'<button class="btn primary" id="balAll">Применить всё</button>':''}</div>`;
+  $('#balClose').onclick=closeBal;
+  $$('#balModal [data-apply]').forEach(b=>b.onclick=()=>{applyMove(moves[+b.dataset.apply]);renderBal();toast('Перекинуто 🪄','🪄');});
+  const all=$('#balAll');if(all)all.onclick=()=>{moves.forEach(applyMove);closeBal();toast('Команда разгружена 🪄','🪄','Отменить',()=>undo());};
+}
+
+/* ---- режим презентации (синк с co-founder, крупно) ---- */
+function openPresent(){
+  const T=S.tasks.filter(t=>!t.isMilestone);
+  const done=T.filter(t=>t.status==='done').length;const pct=T.length?Math.round(done/T.length*100):0;
+  const prog=S.tasks.filter(t=>t.status==='progress');
+  const ov=S.tasks.filter(isOverdue);
+  const mile=S.tasks.filter(t=>t.isMilestone&&parseD(t.end)>=parseD(todayISO())).sort((a,b)=>parseD(a.end)-parseD(b.end))[0];
+  const byPerson=S.members.map(m=>({m,tasks:prog.filter(t=>t.assigneeId===m.id)})).filter(x=>x.tasks.length);
+  const weekAgo=Date.now()-7*dayMs;const vel=(S.activity||[]).filter(a=>a.ts>weekAgo&&/Готово|✅/.test((a.text||'')+(a.icon||''))).length;
+  $('#present').innerHTML=`
+    <button class="pr-close" id="prClose">${icon('x',16)} Esc</button>
+    <div class="pr-head"><div class="pr-emoji">${(reg.list.find(p=>p.id===S.id)||{}).emoji||'🚀'}</div>
+      <div><h1>${esc(S.projectName)}</h1><span>синк · ${new Date().getDate()} ${MONTHF[new Date().getMonth()]} ${new Date().getFullYear()}</span></div></div>
+    <div class="pr-mid">
+      <div class="pr-ring" style="--p:${pct}"><div class="pr-ring-in"><b>${pct}%</b><small>готово</small></div></div>
+      <div class="pr-stats">
+        <div class="pr-stat"><b style="color:var(--warn)">${prog.length}</b><span>в работе</span></div>
+        <div class="pr-stat"><b style="color:${ov.length?'var(--bad)':'var(--ok)'}">${ov.length}</b><span>просрочено</span></div>
+        <div class="pr-stat"><b style="color:var(--acc3)">${vel}</b><span>закрыто за 7д</span></div>
+        ${mile?`<div class="pr-stat"><b>${Math.max(0,Math.round((parseD(mile.end)-parseD(todayISO()))/dayMs))}д</b><span>до «${esc(mile.title)}»</span></div>`:`<div class="pr-stat"><b>${T.length}</b><span>всего</span></div>`}
+      </div></div>
+    <div class="pr-cols">
+      <div class="pr-col"><h3>🔧 В работе сейчас</h3>${byPerson.length?byPerson.map(x=>`<div class="pr-line">${avatar(x.m.id)}<span><b>${esc(x.m.name)}</b> — ${x.tasks.map(t=>esc(t.title)).join(' · ')}</span></div>`).join(''):'<div class="pr-empty">— тишина, никто ничего не делает 😅 —</div>'}</div>
+      <div class="pr-col">${ov.length?`<h3>🔴 Горит</h3>${ov.slice(0,7).map(t=>`<div class="pr-line">${avatar(t.assigneeId)}<span>${esc(t.title)} <em style="color:var(--bad)">${-daysLeft(t)}д просрочки</em></span></div>`).join('')}`:`<h3>✅ Просрочек нет</h3><div class="pr-empty">всё под контролем — красиво идём</div>`}</div>
+    </div>`;
+  $('#present').classList.add('show');
+  $('#prClose').onclick=closePresent;
+  try{if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen();}catch(e){}
+}
+function closePresent(){$('#present').classList.remove('show');try{if(document.fullscreenElement)document.exitFullscreen();}catch(e){}}
 
 /* ============================ DASHBOARD ============================ */
 function renderDash(){
@@ -2493,7 +2645,11 @@ function renderBoard(){
   const b=$('#board');b.innerHTML='';
   STATUSES.forEach(st=>{
     const col=document.createElement('div');col.className='col';col.dataset.st=st.k;
-    const items=S.tasks.filter(t=>t.status===st.k&&passFilter(t)).sort((a,b)=>relScore(b)-relScore(a));
+    const items=S.tasks.filter(t=>t.status===st.k&&passFilter(t)).sort((a,b)=>{
+      const ar=a.rank,br=b.rank;
+      if(ar!=null&&br!=null)return ar-br;
+      if(ar!=null)return -1;if(br!=null)return 1;
+      return relScore(b)-relScore(a);});
     col.innerHTML=`<div class="colh"><span class="pip" style="background:${st.c}"></span>${st.n}<span class="cnt">${items.length}</span></div>
       <div class="colb"></div><button class="addcard">＋ задача</button>`;
     const bodyEl=col.querySelector('.colb');
@@ -2529,7 +2685,15 @@ function renderBoard(){
     col.ondragover=e=>{e.preventDefault();col.classList.add('drop');};
     col.ondragleave=()=>col.classList.remove('drop');
     col.ondrop=e=>{e.preventDefault();col.classList.remove('drop');
-      if(dragCard){const t=task(dragCard);if(t){t.status=st.k;if(st.k==='done'&&t.estimate&&!t.spent)t.spent=t.estimate;logAct('🔀','«'+t.title+'» → '+st.n);const _v=awardForDone(S,t);if(st.k==='done')celebrateAt(e);save();renderBoard();if(_v)toast('+'+_v+' 🪙 за «'+t.title+'»','🪙');}}};
+      if(!dragCard)return;const t=task(dragCard);if(!t)return;
+      const movedCol=t.status!==st.k;t.status=st.k;
+      const bodyEl2=col.querySelector('.colb');
+      const cards=[...bodyEl2.querySelectorAll('.card')].filter(c=>c.dataset.id!==dragCard);
+      let idx=cards.length;for(let i=0;i<cards.length;i++){const r=cards[i].getBoundingClientRect();if(e.clientY<r.top+r.height/2){idx=i;break;}}
+      const ids=cards.map(c=>c.dataset.id);ids.splice(idx,0,dragCard);ids.forEach((id,i)=>{const tt=task(id);if(tt)tt.rank=i;});
+      if(st.k==='done'&&t.estimate&&!t.spent)t.spent=t.estimate;
+      logAct(movedCol?'🔀':'↕',movedCol?('«'+t.title+'» → '+st.n):('порядок «'+t.title+'»'));
+      const _v=awardForDone(S,t);if(st.k==='done')celebrateAt(e);save();renderBoard();if(_v)toast('+'+_v+' 🪙 за «'+t.title+'»','🪙');};
     b.appendChild(col);
   });
   if(pendingBoardAdd){const c=[...document.querySelectorAll('#board .col')].find(x=>x.dataset.st===pendingBoardAdd);if(c)openBoardAdd(c,pendingBoardAdd);}
@@ -2802,6 +2966,8 @@ document.addEventListener('click',e=>{if(!menuEl.contains(e.target)&&e.target!==
 menuEl.onclick=e=>{const b=e.target.closest('button');if(!b)return;menuEl.classList.remove('show');const act=b.dataset.act;
   if(act==='connect'){openConnect();}
   else if(act==='autoschedule'){autoSchedule();}
+  else if(act==='present'){openPresent();}
+  else if(act==='rebalance'){openRebalance();}
   else if(act==='sound'){const on=localStorage.getItem('cockpit_sound')!=='0';localStorage.setItem('cockpit_sound',on?'0':'1');toast(on?'Звук выключен 🔇':'Звук включён 🔔',on?'🔇':'🔔');if(!on)playDing();}
   else if(act==='export'){const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
     const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cockpit-'+todayISO()+'.json';a.click();toast('Экспортировано','💾');}
@@ -2856,6 +3022,7 @@ document.addEventListener('keydown',e=>{
   if((e.metaKey||e.ctrlKey)&&(e.key==='k'||e.key==='K')){e.preventDefault();$('#palScrim').classList.contains('show')?closePalette():openPalette();return;}
   if((e.metaKey||e.ctrlKey)&&!e.shiftKey&&e.code==='KeyZ'&&!typing){e.preventDefault();undo();return;}
   if(e.key==='Escape'){
+    if($('#present').classList.contains('show'))return closePresent();
     if($('#palScrim').classList.contains('show'))return closePalette();
     if($('#obScrim').classList.contains('show'))closeOb();
     else if($('#npScrim').classList.contains('show'))$('#npScrim').classList.remove('show');
@@ -2865,6 +3032,7 @@ document.addEventListener('keydown',e=>{
     else if($('#briefScrim').classList.contains('show'))closeBrief();
     else if($('#connectScrim').classList.contains('show'))closeConnect();
     else if($('#planScrim').classList.contains('show'))closePlan();
+    else if($('#balScrim').classList.contains('show'))closeBal();
     else if($('#drawer').classList.contains('show'))closeDrawer();
     else if($('#mDrawer').classList.contains('show'))closeMember();
     else if($('#inboxDrawer').classList.contains('show'))closeInbox();
@@ -3380,8 +3548,11 @@ function buildPaletteIndex(){
     ['plug','Подключить Claude','ключ для MCP',()=>openConnect()],
     ['layers','Новый проект','создать проект',()=>openNewProject()],
     ['cal','Авто-расписание','раскидать сроки по загрузке',()=>autoSchedule()],
+    ['zap','Презентация · синк','полноэкранный обзор для созвона',()=>openPresent()],
+    ['users','Разгрузить команду','выровнять загрузку',()=>openRebalance()],
     ['sync','Светлая / тёмная тема','оформление',()=>$('#btnTheme').click()],
     ['idea','Добавить идею в бэклог','паркинг идей',()=>{setView('backlog');setTimeout(()=>{const i=$('#ideaIn');if(i)i.focus();},120);}],
+    ['board','Сбросить порядок задач','вернуть авто-сортировку',()=>{S.tasks.forEach(t=>{delete t.rank;});save();render();toast('Авто-сортировка ↕','↕');}],
   ];
   ACT.forEach(([ic,name,sub,run])=>items.push({type:'Команда',icon:icon(ic,17),title:name,sub,kw:name+' '+sub,run}));
   reg.list.filter(p=>!p.archived).forEach(p=>items.push({type:'Проект',icon:`<span class="pal-emoji">${esc(p.emoji||'📄')}</span>`,title:p.name,sub:p.id===S.id?'текущий':'переключиться',kw:p.name+' проект',run:()=>{if(p.id!==S.id)switchProject(p.id);else setView('board');}}));
