@@ -667,6 +667,11 @@ body.light .card .cdel{background:rgba(20,24,40,.1)}
 .airisks ul{margin:6px 0 0;padding-left:18px;line-height:1.6}
 .airisks b{color:var(--txt)}
 .aibtn{margin-left:auto}
+/* svg icons in buttons */
+.iconbtn svg,.mic svg,.cdel svg{display:block}
+.tab svg{flex:0 0 auto}
+.btn svg{vertical-align:-3px}
+.menu button svg,.airow .aitt svg{vertical-align:-3px;margin-right:2px}
 /* inbox */
 .iconbtn.inbox{position:relative}
 .ibadge{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;border-radius:20px;background:var(--bad);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;padding:0 4px;box-shadow:0 0 0 2px rgba(18,21,31,.9)}
@@ -766,27 +771,27 @@ body.light .drawer,body.light .modal{background:var(--sheen),rgba(255,255,255,.9
 
   <div class="cmdwrap">
     <div class="cmd" id="cmdBox">
-      <button class="mic" id="micBtn" title="Голосовой ввод">🎙</button>
-      <input id="cmd" placeholder="Команда голосом или текстом — нажми / или 🎙" autocomplete="off" />
+      <button class="mic" id="micBtn" data-icon="mic" title="Голосовой ввод"></button>
+      <input id="cmd" placeholder="Команда голосом или текстом — нажми / или микрофон" autocomplete="off" />
       <kbd>↵</kbd>
     </div>
     <div class="cmdhint" id="cmdhint"></div>
   </div>
 
   <div class="tabs" id="tabs">
-    <button class="tab active" data-v="dash">🛰 Обзор</button>
-    <button class="tab" data-v="all">🌐 Всё</button>
-    <button class="tab" data-v="gantt">📊 Гант</button>
-    <button class="tab" data-v="board">🗂 Доска</button>
-    <button class="tab" data-v="backlog">💡 Бэклог <span class="cnt" id="cntIdeas">0</span></button>
-    <button class="tab" data-v="team">👥 Команда</button>
+    <button class="tab active" data-v="dash" data-icon="home"><span>Обзор</span></button>
+    <button class="tab" data-v="all" data-icon="layers"><span>Всё</span></button>
+    <button class="tab" data-v="gantt" data-icon="gantt"><span>Гант</span></button>
+    <button class="tab" data-v="board" data-icon="board"><span>Доска</span></button>
+    <button class="tab" data-v="backlog" data-icon="idea"><span>Бэклог</span> <span class="cnt" id="cntIdeas">0</span></button>
+    <button class="tab" data-v="team" data-icon="users"><span>Команда</span></button>
   </div>
-  <button class="iconbtn" id="btnNew" title="Новая задача">＋</button>
-  <button class="iconbtn inbox" id="btnInbox" title="Инбокс — что нового для тебя">🔔<span class="ibadge" id="inboxDot" style="display:none">0</span></button>
-  <button class="iconbtn" id="btnTheme" title="Светлая / тёмная тема">☀️</button>
-  <button class="iconbtn cloud off" id="btnCloud" title="Войти и синхронизировать с командой">🔄</button>
-  <button class="iconbtn" id="btnHelp" title="Обучение и легенда">？</button>
-  <button class="iconbtn" id="btnMenu" title="Данные">⋯</button>
+  <button class="iconbtn" id="btnNew" data-icon="plus" title="Новая задача"></button>
+  <button class="iconbtn inbox" id="btnInbox" data-icon="bell" title="Инбокс — что нового для тебя"><span class="ibadge" id="inboxDot" style="display:none">0</span></button>
+  <button class="iconbtn" id="btnTheme" title="Светлая / тёмная тема"></button>
+  <button class="iconbtn cloud off" id="btnCloud" title="Войти и синхронизировать с командой"></button>
+  <button class="iconbtn" id="btnHelp" data-icon="help" title="Обучение и легенда"></button>
+  <button class="iconbtn" id="btnMenu" data-icon="dots" title="Данные"></button>
 </header>
 
 <main>
@@ -1034,6 +1039,26 @@ function avatarOf(m,sz){if(!m)return '';const s=sz?`width:${sz}px;height:${sz}px
   if(m.photo)return `<span class="av" style="${s}background-image:url('${m.photo}');background-size:cover;background-position:center" title="${esc(m.name)}"></span>`;
   return `<span class="av" style="${s}background:${m.color}" title="${esc(m.name)}">${initials(m.name)}</span>`;}
 function esc(s){return (s+'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+const ICONS={
+ plus:'<path d="M12 5v14M5 12h14"/>',
+ bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
+ sun:'<circle cx="12" cy="12" r="4.3"/><path d="M12 1.5v2M12 20.5v2M3.5 12h-2M22.5 12h-2M5.6 5.6 4.2 4.2M19.8 19.8l-1.4-1.4M18.4 5.6l1.4-1.4M4.2 19.8l1.4-1.4"/>',
+ moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/>',
+ sync:'<path d="M21 4v6h-6M3 20v-6h6"/><path d="M3.5 9a9 9 0 0 1 14.9-3.4L21 10M21 14l-2.6 4.4A9 9 0 0 1 3.5 15"/>',
+ check:'<path d="M20 6 9 17l-5-5"/>',
+ help:'<circle cx="12" cy="12" r="9.3"/><path d="M9.2 9.2a3 3 0 0 1 5.6 1.1c0 2-3 2.5-3 4M12 17.2h.01"/>',
+ dots:'<circle cx="5" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.5" fill="currentColor" stroke="none"/>',
+ mic:'<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 11v1a7 7 0 0 1-14 0v-1M12 19v3M8.5 22h7"/>',
+ x:'<path d="M18 6 6 18M6 6l12 12"/>',
+ home:'<path d="M3 10.2 12 3l9 7.2V20a1 1 0 0 1-1 1h-5v-6.5H9V21H4a1 1 0 0 1-1-1z"/>',
+ layers:'<path d="M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>',
+ gantt:'<path d="M3 4h10M3 9h14M3 14h7M3 19h12"/>',
+ board:'<path d="M4 4h16v16H4zM9 4v16M15 4v16"/>',
+ idea:'<path d="M9 18h6M10 21.5h4M12 2.5a6.5 6.5 0 0 0-4 11.6c.6.5 1 1.2 1 2v.4h6v-.4c0-.8.4-1.5 1-2A6.5 6.5 0 0 0 12 2.5z"/>',
+ users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>',
+ sparkles:'<path d="M12 3l1.8 4.9L18.7 9 13.8 11 12 16l-1.8-5L5.3 9l4.9-1.1z"/><path d="M19 14l.6 1.7 1.7.6-1.7.6L19 19l-.6-1.5-1.7-.6 1.7-.6z"/>',
+};
+function icon(n,s){s=s||18;return `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]||''}</svg>`;}
 function toast(msg,ic='✓',actLabel,actFn){const t=$('#toast');
   t.innerHTML=`<span class="ic">${ic}</span>${esc(msg)}`+(actLabel?`<button class="tact">${esc(actLabel)}</button>`:'');
   t.classList.add('show');clearTimeout(toast._);toast._=setTimeout(()=>t.classList.remove('show'),actLabel?5500:2400);
@@ -1052,9 +1077,11 @@ function relTime(ts){const d=Math.floor((Date.now()-ts)/1000);
   if(d<45)return 'только что';if(d<3600)return Math.floor(d/60)+' мин';if(d<86400)return Math.floor(d/3600)+' ч';
   if(d<604800)return Math.floor(d/86400)+' дн';const x=new Date(ts);return String(x.getDate()).padStart(2,'0')+'.'+String(x.getMonth()+1).padStart(2,'0');}
 function legendHTML(){return `<div class="legend">
+  <span class="lg" style="color:var(--mut2)">Статусы:</span>
   ${STATUSES.map(s=>`<span class="lg"><span class="sw" style="background:${s.c}"></span>${s.n}</span>`).join('')}
-  <span class="lg"><span class="flag" style="color:var(--bad)">⚑</span> приоритет</span>
-  <span class="lg"><span class="av" style="width:16px;height:16px;font-size:9px;background:var(--acc2);box-shadow:none">Я</span> человек</span>
+  <span class="lg" style="opacity:.5">·</span>
+  <span class="lg"><span class="flag" style="color:var(--warn)">⚑</span> высокий</span>
+  <span class="lg"><span class="flag" style="color:var(--bad)">⚑</span> срочный приоритет</span>
 </div>`;}
 
 /* ============================ FILTERS ============================ */
@@ -1119,7 +1146,7 @@ function renderDash(){
     <div class="dhead">
       <h1>🛰 ${greet}, ${esc(meName())}</h1>
       <span class="sub">${esc(S.projectName)} · ${dn.getUTCDate?dn.getDate():''} ${MONTHF[dn.getMonth()]} ${dn.getFullYear()}</span>
-      <button class="btn primary aibtn" id="aiBtn">🧠 AI-разбор</button>
+      <button class="btn primary aibtn" id="aiBtn">${icon('sparkles',16)} AI-разбор</button>
     </div>
     <div class="kpis">
       <div class="kpi"><div class="v">${T.length}</div><div class="l">Задач всего</div></div>
@@ -1531,7 +1558,7 @@ function renderBoard(){
     items.forEach(t=>{
       const card=document.createElement('div');card.className='card';card.draggable=true;card.dataset.id=t.id;
       const ov=isOverdue(t);const blk=isBlocked(t);
-      card.innerHTML=`<button class="cdel" title="Удалить задачу">✕</button>
+      card.innerHTML=`<button class="cdel" title="Удалить задачу">${icon('x',13)}</button>
         <div class="ct">${t.isMilestone?'🔹 ':''}${blk?'🔒 ':''}${esc(t.title)}</div>
         <div class="cm">
           ${prTag(t)}
@@ -1932,7 +1959,7 @@ let bannerDismissed=false;
 $('#bannerHide').onclick=()=>{bannerDismissed=true;$('#banner').classList.add('hide');};
 $('#bannerFresh').onclick=()=>startFresh(true);
 $('#btnHelp').onclick=()=>openOnboarding(0);
-function applyTheme(){const t=localStorage.getItem('cockpit_theme')||'dark';document.body.classList.toggle('light',t==='light');const b=$('#btnTheme');if(b)b.textContent=t==='light'?'🌙':'☀️';}
+function applyTheme(){const t=localStorage.getItem('cockpit_theme')||'dark';document.body.classList.toggle('light',t==='light');const b=$('#btnTheme');if(b)b.innerHTML=t==='light'?icon('moon'):icon('sun');}
 $('#btnTheme').onclick=()=>{const cur=localStorage.getItem('cockpit_theme')||'dark';localStorage.setItem('cockpit_theme',cur==='light'?'dark':'light');applyTheme();toast(cur==='light'?'Тёмная тема':'Светлая тема','🎨');};
 
 function startFresh(){closeOb();openNewProject();}
@@ -2078,7 +2105,7 @@ $('#npScrim').onclick=e=>{if(e.target===$('#npScrim'))$('#npScrim').classList.re
 /* ============================ CLOUD SYNC (Supabase) ============================ */
 function loadSb(){return new Promise((res,rej)=>{if(window.supabase)return res();const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';s.onload=()=>res();s.onerror=rej;document.head.appendChild(s);});}
 function updateCloudBadge(){const b=$('#btnCloud');if(!b)return;b.classList.toggle('on',cloudOn);b.classList.toggle('off',!cloudOn);
-  b.textContent=cloudOn?'✅':'🔄';
+  b.innerHTML=cloudOn?icon('check'):icon('sync');
   b.title=cloudOn?'Синхронизировано с командой · нажми, чтобы выйти':'Войти и синхронизировать с командой';}
 async function cloudInit(){
   updateCloudBadge();
@@ -2173,6 +2200,7 @@ function renderAuth(sent){
 $('#authScrim').onclick=e=>{if(e.target===$('#authScrim'))closeAuth();};
 
 /* ============================ INIT ============================ */
+$$('[data-icon]').forEach(el=>el.insertAdjacentHTML('afterbegin',icon(el.dataset.icon)));
 applyTheme();
 $('#sbLegend').innerHTML=legendHTML();
 resetUndo();
