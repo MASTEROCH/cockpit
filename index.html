@@ -418,6 +418,7 @@
 }
 body{
   font-size:15px;
+  color-scheme:dark;
   background:
     radial-gradient(1100px 720px at 82% -10%, rgba(167,139,250,.17), transparent 60%),
     radial-gradient(900px 650px at -8% 6%, rgba(244,114,182,.12), transparent 55%),
@@ -629,6 +630,9 @@ header{background:var(--sheen),rgba(18,21,31,.62)}
 .cmdhint{background:rgba(17,20,31,.97);backdrop-filter:blur(28px) saturate(1.5);-webkit-backdrop-filter:blur(28px) saturate(1.5);box-shadow:0 22px 60px rgba(0,0,0,.7),var(--ghi);color:#cfd4e3;line-height:1.9;font-size:12.5px}
 .cmdhint .ex{color:#b9a6ff}
 .cmdhint b{color:#fff}
+/* bar labels readable on any status colour (both themes) */
+.bar .lbl{text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.mileT{text-shadow:0 1px 3px rgba(0,0,0,.55)}
 body.light .cmdhint{background:rgba(255,255,255,.98);color:#3a4055;box-shadow:0 22px 60px rgba(70,82,120,.28),var(--ghi)}
 body.light .cmdhint .ex{color:#7c5cff}
 body.light .cmdhint b{color:#11131c}
@@ -637,9 +641,11 @@ body.light .cmdhint b{color:#11131c}
    LIGHT MODE — Liquid Glass on light (iOS 26 daylight)
    ==================================================================== */
 body.light{
+  color-scheme:light;
   --bg:#e8ebf4; --bg2:#f3f4fb;
   --panel:#ffffff; --panel2:#eef0f7;
   --txt:#1b1e29; --mut:#565d70; --mut2:#838aa0;
+  --ok:#0f9d6b; --warn:#b3791a; --bad:#dd3b3b;   /* затемнены для контраста на белом */
   --line:rgba(20,24,40,.09); --line2:rgba(20,24,40,.15);
   --glass:rgba(255,255,255,.6); --glass-2:rgba(255,255,255,.74);
   --gbrd:rgba(20,24,40,.08);
@@ -664,6 +670,12 @@ body.light .tab.active{background:var(--sheen),rgba(20,24,40,.06);color:var(--tx
 body.light .iconbtn.cloud.off{color:var(--mut2)}
 body.light .youbadge{background:rgba(52,180,120,.14)}
 body.light ::-webkit-scrollbar-thumb{background:rgba(20,24,40,.18)}
+body.light .bar .lbl{text-shadow:0 1px 2px rgba(0,0,0,.32)}
+@media (max-width:680px){
+  body.light .tabs{background:rgba(255,255,255,.85);border-top-color:var(--gbrd)}
+  body.light .tab.active{color:#6d4fd0;background:linear-gradient(180deg,rgba(124,92,208,.16),rgba(124,92,208,.05))}
+  body.light .statusbar{background:rgba(255,255,255,.85)}
+}
 </style>
 </head>
 <body>
