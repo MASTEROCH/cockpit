@@ -1030,6 +1030,31 @@ body.light .focusrun{background:rgba(255,255,255,.7)}
 .mm-foot{font-size:11.5px;color:var(--mut2);margin-top:7px}
 /* confetti */
 .confetti{position:fixed;width:9px;height:9px;border-radius:2px;pointer-events:none;z-index:200;will-change:transform,opacity}
+/* swimlanes — board by people */
+.seg2{display:flex;gap:3px;background:var(--sheen),var(--glass);border:1px solid var(--gbrd);border-radius:11px;padding:3px;box-shadow:var(--ghi)}
+.sgb{border:none;background:none;color:var(--mut);font-size:12.5px;font-weight:700;padding:7px 12px;border-radius:9px;transition:.14s}
+.sgb.on{background:linear-gradient(180deg,rgba(167,139,250,.24),rgba(167,139,250,.08));color:#fff}
+.board.people{flex-direction:column;width:100%;max-width:1120px;margin:0 auto;gap:12px;min-width:0}
+.lane{background:var(--bg2);border:1px solid var(--line);border-radius:15px;width:100%;overflow:hidden}
+.lane.drop{outline:2px dashed var(--acc2);outline-offset:-3px}
+.laneh{display:flex;align-items:center;gap:10px;padding:11px 15px;font-weight:700;border-bottom:1px solid var(--line)}
+.laneh .av{width:26px;height:26px;font-size:11px}
+.lanen{font-size:14.5px}
+.lanl{margin-left:auto;font-size:12px;color:var(--mut2);font-weight:600}
+.lanl.over{color:var(--bad)}
+.laneb{display:flex;flex-wrap:wrap;gap:8px;padding:12px;min-height:48px}
+.lcard{display:flex;align-items:center;gap:9px;background:var(--sheen),var(--glass-2);border:1px solid var(--gbrd);border-radius:11px;padding:9px 12px;cursor:grab;box-shadow:var(--ghi);max-width:340px}
+.lcard:hover{border-color:var(--acc2);transform:translateY(-1px)}
+.lcard.dragging{opacity:.4}
+.lcard .pip{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
+.lcard .lct{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lcard .lct.done{color:var(--mut2);text-decoration:line-through}
+.lcard .le{font-size:11px;color:var(--mut2);flex:0 0 auto;font-variant-numeric:tabular-nums}
+.claudecard{display:flex;gap:12px;align-items:flex-start;background:var(--sheen),linear-gradient(120deg,rgba(56,189,248,.12),transparent 70%),var(--glass);border:1px solid rgba(56,189,248,.3);border-radius:16px;padding:14px 16px;margin-bottom:13px;font-size:13.5px;line-height:1.5}
+.claudecard .ci{font-size:22px;flex:0 0 auto}
+.claudecard b{color:var(--txt)}
+.claudecard .cc-risk{color:var(--warn);font-size:12.5px;margin-top:5px}
+.claudecard .cc-sug{color:var(--mut);font-size:12.5px;margin-top:3px}
 /* keyboard selection across views */
 .card.kbsel{border-color:var(--acc2)!important;box-shadow:0 0 0 2px rgba(167,139,250,.55),0 10px 24px rgba(0,0,0,.45)!important}
 .grow.task.kbsel{background:linear-gradient(90deg,rgba(167,139,250,.22),transparent);box-shadow:inset 2px 0 0 var(--acc2)}
@@ -1094,6 +1119,25 @@ body.light .focusrun{background:rgba(255,255,255,.7)}
 .pr-line em{font-style:normal;font-size:14px}
 .pr-empty{color:var(--mut2);font-size:16px;padding:14px 0}
 body.light .pr-ring-in{background:#f4f6fc}
+.pr-slide{flex:1;display:flex;flex-direction:column;animation:viewIn .3s var(--ease)}
+.pr-nav{display:flex;align-items:center;gap:14px;justify-content:center;padding-top:18px}
+.pr-arrow{width:40px;height:40px;border-radius:50%;border:1px solid var(--gbrd);background:var(--glass);color:var(--txt);font-size:22px;line-height:1;display:grid;place-items:center}
+.pr-arrow:hover{border-color:var(--acc2)}
+.pr-dots{display:flex;gap:7px}
+.pr-dot{width:8px;height:8px;border-radius:50%;background:var(--line2);cursor:pointer;transition:.2s}
+.pr-dot.on{background:var(--acc2);width:22px;border-radius:20px}
+.pr-auto{border:1px solid var(--gbrd);background:var(--glass);color:var(--mut);border-radius:10px;padding:8px 13px;font-size:12.5px;font-weight:700}
+.pr-auto.on{color:#fff;background:var(--acc2);border-color:transparent}
+.pr-count{font-size:12px;color:var(--mut2);font-variant-numeric:tabular-nums}
+.pov-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:18px}
+.pov-card{display:flex;align-items:center;gap:16px;background:var(--sheen),var(--glass);border:1px solid var(--gbrd);border-radius:18px;padding:18px 20px;box-shadow:var(--ghi)}
+.pov-ring{--p:0;width:64px;height:64px;border-radius:50%;flex:0 0 auto;background:conic-gradient(var(--acc2) calc(var(--p)*1%),rgba(255,255,255,.08) 0);display:grid;place-items:center}
+.pov-ring span{width:48px;height:48px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font-size:14px;font-weight:800}
+.pov-n{font-size:18px;font-weight:800}
+.pov-m{font-size:13px;color:var(--mut2);margin-top:4px}
+.pr-share-badge{position:absolute;top:22px;left:26px;font-size:12px;font-weight:700;color:var(--acc2);background:rgba(167,139,250,.13);border:1px solid rgba(167,139,250,.3);border-radius:20px;padding:5px 12px}
+.pr-foot-brand{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:auto;padding-top:26px;flex-wrap:wrap}
+.pr-foot-brand span{color:var(--mut2);font-size:14px}.pr-foot-brand b{color:var(--txt)}
 @media(max-width:760px){.pr-head h1{font-size:32px}.pr-mid{gap:30px}.pr-ring{width:150px;height:150px}.pr-ring-in{width:118px;height:118px}.pr-ring-in b{font-size:34px}.pr-stat b{font-size:30px}.pr-cols{grid-template-columns:1fr}.pr-line{font-size:16px}}
 @media (max-width:680px){
   .now{padding:16px 14px 40px}
@@ -1158,6 +1202,10 @@ body.light .pr-ring-in{background:#f4f6fc}
     <select class="fsel" id="fAssignee"><option value="">Все люди</option></select>
     <button class="fchip" id="fMine">🙋 Моё</button>
     <button class="fchip" id="fOver">🔴 Просрочено</button>
+    <div class="seg2" id="boardModeCtl" style="display:none">
+      <button class="sgb on" data-bm="status">▦ Статусы</button>
+      <button class="sgb" data-bm="people">👥 По людям</button>
+    </div>
     <div class="spacer"></div>
     <div class="zoom" id="zoomCtl"><button id="zOut">−</button><span>масштаб</span><button id="zIn">＋</button></div>
     <button class="fchip" id="fReset">Сброс</button>
@@ -1274,6 +1322,7 @@ body.light .pr-ring-in{background:#f4f6fc}
   <button data-act="autoschedule">🗓 Авто-расписание</button>
   <button data-act="present">📺 Презентация (синк)</button>
   <button data-act="rebalance">🪄 Разгрузить команду</button>
+  <button data-act="share">🔗 Ссылка-снимок статуса</button>
   <button data-act="sound">🔔 Звук вкл/выкл</button>
   <div class="sep"></div>
   <button data-act="export">💾 Экспорт в файл</button>
@@ -1563,6 +1612,7 @@ function render(){
   const showTool=(view==='gantt'||view==='board');
   $('#toolbar').classList.toggle('hide',!showTool);
   $('#zoomCtl').style.display=view==='gantt'?'':'none';
+  $('#boardModeCtl').style.display=view==='board'?'':'none';
   $('#banner').classList.toggle('hide',!S.demo||bannerDismissed);
   const _T=S.tasks.filter(t=>!t.isMilestone);
   $('#sbStats').textContent=`${_T.length} задач · ${_T.filter(t=>t.status==='done').length} готово · ${S.tasks.filter(isOverdue).length} просроч.`;
@@ -1630,6 +1680,28 @@ function momentumSpark(){
     <div class="mm-foot">${total} ${plural(total,'задача закрыта','задачи закрыто','задач закрыто')} за 2 недели · цель — держать линию вверх</div>
   </div>`;
 }
+let claudeNow={};
+function claudeNowCard(){const c=claudeNow[S.id];if(!c)return '';
+  return `<div class="claudecard"><span class="ci">🤖</span><div><b>Claude:</b> ${esc(c.summary||'разбор готов')}
+    ${c.risk?`<div class="cc-risk">⚠️ ${esc(c.risk)}</div>`:''}${c.sug?`<div class="cc-sug">💡 ${esc(c.sug)}</div>`:''}</div></div>`;}
+async function fetchClaudeInsight(btn){
+  if(!cloudOn||!sb){toast('Войди в облако (🔄 в шапке) — Claude-инсайты для команды','🤖');return;}
+  let token;try{const {data}=await sb.auth.getSession();token=data&&data.session&&data.session.access_token;}catch(e){}
+  if(!token){toast('Нужен вход в облако','🤖');return;}
+  if(btn){btn.disabled=true;btn.textContent='🤖 Думаю…';}
+  const nameOf=id=>{const m=member(id);return m?m.name:null;};
+  const payload={today:todayISO(),project:S.projectName,
+    members:S.members.map(m=>({name:m.name,capacity:m.capacity,load:S.tasks.filter(t=>t.assigneeId===m.id&&t.status!=='done').reduce((a,t)=>a+(t.estimate||0),0)})),
+    tasks:S.tasks.map(t=>({title:t.title,status:stMap[t.status].n,assignee:nameOf(t.assigneeId),start:t.start,end:t.end,estimate:t.estimate||0,spent:t.spent||0,priority:prMap[t.priority].n,deps:(t.deps||[]).map(d=>{const x=task(d);return x?x.title:null;}).filter(Boolean),blocked:isBlocked(t),overdue:isOverdue(t),milestone:!!t.isMilestone}))};
+  try{const r=await fetch(CFG.url+'/functions/v1/ai-review',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+token},body:JSON.stringify({project:payload})});
+    const res=normalizeAI(await r.json());
+    if(!r.ok){toast('Claude недоступен сейчас','🤖');}
+    const sg=(res.suggestions&&res.suggestions[0])?res.suggestions[0]:null;
+    claudeNow[S.id]={summary:res.summary||'',risk:(res.risks&&res.risks[0])||'',sug:sg?((sg.taskTitle?('«'+sg.taskTitle+'»: '):'')+(sg.reason||'')):'',ts:Date.now()};
+    if(view==='now')renderNow();else toast('Claude посмотрел проект 🤖','🤖','Открыть',()=>setView('now'));
+  }catch(e){toast('Ошибка запроса к Claude','🤖');}
+  if(btn){btn.disabled=false;btn.textContent='🤖 Claude';}
+}
 function renderNow(){
   const el=$('#now');if(!el)return;
   const T=S.tasks.filter(t=>!t.isMilestone);const me=myId();
@@ -1672,8 +1744,10 @@ function renderNow(){
     </div>
     ${momentumSpark()}
     ${milestoneRadar()}
+    ${claudeNowCard()}
     <div class="now-sec">🧠 Что важно знать <span>проактивно — пока другие тулзы молчат</span>
-      <button class="btn" id="nowMic" style="margin-left:auto;padding:8px 13px;font-size:12.5px">🎙 Сказать задачу</button>
+      <button class="btn" id="claudeBtn" style="margin-left:auto;padding:8px 13px;font-size:12.5px">🤖 Claude</button>
+      <button class="btn" id="nowMic" style="padding:8px 13px;font-size:12.5px">🎙 Сказать</button>
       <button class="btn" id="aiPlanBtn" style="padding:8px 13px;font-size:12.5px">🧠 AI-План</button></div>
     <div class="insights">${ins.map((x,i)=>`<div class="insight ${x.act?'click':''}" data-i="${i}"><span class="ii">${x.ic}</span><div class="ib"><div class="it">${esc(x.title)}</div>${x.sub?`<div class="is">${esc(x.sub)}</div>`:''}</div>${x.act?'<span class="ia">→</span>':''}</div>`).join('')}</div>`;
   const ns=el.querySelector('.nh-title[data-open]');if(ns)ns.onclick=()=>openTask(ns.dataset.open);
@@ -1685,6 +1759,7 @@ function renderNow(){
   ins.forEach((x,i)=>{const c=el.querySelector(`.insight[data-i="${i}"]`);if(c&&x.act)c.onclick=x.act;});
   const ap=$('#aiPlanBtn');if(ap)ap.onclick=openAiPlan;
   const nm=$('#nowMic');if(nm)nm.onclick=()=>{const c=$('#cmd');if(c)c.focus();const mb=$('#micBtn');if(mb)mb.click();};
+  const cb=$('#claudeBtn');if(cb)cb.onclick=()=>fetchClaudeInsight(cb);
 }
 
 /* ---- AI-План проекта (Claude разбивает цель на задачи → Приёмка) ---- */
@@ -1741,7 +1816,7 @@ function renderPlan(){
 
 /* ---- клавиатурная навигация (Superhuman): доска · гант · неделя ---- */
 function kbItems(){
-  if(view==='board')return $$('#board .card').map(el=>({el,pid:S.id,tid:el.dataset.id}));
+  if(view==='board')return $$('#board .card, #board .lcard').map(el=>({el,pid:S.id,tid:el.dataset.id}));
   if(view==='gantt')return $$('#gantt .grow.task').map(el=>({el,pid:S.id,tid:el.dataset.id}));
   if(view==='week')return $$('#week .wcard').map(el=>({el,pid:el.dataset.pid,tid:el.dataset.tid}));
   return [];
@@ -1850,36 +1925,114 @@ function renderBal(){
   const all=$('#balAll');if(all)all.onclick=()=>{moves.forEach(applyMove);closeBal();toast('Команда разгружена 🪄','🪄','Отменить',()=>undo());};
 }
 
-/* ---- режим презентации (синк с co-founder, крупно) ---- */
-function openPresent(){
-  const T=S.tasks.filter(t=>!t.isMilestone);
+/* ---- режим презентации: авто-слайдшоу (портфель → проекты) ---- */
+function presProjectHTML(meta,data){
+  const tasks=data.tasks||[];const T=tasks.filter(t=>!t.isMilestone);
   const done=T.filter(t=>t.status==='done').length;const pct=T.length?Math.round(done/T.length*100):0;
-  const prog=S.tasks.filter(t=>t.status==='progress');
-  const ov=S.tasks.filter(isOverdue);
-  const mile=S.tasks.filter(t=>t.isMilestone&&parseD(t.end)>=parseD(todayISO())).sort((a,b)=>parseD(a.end)-parseD(b.end))[0];
-  const byPerson=S.members.map(m=>({m,tasks:prog.filter(t=>t.assigneeId===m.id)})).filter(x=>x.tasks.length);
-  const weekAgo=Date.now()-7*dayMs;const vel=(S.activity||[]).filter(a=>a.ts>weekAgo&&/Готово|✅/.test((a.text||'')+(a.icon||''))).length;
-  $('#present').innerHTML=`
-    <button class="pr-close" id="prClose">${icon('x',16)} Esc</button>
-    <div class="pr-head"><div class="pr-emoji">${(reg.list.find(p=>p.id===S.id)||{}).emoji||'🚀'}</div>
-      <div><h1>${esc(S.projectName)}</h1><span>синк · ${new Date().getDate()} ${MONTHF[new Date().getMonth()]} ${new Date().getFullYear()}</span></div></div>
+  const tISO=todayISO();
+  const prog=tasks.filter(t=>t.status==='progress');
+  const ov=tasks.filter(t=>!t.isMilestone&&t.status!=='done'&&parseD(t.end)<parseD(tISO));
+  const mile=tasks.filter(t=>t.isMilestone&&parseD(t.end)>=parseD(tISO)).sort((a,b)=>parseD(a.end)-parseD(b.end))[0];
+  const mem=id=>(data.members||[]).find(m=>m.id===id);
+  const av=id=>{const m=mem(id);if(!m)return `<span class="av none">·</span>`;return m.photo?`<span class="av" style="background-image:url('${m.photo}');background-size:cover;background-position:center"></span>`:`<span class="av" style="background:${m.color}">${initials(m.name)}</span>`;};
+  const byPerson=(data.members||[]).map(m=>({m,tasks:prog.filter(t=>t.assigneeId===m.id)})).filter(x=>x.tasks.length);
+  const weekAgo=Date.now()-7*dayMs;const vel=(data.activity||[]).filter(a=>a.ts>weekAgo&&/Готово|✅/.test((a.text||'')+(a.icon||''))).length;
+  const dl=t=>Math.round((parseD(tISO)-parseD(t.end))/dayMs);
+  return `<div class="pr-head"><div class="pr-emoji">${meta.emoji||'🚀'}</div>
+      <div><h1>${esc(data.projectName||meta.name||'Проект')}</h1><span>синк · ${new Date().getDate()} ${MONTHF[new Date().getMonth()]} ${new Date().getFullYear()}</span></div></div>
     <div class="pr-mid">
       <div class="pr-ring" style="--p:${pct}"><div class="pr-ring-in"><b>${pct}%</b><small>готово</small></div></div>
       <div class="pr-stats">
         <div class="pr-stat"><b style="color:var(--warn)">${prog.length}</b><span>в работе</span></div>
         <div class="pr-stat"><b style="color:${ov.length?'var(--bad)':'var(--ok)'}">${ov.length}</b><span>просрочено</span></div>
         <div class="pr-stat"><b style="color:var(--acc3)">${vel}</b><span>закрыто за 7д</span></div>
-        ${mile?`<div class="pr-stat"><b>${Math.max(0,Math.round((parseD(mile.end)-parseD(todayISO()))/dayMs))}д</b><span>до «${esc(mile.title)}»</span></div>`:`<div class="pr-stat"><b>${T.length}</b><span>всего</span></div>`}
+        ${mile?`<div class="pr-stat"><b>${Math.max(0,Math.round((parseD(mile.end)-parseD(tISO))/dayMs))}д</b><span>до «${esc(mile.title)}»</span></div>`:`<div class="pr-stat"><b>${T.length}</b><span>всего задач</span></div>`}
       </div></div>
     <div class="pr-cols">
-      <div class="pr-col"><h3>🔧 В работе сейчас</h3>${byPerson.length?byPerson.map(x=>`<div class="pr-line">${avatar(x.m.id)}<span><b>${esc(x.m.name)}</b> — ${x.tasks.map(t=>esc(t.title)).join(' · ')}</span></div>`).join(''):'<div class="pr-empty">— тишина, никто ничего не делает 😅 —</div>'}</div>
-      <div class="pr-col">${ov.length?`<h3>🔴 Горит</h3>${ov.slice(0,7).map(t=>`<div class="pr-line">${avatar(t.assigneeId)}<span>${esc(t.title)} <em style="color:var(--bad)">${-daysLeft(t)}д просрочки</em></span></div>`).join('')}`:`<h3>✅ Просрочек нет</h3><div class="pr-empty">всё под контролем — красиво идём</div>`}</div>
+      <div class="pr-col"><h3>🔧 В работе сейчас</h3>${byPerson.length?byPerson.map(x=>`<div class="pr-line">${av(x.m.id)}<span><b>${esc(x.m.name)}</b> — ${x.tasks.map(t=>esc(t.title)).join(' · ')}</span></div>`).join(''):'<div class="pr-empty">— ничего в работе —</div>'}</div>
+      <div class="pr-col">${ov.length?`<h3>🔴 Горит</h3>${ov.slice(0,7).map(t=>`<div class="pr-line">${av(t.assigneeId)}<span>${esc(t.title)} <em style="color:var(--bad)">${dl(t)}д просрочки</em></span></div>`).join('')}`:`<h3>✅ Просрочек нет</h3><div class="pr-empty">всё под контролем — красиво идём</div>`}</div>
     </div>`;
-  $('#present').classList.add('show');
-  $('#prClose').onclick=closePresent;
-  try{if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen();}catch(e){}
 }
-function closePresent(){$('#present').classList.remove('show');try{if(document.fullscreenElement)document.exitFullscreen();}catch(e){}}
+function presOverviewHTML(projs){
+  const card=p=>{const d=p.id===S.id?S:loadProj(p.id)||{tasks:[]};const T=(d.tasks||[]).filter(t=>!t.isMilestone);
+    const done=T.filter(t=>t.status==='done').length;const pct=T.length?Math.round(done/T.length*100):0;
+    const ov=(d.tasks||[]).filter(t=>!t.isMilestone&&t.status!=='done'&&parseD(t.end)<parseD(todayISO())).length;
+    return `<div class="pov-card"><div class="pov-ring" style="--p:${pct}"><span>${pct}%</span></div>
+      <div class="pov-main"><div class="pov-n">${p.emoji||'📄'} ${esc(p.name)}</div>
+      <div class="pov-m">${T.length} задач · ${done} готово${ov?` · <b style="color:var(--bad)">${ov} просроч.</b>`:''}</div></div></div>`;};
+  return `<div class="pr-head"><div class="pr-emoji">🛰️</div><div><h1>Портфель · ${projs.length} ${plural(projs.length,'проект','проекта','проектов')}</h1><span>обзор перед синком</span></div></div>
+    <div class="pov-grid">${projs.map(card).join('')}</div>`;
+}
+let presSlides=[],presIdx=0,presTimer=null;
+function buildPresSlides(){
+  const projs=reg.list.filter(p=>!p.archived);const slides=[];
+  if(projs.length>1)slides.push(presOverviewHTML(projs));
+  (projs.length?projs:[{id:S.id,name:S.projectName,emoji:'🚀'}]).forEach(p=>{const d=p.id===S.id?S:loadProj(p.id);if(d)slides.push(presProjectHTML(p,d));});
+  if(!slides.length)slides.push(presProjectHTML({name:S.projectName},S));
+  return slides;
+}
+function renderPresent(){
+  const dots=presSlides.map((_,i)=>`<span class="pr-dot ${i===presIdx?'on':''}" data-d="${i}"></span>`).join('');
+  $('#present').innerHTML=`<button class="pr-close" id="prClose">${icon('x',16)} Esc</button>
+    <div class="pr-slide" key="${presIdx}">${presSlides[presIdx]}</div>
+    <div class="pr-nav"><button class="pr-arrow" id="prPrev">‹</button>
+      <div class="pr-dots">${dots}</div>
+      <button class="pr-arrow" id="prNext">›</button>
+      <button class="pr-auto ${presTimer?'on':''}" id="prAuto">${presTimer?'⏸ авто':'▶ авто'}</button>
+      <span class="pr-count">${presIdx+1} / ${presSlides.length}</span></div>`;
+  $('#prClose').onclick=closePresent;
+  $('#prPrev').onclick=()=>presNav(-1);$('#prNext').onclick=()=>presNav(1);
+  $('#prAuto').onclick=presToggleAuto;
+  $$('#present .pr-dot').forEach(d=>d.onclick=()=>{presIdx=+d.dataset.d;renderPresent();});
+}
+function presNav(d){if(!presSlides.length)return;presIdx=(presIdx+d+presSlides.length)%presSlides.length;renderPresent();}
+function presToggleAuto(){if(presTimer){clearInterval(presTimer);presTimer=null;}else{presTimer=setInterval(()=>presNav(1),8000);}renderPresent();}
+function openPresent(){presSlides=buildPresSlides();presIdx=0;renderPresent();$('#present').classList.add('show');
+  try{if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen();}catch(e){}}
+function closePresent(){$('#present').classList.remove('show');if(presTimer){clearInterval(presTimer);presTimer=null;}try{if(document.fullscreenElement)document.exitFullscreen();}catch(e){}}
+
+/* ---- read-only шеринг статуса по ссылке (без бэкенда, всё в URL) ---- */
+function buildShareSnapshot(){
+  const T=S.tasks.filter(t=>!t.isMilestone);const done=T.filter(t=>t.status==='done').length;const tISO=todayISO();
+  const mile=S.tasks.filter(t=>t.isMilestone&&parseD(t.end)>=parseD(tISO)).sort((a,b)=>parseD(a.end)-parseD(b.end))[0];
+  return {n:S.projectName,e:(reg.list.find(p=>p.id===S.id)||{}).emoji||'🚀',d:tISO,
+    pct:T.length?Math.round(done/T.length*100):0,tot:T.length,done,prog:S.tasks.filter(t=>t.status==='progress').length,ov:S.tasks.filter(isOverdue).length,
+    mile:mile?{t:mile.title,e:mile.end}:null,
+    pl:S.tasks.filter(t=>t.status==='progress').slice(0,8).map(t=>({t:t.title,a:(member(t.assigneeId)||{}).name||''})),
+    ov2:S.tasks.filter(isOverdue).slice(0,8).map(t=>({t:t.title,d:-daysLeft(t)}))};
+}
+function encodeShare(o){return btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
+function decodeShare(s){try{s=s.replace(/-/g,'+').replace(/_/g,'/');return JSON.parse(decodeURIComponent(escape(atob(s))));}catch(e){return null;}}
+function openShare(){
+  const url=location.origin+location.pathname+'#s='+encodeShare(buildShareSnapshot());
+  $('#balModal').innerHTML=`<div class="ob-art" style="font-size:46px">🔗</div>
+    <div class="ob-body"><h2>Ссылка-снимок статуса</h2>
+    <p>Read-only снимок проекта «${esc(S.projectName)}» — для клиента, инвестора или партнёра. Без входа, без правок. Снимок «вшит» в ссылку (обновишь — пошлёшь новую).</p>
+    <div class="codebox"><button class="btn copycfg" id="shCopy">Копировать</button><pre style="white-space:pre-wrap;word-break:break-all">${esc(url.length>180?url.slice(0,180)+'…':url)}</pre></div>
+    <div class="keyhint">Длина ссылки зависит от размера проекта. Открывается на любом устройстве.</div></div>
+    <div class="ob-foot"><button class="btn" id="shClose">Закрыть</button><div class="spacer"></div><a class="btn primary" id="shOpen" href="${url}" target="_blank" rel="noopener">Открыть превью →</a></div>`;
+  $('#balScrim').classList.add('show');
+  $('#shClose').onclick=closeBal;
+  $('#shCopy').onclick=()=>{navigator.clipboard.writeText(url);toast('Ссылка скопирована 🔗','📋');};
+}
+function renderSharePage(s){
+  const av=n=>`<span class="av" style="background:${COLORS[(n||'').length%COLORS.length]}">${n?initials(n):'·'}</span>`;
+  $('#present').innerHTML=`<div class="pr-share-badge">📸 Снимок статуса · ${s.d}</div>
+    <div class="pr-head"><div class="pr-emoji">${s.e||'🚀'}</div><div><h1>${esc(s.n)}</h1><span>read-only обзор от команды</span></div></div>
+    <div class="pr-mid"><div class="pr-ring" style="--p:${s.pct}"><div class="pr-ring-in"><b>${s.pct}%</b><small>готово</small></div></div>
+      <div class="pr-stats">
+        <div class="pr-stat"><b style="color:var(--warn)">${s.prog}</b><span>в работе</span></div>
+        <div class="pr-stat"><b style="color:${s.ov?'var(--bad)':'var(--ok)'}">${s.ov}</b><span>просрочено</span></div>
+        <div class="pr-stat"><b>${s.tot}</b><span>всего задач</span></div>
+        ${s.mile?`<div class="pr-stat"><b>${esc(s.mile.t)}</b><span>веха · ${s.mile.e.slice(8)}.${s.mile.e.slice(5,7)}</span></div>`:''}
+      </div></div>
+    <div class="pr-cols">
+      <div class="pr-col"><h3>🔧 В работе</h3>${s.pl&&s.pl.length?s.pl.map(x=>`<div class="pr-line">${av(x.a)}<span>${esc(x.t)}${x.a?` <em style="color:var(--mut2)">· ${esc(x.a)}</em>`:''}</span></div>`).join(''):'<div class="pr-empty">—</div>'}</div>
+      <div class="pr-col">${s.ov2&&s.ov2.length?`<h3>🔴 Горит</h3>${s.ov2.map(x=>`<div class="pr-line"><span>${esc(x.t)} <em style="color:var(--bad)">${x.d}д</em></span></div>`).join('')}`:'<h3>✅ Просрочек нет</h3><div class="pr-empty">всё в графике</div>'}</div>
+    </div>
+    <div class="pr-foot-brand"><span>Сделано в <b>Cockpit</b> · cock-pit.com</span><a class="btn primary" href="${location.origin+location.pathname}">Открыть свой Cockpit →</a></div>`;
+  $('#present').classList.add('show');hideGate();
+}
 
 /* ============================ DASHBOARD ============================ */
 function renderDash(){
@@ -2641,8 +2794,36 @@ function wireBar(el,min,DAY){
 
 /* ============================ BOARD ============================ */
 let dragCard=null;
+let boardMode='status';
+function renderBoardPeople(){
+  const b=$('#board');b.className='board people';b.innerHTML='';
+  const lanes=[...S.members.map(m=>({id:m.id,m})),{id:'',m:null}];
+  lanes.forEach(L=>{
+    const tasks=S.tasks.filter(t=>!t.isMilestone&&(t.assigneeId||'')===L.id&&passFilter(t)).sort((a,b)=>relScore(b)-relScore(a));
+    if(!tasks.length&&L.id==='')return;
+    const load=tasks.filter(t=>t.status!=='done').reduce((a,t)=>a+(t.estimate||0),0);
+    const cap=L.m&&L.m.capacity?L.m.capacity:0;const over=cap&&load>cap;
+    const lane=document.createElement('div');lane.className='lane';lane.dataset.member=L.id;
+    lane.innerHTML=`<div class="laneh">${L.m?avatar(L.m.id):'<span class="av none">·</span>'}<span class="lanen">${L.m?esc(L.m.name):'Без исполнителя'}</span>
+      <span class="lanl ${over?'over':''}">${tasks.filter(t=>t.status!=='done').length} актив · ${load}${cap?'/'+cap:''}ч ${over?'⚠':''}</span></div><div class="laneb"></div>`;
+    const body=lane.querySelector('.laneb');
+    tasks.forEach(t=>{const c=document.createElement('div');c.className='lcard';c.draggable=true;c.dataset.id=t.id;const ov=isOverdue(t);
+      c.innerHTML=`<span class="pip" style="background:${stMap[t.status].c}"></span><span class="lct ${t.status==='done'?'done':''}">${prGlyph(t)}${esc(t.title)}</span>${t.estimate?`<span class="le">${t.estimate}ч</span>`:''}${ov?'<span class="le" style="color:var(--bad)">⚠</span>':''}`;
+      c.onclick=()=>openTask(t.id);
+      c.ondragstart=()=>{dragCard=t.id;c.classList.add('dragging');};
+      c.ondragend=()=>{c.classList.remove('dragging');dragCard=null;};
+      body.appendChild(c);});
+    if(!tasks.length)body.innerHTML='<div class="colempty">— нет задач —</div>';
+    lane.ondragover=e=>{e.preventDefault();lane.classList.add('drop');};
+    lane.ondragleave=()=>lane.classList.remove('drop');
+    lane.ondrop=e=>{e.preventDefault();lane.classList.remove('drop');if(!dragCard)return;const t=task(dragCard);
+      if(t&&(t.assigneeId||'')!==L.id){t.assigneeId=L.id||null;logAct('👤','«'+t.title+'» → '+(L.m?L.m.name:'без исполнителя'));save();renderBoardPeople();toast('Назначено: '+(L.m?L.m.name:'никто'),'👤');}};
+    b.appendChild(lane);
+  });
+}
 function renderBoard(){
-  const b=$('#board');b.innerHTML='';
+  if(boardMode==='people')return renderBoardPeople();
+  const b=$('#board');b.className='board';b.innerHTML='';
   STATUSES.forEach(st=>{
     const col=document.createElement('div');col.className='col';col.dataset.st=st.k;
     const items=S.tasks.filter(t=>t.status===st.k&&passFilter(t)).sort((a,b)=>{
@@ -2955,6 +3136,7 @@ $('#fAssignee').onchange=e=>{filter.assignee=e.target.value;rerenderView();};
 $('#fMine').onclick=()=>{filter.mine=!filter.mine;render();};
 $('#fOver').onclick=()=>{filter.overdue=!filter.overdue;render();};
 $('#fReset').onclick=()=>{filter={q:'',assignee:'',mine:false,overdue:false};render();};
+$('#boardModeCtl').onclick=e=>{const b=e.target.closest('.sgb');if(!b)return;boardMode=b.dataset.bm;$$('#boardModeCtl .sgb').forEach(x=>x.classList.toggle('on',x===b));renderBoard();};
 $('#zOut').onclick=()=>{S.ui.zoom=Math.max(22,S.ui.zoom-8);save();renderGantt();};
 $('#zIn').onclick=()=>{S.ui.zoom=Math.min(64,S.ui.zoom+8);save();renderGantt();};
 function rerenderView(){if(view==='gantt')renderGantt();else if(view==='board')renderBoard();}
@@ -2968,6 +3150,7 @@ menuEl.onclick=e=>{const b=e.target.closest('button');if(!b)return;menuEl.classL
   else if(act==='autoschedule'){autoSchedule();}
   else if(act==='present'){openPresent();}
   else if(act==='rebalance'){openRebalance();}
+  else if(act==='share'){openShare();}
   else if(act==='sound'){const on=localStorage.getItem('cockpit_sound')!=='0';localStorage.setItem('cockpit_sound',on?'0':'1');toast(on?'Звук выключен 🔇':'Звук включён 🔔',on?'🔇':'🔔');if(!on)playDing();}
   else if(act==='export'){const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
     const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cockpit-'+todayISO()+'.json';a.click();toast('Экспортировано','💾');}
@@ -3019,6 +3202,10 @@ cmdEl.onkeydown=e=>{if(e.key==='Enter'){runCmd(cmdEl.value);cmdEl.value='';$('#c
 {const k=$('#cmdkBtn');if(k)k.onclick=()=>openPalette();}
 document.addEventListener('keydown',e=>{
   const a=document.activeElement;const typing=a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.isContentEditable);
+  if($('#present').classList.contains('show')&&!$('#present').querySelector('.pr-foot-brand')){
+    if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();presNav(1);return;}
+    if(e.key==='ArrowLeft'){e.preventDefault();presNav(-1);return;}
+  }
   if((e.metaKey||e.ctrlKey)&&(e.key==='k'||e.key==='K')){e.preventDefault();$('#palScrim').classList.contains('show')?closePalette():openPalette();return;}
   if((e.metaKey||e.ctrlKey)&&!e.shiftKey&&e.code==='KeyZ'&&!typing){e.preventDefault();undo();return;}
   if(e.key==='Escape'){
@@ -3550,6 +3737,7 @@ function buildPaletteIndex(){
     ['cal','Авто-расписание','раскидать сроки по загрузке',()=>autoSchedule()],
     ['zap','Презентация · синк','полноэкранный обзор для созвона',()=>openPresent()],
     ['users','Разгрузить команду','выровнять загрузку',()=>openRebalance()],
+    ['layers','Ссылка-снимок статуса','read-only для клиента/инвестора',()=>openShare()],
     ['sync','Светлая / тёмная тема','оформление',()=>$('#btnTheme').click()],
     ['idea','Добавить идею в бэклог','паркинг идей',()=>{setView('backlog');setTimeout(()=>{const i=$('#ideaIn');if(i)i.focus();},120);}],
     ['board','Сбросить порядок задач','вернуть авто-сортировку',()=>{S.tasks.forEach(t=>{delete t.rank;});save();render();toast('Авто-сортировка ↕','↕');}],
@@ -3608,9 +3796,12 @@ applyTheme();
 $('#sbLegend').innerHTML=legendHTML();
 resetUndo();
 render();
-cloudInit();
+const _share=(location.hash.match(/[#&]s=([^&]+)/)||[])[1];
+const _shareSnap=_share?decodeShare(_share):null;
+if(_shareSnap){renderSharePage(_shareSnap);}
+else cloudInit();
 // утренний бриф для локального режима (без облака) — один раз в день
-setTimeout(()=>{
+if(!_shareSnap)setTimeout(()=>{
   if(cloudOn)return;
   const anyModal=['#gate','#obScrim','#npScrim','#authScrim','#profileScrim','#briefScrim'].some(id=>{const el=$(id);return el&&(id==='#gate'?!el.classList.contains('hide'):el.classList.contains('show'));});
   if(anyModal)return;
