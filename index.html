@@ -959,6 +959,75 @@ body.light .codebox{background:#0f1320}
 .pal-foot kbd{font-size:10px;border:1px solid var(--line2);border-radius:4px;padding:1px 5px;background:var(--bg);margin-right:3px}
 .pal-foot-r{margin-left:auto;font-weight:800;letter-spacing:.3px;opacity:.55}
 body.light .pal{background:var(--sheen),rgba(255,255,255,.97)}
+
+/* live NLP chips под командной строкой */
+.cmd .cmdk{font-size:10px;color:var(--mut2);border:1px solid var(--line2);border-radius:5px;padding:2px 6px;background:var(--bg);cursor:pointer;transition:.14s;flex:0 0 auto}
+.cmd .cmdk:hover{color:var(--acc2);border-color:var(--acc2)}
+.cmdchips{position:absolute;top:46px;left:0;right:0;z-index:41;display:none;align-items:center;gap:7px;flex-wrap:wrap;
+  background:rgba(17,20,31,.97);backdrop-filter:blur(28px) saturate(1.5);-webkit-backdrop-filter:blur(28px) saturate(1.5);
+  border:1px solid var(--gbrd);border-radius:13px;box-shadow:0 18px 50px rgba(0,0,0,.6),var(--ghi);padding:10px 12px}
+.cmdchips.show{display:flex;animation:pop .14s ease}
+.cmdchips .cc-arrow{font-size:11px;font-weight:800;color:#0c0d12;background:linear-gradient(160deg,var(--acc2),#8b6ff0);border-radius:6px;padding:2px 7px;flex:0 0 auto}
+.cmdchips .cc-t{font-weight:700;font-size:13.5px;color:var(--txt);max-width:46%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmdchips .cc-h{font-size:11.5px;color:var(--mut2)}
+body.light .cmdchips{background:rgba(255,255,255,.98);box-shadow:0 18px 50px rgba(70,82,120,.26),var(--ghi)}
+
+/* ====================================================================
+   СЕЙЧАС — Mission Control (bold home)
+   ==================================================================== */
+.now{padding:24px 22px 40px;max-width:1080px;margin:0 auto}
+.now-greet{margin-bottom:18px}
+.now-greet h1{font-size:32px;font-weight:850;letter-spacing:-.8px;margin:0;line-height:1.05}
+.now-greet span{color:var(--mut2);font-size:13.5px;font-weight:600}
+.now-hero{position:relative;overflow:hidden;border-radius:24px;padding:26px 26px 22px;margin-bottom:20px;
+  background:var(--sheen),linear-gradient(135deg,rgba(167,139,250,.22),rgba(56,189,248,.10) 70%),var(--glass);
+  border:1px solid rgba(167,139,250,.34);box-shadow:var(--ghi),0 22px 60px rgba(0,0,0,.4),0 0 0 1px rgba(167,139,250,.06)}
+.now-hero::after{content:'';position:absolute;right:-60px;top:-80px;width:280px;height:280px;border-radius:50%;
+  background:radial-gradient(closest-side,rgba(167,139,250,.30),transparent);pointer-events:none}
+.now-hero.over{background:var(--sheen),linear-gradient(135deg,rgba(248,113,113,.22),rgba(251,191,36,.10) 70%),var(--glass);border-color:rgba(248,113,113,.4)}
+.now-hero.done{background:var(--sheen),linear-gradient(135deg,rgba(52,211,153,.18),transparent 70%),var(--glass);border-color:rgba(52,211,153,.32)}
+.nh-label{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--acc2);margin-bottom:9px;position:relative;z-index:1}
+.now-hero.over .nh-label{color:var(--bad)}.now-hero.done .nh-label{color:var(--ok)}
+.nh-title{font-size:27px;font-weight:800;letter-spacing:-.5px;line-height:1.15;cursor:pointer;position:relative;z-index:1;margin-bottom:15px}
+.nh-title:hover{opacity:.85}
+.nh-meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;position:relative;z-index:1}
+.nh-meta .ichip{background:rgba(0,0,0,.22);border-color:rgba(255,255,255,.14)}
+.nh-meta .ichip.bad{color:#fff;background:rgba(248,113,113,.3);border-color:var(--bad)}
+body.light .nh-meta .ichip{background:rgba(255,255,255,.6)}
+.nh-acts{display:flex;gap:10px;flex-wrap:wrap;position:relative;z-index:1}
+.btn.big{padding:13px 20px;font-size:14.5px;border-radius:14px}
+.focusrun{display:flex;align-items:center;gap:12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:8px 8px 8px 16px}
+body.light .focusrun{background:rgba(255,255,255,.7)}
+.focusrun .fdot{width:10px;height:10px;border-radius:50%;background:var(--bad);box-shadow:0 0 0 0 rgba(248,113,113,.6);animation:fpulse 1.3s infinite}
+@keyframes fpulse{0%,100%{box-shadow:0 0 0 0 rgba(248,113,113,.55)}50%{box-shadow:0 0 0 8px rgba(248,113,113,0)}}
+.focusrun .fclock{font-variant-numeric:tabular-nums;font-weight:800;font-size:19px;letter-spacing:.5px;min-width:78px}
+.pulse-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.pulse-card{background:var(--sheen),var(--glass);border:1px solid var(--gbrd);border-radius:18px;padding:16px 17px;box-shadow:var(--ghi)}
+.pulse-card .pv{font-size:30px;font-weight:850;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-1px}
+.pulse-card .pl{font-size:12px;color:var(--mut2);font-weight:600;margin-top:7px}
+.pulse-card .pbar2{height:5px;border-radius:20px;background:var(--bg2);margin-top:9px;overflow:hidden}
+.pulse-card .pbar2 span{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,var(--ok),#10b981)}
+.now-sec{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--mut);margin:4px 2px 13px;display:flex;align-items:center;gap:9px}
+.now-sec span{text-transform:none;letter-spacing:0;font-weight:500;color:var(--mut2)}
+.insights{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.insight{display:flex;align-items:center;gap:13px;background:var(--sheen),var(--glass);border:1px solid var(--gbrd);border-radius:16px;padding:14px 16px;box-shadow:var(--ghi)}
+.insight.click{cursor:pointer;transition:transform .16s var(--ease),border-color .16s}
+.insight.click:hover{transform:translateY(-2px);border-color:rgba(167,139,250,.4)}
+.insight .ii{font-size:23px;flex:0 0 auto}
+.insight .ib{flex:1;min-width:0}
+.insight .it{font-weight:700;font-size:14px}
+.insight .is{font-size:12.5px;color:var(--mut2);margin-top:2px;line-height:1.45;overflow:hidden;text-overflow:ellipsis}
+.insight .ia{color:var(--mut2);font-size:18px;flex:0 0 auto}
+.insight.click:hover .ia{color:var(--acc2)}
+@media (max-width:680px){
+  .now{padding:16px 14px 40px}
+  .now-greet h1{font-size:26px}
+  .now-hero{padding:20px 18px;border-radius:20px}
+  .nh-title{font-size:22px}
+  .pulse-row{grid-template-columns:1fr 1fr}
+  .insights{grid-template-columns:1fr}
+  .nh-acts .btn.big{flex:1;justify-content:center}
+}
 @media (max-width:680px){.pal-scrim{padding:0}.pal{width:100%;height:100%;max-width:none;border-radius:0;display:flex;flex-direction:column}.pal-list{max-height:none;flex:1}.pal-in input{font-size:16px}}
 </style>
 </head>
@@ -973,17 +1042,20 @@ body.light .pal{background:var(--sheen),rgba(255,255,255,.97)}
   <div class="cmdwrap">
     <div class="cmd" id="cmdBox">
       <button class="mic" id="micBtn" data-icon="mic" title="Голосовой ввод"></button>
-      <input id="cmd" placeholder="Команда голосом или текстом — нажми / или микрофон" autocomplete="off" />
+      <input id="cmd" placeholder="Напиши задачу или команду — Enter создаст. / подсказки, ⌘K поиск" autocomplete="off" />
+      <kbd class="cmdk" id="cmdkBtn" title="Палитра — поиск и переходы">⌘K</kbd>
       <kbd>↵</kbd>
     </div>
+    <div class="cmdchips" id="cmdChips"></div>
     <div class="cmdhint" id="cmdhint"></div>
   </div>
 
   <div class="tabs" id="tabs">
+    <button class="tab active" data-v="now" data-icon="zap"><span>Сейчас</span></button>
     <button class="tab" data-v="dash" data-icon="home"><span>Обзор</span></button>
     <button class="tab" data-v="all" data-icon="layers"><span>Всё</span></button>
     <button class="tab" data-v="gantt" data-icon="gantt"><span>Гант</span></button>
-    <button class="tab active" data-v="board" data-icon="board"><span>Доска</span></button>
+    <button class="tab" data-v="board" data-icon="board"><span>Доска</span></button>
     <button class="tab" data-v="week" data-icon="cal"><span>Неделя</span></button>
     <button class="tab" data-v="backlog" data-icon="idea"><span>Бэклог</span> <span class="cnt" id="cntIdeas">0</span></button>
     <button class="tab" data-v="team" data-icon="users"><span>Команда</span></button>
@@ -1016,10 +1088,11 @@ body.light .pal{background:var(--sheen),rgba(255,255,255,.97)}
   </div>
 
   <div class="content">
+    <div class="view active" id="v-now"><div class="now" id="now"></div></div>
     <div class="view" id="v-dash"><div class="dash" id="dash"></div></div>
     <div class="view" id="v-all"><div class="dash" id="portfolio"></div></div>
     <div class="view" id="v-gantt"><div class="gantt" id="gantt"></div></div>
-    <div class="view active" id="v-board"><div class="board" id="board"></div></div>
+    <div class="view" id="v-board"><div class="board" id="board"></div></div>
     <div class="view" id="v-week"><div class="weekwrap" id="week"></div></div>
     <div class="view" id="v-backlog">
       <div class="pad">
@@ -1288,6 +1361,9 @@ const ICONS={
  sparkles:'<path d="M12 3l1.8 4.9L18.7 9 13.8 11 12 16l-1.8-5L5.3 9l4.9-1.1z"/><path d="M19 14l.6 1.7 1.7.6-1.7.6L19 19l-.6-1.5-1.7-.6 1.7-.6z"/>',
  inbox:'<path d="M3 13h4l1.5 3h7L17 13h4M5 5h14a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/>',
  plug:'<path d="M9 2v6M15 2v6M7 8h10v3a5 5 0 0 1-10 0zM12 16v6"/>',
+ zap:'<path d="M13 2 4 14h6l-1 8 9-12h-6z"/>',
+ play:'<path d="M7 4v16l13-8z" fill="currentColor" stroke="none"/>',
+ clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
 };
 function icon(n,s){s=s||18;return `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]||''}</svg>`;}
 const LOGO_PATHS='<path transform="translate(-239 -299)" d="M590.549 318.732C592.945 318.453 596.745 318.696 599.286 318.696C634.434 318.703 667.897 316.824 700.032 333.775C783.727 377.923 786.207 488.78 731.835 556.811C700.794 595.65 657.566 620.752 607.3 623.356C576.646 624.841 542.765 617.244 517.207 638.881C505.403 648.755 500.588 660.76 494.308 674.336C488.985 685.844 483.927 697.868 478.034 709.061C447.129 709.003 414.041 709.686 383.322 708.993C390.272 692.78 399.544 674.533 407.172 658.357C414.402 641.263 425.054 620.531 433.24 603.375L468.064 529.888C478.844 507.375 489.815 485.216 500.033 462.397C508.607 461.72 522.007 461.939 530.747 461.916C551.732 461.88 572.716 462.073 593.696 462.496C589.717 468.96 584.172 482.027 580.797 489.352C574.315 503.42 567.316 518.312 561.52 532.628C562.821 532.707 564.123 532.765 565.426 532.803C574.929 533.092 584.848 532.969 594.379 533.027C601.077 532.791 608.447 533.526 615.073 532.731C648.617 528.704 677.207 498.097 677.706 464.145C678.091 437.865 664.532 415.164 637.935 409.832C622.705 406.779 607.684 407.916 592.303 407.965C569.853 408.116 547.402 408.135 524.952 408.02C539.76 379.17 553.156 348.033 567.408 318.783C575.059 318.869 582.922 319.055 590.549 318.732Z"/><path transform="translate(-239 -299)" d="M436.648 318.711C438.535 318.361 446.366 318.402 448.541 318.408L474.9 318.684C498.905 318.824 523.676 318.103 547.68 318.994C534.009 349.063 519.82 378.173 505.694 407.974L452.824 407.966C437.639 407.999 418.311 406.719 404.007 410.92C374.633 419.548 349.545 452.473 349.489 483.221C349.376 496.888 354.815 510.016 364.561 519.599C378.937 533.945 398.3 532.85 417.331 532.946L446.601 533.036C439.517 549.455 431.978 565.674 423.991 581.673C417.562 595.433 410.688 609.303 404.066 623C374.725 623.045 349.066 625.26 321.887 611.554C233.151 566.808 241.2 449.578 300.225 384.017C338.665 341.322 379.901 322.449 436.648 318.711Z"/>';
@@ -1336,7 +1412,7 @@ function passFilter(t){
 function filterActive(){return filter.q||filter.assignee||filter.mine||filter.overdue;}
 
 /* ============================ RENDER ROUTER ============================ */
-let view='board';
+let view='now';
 function relScore(t){const prW={urgent:4,high:3,med:2,low:1}[t.priority]||2;const dl=daysLeft(t);
   const due=dl<0?(2000-dl):Math.max(0,400-dl*8);return due+prW*60;}
 /* геймификация: баллы за выполненные задачи */
@@ -1380,7 +1456,8 @@ function render(){
   $('#sbStats').textContent=`${_T.length} задач · ${_T.filter(t=>t.status==='done').length} готово · ${S.tasks.filter(isOverdue).length} просроч.`;
   updateInboxBadge();
   syncFilterUI();
-  if(view==='dash')renderDash();
+  if(view==='now')renderNow();
+  else if(view==='dash')renderDash();
   else if(view==='all')renderPortfolio();
   else if(view==='gantt')renderGantt();
   else if(view==='board')renderBoard();
@@ -1392,6 +1469,84 @@ function render(){
 }
 function setView(v){view=v;if(v==='gantt')ganttNeedsScroll=true;$$('.tab').forEach(t=>t.classList.toggle('active',t.dataset.v===v));
   $$('.view').forEach(el=>el.classList.toggle('active',el.id==='v-'+v));render();}
+
+/* ============================ СЕЙЧАС — MISSION CONTROL ============================ */
+let focus={tid:null,start:0,iv:null};
+function fmtDur(s){const h=Math.floor(s/3600),m=Math.floor(s/60)%60,x=s%60;return (h?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(x).padStart(2,'0');}
+function updFocus(){const el=$('#focusClock');if(!el){clearInterval(focus.iv);focus.iv=null;return;}el.textContent=fmtDur(Math.floor((Date.now()-focus.start)/1000));}
+function startFocus(tid){if(focus.tid)stopFocus(true);const t=task(tid);if(!t)return;focus.tid=tid;focus.start=Date.now();
+  if(t.status==='backlog'||t.status==='todo'){t.status='progress';logAct('▶️','начал «'+t.title+'»');}save();
+  clearInterval(focus.iv);focus.iv=setInterval(updFocus,1000);if(view==='now')renderNow();}
+function stopFocus(silent){if(!focus.tid)return;clearInterval(focus.iv);focus.iv=null;
+  const mins=(Date.now()-focus.start)/60000;const t=task(focus.tid);
+  if(t&&mins>=0.5){t.spent=Math.round(((t.spent||0)+mins/60)*10)/10;logAct('⏱','фокус '+Math.round(mins)+'м · «'+t.title+'»');save();}
+  focus.tid=null;if(!silent&&view==='now')renderNow();}
+function plural(n,one,few,many){const m=n%100,d=n%10;if(m>=11&&m<=14)return many;if(d===1)return one;if(d>=2&&d<=4)return few;return many;}
+function buildInsights(T){
+  const out=[],me=myId();
+  const ov=T.filter(isOverdue);
+  if(ov.length)out.push({ic:'🔴',title:`${ov.length} ${plural(ov.length,'задача просрочена','задачи просрочены','задач просрочено')}`,sub:ov.slice(0,2).map(t=>t.title).join(' · '),act:()=>{filter={q:'',assignee:'',mine:false,overdue:true};setView('board');}});
+  const wom=T.filter(t=>t.waitingOn===me&&t.status!=='done');
+  if(wom.length)out.push({ic:'⏳',title:`Висит на тебе: ${wom.length}`,sub:wom.slice(0,2).map(t=>t.title).join(' · '),act:()=>openTask(wom[0].id)});
+  S.members.forEach(m=>{const load=T.filter(t=>t.assigneeId===m.id&&t.status!=='done').reduce((a,t)=>a+(t.estimate||0),0);
+    if(m.capacity&&load>m.capacity*1.15)out.push({ic:'🥵',title:`${m.name} перегружен`,sub:`${load}/${m.capacity}ч — перекинь часть или сдвинь сроки`,act:()=>openMember(m.id)});});
+  const rot=T.filter(t=>t.status!=='done'&&(t.status==='backlog'||t.status==='todo')&&(t.spent||0)===0&&t.createdTs&&(Date.now()-t.createdTs>10*dayMs));
+  if(rot.length)out.push({ic:'🕸',title:`${rot.length} ${plural(rot.length,'задача застряла','задачи застряли','задач застряло')}`,sub:'больше 10 дней без движения — сделать, делегировать или удалить',act:()=>openTask(rot[0].id)});
+  const last=(S.activity||[])[0];
+  if(last&&Date.now()-last.ts>3*dayMs)out.push({ic:'🌙',title:'Тишина 3+ дня',sub:'проект не двигался — закинь следующий шаг',act:()=>{const c=$('#cmd');if(c)c.focus();}});
+  if(!out.length)out.push({ic:'✨',title:'Всё под контролем',sub:'просрочек и перегруза нет — можно строить',act:null});
+  return out;
+}
+function renderNow(){
+  const el=$('#now');if(!el)return;
+  const T=S.tasks.filter(t=>!t.isMilestone);const me=myId();
+  const done=T.filter(t=>t.status==='done').length;
+  const prog=T.filter(t=>t.status==='progress').length;
+  const pct=T.length?Math.round(done/T.length*100):0;
+  const ov=T.filter(isOverdue).length;
+  const weekAgo=Date.now()-7*dayMs;
+  const vel=(S.activity||[]).filter(a=>a.ts>weekAgo&&/Готово|✅/.test((a.text||'')+(a.icon||''))).length;
+  const mine=T.filter(t=>t.assigneeId===me&&t.status!=='done');
+  const pool=mine.length?mine:T.filter(t=>t.status!=='done');
+  const next=[...pool].sort((a,b)=>relScore(b)-relScore(a))[0];
+  const h=new Date().getHours();const greet=h<6?'Доброй ночи':h<12?'Доброе утро':h<18?'Добрый день':'Добрый вечер';
+  const ins=buildInsights(T);const running=!!(focus.tid&&task(focus.tid));
+  let hero;
+  if(next){const ovn=isOverdue(next);const dl=daysLeft(next);const isFoc=focus.tid===next.id;const m=next.assigneeId?member(next.assigneeId):null;
+    hero=`<div class="now-hero ${ovn?'over':''}">
+      <div class="nh-label">${mine.length?'🎯 Твой следующий шаг':'🎯 Главное в проекте сейчас'}</div>
+      <div class="nh-title" data-open="${next.id}">${prGlyph(next)}${esc(next.title)}</div>
+      <div class="nh-meta">
+        <span class="ichip">${avatar(next.assigneeId)} ${m?esc(m.name):'без исполнителя'}</span>
+        <span class="ichip" style="border-color:${stMap[next.status].c}"><span class="pal-dot" style="background:${stMap[next.status].c}"></span> ${stMap[next.status].n}</span>
+        ${next.estimate?`<span class="ichip">⏱ ${next.spent||0}/${next.estimate}ч</span>`:''}
+        <span class="ichip ${ovn?'bad':''}">📅 ${ovn?'просрочено '+(-dl)+'д':dl===0?'сегодня':dl===1?'завтра':'через '+dl+'д'}</span>
+      </div>
+      <div class="nh-acts">
+        ${isFoc?`<div class="focusrun"><span class="fdot"></span><span id="focusClock" class="fclock">00:00</span><button class="btn" id="focusStop">■ Стоп</button></div>`
+               :`<button class="btn primary big" id="focusStart">${icon('play',15)} Фокус — поехали</button>`}
+        <button class="btn big" data-done="${next.id}">✓ Готово</button>
+      </div></div>`;
+  }else hero=`<div class="now-hero done"><div class="nh-label">🎉 Чисто</div><div class="nh-title">Активных задач на тебе нет</div>
+      <div class="nh-meta"><span class="ichip">создай задачу строкой сверху или ⌘K</span></div></div>`;
+  el.innerHTML=`<div class="now-greet"><h1>${greet}, ${esc(meName())}</h1><span>${esc(S.projectName)} · пульс проекта</span></div>
+    ${hero}
+    <div class="pulse-row">
+      <div class="pulse-card"><div class="pv" style="color:var(--ok)">${pct}%</div><div class="pl">готово</div><div class="pbar2"><span style="width:${pct}%"></span></div></div>
+      <div class="pulse-card"><div class="pv" style="color:var(--warn)">${prog}</div><div class="pl">в работе</div></div>
+      <div class="pulse-card"><div class="pv" style="color:${ov?'var(--bad)':'var(--mut)'}">${ov}</div><div class="pl">просрочено</div></div>
+      <div class="pulse-card"><div class="pv">${vel}</div><div class="pl">закрыто за 7 дней</div></div>
+    </div>
+    <div class="now-sec">🧠 Что важно знать <span>проактивно — пока другие тулзы молчат</span></div>
+    <div class="insights">${ins.map((x,i)=>`<div class="insight ${x.act?'click':''}" data-i="${i}"><span class="ii">${x.ic}</span><div class="ib"><div class="it">${esc(x.title)}</div>${x.sub?`<div class="is">${esc(x.sub)}</div>`:''}</div>${x.act?'<span class="ia">→</span>':''}</div>`).join('')}</div>`;
+  const ns=el.querySelector('.nh-title[data-open]');if(ns)ns.onclick=()=>openTask(ns.dataset.open);
+  const fs=$('#focusStart');if(fs&&next)fs.onclick=()=>startFocus(next.id);
+  const fst=$('#focusStop');if(fst)fst.onclick=()=>stopFocus(false);
+  if(running){if(!focus.iv)focus.iv=setInterval(updFocus,1000);updFocus();}
+  const dn=el.querySelector('[data-done]');if(dn)dn.onclick=()=>{const t=task(dn.dataset.done);if(!t)return;if(focus.tid===t.id)stopFocus(true);
+    t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;logAct('✅','«'+t.title+'» → Готово');const v=awardForDone(S,t);save();render();toast(v?('+'+v+' 🪙 за «'+t.title+'»'):'Готово ✅',v?'🪙':'✅');};
+  ins.forEach((x,i)=>{const c=el.querySelector(`.insight[data-i="${i}"]`);if(c&&x.act)c.onclick=x.act;});
+}
 
 /* ============================ DASHBOARD ============================ */
 function renderDash(){
@@ -2500,9 +2655,19 @@ const HINT=`<b>🎙 Командная строка</b> — говори или 
 <b style="color:#9aa0b3">Ещё</b> <span class="ex">переименуй Тексты в Копирайтинг</span> · <span class="ex">коммент Тексты: нужен тон бренда</span> · <span class="ex">идея реферальная петля</span> · <span class="ex">удали задачу Саунддизайн</span><br>
 <span style="color:#838aa6">⌨ <b>⌘K</b> палитра (поиск + всё) · <b>/</b> команда · <b>N</b> новая · <b>O</b>бзор · <b>B</b> доска · <b>G</b> гант · <b>W</b> неделя · <b>I</b> бэклог · <b>T</b> команда · <b>A</b> всё · <b>⌘Z</b> отмена</span>`;
 cmdEl.onfocus=()=>{hintEl.innerHTML=HINT;hintEl.classList.add('show');bindEx();};
-cmdEl.onblur=()=>setTimeout(()=>hintEl.classList.remove('show'),180);
-function bindEx(){$$('#cmdhint .ex').forEach(e=>e.onmousedown=ev=>{ev.preventDefault();cmdEl.value=e.textContent;cmdEl.focus();});}
-cmdEl.onkeydown=e=>{if(e.key==='Enter'){runCmd(cmdEl.value);cmdEl.value='';}if(e.key==='Escape')cmdEl.blur();};
+cmdEl.onblur=()=>setTimeout(()=>{hintEl.classList.remove('show');$('#cmdChips').classList.remove('show');},180);
+function bindEx(){$$('#cmdhint .ex').forEach(e=>e.onmousedown=ev=>{ev.preventDefault();cmdEl.value=e.textContent;cmdEl.focus();cmdLiveChips();});}
+function cmdLiveChips(){const box=$('#cmdChips');const s=cmdEl.value;
+  const hide=()=>{box.classList.remove('show');box.innerHTML='';if(document.activeElement===cmdEl){hintEl.innerHTML=HINT;hintEl.classList.add('show');bindEx();}};
+  if(!s.trim()||isManageCmd(s))return hide();
+  const p=parseQuick(s);const chips=nlpChips(p);
+  if(p.title&&(chips.length||p.title!==s.trim())){
+    box.innerHTML=`<span class="cc-arrow">↵</span><span class="cc-t">${esc(p.title)}</span>${chips.join('')}<span class="cc-h">— станет задачей</span>`;
+    box.classList.add('show');hintEl.classList.remove('show');
+  }else hide();}
+cmdEl.addEventListener('input',cmdLiveChips);
+cmdEl.onkeydown=e=>{if(e.key==='Enter'){runCmd(cmdEl.value);cmdEl.value='';$('#cmdChips').classList.remove('show');}if(e.key==='Escape')cmdEl.blur();};
+{const k=$('#cmdkBtn');if(k)k.onclick=()=>openPalette();}
 document.addEventListener('keydown',e=>{
   const a=document.activeElement;const typing=a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.isContentEditable);
   if((e.metaKey||e.ctrlKey)&&(e.key==='k'||e.key==='K')){e.preventDefault();$('#palScrim').classList.contains('show')?closePalette():openPalette();return;}
@@ -2578,6 +2743,16 @@ function parseQuick(raw){
 }
 // применить разобранные поля к задаче (кроме названия)
 function applyQuick(t,p){if(p.assignee)t.assigneeId=p.assignee;if(p.est)t.estimate=p.est;if(p.prio)t.priority=p.prio;if(p.start){t.start=p.start;t.end=p.end||p.start;}return t;}
+// живой превью-разбор (чипы) для распознанных сущностей
+function nlpChips(p){const out=[];
+  if(p.assignee){const m=member(p.assignee);if(m)out.push(`<span class="ichip" style="border-color:${m.color}">${avatarOf(m,16)} ${esc(m.name)}</span>`);}
+  if(p.start)out.push(`<span class="ichip">📅 ${p.start.slice(8)}.${p.start.slice(5,7)}${p.end&&p.end!==p.start?'–'+p.end.slice(8)+'.'+p.end.slice(5,7):''}</span>`);
+  if(p.est)out.push(`<span class="ichip">⏱ ${p.est}ч</span>`);
+  if(p.prio==='urgent')out.push(`<span class="ichip" style="color:var(--bad);border-color:var(--bad)">⚑ срочно</span>`);
+  else if(p.prio==='high')out.push(`<span class="ichip" style="color:var(--warn);border-color:var(--warn)">⚑ важно</span>`);
+  return out;}
+// это команда-управление (статус/назначь/…), а не создание задачи?
+function isManageCmd(s){return /^\s*(статус|status|назнач|assign|эстимейт|оцен|estimate|est|приоритет|priorit|приор|переимену|rename|срок|дедлайн|due|удали|удалить|delete|del|коммент|comment|идея|idea)\b/i.test(s);}
 
 function runCmd(raw){
   const s=(raw||'').trim();if(!s)return;
@@ -2637,7 +2812,10 @@ function runCmd(raw){
     const t=applyQuick(newTask(p.title),p);if(p.start)t.status='todo';
     save();render();toast('Задача создана: «'+p.title+'»','🚀');return;
   }
-  toast('Не распознал команду. Жми / для подсказок','🤔');
+  // фолбэк: любой свободный текст → задача (с умным разбором)
+  {const p=parseQuick(s);if(!p.title){toast('Не понял — жми / для подсказок','🤔');return;}
+   const t=applyQuick(newTask(p.title),p);if(p.start)t.status='todo';
+   save();render();toast('Задача создана: «'+p.title+'»','🚀');return;}
   }catch(err){console.error(err);toast('Ошибка: '+err.message,'⚠');}
 }
 
@@ -3000,7 +3178,7 @@ let palItems=[], palFiltered=[], palSel=0;
 function buildPaletteIndex(){
   const items=[];
   const dot=c=>`<span class="pal-dot" style="background:${c}"></span>`;
-  const NAV=[['dash','home','Обзор'],['board','board','Доска'],['gantt','gantt','Гант'],['week','cal','Неделя'],['backlog','idea','Бэклог'],['team','users','Команда'],['intake','inbox','Приёмка'],['all','layers','Все проекты']];
+  const NAV=[['now','zap','Сейчас'],['dash','home','Обзор'],['board','board','Доска'],['gantt','gantt','Гант'],['week','cal','Неделя'],['backlog','idea','Бэклог'],['team','users','Команда'],['intake','inbox','Приёмка'],['all','layers','Все проекты']];
   NAV.forEach(([v,ic,name])=>items.push({type:'Переход',icon:icon(ic,17),title:name,sub:'раздел',kw:name+' раздел перейти открыть',run:()=>setView(v)}));
   const ACT=[
     ['plus','Новая задача','создать пустую',()=>{$('#btnNew').click();}],
