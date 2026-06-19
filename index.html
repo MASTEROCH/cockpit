@@ -766,6 +766,8 @@ body.light .brand .logo{background:linear-gradient(157deg,#1b1d27,#08090d 72%)}
 .lbpts{font-weight:800;color:#e8b94a;font-variant-numeric:tabular-nums;flex:0 0 auto}
 .coffeeline{margin-top:11px;font-size:13px;font-weight:600;color:var(--txt);background:rgba(232,185,74,.1);border:1px solid rgba(232,185,74,.25);border-radius:10px;padding:9px 12px}
 .coffeeline b{color:#e8b94a}
+.streak{font-size:11px;font-weight:800;color:#ff7847;background:rgba(255,120,71,.13);border:1px solid rgba(255,120,71,.3);border-radius:7px;padding:1px 6px;white-space:nowrap;flex:0 0 auto}
+.lbrow .av{width:24px;height:24px;flex:0 0 auto}
 /* inbox */
 .iconbtn.inbox{position:relative}
 .ibadge{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;border-radius:20px;background:var(--bad);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;padding:0 4px;box-shadow:0 0 0 2px rgba(18,21,31,.9)}
@@ -1219,9 +1221,31 @@ function relScore(t){const prW={urgent:4,high:3,med:2,low:1}[t.priority]||2;cons
 /* геймификация: баллы за выполненные задачи */
 function taskValue(t){const pm={urgent:1.5,high:1.25,med:1,low:1}[t.priority]||1;return Math.max(3,Math.round((t.estimate||5)*pm));}
 function awardForDone(data,t){
-  if(t.status!=='done'||t.pointsAwarded||!t.assigneeId)return 0;
+  if(t.isMilestone||t.status!=='done'||t.pointsAwarded||!t.assigneeId)return 0;
   const m=(data.members||[]).find(x=>x.id===t.assigneeId);if(!m)return 0;
-  const v=taskValue(t);m.points=(m.points||0)+v;t.pointsAwarded=t.assigneeId;return v;}
+  const v=taskValue(t);m.points=(m.points||0)+v;t.pointsAwarded=t.assigneeId;
+  const today=todayISO();
+  if(m.lastDone!==today){const y=fmtD(parseD(today)-86400000);m.streak=(m.lastDone===y?(m.streak||0)+1:1);m.lastDone=today;}
+  return v;}
+function effStreak(m){const t=todayISO(),y=fmtD(parseD(t)-86400000);return (m&&(m.lastDone===t||m.lastDone===y))?(m.streak||0):0;}
+const pKey=m=>((m.email||'').toLowerCase())||('n:'+(m.name||'').toLowerCase());
+function personScores(){
+  const map={};
+  reg.list.filter(p=>!p.archived).forEach(p=>{const d=loadProj(p.id);if(!d)return;
+    (d.members||[]).forEach(m=>{const k=pKey(m);if(!map[k])map[k]={name:m.name,email:m.email||'',color:m.color,photo:m.photo||'',points:0,streak:0};
+      map[k].points+=(m.points||0);map[k].streak=Math.max(map[k].streak,effStreak(m));if(m.photo&&!map[k].photo){map[k].photo=m.photo;}if(m.name&&map[k].name==='—')map[k].name=m.name;});});
+  return Object.values(map).sort((a,b)=>b.points-a.points);
+}
+function closeMonth(){
+  const ps=personScores();if(ps.length<2){toast('Нужно минимум 2 участника','☕');return;}
+  const payer=ps[ps.length-1];const lead=ps[0];
+  if(!confirm('Закрыть месяц? Зафиксируем итог и обнулим баллы у всех (во всех проектах).\n\n🥇 Лидер: '+lead.name+' ('+lead.points+')\n☕ Платит кофе: '+payer.name+' ('+payer.points+')'))return;
+  const d=new Date();const month=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  reg.list.forEach(p=>{const data=loadProj(p.id);if(!data)return;(data.members||[]).forEach(m=>m.points=0);
+    data.updatedAt=Date.now();localStorage.setItem(pkey(p.id),JSON.stringify(data));if(cloudOn)cloudPush(data,true);if(p.id===S.id)S=migrate(data);});
+  localStorage.setItem('cockpit_month_result',JSON.stringify({month,payer:payer.name,lead:lead.name,scores:ps.map(x=>({name:x.name,points:x.points}))}));
+  resetUndo();render();toast('Месяц закрыт ☕ кофе с '+payer.name,'☕');
+}
 function render(){
   $('#cntIdeas').textContent=S.ideas.length;
   $('#projLabel').textContent=S.projectName;
@@ -1899,30 +1923,37 @@ function renderTeam(){
   $('#whoAmI').innerHTML=S.members.map(m=>`<option value="${m.id}" ${m.id===myId()?'selected':''}>${esc(m.name)}</option>`).join('');
   $('#whoAmI').onchange=e=>{localStorage.setItem('cockpit_me',e.target.value);render();toast('Теперь вы — '+meName(),'👤');};
   const g=$('#team');
+  const ps=personScores();const pmap={};ps.forEach(x=>pmap[(x.email||'').toLowerCase()||('n:'+(x.name||'').toLowerCase())]=x);
+  const scoreOf=m=>pmap[pKey(m)]||{points:m.points||0,streak:effStreak(m)};
   g.innerHTML=S.members.map(m=>{
     const mt=S.tasks.filter(t=>t.assigneeId===m.id&&t.status!=='done');
     const load=mt.reduce((a,t)=>a+(t.estimate||0),0);
     const pct=m.capacity?Math.min(100,Math.round(load/m.capacity*100)):0;
-    const over=load>m.capacity;
+    const over=load>m.capacity;const sc=scoreOf(m);
     const av=m.photo
       ? `<span class="av" style="width:46px;height:46px;background-image:url('${m.photo}');background-size:cover;background-position:center"></span>`
       : `<span class="av" style="width:46px;height:46px;font-size:17px;background:${m.color}">${initials(m.name)}</span>`;
     return `<div class="mcard click" data-m="${m.id}">
       <div class="top">${av}<div style="min-width:0;flex:1">
         <div class="nm">${esc(m.name)} ${m.id===myId()?'<span class="youbadge">вы</span>':''}</div>
-        <div class="rl">${esc(m.role)}</div></div><span class="coins" title="Очки за выполненные задачи">🪙 ${m.points||0}</span></div>
+        <div class="rl">${esc(m.role)}</div></div><span class="coins" title="Очки · стрик дней подряд">🪙 ${sc.points}${sc.streak>1?` · 🔥${sc.streak}`:''}</span></div>
       <div class="meter"><span style="width:${pct}%;${over?'background:linear-gradient(90deg,#fb7185,#f87171)':''}"></span></div>
       <div class="mstat"><span>${mt.length} задач · ${load}ч</span><span style="${over?'color:var(--bad)':''}">${load}/${m.capacity}ч ${over?'⚠':''}</span></div>
     </div>`;}).join('')
     +`<button class="addmcard" id="addMember2">＋ Добавить участника</button>`;
-  const ranked=[...S.members].sort((a,b)=>(b.points||0)-(a.points||0));
-  const payer=ranked.length>1?ranked[ranked.length-1]:null;
-  $('#leaderboard').innerHTML=ranked.length<2?'':`<div class="panel-c" style="margin-bottom:16px"><h3>🏆 Очки команды</h3>
-    <div class="lbrow-wrap">${ranked.map((m,i)=>`<div class="lbrow"><span class="lbrank">${['🥇','🥈','🥉'][i]||(i+1)}</span>${avatar(m.id)}<span class="lbn">${esc(m.name)}${m.id===myId()?' · вы':''}</span><span class="lbpts">🪙 ${m.points||0}</span></div>`).join('')}</div>
+  const payer=ps.length>1?ps[ps.length-1]:null;
+  const av2=x=>x.photo?`<span class="av" style="background-image:url('${x.photo}');background-size:cover;background-position:center"></span>`:`<span class="av" style="background:${x.color}">${initials(x.name)}</span>`;
+  let last=null;try{last=JSON.parse(localStorage.getItem('cockpit_month_result'));}catch(e){}
+  $('#leaderboard').innerHTML=ps.length<2?'':`<div class="panel-c" style="margin-bottom:16px"><h3>🏆 Очки команды <span class="c">${MONTHF[new Date().getMonth()]}</span></h3>
+    <div class="lbrow-wrap">${ps.map((x,i)=>`<div class="lbrow"><span class="lbrank">${['🥇','🥈','🥉'][i]||(i+1)}</span>${av2(x)}<span class="lbn">${esc(x.name)}</span>${x.streak>1?`<span class="streak">🔥 ${x.streak}</span>`:''}<span class="lbpts">🪙 ${x.points}</span></div>`).join('')}</div>
     ${payer?`<div class="coffeeline">☕ Кофе пока с <b>${esc(payer.name)}</b> — у кого меньше всех баллов</div>`:''}
-    <div style="font-size:12px;color:var(--mut2);margin-top:9px;line-height:1.5">Баллы — за выполненные задачи (× приоритет). Можно потратить, чтобы перекинуть свою задачу на партнёра (откупиться). Купить или одолжить нельзя — только заработать. Это просто <b>мотиватор заходить и закрывать задачи регулярно</b> 🙂</div></div>`;
+    <div style="display:flex;gap:10px;align-items:center;margin-top:11px;flex-wrap:wrap">
+      <button class="btn" id="closeMonthBtn">☕ Закрыть месяц</button>
+      ${last?`<span style="font-size:11.5px;color:var(--mut2)">Прошлый раз кофе платил <b style="color:var(--mut)">${esc(last.payer)}</b></span>`:''}</div>
+    <div style="font-size:12px;color:var(--mut2);margin-top:10px;line-height:1.5">🪙 — за выполненные задачи (× приоритет). 🔥 — стрик дней подряд. Можно потратить, чтобы перекинуть свою задачу на партнёра (откупиться). Купить/одолжить нельзя — только заработать. По итогам месяца — кофе с того, у кого меньше. Просто мотиватор заходить и закрывать задачи каждый день 🙂</div></div>`;
   $$('#team .mcard.click').forEach(el=>el.onclick=()=>openMember(el.dataset.m));
   $('#addMember2').onclick=addBlankMember;
+  const cm=$('#closeMonthBtn');if(cm)cm.onclick=closeMonth;
 }
 function addBlankMember(){
   const m={id:uid('m'),name:'Новый участник',role:'—',email:'',color:COLORS[S.members.length%COLORS.length],capacity:30};
