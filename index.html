@@ -649,6 +649,12 @@ header{background:var(--sheen),rgba(18,21,31,.62)}
 .prow .ppct{font-weight:800;font-size:16px;flex:0 0 auto;width:46px;text-align:right;font-variant-numeric:tabular-nums}
 .pbadge{font-size:10.5px;font-weight:700;color:var(--mut);background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:2px 7px;white-space:nowrap;flex:0 0 auto}
 body.light .pdemo{background:rgba(20,24,40,.05)}
+/* quick-delete on board cards */
+.card .cdel{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:7px;border:none;background:rgba(0,0,0,.28);color:var(--mut2);font-size:12px;line-height:1;display:grid;place-items:center;opacity:0;transition:.12s;z-index:4;padding:0}
+.card:hover .cdel{opacity:1}
+.card .cdel:hover{background:var(--bad);color:#fff}
+body.light .card .cdel{background:rgba(20,24,40,.1)}
+@media (hover:none){.card .cdel{opacity:.7}}
 /* AI review */
 .aisug{display:flex;flex-direction:column;gap:10px;margin-top:14px}
 .airow{display:flex;gap:11px;align-items:flex-start;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:12px}
@@ -986,15 +992,31 @@ if(!reg){
   S=migrate(loadProj(reg.active))||migrate(loadProj((reg.list[0]||{}).id));
   if(!S){S=migrate(blankProject());reg={active:S.id,list:[{id:S.id,name:S.projectName,emoji:'🚀'}]};saveReg();localStorage.setItem(pkey(S.id),JSON.stringify(S));}
 }
-function save(){S.updatedAt=Date.now();localStorage.setItem(pkey(S.id),JSON.stringify(S));const e=reg.list.find(p=>p.id===S.id);if(e)e.name=S.projectName;saveReg();if(cloudOn)cloudPush(S);}
-function myId(){const id=localStorage.getItem('cockpit_me');if(id&&member(id))return id;return (S.members[0]||{}).id||CURRENT_USER;}
+let undoStack=[],lastSnap=null,undoing=false;
+function snap(){const u=S.updatedAt;S.updatedAt=0;const s=JSON.stringify(S);S.updatedAt=u;return s;}
+function resetUndo(){undoStack=[];lastSnap=snap();}
+function save(){S.updatedAt=Date.now();const cur=snap();
+  if(!undoing&&lastSnap!==null&&cur!==lastSnap){undoStack.push(lastSnap);if(undoStack.length>40)undoStack.shift();}
+  lastSnap=cur;localStorage.setItem(pkey(S.id),JSON.stringify(S));const e=reg.list.find(p=>p.id===S.id);if(e)e.name=S.projectName;saveReg();if(cloudOn)cloudPush(S);}
+function undo(){if(!undoStack.length){toast('Нечего отменять','↩️');return;}
+  const prev=undoStack.pop();undoing=true;
+  try{S=JSON.parse(prev);}catch(e){undoing=false;return;}
+  migrate(S);lastSnap=snap();
+  localStorage.setItem(pkey(S.id),JSON.stringify(S));const e=reg.list.find(p=>p.id===S.id);if(e)e.name=S.projectName;saveReg();
+  if(cloudOn)cloudPush(S);undoing=false;
+  if($('#drawer').classList.contains('show'))closeDrawer();
+  render();toast('Действие отменено','↩️');}
+function myId(){
+  if(myEmail){const m=S.members.find(x=>(x.email||'').toLowerCase()===myEmail);if(m)return m.id;}
+  const id=localStorage.getItem('cockpit_me');if(id&&member(id))return id;
+  return (S.members[0]||{}).id||CURRENT_USER;}
 function isOwner(){return (S.members[0]||{}).id===myId();}
 function canEditMember(m){return !!m&&(m.id===myId()||isOwner());}
 const meName=()=>(member(myId())||{}).name||'Я';
 const DEFAULT_CFG={url:'https://tonmsmxzmycimybzywqp.supabase.co',anon:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRvbm1zbXh6bXljaW15Ynp5d3FwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTE5NDksImV4cCI6MjA5NzQyNzk0OX0.c9ER6paD6GzUS_z40b2nv3d5jwEiREy9xXASAprrldM'};
 let CFG=null;try{CFG=JSON.parse(localStorage.getItem('cockpit_cfg'));}catch(e){}
 if(!CFG||!CFG.url)CFG=DEFAULT_CFG;
-let sb=null, me=null, cloudOn=false;
+let sb=null, me=null, cloudOn=false, myEmail=null;
 
 /* ============================ HELPERS ============================ */
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
@@ -1220,6 +1242,8 @@ function renderPortfolio(){
   });
   const pct=gTasks?Math.round(gDone/gTasks*100):0;
   mine.sort((a,b)=>parseD(a.t.end)-parseD(b.t.end));
+  const allAct=[];projs.forEach(({meta,data})=>{(data.activity||[]).forEach(a=>allAct.push(Object.assign({},a,{pname:meta.name,emoji:meta.emoji})));});
+  allAct.sort((a,b)=>b.ts-a.ts);
   if(projs.length<=1){el.innerHTML=emptyState('🌐','Пока один проект','Создавай проекты под разные ниши и клиентов — здесь будет общий пульс всей компании, без переключений');return;}
   el.innerHTML=`
    <div class="dhead"><h1>🌐 Все проекты</h1><span class="sub">${projs.length} проектов · общий пульс компании</span></div>
@@ -1247,13 +1271,15 @@ function renderPortfolio(){
            <div class="pmeta">${ts.length} задач · ${done} готово${ov?` · <b style="color:var(--bad)">${ov} просроч.</b>`:''}${next?` · срок ${next.end.slice(8)}.${next.end.slice(5,7)}`:''}</div></div>
          <div class="pteam">${team.map(m=>avatarOf(m,26)).join('')}</div>
          <div class="ppct">${p}%</div></div>`;}).join('')}</div>
-   </div>`;
+   </div>
+   <div class="panel-c" style="margin-top:16px"><h3>🕑 История компании <span class="c">${allAct.length}</span></h3>
+     <div class="actfeed">${allAct.length?allAct.slice(0,50).map(a=>`<div class="actrow"><span class="ai">${a.icon}</span><span class="atx"><b>${esc(a.who)}</b> ${esc(a.text)} <span class="pbadge" style="margin-left:5px;vertical-align:middle">${a.emoji||'📄'} ${esc(a.pname)}</span></span><span class="att">${relTime(a.ts)}</span></div>`).join(''):'<div class="emptymini">История появится по мере работы команды</div>'}</div></div>`;
   $$('#portfolio .prow').forEach(e=>e.onclick=()=>{const id=e.dataset.open;if(id===S.id)setView('dash');else switchProject(id);});
   $$('#portfolio .trow').forEach(e=>e.onclick=()=>{const pid=e.dataset.pid,tid=e.dataset.tid;if(pid!==S.id)switchProject(pid);setTimeout(()=>openTask(tid),80);});
 }
 
 /* ============================ INBOX (что нового для меня) ============================ */
-function myMemberIn(data){const n=meName().toLowerCase();return (data.members||[]).find(m=>(m.name||'').toLowerCase()===n);}
+function myMemberIn(data){if(myEmail){const m=(data.members||[]).find(x=>(x.email||'').toLowerCase()===myEmail);if(m)return m;}const n=meName().toLowerCase();return (data.members||[]).find(m=>(m.name||'').toLowerCase()===n);}
 function inboxItems(){
   const out=[];const seen=+(localStorage.getItem('cockpit_inbox_seen')||0);
   reg.list.filter(p=>!p.archived).forEach(p=>{
@@ -1505,7 +1531,8 @@ function renderBoard(){
     items.forEach(t=>{
       const card=document.createElement('div');card.className='card';card.draggable=true;card.dataset.id=t.id;
       const ov=isOverdue(t);const blk=isBlocked(t);
-      card.innerHTML=`<div class="ct">${t.isMilestone?'🔹 ':''}${blk?'🔒 ':''}${esc(t.title)}</div>
+      card.innerHTML=`<button class="cdel" title="Удалить задачу">✕</button>
+        <div class="ct">${t.isMilestone?'🔹 ':''}${blk?'🔒 ':''}${esc(t.title)}</div>
         <div class="cm">
           ${prTag(t)}
           ${t.estimate?`<span>⏱ ${t.estimate}ч</span>`:''}
@@ -1514,6 +1541,10 @@ function renderBoard(){
           <span style="margin-left:auto">${avatar(t.assigneeId)}</span>
         </div>`;
       card.onclick=()=>openTask(t.id);
+      card.querySelector('.cdel').onclick=ev=>{ev.stopPropagation();if(!confirm('Удалить задачу «'+t.title+'»?'))return;
+        const idx=S.tasks.indexOf(t);S.tasks=S.tasks.filter(x=>x.id!==t.id);S.tasks.forEach(x=>x.deps=x.deps.filter(d=>d!==t.id));
+        logAct('🗑','удалил «'+t.title+'»');save();renderBoard();
+        toast('Удалено: «'+t.title+'»','🗑','Отменить',()=>{S.tasks.splice(idx,0,t);save();render();});};
       card.ondragstart=()=>{dragCard=t.id;card.classList.add('dragging');};
       card.ondragend=()=>{card.classList.remove('dragging');dragCard=null;};
       bodyEl.appendChild(card);
@@ -1594,7 +1625,7 @@ function renderTeam(){
   $('#addMember2').onclick=addBlankMember;
 }
 function addBlankMember(){
-  const m={id:uid('m'),name:'Новый участник',role:'—',color:COLORS[S.members.length%COLORS.length],capacity:30};
+  const m={id:uid('m'),name:'Новый участник',role:'—',email:'',color:COLORS[S.members.length%COLORS.length],capacity:30};
   S.members.push(m);logAct('🧑','добавил участника');save();render();openMember(m.id);
 }
 
@@ -1630,6 +1661,9 @@ function openMember(id){
       <div class="mstat-c"><div class="v">${load}<span style="font-size:12px;color:var(--mut2)">ч</span></div><div class="l">загрузка</div></div>
       <div class="mstat-c"><div class="v" style="${over?'color:var(--bad)':''}">${over}</div><div class="l">просроч.</div></div>
     </div>
+    <div class="field"><label>Email ${isMe?'(ваш — для входа)':'(чтобы он вошёл и видел свои задачи)'}</label>
+      ${can?`<input class="inp" type="email" id="mEmail" placeholder="например dmitry.nevmer@gmail.com" value="${esc(m.email||'')}">`
+           :`<div class="inp" style="color:var(--mut)">${m.email?esc(m.email):'— не указан —'}</div>`}</div>
     ${can?`<div class="field"><label>Лимит часов / неделя</label><input class="inp" type="number" id="mCap" min="0" value="${m.capacity}"></div>
     <div class="field"><label>Цвет метки</label><div class="colorrow" id="mColors">${COLORS.map(c=>`<span class="cdot ${m.color===c?'on':''}" data-c="${c}" style="background:${c}"></span>`).join('')}</div></div>`:''}
     <div class="field"><label>Задачи · ${all.length}</label>
@@ -1641,6 +1675,7 @@ function openMember(id){
     $('#mAvatar').onclick=()=>pickPhoto(m);
     $('#mName').onblur=e=>{m.name=e.target.value.trim()||'—';save();render();};
     $('#mRole').onblur=e=>{m.role=e.target.value.trim()||'—';save();render();};
+    {const em=$('#mEmail');if(em)em.onblur=e=>{m.email=e.target.value.trim();save();render();};}
     $('#mCap').onchange=e=>{m.capacity=parseInt(e.target.value)||0;save();openMember(id);render();};
     $$('#mColors .cdot').forEach(el=>el.onclick=()=>{m.color=el.dataset.c;save();openMember(id);render();});
   }
@@ -1777,6 +1812,7 @@ function bindEx(){$$('#cmdhint .ex').forEach(e=>e.onmousedown=ev=>{ev.preventDef
 cmdEl.onkeydown=e=>{if(e.key==='Enter'){runCmd(cmdEl.value);cmdEl.value='';}if(e.key==='Escape')cmdEl.blur();};
 document.addEventListener('keydown',e=>{
   const a=document.activeElement;const typing=a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.isContentEditable);
+  if((e.metaKey||e.ctrlKey)&&!e.shiftKey&&e.code==='KeyZ'&&!typing){e.preventDefault();undo();return;}
   if(e.key==='Escape'){
     if($('#obScrim').classList.contains('show'))closeOb();
     else if($('#npScrim').classList.contains('show'))$('#npScrim').classList.remove('show');
@@ -1975,10 +2011,10 @@ function buildTemplate(tpl){
 function createProject(name,tpl){
   save();const p=migrate(buildTemplate(tpl));if(name)p.projectName=name;
   reg.list.push({id:p.id,name:p.projectName,emoji:p.emoji||'📄'});reg.active=p.id;saveReg();
-  localStorage.setItem(pkey(p.id),JSON.stringify(p));S=p;if(cloudOn)cloudPush(p,true);
+  localStorage.setItem(pkey(p.id),JSON.stringify(p));S=p;resetUndo();if(cloudOn)cloudPush(p,true);
   collapsed={};filter={q:'',assignee:'',mine:false,overdue:false};ganttNeedsScroll=true;setView('dash');toast('Проект создан: «'+p.projectName+'»','🚀');
 }
-function switchProject(id){if(id===S.id)return;save();const p=migrate(loadProj(id));if(!p)return;S=p;reg.active=id;saveReg();
+function switchProject(id){if(id===S.id)return;save();const p=migrate(loadProj(id));if(!p)return;S=p;reg.active=id;saveReg();resetUndo();
   collapsed={};filter={q:'',assignee:'',mine:false,overdue:false};ganttNeedsScroll=true;setView('dash');toast('Проект: «'+S.projectName+'»','📂');}
 function deleteProject(id){if(reg.list.length<=1){toast('Нельзя удалить единственный проект','⚠');return;}
   if(!confirm('Удалить проект целиком? Это необратимо.'))return;localStorage.removeItem(pkey(id));if(cloudOn)cloudDelete(id);reg.list=reg.list.filter(p=>p.id!==id);
@@ -2013,7 +2049,7 @@ projMenu.onclick=e=>{const b=e.target.closest('button');if(!b)return;projMenu.cl
 function loadDemo(){
   const p=migrate(seed());
   reg.list.push({id:p.id,name:p.projectName,emoji:'🎬'});reg.active=p.id;saveReg();
-  localStorage.setItem(pkey(p.id),JSON.stringify(p));S=p;if(cloudOn)cloudPush(p,true);
+  localStorage.setItem(pkey(p.id),JSON.stringify(p));S=p;resetUndo();if(cloudOn)cloudPush(p,true);
   collapsed={};filter={q:'',assignee:'',mine:false,overdue:false};ganttNeedsScroll=true;setView('dash');toast('Демо-проект загружен','🎬');
 }
 let npTpl='mvp';
@@ -2049,8 +2085,8 @@ async function cloudInit(){
   if(!CFG||!CFG.url||!CFG.anon)return;
   try{await loadSb();}catch(e){toast('Не загрузился supabase-js (нет сети?)','⚠');return;}
   try{sb=window.supabase.createClient(CFG.url,CFG.anon);}catch(e){toast('Неверные ключи Supabase','⚠');return;}
-  sb.auth.onAuthStateChange((_e,sess)=>{if(sess&&sess.user&&!cloudOn){me=sess.user.id;onLoggedIn();}});
-  try{const {data}=await sb.auth.getSession();if(data&&data.session){me=data.session.user.id;onLoggedIn();}else updateCloudBadge();}catch(e){updateCloudBadge();}
+  sb.auth.onAuthStateChange((_e,sess)=>{if(sess&&sess.user&&!cloudOn){me=sess.user.id;myEmail=(sess.user.email||'').toLowerCase();onLoggedIn();}});
+  try{const {data}=await sb.auth.getSession();if(data&&data.session){me=data.session.user.id;myEmail=(data.session.user.email||'').toLowerCase();onLoggedIn();}else updateCloudBadge();}catch(e){updateCloudBadge();}
 }
 async function onLoggedIn(){cloudOn=true;closeAuth();updateCloudBadge();await cloudSync();subscribeRealtime();toast('Облако подключено','☁️');}
 async function cloudSync(){
@@ -2073,7 +2109,7 @@ async function cloudSync(){
   if(union.length)reg.list=union;
   if(!reg.list.find(p=>p.id===reg.active))reg.active=(reg.list[0]||{}).id;
   const act=loadProj(reg.active);if(act)S=migrate(act);
-  saveReg();render();
+  resetUndo();saveReg();render();
   toast(rows.length?'Синхронизировано с командой':'Загрузил твои проекты в облако','☁️');
 }
 const _pt={};
@@ -2139,6 +2175,7 @@ $('#authScrim').onclick=e=>{if(e.target===$('#authScrim'))closeAuth();};
 /* ============================ INIT ============================ */
 applyTheme();
 $('#sbLegend').innerHTML=legendHTML();
+resetUndo();
 render();
 if(!localStorage.getItem('cockpit_onboarded'))openOnboarding(0);
 cloudInit();
