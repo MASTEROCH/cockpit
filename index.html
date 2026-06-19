@@ -649,6 +649,44 @@ header{background:var(--sheen),rgba(18,21,31,.62)}
 .prow .ppct{font-weight:800;font-size:16px;flex:0 0 auto;width:46px;text-align:right;font-variant-numeric:tabular-nums}
 .pbadge{font-size:10.5px;font-weight:700;color:var(--mut);background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:2px 7px;white-space:nowrap;flex:0 0 auto}
 body.light .pdemo{background:rgba(20,24,40,.05)}
+/* inbox */
+.iconbtn.inbox{position:relative}
+.ibadge{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;border-radius:20px;background:var(--bad);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;padding:0 4px;box-shadow:0 0 0 2px rgba(18,21,31,.9)}
+body.light .ibadge{box-shadow:0 0 0 2px rgba(255,255,255,.9)}
+#inboxBody{gap:8px}
+.inboxrow{display:flex;gap:10px;align-items:flex-start;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:11px 12px;cursor:pointer;transition:border-color .14s}
+.inboxrow:hover{border-color:var(--acc2)}
+.inboxrow.unread{border-color:rgba(167,139,250,.45)}
+.inboxrow.unread .ii::after{content:'';position:absolute;width:7px;height:7px;border-radius:50%;background:var(--acc2);margin:-2px 0 0 -3px}
+.inboxrow .ii{font-size:16px;flex:0 0 auto;position:relative}
+.inboxrow .ib{flex:1;min-width:0}
+.inboxrow .it{font-size:13px;line-height:1.45;color:var(--txt)}
+.inboxrow .is{font-size:11px;color:var(--mut2);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* client report (white document sheet) */
+#reportModal{background:#fff;color:#16181f;max-width:680px;width:680px}
+.rp{padding:28px 32px;max-height:calc(92vh - 62px);overflow:auto}
+.rp h1{font-size:23px;margin:0 0 3px;color:#0c0d12;letter-spacing:-.3px}
+.rp .rpsub{color:#6b7186;font-size:13px;margin-bottom:18px}
+.rp .rpkpi{display:flex;gap:22px;margin:0 0 18px;flex-wrap:wrap}
+.rp .rpkpi div{font-size:12px;color:#6b7186}
+.rp .rpkpi b{display:block;font-size:22px;color:#0c0d12;font-weight:800;font-variant-numeric:tabular-nums}
+.rp h3{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:#8b90a0;margin:18px 0 6px;border-bottom:1px solid #eceef3;padding-bottom:6px}
+.rp .rpt{display:flex;align-items:center;gap:9px;padding:6px 0;font-size:13.5px;border-bottom:1px solid #f4f5f7;color:#1c1f2a}
+.rp .rpt .rs{font-size:10.5px;font-weight:800;padding:1px 8px;border-radius:20px;white-space:nowrap}
+.rp .rpt .rn{flex:1}
+.rp .rpt.done .rn{color:#9095a3;text-decoration:line-through}
+.rp .rpt .rd{color:#9095a3;font-size:12px;white-space:nowrap}
+.rp .rpt.ov .rd{color:#d33;font-weight:700}
+.rp-actions{display:flex;gap:9px;padding:13px 18px;border-top:1px solid var(--line)}
+@media print{
+  body{background:#fff!important}
+  body *{visibility:hidden!important}
+  #reportScrim,#reportScrim *{visibility:visible!important}
+  #reportScrim{position:fixed;inset:0;background:#fff;display:block!important;padding:0;backdrop-filter:none;-webkit-backdrop-filter:none}
+  #reportModal{position:static;width:100%;max-width:100%;box-shadow:none;border:none;border-radius:0;animation:none}
+  .rp-actions{display:none!important}
+  .rp{max-height:none;overflow:visible}
+}
 body.light .cmdhint{background:rgba(255,255,255,.98);color:#3a4055;box-shadow:0 22px 60px rgba(70,82,120,.28),var(--ghi)}
 body.light .cmdhint .ex{color:#7c5cff}
 body.light .cmdhint b{color:#11131c}
@@ -726,6 +764,7 @@ body.light .drawer,body.light .modal{background:var(--sheen),rgba(255,255,255,.9
     <button class="tab" data-v="team">👥 Команда</button>
   </div>
   <button class="iconbtn" id="btnNew" title="Новая задача">＋</button>
+  <button class="iconbtn inbox" id="btnInbox" title="Инбокс — что нового для тебя">🔔<span class="ibadge" id="inboxDot" style="display:none">0</span></button>
   <button class="iconbtn" id="btnTheme" title="Светлая / тёмная тема">☀️</button>
   <button class="iconbtn cloud off" id="btnCloud" title="Войти и синхронизировать с командой">🔄</button>
   <button class="iconbtn" id="btnHelp" title="Обучение и легенда">？</button>
@@ -821,6 +860,15 @@ body.light .drawer,body.light .modal{background:var(--sheen),rgba(255,255,255,.9
   <div class="db" id="mBody"></div>
   <div class="df"><div class="spacer"></div><button class="btn primary" id="mClose">Готово</button></div>
 </aside>
+
+<aside class="drawer" id="inboxDrawer">
+  <div class="dh"><span style="font-size:14px;font-weight:800">🔔 Инбокс</span>
+    <span style="margin-left:auto;font-size:12px;color:var(--mut2)">что нового для тебя</span></div>
+  <div class="db" id="inboxBody"></div>
+  <div class="df"><div class="spacer"></div><button class="btn primary" id="inboxClose">Готово</button></div>
+</aside>
+
+<div class="modal-scrim" id="reportScrim"><div class="modal" id="reportModal"></div></div>
 
 <footer class="statusbar" id="statusbar">
   <span class="sb-label">Цвета</span>
@@ -998,6 +1046,7 @@ function render(){
   $('#banner').classList.toggle('hide',!S.demo||bannerDismissed);
   const _T=S.tasks.filter(t=>!t.isMilestone);
   $('#sbStats').textContent=`${_T.length} задач · ${_T.filter(t=>t.status==='done').length} готово · ${S.tasks.filter(isOverdue).length} просроч.`;
+  updateInboxBadge();
   syncFilterUI();
   if(view==='dash')renderDash();
   else if(view==='all')renderPortfolio();
@@ -1078,7 +1127,7 @@ function renderDash(){
 /* ============================ PORTFOLIO (все проекты) ============================ */
 function renderPortfolio(){
   const el=$('#portfolio');
-  const projs=reg.list.map(p=>({meta:p,data:loadProj(p.id)})).filter(x=>x.data&&x.data.tasks);
+  const projs=reg.list.filter(p=>!p.archived).map(p=>({meta:p,data:loadProj(p.id)})).filter(x=>x.data&&x.data.tasks);
   const tISO=todayISO();
   const over=t=>!t.isMilestone&&t.status!=='done'&&parseD(t.end)<parseD(tISO);
   let gActive=0,gDone=0,gOver=0,gTasks=0;const mine=[];const myname=meName().toLowerCase();
@@ -1120,6 +1169,88 @@ function renderPortfolio(){
   $$('#portfolio .prow').forEach(e=>e.onclick=()=>{const id=e.dataset.open;if(id===S.id)setView('dash');else switchProject(id);});
   $$('#portfolio .trow').forEach(e=>e.onclick=()=>{const pid=e.dataset.pid,tid=e.dataset.tid;if(pid!==S.id)switchProject(pid);setTimeout(()=>openTask(tid),80);});
 }
+
+/* ============================ INBOX (что нового для меня) ============================ */
+function myMemberIn(data){const n=meName().toLowerCase();return (data.members||[]).find(m=>(m.name||'').toLowerCase()===n);}
+function inboxItems(){
+  const out=[];const seen=+(localStorage.getItem('cockpit_inbox_seen')||0);
+  reg.list.filter(p=>!p.archived).forEach(p=>{
+    const data=loadProj(p.id);if(!data)return;const me=myMemberIn(data);if(!me)return;
+    (data.tasks||[]).forEach(t=>{(t.comments||[]).forEach(c=>{
+      if(!c.ts||c.authorId===me.id)return;
+      const mentioned=(c.text||'').toLowerCase().includes((me.name||'').toLowerCase());
+      const onMine=t.assigneeId===me.id;
+      if(!mentioned&&!onMine)return;
+      out.push({ts:c.ts,icon:mentioned?'📣':'💬',
+        text:`<b>${esc(c.author)}</b> ${mentioned?'упомянул вас':'оставил коммент'}: ${esc(c.text)}`,
+        sub:`${p.emoji||'📄'} ${esc(p.name)} · «${esc(t.title)}»`,pid:p.id,tid:t.id,unread:c.ts>seen});
+    });});
+  });
+  out.sort((a,b)=>b.ts-a.ts);return out;
+}
+function inboxUnread(){try{return inboxItems().filter(i=>i.unread).length;}catch(e){return 0;}}
+function updateInboxBadge(){const b=$('#inboxDot');if(!b)return;const n=inboxUnread();b.style.display=n>0?'':'none';b.textContent=n>9?'9+':n;}
+function renderInbox(){
+  const items=inboxItems();
+  $('#inboxBody').innerHTML=items.length?items.map(i=>`
+    <div class="inboxrow ${i.unread?'unread':''}" data-pid="${i.pid}" data-tid="${i.tid}">
+      <span class="ii">${i.icon}</span>
+      <div class="ib"><div class="it">${i.text}</div><div class="is">${i.sub} · ${relTime(i.ts)}</div></div>
+    </div>`).join(''):emptyState('📭','Пока пусто','Сюда прилетят комментарии к твоим задачам и упоминания @тебя со всех проектов — ничего не потеряется');
+  $$('#inboxBody .inboxrow').forEach(e=>e.onclick=()=>{const pid=e.dataset.pid,tid=e.dataset.tid;closeInbox();if(pid!==S.id)switchProject(pid);setTimeout(()=>openTask(tid),90);});
+}
+function openInbox(){renderInbox();$('#inboxDrawer').classList.add('show');syncScrim();
+  setTimeout(()=>{localStorage.setItem('cockpit_inbox_seen',Date.now());updateInboxBadge();if($('#inboxDrawer').classList.contains('show'))renderInbox();},1500);}
+function closeInbox(){$('#inboxDrawer').classList.remove('show');syncScrim();}
+$('#btnInbox').onclick=openInbox;$('#inboxClose').onclick=closeInbox;
+
+/* ============================ CLIENT REPORT (статус-сводка) ============================ */
+function fmtRu(iso){return iso.slice(8)+'.'+iso.slice(5,7);}
+function openReport(){renderReport();$('#reportScrim').classList.add('show');}
+function renderReport(){
+  const ts=S.tasks.filter(t=>!t.isMilestone);const done=ts.filter(t=>t.status==='done').length;
+  const pct=ts.length?Math.round(done/ts.length*100):0;const tISO=todayISO();
+  const over=t=>!t.isMilestone&&t.status!=='done'&&parseD(t.end)<parseD(tISO);
+  const ovc=S.tasks.filter(over).length;
+  const d=new Date();const dateStr=`${d.getDate()} ${MONTHF[d.getMonth()]} ${d.getFullYear()}`;
+  const sections=S.sections.map(sec=>{
+    const st=S.tasks.filter(t=>t.sectionId===sec.id);if(!st.length)return '';
+    return `<h3>${esc(sec.name)}</h3>`+st.map(t=>{const stt=stMap[t.status];const ov=over(t);
+      return `<div class="rpt ${t.status==='done'?'done':''} ${ov?'ov':''}">
+        <span class="rs" style="background:${stt.c}22;color:${shade(stt.c,-32)}">${stt.n}</span>
+        <span class="rn">${t.isMilestone?'🔹 ':''}${esc(t.title)}</span>
+        <span class="rd">${t.isMilestone?fmtRu(t.end):fmtRu(t.start)+'–'+fmtRu(t.end)}${ov?' ⚠':''}</span></div>`;}).join('');
+  }).join('');
+  $('#reportModal').innerHTML=`
+    <div class="rp">
+      <h1>${esc(S.projectName)}</h1>
+      <div class="rpsub">Статус-отчёт · ${dateStr}</div>
+      <div class="rpkpi">
+        <div><b>${pct}%</b>готовность</div>
+        <div><b>${done}/${ts.length}</b>задач закрыто</div>
+        <div><b style="${ovc?'color:#d33':''}">${ovc}</b>просрочено</div>
+      </div>
+      ${sections||'<div style="color:#9095a3">Задач пока нет.</div>'}
+      <div style="margin-top:24px;font-size:11px;color:#aeb2bd">Сформировано в Cockpit · ${dateStr}</div>
+    </div>
+    <div class="rp-actions"><div class="spacer"></div>
+      <button class="btn" id="rpCopy">📋 Скопировать текст</button>
+      <button class="btn" id="rpClose">Закрыть</button>
+      <button class="btn primary" id="rpPrint">🖨 Печать / PDF</button></div>`;
+  $('#rpClose').onclick=()=>$('#reportScrim').classList.remove('show');
+  $('#rpPrint').onclick=()=>window.print();
+  $('#rpCopy').onclick=()=>{const txt=reportText();if(navigator.clipboard)navigator.clipboard.writeText(txt).then(()=>toast('Текст отчёта скопирован','📋'),()=>toast('Не удалось скопировать','⚠'));else toast('Копирование недоступно','⚠');};
+}
+function reportText(){
+  const ts=S.tasks.filter(t=>!t.isMilestone);const done=ts.filter(t=>t.status==='done').length;
+  const pct=ts.length?Math.round(done/ts.length*100):0;const d=new Date();
+  let s=`📊 ${S.projectName} — статус-отчёт (${d.getDate()} ${MONTHF[d.getMonth()]} ${d.getFullYear()})\n`;
+  s+=`Готовность: ${pct}% · закрыто ${done}/${ts.length}\n`;
+  S.sections.forEach(sec=>{const st=S.tasks.filter(t=>t.sectionId===sec.id);if(!st.length)return;
+    s+=`\n${sec.name}:\n`;st.forEach(t=>{s+=`  ${t.status==='done'?'✅':'•'} ${t.title} — ${stMap[t.status].n}${t.isMilestone?'':' ('+fmtRu(t.start)+'–'+fmtRu(t.end)+')'}\n`;});});
+  return s;
+}
+$('#reportScrim').onclick=e=>{if(e.target===$('#reportScrim'))$('#reportScrim').classList.remove('show');};
 
 /* ============================ GANTT ============================ */
 let collapsed={};
@@ -1476,9 +1607,9 @@ function renderComments(t){
   const c=$('#dComments');
   if(!t.comments.length){c.innerHTML='<div style="color:var(--mut2);font-size:12px">Пока нет комментариев.</div>';return;}
   c.innerHTML=t.comments.map(cm=>`<div class="cmt">${avatar(cm.authorId||'m1')}
-    <div class="cb"><div class="cmeta"><b>${esc(cm.author)}</b> · ${esc(cm.when)}</div>${esc(cm.text)}</div></div>`).join('');
+    <div class="cb"><div class="cmeta"><b>${esc(cm.author)}</b> · ${esc(cm.ts?relTime(cm.ts):cm.when)}</div>${esc(cm.text)}</div></div>`).join('');
 }
-function syncScrim(){const any=$('#drawer').classList.contains('show')||$('#mDrawer').classList.contains('show');$('#scrim').classList.toggle('show',any);}
+function syncScrim(){const any=$('#drawer').classList.contains('show')||$('#mDrawer').classList.contains('show')||$('#inboxDrawer').classList.contains('show');$('#scrim').classList.toggle('show',any);}
 function closeDrawer(){$('#drawer').classList.remove('show');curTask=null;syncScrim();render();}
 function autoGrow(el){el.style.height='auto';el.style.height=el.scrollHeight+'px';}
 
@@ -1494,11 +1625,11 @@ $('#dStatus').onchange=e=>{if(curTask){curTask.status=e.target.value;if(curTask.
 $('#dCmtBtn').onclick=addComment;
 $('#dCmtIn').onkeydown=e=>{if(e.key==='Enter')addComment();};
 function addComment(){const v=$('#dCmtIn').value.trim();if(!v||!curTask)return;
-  curTask.comments.push({text:v,author:meName(),authorId:myId(),when:'сейчас'});logAct('💬','коммент к «'+curTask.title+'»');$('#dCmtIn').value='';save();renderComments(curTask);}
+  curTask.comments.push({text:v,author:meName(),authorId:myId(),when:'сейчас',ts:Date.now()});logAct('💬','коммент к «'+curTask.title+'»');$('#dCmtIn').value='';save();renderComments(curTask);}
 $('#dDelete').onclick=()=>{if(!curTask)return;const t=curTask;const idx=S.tasks.indexOf(t);
   S.tasks=S.tasks.filter(x=>x.id!==t.id);S.tasks.forEach(x=>x.deps=x.deps.filter(d=>d!==t.id));logAct('🗑','удалил «'+t.title+'»');closeDrawer();
   toast('Удалено: «'+t.title+'»','🗑','Отменить',()=>{S.tasks.splice(idx,0,t);logAct('↩️','вернул «'+t.title+'»');save();render();});};
-$('#dClose').onclick=closeDrawer;$('#scrim').onclick=()=>{closeDrawer();closeMember();};
+$('#dClose').onclick=closeDrawer;$('#scrim').onclick=()=>{closeDrawer();closeMember();closeInbox();};
 
 /* ============================ TABS / TOPBAR / FILTERS ============================ */
 $('#tabs').onclick=e=>{const b=e.target.closest('.tab');if(b)setView(b.dataset.v);};
@@ -1568,8 +1699,10 @@ document.addEventListener('keydown',e=>{
     if($('#obScrim').classList.contains('show'))closeOb();
     else if($('#npScrim').classList.contains('show'))$('#npScrim').classList.remove('show');
     else if($('#authScrim').classList.contains('show'))$('#authScrim').classList.remove('show');
+    else if($('#reportScrim').classList.contains('show'))$('#reportScrim').classList.remove('show');
     else if($('#drawer').classList.contains('show'))closeDrawer();
     else if($('#mDrawer').classList.contains('show'))closeMember();
+    else if($('#inboxDrawer').classList.contains('show'))closeInbox();
     menuEl.classList.remove('show');if(window.projMenu)projMenu.classList.remove('show');
     if(typing&&a.blur)a.blur();return;}
   if(typing)return;
@@ -1597,7 +1730,7 @@ function runCmd(raw){
   }
   let mc=s.match(/^(коммент\w*|comment)\s+(.+?)\s*[:\-—]\s*(.+)$/i);
   if(mc){const t=findTask(mc[2]);if(!t){toast('Задача не найдена: '+mc[2],'⚠');return;}
-    t.comments.push({text:mc[3].trim(),author:meName(),authorId:myId(),when:'сейчас'});save();
+    t.comments.push({text:mc[3].trim(),author:meName(),authorId:myId(),when:'сейчас',ts:Date.now()});save();
     toast('Комментарий к «'+t.title+'»','💬');return;}
   let md=s.match(/^(удали|удалить|delete|del)\s+(?:задачу\s+)?(.+)$/i);
   if(md){const t=findTask(md[2]);if(!t){toast('Задача не найдена','⚠');return;}
@@ -1769,16 +1902,29 @@ function deleteProject(id){if(reg.list.length<=1){toast('Нельзя удали
   if(reg.active===id){reg.active=reg.list[0].id;S=migrate(loadProj(reg.active));}saveReg();render();toast('Проект удалён','🗑');}
 
 const projBtn=$('#projBtn'),projMenu=$('#projMenu');
+function archiveProject(id,val){const e=reg.list.find(p=>p.id===id);if(!e)return;e.archived=val;saveReg();
+  if(val&&reg.active===id){const next=reg.list.find(p=>!p.archived);if(next){switchProject(next.id);toast('Проект в архиве','🗄');return;}}
+  render();toast(val?'Проект в архиве':'Проект возвращён из архива',val?'🗄':'♻️');}
 projBtn.onclick=e=>{e.stopPropagation();
-  projMenu.innerHTML=reg.list.map(p=>`<button class="${p.id===S.id?'cur':''}" data-switch="${p.id}">${p.emoji||'📄'} ${esc(p.name)}${p.id===S.id?' ✓':''}</button>`).join('')
-    +`<div class="sep"></div><button data-act="newp">＋ Новый проект</button><button data-act="renp">✏️ Переименовать</button>${reg.list.length>1?'<button data-act="delp" class="dng">🗑 Удалить проект</button>':''}`;
+  const active=reg.list.filter(p=>!p.archived), arch=reg.list.filter(p=>p.archived);
+  const cur=reg.list.find(p=>p.id===S.id);
+  projMenu.innerHTML=active.map(p=>`<button class="${p.id===S.id?'cur':''}" data-switch="${p.id}">${p.emoji||'📄'} ${esc(p.name)}${p.id===S.id?' ✓':''}</button>`).join('')
+    +`<div class="sep"></div>`
+    +`<button data-act="newp">＋ Новый проект</button>`
+    +`<button data-act="report">📄 Отчёт для клиента</button>`
+    +`<button data-act="renp">✏️ Переименовать</button>`
+    +`<button data-act="archive">${cur&&cur.archived?'♻️ Вернуть из архива':'🗄 В архив'}</button>`
+    +`${active.length>1?'<button data-act="delp" class="dng">🗑 Удалить проект</button>':''}`
+    +`${arch.length?`<div class="sep"></div><div style="font-size:10px;color:var(--mut2);padding:5px 11px;text-transform:uppercase;letter-spacing:.5px">Архив · ${arch.length}</div>`+arch.map(p=>`<button data-switch="${p.id}" style="opacity:.6">🗄 ${esc(p.name)}</button>`).join(''):''}`;
   const r=projBtn.getBoundingClientRect();projMenu.style.left=r.left+'px';projMenu.style.right='auto';projMenu.style.top=(r.bottom+6)+'px';
   projMenu.classList.toggle('show');};
 document.addEventListener('click',e=>{if(!projMenu.contains(e.target)&&!projBtn.contains(e.target))projMenu.classList.remove('show');});
 projMenu.onclick=e=>{const b=e.target.closest('button');if(!b)return;projMenu.classList.remove('show');
   if(b.dataset.switch)switchProject(b.dataset.switch);
   else if(b.dataset.act==='newp')openNewProject();
+  else if(b.dataset.act==='report')openReport();
   else if(b.dataset.act==='renp'){const n=prompt('Название проекта:',S.projectName);if(n){S.projectName=n.trim();save();render();}}
+  else if(b.dataset.act==='archive')archiveProject(S.id,!(reg.list.find(p=>p.id===S.id)||{}).archived);
   else if(b.dataset.act==='delp')deleteProject(S.id);};
 
 function loadDemo(){
@@ -1837,8 +1983,9 @@ async function cloudSync(){
   });
   // локальные проекты, которых нет в облаке → отправляем (не теряем)
   reg.list.forEach(p=>{if(!cloudById[p.id]){const local=loadProj(p.id);if(local)cloudPush(local,true);}});
-  // reg = объединение облака и локально-уникальных
-  const union=rows.map(r=>({id:r.id,name:r.name,emoji:r.emoji||'📄'}));
+  // reg = объединение облака и локально-уникальных (флаг архива сохраняем — он локальный)
+  const prevArch={};reg.list.forEach(p=>{if(p.archived)prevArch[p.id]=true;});
+  const union=rows.map(r=>({id:r.id,name:r.name,emoji:r.emoji||'📄',archived:!!prevArch[r.id]}));
   reg.list.forEach(p=>{if(!cloudById[p.id])union.push(p);});
   if(union.length)reg.list=union;
   if(!reg.list.find(p=>p.id===reg.active))reg.active=(reg.list[0]||{}).id;
