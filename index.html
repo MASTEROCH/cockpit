@@ -633,6 +633,22 @@ header{background:var(--sheen),rgba(18,21,31,.62)}
 /* bar labels readable on any status colour (both themes) */
 .bar .lbl{text-shadow:0 1px 2px rgba(0,0,0,.5)}
 .mileT{text-shadow:0 1px 3px rgba(0,0,0,.55)}
+/* portfolio (все проекты) */
+.plist{display:flex;flex-direction:column;gap:10px}
+.prow{display:flex;align-items:center;gap:13px;background:var(--bg2);border:1px solid var(--line);border-radius:13px;padding:12px 14px;cursor:pointer;transition:transform .15s var(--ease),border-color .15s}
+.prow:hover{border-color:var(--acc2);transform:translateY(-1px)}
+.prow .pemoji{font-size:24px;flex:0 0 auto;line-height:1}
+.prow .pmain{flex:1;min-width:0}
+.prow .pn{font-weight:700;font-size:14px;margin-bottom:6px;display:flex;align-items:center;gap:7px}
+.pdemo{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--mut2);background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:20px;padding:1px 6px}
+.prow .pbar{height:6px;border-radius:20px;background:var(--bg);overflow:hidden;margin-bottom:6px}
+.prow .pbar span{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,var(--acc),var(--acc2))}
+.prow .pmeta{font-size:11.5px;color:var(--mut2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prow .pteam{display:flex;flex-direction:row-reverse;flex:0 0 auto;padding-left:8px}
+.prow .pteam .av{margin-left:-8px}
+.prow .ppct{font-weight:800;font-size:16px;flex:0 0 auto;width:46px;text-align:right;font-variant-numeric:tabular-nums}
+.pbadge{font-size:10.5px;font-weight:700;color:var(--mut);background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:2px 7px;white-space:nowrap;flex:0 0 auto}
+body.light .pdemo{background:rgba(20,24,40,.05)}
 body.light .cmdhint{background:rgba(255,255,255,.98);color:#3a4055;box-shadow:0 22px 60px rgba(70,82,120,.28),var(--ghi)}
 body.light .cmdhint .ex{color:#7c5cff}
 body.light .cmdhint b{color:#11131c}
@@ -676,6 +692,13 @@ body.light .bar .lbl{text-shadow:0 1px 2px rgba(0,0,0,.32)}
   body.light .tab.active{color:#6d4fd0;background:linear-gradient(180deg,rgba(124,92,208,.16),rgba(124,92,208,.05))}
   body.light .statusbar{background:rgba(255,255,255,.85)}
 }
+/* floating overlays — opaque enough to read over busy content (rule #35) */
+.menu{background:rgba(18,21,32,.98);backdrop-filter:blur(30px) saturate(1.5);-webkit-backdrop-filter:blur(30px) saturate(1.5);box-shadow:0 22px 60px rgba(0,0,0,.72),var(--ghi)}
+.toast{background:rgba(22,26,38,.96);backdrop-filter:blur(22px) saturate(1.4);-webkit-backdrop-filter:blur(22px) saturate(1.4)}
+.drawer,.modal{background:var(--sheen),rgba(19,23,34,.94)}
+body.light .menu{background:rgba(255,255,255,.985);box-shadow:0 22px 60px rgba(70,82,120,.28),var(--ghi)}
+body.light .toast{background:rgba(255,255,255,.97)}
+body.light .drawer,body.light .modal{background:var(--sheen),rgba(255,255,255,.96)}
 </style>
 </head>
 <body>
@@ -696,6 +719,7 @@ body.light .bar .lbl{text-shadow:0 1px 2px rgba(0,0,0,.32)}
 
   <div class="tabs" id="tabs">
     <button class="tab active" data-v="dash">🛰 Обзор</button>
+    <button class="tab" data-v="all">🌐 Всё</button>
     <button class="tab" data-v="gantt">📊 Гант</button>
     <button class="tab" data-v="board">🗂 Доска</button>
     <button class="tab" data-v="backlog">💡 Бэклог <span class="cnt" id="cntIdeas">0</span></button>
@@ -703,7 +727,7 @@ body.light .bar .lbl{text-shadow:0 1px 2px rgba(0,0,0,.32)}
   </div>
   <button class="iconbtn" id="btnNew" title="Новая задача">＋</button>
   <button class="iconbtn" id="btnTheme" title="Светлая / тёмная тема">☀️</button>
-  <button class="iconbtn cloud off" id="btnCloud" title="Синк с партнёром">☁</button>
+  <button class="iconbtn cloud off" id="btnCloud" title="Войти и синхронизировать с командой">🔄</button>
   <button class="iconbtn" id="btnHelp" title="Обучение и легенда">？</button>
   <button class="iconbtn" id="btnMenu" title="Данные">⋯</button>
 </header>
@@ -728,6 +752,7 @@ body.light .bar .lbl{text-shadow:0 1px 2px rgba(0,0,0,.32)}
 
   <div class="content">
     <div class="view active" id="v-dash"><div class="dash" id="dash"></div></div>
+    <div class="view" id="v-all"><div class="dash" id="portfolio"></div></div>
     <div class="view" id="v-gantt"><div class="gantt" id="gantt"></div></div>
     <div class="view" id="v-board"><div class="board" id="board"></div></div>
     <div class="view" id="v-backlog">
@@ -922,6 +947,9 @@ const initials=n=>n.split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
 function avatar(id,cls=''){const m=member(id);if(!m)return `<span class="av none ${cls}">?</span>`;
   if(m.photo)return `<span class="av ${cls}" style="background-image:url('${m.photo}');background-size:cover;background-position:center" title="${esc(m.name)}"></span>`;
   return `<span class="av ${cls}" style="background:${m.color}" title="${esc(m.name)}">${initials(m.name)}</span>`;}
+function avatarOf(m,sz){if(!m)return '';const s=sz?`width:${sz}px;height:${sz}px;`:'';
+  if(m.photo)return `<span class="av" style="${s}background-image:url('${m.photo}');background-size:cover;background-position:center" title="${esc(m.name)}"></span>`;
+  return `<span class="av" style="${s}background:${m.color}" title="${esc(m.name)}">${initials(m.name)}</span>`;}
 function esc(s){return (s+'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function toast(msg,ic='✓',actLabel,actFn){const t=$('#toast');
   t.innerHTML=`<span class="ic">${ic}</span>${esc(msg)}`+(actLabel?`<button class="tact">${esc(actLabel)}</button>`:'');
@@ -972,6 +1000,7 @@ function render(){
   $('#sbStats').textContent=`${_T.length} задач · ${_T.filter(t=>t.status==='done').length} готово · ${S.tasks.filter(isOverdue).length} просроч.`;
   syncFilterUI();
   if(view==='dash')renderDash();
+  else if(view==='all')renderPortfolio();
   else if(view==='gantt')renderGantt();
   else if(view==='board')renderBoard();
   else if(view==='backlog')renderBacklog();
@@ -1044,6 +1073,52 @@ function renderDash(){
     <div class="panel-c" style="margin-top:16px"><h3>🕑 Лента активности <span class="c">${(S.activity||[]).length}</span></h3>
       <div class="actfeed">${(S.activity||[]).length?S.activity.slice(0,20).map(a=>`<div class="actrow"><span class="ai">${a.icon}</span><span class="atx"><b>${esc(a.who)}</b> ${esc(a.text)}</span><span class="att">${relTime(a.ts)}</span></div>`).join(''):'<div class="emptymini">Здесь появится история: кто что создал, передвинул, закрыл. Ничего не теряется — всё под контролем.</div>'}</div></div>`;
   $$('#dash .trow').forEach(el=>el.onclick=()=>openTask(el.dataset.task));
+}
+
+/* ============================ PORTFOLIO (все проекты) ============================ */
+function renderPortfolio(){
+  const el=$('#portfolio');
+  const projs=reg.list.map(p=>({meta:p,data:loadProj(p.id)})).filter(x=>x.data&&x.data.tasks);
+  const tISO=todayISO();
+  const over=t=>!t.isMilestone&&t.status!=='done'&&parseD(t.end)<parseD(tISO);
+  let gActive=0,gDone=0,gOver=0,gTasks=0;const mine=[];const myname=meName().toLowerCase();
+  projs.forEach(({meta,data})=>{
+    const me=(data.members||[]).find(m=>(m.name||'').toLowerCase()===myname);
+    (data.tasks||[]).forEach(t=>{if(t.isMilestone)return;gTasks++;if(t.status==='done')gDone++;else gActive++;if(over(t))gOver++;
+      if(me&&t.assigneeId===me.id&&t.status!=='done')mine.push({t,pid:meta.id,pname:meta.name,emoji:meta.emoji});});
+  });
+  const pct=gTasks?Math.round(gDone/gTasks*100):0;
+  mine.sort((a,b)=>parseD(a.t.end)-parseD(b.t.end));
+  if(projs.length<=1){el.innerHTML=emptyState('🌐','Пока один проект','Создавай проекты под разные ниши и клиентов — здесь будет общий пульс всей компании, без переключений');return;}
+  el.innerHTML=`
+   <div class="dhead"><h1>🌐 Все проекты</h1><span class="sub">${projs.length} проектов · общий пульс компании</span></div>
+   <div class="kpis">
+     <div class="kpi"><div class="v">${projs.length}</div><div class="l">Проектов</div></div>
+     <div class="kpi"><div class="v" style="color:var(--warn)">${gActive}</div><div class="l">Активных задач</div></div>
+     <div class="kpi"><div class="v" style="color:var(--ok)">${pct}%</div><div class="l">${gDone}/${gTasks} готово</div><div class="kpibar"><span style="width:${pct}%;background:linear-gradient(90deg,var(--ok),#10b981)"></span></div></div>
+     <div class="kpi"><div class="v" style="color:${gOver?'var(--bad)':'var(--mut)'}">${gOver}</div><div class="l">Просрочено везде</div></div>
+   </div>
+   ${mine.length?`<div class="panel-c" style="margin-bottom:16px"><h3>🔥 Мои задачи по всем проектам <span class="c">${mine.length}</span></h3>
+     ${mine.slice(0,14).map(x=>{const ov=over(x.t);const dl=Math.round((parseD(x.t.end)-parseD(tISO))/dayMs);
+       return `<div class="trow" data-pid="${x.pid}" data-tid="${x.t.id}"><span class="dot" style="background:${stMap[x.t.status].c}"></span>
+         <span class="tn">${esc(x.t.title)}</span><span class="pbadge">${x.emoji||'📄'} ${esc(x.pname)}</span>
+         <span class="when ${ov?'over':''}">${ov?'просроч.':dl<=0?'сегодня':'через '+dl+'д'}</span></div>`;}).join('')}</div>`:''}
+   <div class="panel-c"><h3>📊 Проекты <span class="c">${projs.length}</span></h3>
+     <div class="plist">${projs.map(({meta,data})=>{
+       const ts=(data.tasks||[]).filter(t=>!t.isMilestone);const done=ts.filter(t=>t.status==='done').length;
+       const ov=(data.tasks||[]).filter(over).length;const p=ts.length?Math.round(done/ts.length*100):0;
+       const next=(data.tasks||[]).filter(t=>t.status!=='done'&&!t.isMilestone).sort((a,b)=>parseD(a.end)-parseD(b.end))[0];
+       const team=(data.members||[]).filter(m=>(data.tasks||[]).some(t=>t.assigneeId===m.id&&t.status!=='done')).slice(0,5);
+       return `<div class="prow" data-open="${meta.id}">
+         <div class="pemoji">${meta.emoji||'📄'}</div>
+         <div class="pmain"><div class="pn">${esc(meta.name)}${data.demo?' <span class="pdemo">демо</span>':''}</div>
+           <div class="pbar"><span style="width:${p}%;${ov?'background:linear-gradient(90deg,#fb7185,#f87171)':''}"></span></div>
+           <div class="pmeta">${ts.length} задач · ${done} готово${ov?` · <b style="color:var(--bad)">${ov} просроч.</b>`:''}${next?` · срок ${next.end.slice(8)}.${next.end.slice(5,7)}`:''}</div></div>
+         <div class="pteam">${team.map(m=>avatarOf(m,26)).join('')}</div>
+         <div class="ppct">${p}%</div></div>`;}).join('')}</div>
+   </div>`;
+  $$('#portfolio .prow').forEach(e=>e.onclick=()=>{const id=e.dataset.open;if(id===S.id)setView('dash');else switchProject(id);});
+  $$('#portfolio .trow').forEach(e=>e.onclick=()=>{const pid=e.dataset.pid,tid=e.dataset.tid;if(pid!==S.id)switchProject(pid);setTimeout(()=>openTask(tid),80);});
 }
 
 /* ============================ GANTT ============================ */
@@ -1718,22 +1793,28 @@ function renderNP(){
   $('#npModal').innerHTML=`
     <div class="ob-body" style="padding-top:24px">
       <h2>Новый проект</h2>
-      <p>Выбери шаблон — этапы и задачи создадутся сами. Название можно изменить.</p>
-      <input class="inp" id="npName" placeholder="Название проекта" style="margin-top:14px;font-size:15px;padding:11px 13px">
+      <p>Назови проект и выбери шаблон — этапы и задачи создадутся сами.</p>
+      <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mut2);margin:16px 0 6px">Название проекта</label>
+      <input class="inp" id="npName" placeholder="Например: AppHub — лендинг" style="font-size:16px;padding:12px 14px">
       <div class="tpl-grid">${TEMPLATES.map(t=>`<button class="tpl ${t.k===npTpl?'on':''}" data-tpl="${t.k}"><div class="tic">${t.emoji}</div><div class="tnm">${t.n}</div><div class="tds">${t.d}</div></button>`).join('')}</div>
     </div>
     <div class="ob-foot"><div class="spacer"></div><button class="btn" id="npCancel">Отмена</button><button class="btn primary" id="npCreate">Создать проект</button></div>`;
-  $('#npName').value=TPL_NAME[npTpl]||'';
-  $$('#npModal .tpl').forEach(el=>el.onclick=()=>{npTpl=el.dataset.tpl;renderNP();});
+  const nameEl=$('#npName');nameEl.value=TPL_NAME[npTpl]||'Мой проект';
+  let edited=false;nameEl.oninput=()=>{edited=true;};
+  $$('#npModal .tpl').forEach(el=>el.onclick=()=>{npTpl=el.dataset.tpl;
+    $$('#npModal .tpl').forEach(x=>x.classList.toggle('on',x===el));
+    if(!edited)nameEl.value=TPL_NAME[npTpl]||'Мой проект';});
   $('#npCancel').onclick=()=>$('#npScrim').classList.remove('show');
-  $('#npCreate').onclick=()=>{const nm=$('#npName').value.trim();$('#npScrim').classList.remove('show');createProject(nm,npTpl);};
+  $('#npCreate').onclick=()=>{const nm=(nameEl.value||'').trim()||TPL_NAME[npTpl]||'Мой проект';$('#npScrim').classList.remove('show');createProject(nm,npTpl);};
+  setTimeout(()=>{nameEl.focus();nameEl.select();},60);
 }
 $('#npScrim').onclick=e=>{if(e.target===$('#npScrim'))$('#npScrim').classList.remove('show');};
 
 /* ============================ CLOUD SYNC (Supabase) ============================ */
 function loadSb(){return new Promise((res,rej)=>{if(window.supabase)return res();const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';s.onload=()=>res();s.onerror=rej;document.head.appendChild(s);});}
 function updateCloudBadge(){const b=$('#btnCloud');if(!b)return;b.classList.toggle('on',cloudOn);b.classList.toggle('off',!cloudOn);
-  b.title=cloudOn?'Синхронизировано с партнёром · клик — выйти':(CFG&&CFG.url?'Облако настроено — войди для синка':'Подключить синк с партнёром');}
+  b.textContent=cloudOn?'✅':'🔄';
+  b.title=cloudOn?'Синхронизировано с командой · нажми, чтобы выйти':'Войти и синхронизировать с командой';}
 async function cloudInit(){
   updateCloudBadge();
   if(!CFG||!CFG.url||!CFG.anon)return;
@@ -1806,7 +1887,7 @@ function openAuth(){renderAuth();$('#authScrim').classList.add('show');}
 function closeAuth(){$('#authScrim').classList.remove('show');}
 function renderAuth(sent){
   $('#authModal').innerHTML=`
-    <div class="ob-art">☁️</div>
+    <div class="ob-art">🔑</div>
     <div class="ob-body">
       <h2>Вход в общее пространство</h2>
       ${sent?`<p>Ссылка для входа отправлена на <b>${esc(sent)}</b>. Открой письмо на этом устройстве — вернёшься сюда уже залогиненным и синхронизированным с партнёром.</p>`
