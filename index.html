@@ -711,6 +711,23 @@ body.light .card .cdel{background:rgba(20,24,40,.1)}
 body.light .brand .logo{background:linear-gradient(157deg,#1b1d27,#08090d 72%)}
 .dcsel{position:absolute;height:26px;border-radius:9px;background:rgba(167,139,250,.30);border:1.6px dashed var(--acc2);pointer-events:none;z-index:9;box-shadow:0 0 0 1px rgba(167,139,250,.25),0 4px 12px rgba(167,139,250,.3)}
 .wtag{font-size:10px;font-weight:700;color:var(--warn);background:rgba(251,191,36,.14);border:1px solid rgba(251,191,36,.32);border-radius:6px;padding:1px 6px;white-space:nowrap}
+.subbadge{font-size:10px;font-weight:700;color:var(--acc2);background:rgba(167,139,250,.13);border:1px solid rgba(167,139,250,.3);border-radius:6px;padding:1px 6px;white-space:nowrap}
+.qdone{width:19px;height:19px;border-radius:50%;border:2px solid var(--c,var(--mut2));background:none;cursor:pointer;flex:0 0 auto;padding:0;position:relative;transition:.12s}
+.qdone:hover{background:var(--ok);border-color:var(--ok)}
+.qdone:hover::after{content:'✓';color:#fff;font-size:11px;font-weight:800;position:absolute;inset:0;display:grid;place-items:center}
+.subbadge.all{color:var(--ok);background:rgba(52,211,153,.13);border-color:rgba(52,211,153,.3)}
+.subhead{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.subprog{flex:1;height:6px;border-radius:20px;background:var(--bg2);overflow:hidden}
+.subprog span{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,var(--acc2),#8b6ff0)}
+.subcount{font-size:11px;color:var(--mut2);font-variant-numeric:tabular-nums}
+.subrow{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.subck{flex:0 0 auto;width:22px;height:22px;border-radius:7px;border:1.5px solid var(--line2);background:var(--bg2);color:#fff;font-size:12px;display:grid;place-items:center;cursor:pointer}
+.subck.on{background:var(--ok);border-color:var(--ok)}
+.subtxt{flex:1;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--txt);outline:none}
+.subtxt:focus{border-color:var(--acc2)}
+.subtxt.done{color:var(--mut2);text-decoration:line-through}
+.subdel{flex:0 0 auto;width:24px;height:24px;border:none;background:none;color:var(--mut2);font-size:12px;cursor:pointer;border-radius:6px}
+.subdel:hover{color:var(--bad)}
 /* inbox */
 .iconbtn.inbox{position:relative}
 .ibadge{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;border-radius:20px;background:var(--bad);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;padding:0 4px;box-shadow:0 0 0 2px rgba(18,21,31,.9)}
@@ -871,6 +888,7 @@ body.light .drawer,body.light .modal{background:var(--sheen),rgba(255,255,255,.9
       <div class="secttl">👥 Команда и загрузка
         <span style="margin-left:auto;display:flex;align-items:center;gap:7px;text-transform:none;letter-spacing:0;font-weight:500;color:var(--mut)">Вы: <select class="fsel" id="whoAmI"></select></span>
       </div>
+      <div style="font-size:12.5px;color:var(--mut2);margin:-6px 0 14px;line-height:1.5">👋 <b style="color:var(--mut)">Пригласить со-фаундера:</b> добавь участника → впиши его email → он войдёт этой почтой и сразу увидит ваши проекты и задачи. (Доступ открыт только участникам, прописанным в Supabase.)</div>
       <div class="grid" id="team"></div>
     </div></div>
   </div>
@@ -906,6 +924,10 @@ body.light .drawer,body.light .modal{background:var(--sheen),rgba(255,255,255,.9
       </div></div>
     <div class="field"><label>Зависит от (блокеры)</label><div class="seg" id="dDeps"></div></div>
     <div class="field"><label>⏳ Ждёт от — кто должен сделать шаг</label><div class="seg" id="dWaiting"></div></div>
+    <div class="field"><label>✓ Чеклист / подзадачи</label>
+      <div id="dSubs"></div>
+      <div class="cmtadd"><input class="inp" id="dSubIn" placeholder="Добавить пункт… (Enter)"><button class="btn" id="dSubBtn">＋</button></div>
+    </div>
     <div class="field"><label>Комментарии</label>
       <div class="comments" id="dComments"></div>
       <div class="cmtadd"><input class="inp" id="dCmtIn" placeholder="Написать комментарий…"><button class="btn" id="dCmtBtn">↑</button></div>
@@ -1216,8 +1238,8 @@ function renderDash(){
       <div class="panel-c">
         <h3>🔥 Фокус на сегодня <span class="c">${focusU.length}</span></h3>
         ${focusU.length?focusU.map(t=>{const ov=isOverdue(t);const dl=daysLeft(t);
-          return `<div class="trow" data-task="${t.id}"><span class="dot" style="background:${stMap[t.status].c}"></span>
-            <span class="tn">${esc(t.title)}</span>${avatar(t.assigneeId)}
+          return `<div class="trow" data-task="${t.id}"><button class="qdone" data-quickdone="${t.id}" title="Отметить готовым" style="--c:${stMap[t.status].c}"></button>
+            <span class="tn">${esc(t.title)}</span>${subTag(t)}${avatar(t.assigneeId)}
             <span class="when ${ov?'over':''}">${ov?'просрочено '+(-dl)+'д':'до '+t.end.slice(8)+'.'+t.end.slice(5,7)}</span></div>`;}).join(''):'<div class="emptymini">На сегодня активных задач нет 🎉</div>'}
       </div>
       <div class="panel-c">
@@ -1244,6 +1266,7 @@ function renderDash(){
     <div class="panel-c" style="margin-top:16px"><h3>🕑 Лента активности <span class="c">${(S.activity||[]).length}</span></h3>
       <div class="actfeed">${(S.activity||[]).length?S.activity.slice(0,20).map(a=>`<div class="actrow"><span class="ai">${a.icon}</span><span class="atx"><b>${esc(a.who)}</b> ${esc(a.text)}</span><span class="att">${relTime(a.ts)}</span></div>`).join(''):'<div class="emptymini">Здесь появится история: кто что создал, передвинул, закрыл. Ничего не теряется — всё под контролем.</div>'}</div></div>`;
   $$('#dash .trow').forEach(el=>el.onclick=()=>openTask(el.dataset.task));
+  $$('#dash .qdone').forEach(b=>b.onclick=e=>{e.stopPropagation();const t=task(b.dataset.quickdone);if(t){t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;logAct('✅','«'+t.title+'» → Готово');save();render();toast('Готово: «'+t.title+'» ✅','✅');}});
   $$('#dash .prow[data-open]').forEach(el=>el.onclick=()=>switchProject(el.dataset.open));
   const ab=$('#aiBtn');if(ab)ab.onclick=aiReview;
   const bb=$('#briefBtn');if(bb)bb.onclick=openBrief;
@@ -1708,6 +1731,7 @@ function renderBoard(){
         <div class="cm">
           ${prTag(t)}
           ${waitTag(t)}
+          ${subTag(t)}
           ${t.estimate?`<span>⏱ ${t.estimate}ч</span>`:''}
           ${t.comments.length?`<span>💬 ${t.comments.length}</span>`:''}
           ${ov?`<span style="color:var(--bad);font-weight:700">⚠ просроч.</span>`:''}
@@ -1893,6 +1917,7 @@ function openTask(id){
   // ждёт от (waiting-on)
   $('#dWaiting').innerHTML=S.members.map(m=>`<button class="chip ${t.waitingOn===m.id?'on':''}" data-wo="${m.id}" style="${t.waitingOn===m.id?`background:${m.color}`:''}">${esc(m.name)}</button>`).join('')+`<button class="chip ${!t.waitingOn?'on':''}" data-wo="">— никого</button>`;
   $$('#dWaiting .chip').forEach(c=>c.onclick=()=>{const wid=c.dataset.wo||null;t.waitingOn=wid;logAct('⏳',wid?('«'+t.title+'» ждёт от '+((member(wid)||{}).name||'?')):('«'+t.title+'» — снято ожидание'));save();openTask(id);render();});
+  renderSubtasks(t);
   renderComments(t);
   $('#drawer').classList.add('show');syncScrim();
 }
@@ -1902,6 +1927,17 @@ function renderComments(t){
   c.innerHTML=t.comments.map(cm=>`<div class="cmt">${avatar(cm.authorId||'m1')}
     <div class="cb"><div class="cmeta"><b>${esc(cm.author)}</b> · ${esc(cm.ts?relTime(cm.ts):cm.when)}</div>${esc(cm.text)}</div></div>`).join('');
 }
+function renderSubtasks(t){
+  const c=$('#dSubs');if(!c)return;const subs=t.subtasks||(t.subtasks=[]);
+  const done=subs.filter(s=>s.done).length;
+  c.innerHTML=(subs.length?`<div class="subhead"><div class="subprog"><span style="width:${Math.round(done/subs.length*100)}%"></span></div><span class="subcount">${done}/${subs.length}</span></div>`:'')
+    +subs.map(s=>`<div class="subrow"><button class="subck ${s.done?'on':''}" data-sub="${s.id}">${s.done?'✓':''}</button><input class="subtxt ${s.done?'done':''}" data-subt="${s.id}" value="${esc(s.text)}"><button class="subdel" data-subd="${s.id}">✕</button></div>`).join('');
+  $$('#dSubs .subck').forEach(b=>b.onclick=()=>{const s=subs.find(x=>x.id===b.dataset.sub);if(s){s.done=!s.done;save();renderSubtasks(t);render();}});
+  $$('#dSubs .subtxt').forEach(i=>i.onblur=()=>{const s=subs.find(x=>x.id===i.dataset.subt);if(s){s.text=i.value.trim();save();}});
+  $$('#dSubs .subdel').forEach(b=>b.onclick=()=>{t.subtasks=subs.filter(x=>x.id!==b.dataset.subd);save();renderSubtasks(t);render();});
+}
+function addSub(){const v=($('#dSubIn').value||'').trim();if(!v||!curTask)return;if(!curTask.subtasks)curTask.subtasks=[];curTask.subtasks.push({id:uid('sb'),text:v,done:false});$('#dSubIn').value='';save();renderSubtasks(curTask);render();}
+function subTag(t){const s=t.subtasks||[];if(!s.length)return '';const d=s.filter(x=>x.done).length;return `<span class="subbadge${d===s.length?' all':''}">✓ ${d}/${s.length}</span>`;}
 function syncScrim(){const any=$('#drawer').classList.contains('show')||$('#mDrawer').classList.contains('show')||$('#inboxDrawer').classList.contains('show');$('#scrim').classList.toggle('show',any);}
 function closeDrawer(){$('#drawer').classList.remove('show');curTask=null;syncScrim();render();}
 function autoGrow(el){el.style.height='auto';el.style.height=el.scrollHeight+'px';}
@@ -1921,6 +1957,8 @@ $('#dSpent').onblur=()=>{if(curTask)save();};
 $('#dStatus').onchange=e=>{if(curTask){curTask.status=e.target.value;if(curTask.status==='done'&&curTask.estimate&&!curTask.spent)curTask.spent=curTask.estimate;$('#dDot').style.background=stMap[curTask.status].c;logAct('🔀','«'+curTask.title+'» → '+stMap[curTask.status].n);save();}};
 $('#dCmtBtn').onclick=addComment;
 $('#dCmtIn').onkeydown=e=>{if(e.key==='Enter')addComment();};
+$('#dSubBtn').onclick=addSub;
+$('#dSubIn').onkeydown=e=>{if(e.key==='Enter')addSub();};
 function addComment(){const v=$('#dCmtIn').value.trim();if(!v||!curTask)return;
   curTask.comments.push({text:v,author:meName(),authorId:myId(),when:'сейчас',ts:Date.now()});logAct('💬','коммент к «'+curTask.title+'»');$('#dCmtIn').value='';save();renderComments(curTask);}
 $('#dDelete').onclick=()=>{if(!curTask)return;const t=curTask;const idx=S.tasks.indexOf(t);
