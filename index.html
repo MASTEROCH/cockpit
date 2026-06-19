@@ -2169,6 +2169,7 @@ function hideGate(){const g=$('#gate');if(g)g.classList.add('hide');}
 function showGate(){renderGate('login');}
 function renderGate(state,email){
   const g=$('#gate');if(!g)return;g.classList.remove('hide');
+  if(location.protocol==='file:'){g.innerHTML=`<div class="gatecard"><div class="gatelogo">🚀</div><h1>Cockpit</h1><div class="gp">Это локальная копия для разработки — вход здесь не работает.<br>Рабочая версия (вход запоминается):</div><a class="btn primary" href="https://cock-pit.com" target="_blank" rel="noopener" style="width:100%;justify-content:center;text-decoration:none">Открыть cock-pit.com →</a></div>`;return;}
   if(state==='loading'){g.innerHTML=`<div class="gatecard"><div class="gatelogo">🚀</div><h1>Cockpit</h1><div class="gp">Проверяю вход…</div></div>`;return;}
   if(state==='sent'){g.innerHTML=`<div class="gatecard"><div class="gatelogo">✉️</div><h1>Письмо отправлено</h1><div class="gp">Открой ссылку из письма на <b>${esc(email||'')}</b> на этом устройстве — и вернёшься сюда уже внутри. Загляни в «Спам», если не видно.</div><button class="btn" id="gateBack" style="margin-top:14px;width:100%;justify-content:center">← Другой email</button></div>`;
     $('#gateBack').onclick=()=>renderGate('login',email);return;}
