@@ -1860,7 +1860,7 @@ function renderBoard(){
           ${waitTag(t)}
           ${subTag(t)}
           ${t.estimate?`<span>⏱ ${t.estimate}ч</span>`:''}
-          ${t.comments.length?`<span>💬 ${t.comments.length}</span>`:''}
+          ${(t.comments||[]).length?`<span>💬 ${(t.comments||[]).length}</span>`:''}
           ${ov?`<span style="color:var(--bad);font-weight:700">⚠ просроч.</span>`:''}
           <span style="margin-left:auto">${avatar(t.assigneeId)}</span>
         </div>`;
@@ -2023,7 +2023,7 @@ function openMember(id){
     S.members=S.members.filter(x=>x.id!==id);S.tasks.forEach(t=>{if(t.assigneeId===id)t.assigneeId=null;});save();closeMember();render();toast('Участник удалён','🗑');};
   $('#mDrawer').classList.add('show');syncScrim();
 }
-function closeMember(){$('#mDrawer').classList.remove('show');curMember=null;syncScrim();render();}
+function closeMember(){$('#mDrawer').classList.remove('show');curMember=null;applyPendingRemote();syncScrim();render();}
 $('#mClose').onclick=closeMember;
 
 /* ============================ TASK CRUD + DRAWER ============================ */
@@ -2049,7 +2049,7 @@ function openTask(id){
     +`<button class="chip ${!t.assigneeId?'on':''}" data-as="">— никто</button>`;
   $$('#dAssignee .chip').forEach(c=>c.onclick=()=>{
     const newAs=c.dataset.as||null;
-    if(newAs&&newAs!==myId()&&t.assigneeId===myId()&&t.status!=='done'){
+    if(newAs&&newAs!==myId()&&newAs!==t.assigneeId&&t.status!=='done'){
       const me=member(myId())||{};const cost=taskValue(t);
       if((me.points||0)<cost){toast('Не хватает баллов: '+(me.points||0)+'/'+cost+' 🪙. Сделай сам или заработай 💪','🪙');return;}
       me.points-=cost;logAct('🪙',meName()+' −'+cost+' · перекинул «'+t.title+'» на '+((member(newAs)||{}).name||'?'));
@@ -2091,7 +2091,8 @@ function renderSubtasks(t){
 function addSub(){const v=($('#dSubIn').value||'').trim();if(!v||!curTask)return;if(!curTask.subtasks)curTask.subtasks=[];curTask.subtasks.push({id:uid('sb'),text:v,done:false});$('#dSubIn').value='';save();renderSubtasks(curTask);render();}
 function subTag(t){const s=t.subtasks||[];if(!s.length)return '';const d=s.filter(x=>x.done).length;return `<span class="subbadge${d===s.length?' all':''}">✓ ${d}/${s.length}</span>`;}
 function syncScrim(){const any=$('#drawer').classList.contains('show')||$('#mDrawer').classList.contains('show')||$('#inboxDrawer').classList.contains('show');$('#scrim').classList.toggle('show',any);}
-function closeDrawer(){$('#drawer').classList.remove('show');curTask=null;syncScrim();render();}
+function applyPendingRemote(){if(pendingRemote[S.id]){S=migrate(pendingRemote[S.id]);delete pendingRemote[S.id];resetUndo();toast('Подтянул обновление партнёра','☁️');}}
+function closeDrawer(){$('#drawer').classList.remove('show');curTask=null;applyPendingRemote();syncScrim();render();}
 function autoGrow(el){el.style.height='auto';el.style.height=el.scrollHeight+'px';}
 
 $('#dTitle').oninput=e=>{if(curTask){curTask.title=e.target.value;autoGrow(e.target);}};
@@ -2146,7 +2147,7 @@ menuEl.onclick=e=>{const b=e.target.closest('button');if(!b)return;menuEl.classL
   if(act==='export'){const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
     const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cockpit-'+todayISO()+'.json';a.click();toast('Экспортировано','💾');}
   else if(act==='import'){const inp=document.createElement('input');inp.type='file';inp.accept='.json';
-    inp.onchange=()=>{const f=inp.files[0];const r=new FileReader();r.onload=()=>{try{S=JSON.parse(r.result);S.ui=S.ui||{zoom:38};S.tasks.forEach(t=>{if(!t.deps)t.deps=[];});save();render();toast('Импортировано','📥');}catch(e){toast('Ошибка файла','⚠');}};r.readAsText(f);};inp.click();}
+    inp.onchange=()=>{const f=inp.files[0];const r=new FileReader();r.onload=()=>{try{S=migrate(JSON.parse(r.result));resetUndo();save();render();toast('Импортировано','📥');}catch(e){toast('Ошибка файла','⚠');}};r.readAsText(f);};inp.click();}
   else if(act==='section'){const n=prompt('Название раздела:');if(n){S.sections.push({id:uid('s'),name:n});save();render();toast('Раздел добавлен','📁');}}
   else if(act==='print'){window.print();}
   else if(act==='reset'){if(confirm('Сбросить к демо-данным? Текущее будет потеряно.')){S=seed();save();render();toast('Сброшено','♻');}}
@@ -2405,7 +2406,9 @@ function deleteProject(id){if(reg.list.length<=1){toast('Нельзя удали
   if(reg.active===id){reg.active=reg.list[0].id;S=migrate(loadProj(reg.active));}saveReg();render();toast('Проект удалён','🗑');}
 
 const projBtn=$('#projBtn'),projMenu=$('#projMenu');
-function archiveProject(id,val){const e=reg.list.find(p=>p.id===id);if(!e)return;e.archived=val;saveReg();
+function archiveProject(id,val){const e=reg.list.find(p=>p.id===id);if(!e)return;e.archived=val;
+  const pr=(id===S.id)?S:loadProj(id);if(pr){pr.archived=val;localStorage.setItem(pkey(id),JSON.stringify(pr));if(cloudOn)cloudPush(pr,true);}
+  saveReg();
   if(val&&reg.active===id){const next=reg.list.find(p=>!p.archived);if(next){switchProject(next.id);toast('Проект в архиве','🗄');return;}}
   render();toast(val?'Проект в архиве':'Проект возвращён из архива',val?'🗄':'♻️');}
 projBtn.onclick=e=>{e.stopPropagation();
@@ -2509,8 +2512,8 @@ async function cloudInit(){
   });
   try{const {data}=await sb.auth.getSession();
     if(data&&data.session){me=data.session.user.id;myEmail=(data.session.user.email||'').toLowerCase();hideGate();onLoggedIn();}
-    else showGate();
-  }catch(e){showGate();}
+    else if(!cloudOn)showGate();
+  }catch(e){if(!cloudOn)showGate();}
 }
 async function onLoggedIn(){cloudOn=true;closeAuth();hideGate();updateCloudBadge();await cloudSync();subscribeRealtime();
   if(!localStorage.getItem('cockpit_profile_done'))openProfileSetup();
@@ -2554,7 +2557,7 @@ function saveProfileSetup(){
   const nm=($('#pfName').value||'').trim();if(!nm){toast('Введите имя','⚠');const i=$('#pfName');if(i)i.focus();return;}
   profileDraft.name=nm;profileDraft.role=($('#pfRole').value||'').trim();
   let m=S.members.find(x=>(x.email||'').toLowerCase()===myEmail);
-  if(!m)m=S.members.find(x=>!x.email&&(x.name==='Я'||x.name==='Новый участник')&&!S.tasks.some(t=>t.assigneeId===x.id));
+  if(!m&&S.members.length===1&&!S.members[0].email)m=S.members[0];
   if(!m){m={id:uid('m'),capacity:30};S.members.push(m);}
   m.name=nm;m.role=profileDraft.role||'—';m.color=profileDraft.color;if(profileDraft.photo)m.photo=profileDraft.photo;m.email=myEmail||m.email||'';
   localStorage.setItem('cockpit_me',m.id);
@@ -2579,7 +2582,7 @@ async function cloudSync(){
   reg.list.forEach(p=>{if(!cloudById[p.id]){const local=loadProj(p.id);if(local)cloudPush(local,true);}});
   // reg = объединение облака и локально-уникальных (флаг архива сохраняем — он локальный)
   const prevArch={};reg.list.forEach(p=>{if(p.archived)prevArch[p.id]=true;});
-  const union=rows.map(r=>({id:r.id,name:r.name,emoji:r.emoji||'📄',archived:!!prevArch[r.id],parentId:(r.data&&r.data.parentId)||null}));
+  const union=rows.map(r=>({id:r.id,name:r.name,emoji:r.emoji||'📄',archived:!!((r.data&&r.data.archived)||prevArch[r.id]),parentId:(r.data&&r.data.parentId)||null}));
   reg.list.forEach(p=>{if(!cloudById[p.id])union.push(p);});
   if(union.length)reg.list=union;
   if(!reg.list.find(p=>p.id===reg.active))reg.active=(reg.list[0]||{}).id;
@@ -2588,19 +2591,22 @@ async function cloudSync(){
   toast(rows.length?'Синхронизировано с командой':'Загрузил твои проекты в облако','☁️');
 }
 const _pt={};
+let rtSubbed=false, pendingRemote={};
 function cloudPush(p,now){
   if(!cloudOn||!sb||!p)return;
+  p.updatedAt=Date.now();
   const row={id:p.id,name:p.projectName,emoji:(reg.list.find(x=>x.id===p.id)||{}).emoji||'📄',data:p,updated_by:me,updated_at:new Date().toISOString()};
   const doit=async()=>{try{await sb.from('projects').upsert(row);}catch(e){console.warn('cloud push',e);}};
   if(now){doit();return;}clearTimeout(_pt[p.id]);_pt[p.id]=setTimeout(doit,700);
 }
 async function cloudDelete(id){if(!cloudOn||!sb)return;try{await sb.from('projects').delete().eq('id',id);}catch(e){}}
 function subscribeRealtime(){
+  if(rtSubbed)return;rtSubbed=true;
   try{sb.channel('cockpit-rt').on('postgres_changes',{event:'*',schema:'public',table:'projects'},payload=>{
     if(payload.eventType==='DELETE'){const id=payload.old&&payload.old.id;if(!id)return;reg.list=reg.list.filter(p=>p.id!==id);localStorage.removeItem(pkey(id));
       if(S.id===id&&reg.list[0]){reg.active=reg.list[0].id;S=migrate(loadProj(reg.active));}saveReg();render();return;}
     const row=payload.new;if(!row||row.updated_by===me)return;applyRemote(row);
-  }).subscribe();}catch(e){console.warn('realtime',e);}
+  }).subscribe();}catch(e){console.warn('realtime',e);rtSubbed=false;}
 }
 function applyRemote(row){
   localStorage.setItem(pkey(row.id),JSON.stringify(row.data));
@@ -2608,7 +2614,7 @@ function applyRemote(row){
   if(e){e.name=row.name;e.emoji=row.emoji||'📄';}else reg.list.push({id:row.id,name:row.name,emoji:row.emoji||'📄'});
   saveReg();
   if(row.id===S.id){
-    if($('#drawer').classList.contains('show'))toast('Партнёр обновил проект — закрой карточку, чтобы подтянуть','☁️');
+    if($('#drawer').classList.contains('show')||$('#mDrawer').classList.contains('show')){pendingRemote[row.id]=row.data;toast('Партнёр обновил проект — закрой карточку, чтобы подтянуть','☁️');}
     else{S=migrate(row.data);render();toast('Обновление от партнёра','☁️');}
   }else render();
 }
