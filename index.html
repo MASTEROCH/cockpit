@@ -195,7 +195,7 @@
   .colh .cnt{margin-left:auto;color:var(--mut2);font-size:12px;background:var(--panel);padding:1px 8px;border-radius:20px}
   .colb{padding:10px;overflow:auto;display:flex;flex-direction:column;gap:9px;flex:1;min-height:60px}
   .col.drop{outline:2px dashed var(--acc2);outline-offset:-4px;border-radius:14px}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:11px;cursor:grab;transition:.12s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+  .card{flex:0 0 auto;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:11px;cursor:grab;transition:.12s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
   .card:hover{border-color:var(--line2);transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,0,0,.4)}
   .card.dragging{opacity:.4}
   .card .ct{font-weight:600;font-size:13px;margin-bottom:8px}
@@ -1030,6 +1030,27 @@ body.light .focusrun{background:rgba(255,255,255,.7)}
 .mm-foot{font-size:11.5px;color:var(--mut2);margin-top:7px}
 /* confetti */
 .confetti{position:fixed;width:9px;height:9px;border-radius:2px;pointer-events:none;z-index:200;will-change:transform,opacity}
+/* accent picker */
+.acc-grid{display:flex;flex-wrap:wrap;gap:11px;margin-top:14px}
+.acc-sw{width:42px;height:42px;border-radius:13px;border:2px solid transparent;cursor:pointer;position:relative;box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 3px 8px rgba(0,0,0,.3)}
+.acc-sw.on{border-color:#fff;transform:scale(1.06)}
+.acc-sw:hover{transform:scale(1.08)}
+.acc-sw.cu{display:grid;place-items:center;color:#fff;font-size:20px;font-weight:700;overflow:hidden}
+.acc-sw.cu input{position:absolute;inset:0;opacity:0;cursor:pointer}
+/* analytics */
+.anlist{display:flex;flex-direction:column;gap:13px;margin-top:14px}
+.anrow{background:var(--bg2);border:1px solid var(--line);border-radius:13px;padding:13px 15px}
+.antop{display:flex;align-items:center;gap:10px}.antop b{font-size:14px}
+.anpts{margin-left:auto;font-size:12px;color:var(--mut2);font-weight:600}
+.anbar{height:7px;border-radius:20px;background:var(--bg);overflow:hidden;margin:9px 0 8px}
+.anbar span{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,var(--acc),var(--acc2))}
+.anmeta{font-size:12px;color:var(--mut2)}
+/* @mention dropdown */
+.ment{display:none;flex-direction:column;gap:2px;background:rgba(17,20,31,.98);border:1px solid var(--gbrd);border-radius:11px;box-shadow:0 16px 44px rgba(0,0,0,.6),var(--ghi);padding:5px;margin-bottom:6px;max-height:180px;overflow:auto}
+.ment.show{display:flex}
+.mention-i{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:none;border:none;color:var(--txt);font-size:13px;font-weight:600;padding:8px 10px;border-radius:8px}
+.mention-i:hover{background:var(--panel)}
+body.light .ment{background:rgba(255,255,255,.99)}
 /* swimlanes — board by people */
 .seg2{display:flex;gap:3px;background:var(--sheen),var(--glass);border:1px solid var(--gbrd);border-radius:11px;padding:3px;box-shadow:var(--ghi)}
 .sgb{border:none;background:none;color:var(--mut);font-size:12.5px;font-weight:700;padding:7px 12px;border-radius:9px;transition:.14s}
@@ -1323,6 +1344,8 @@ body.light .pr-ring-in{background:#f4f6fc}
   <button data-act="present">📺 Презентация (синк)</button>
   <button data-act="rebalance">🪄 Разгрузить команду</button>
   <button data-act="share">🔗 Ссылка-снимок статуса</button>
+  <button data-act="analytics">📊 Аналитика команды</button>
+  <button data-act="accent">🎨 Цвет проекта</button>
   <button data-act="sound">🔔 Звук вкл/выкл</button>
   <div class="sep"></div>
   <button data-act="export">💾 Экспорт в файл</button>
@@ -1579,6 +1602,7 @@ function relScore(t){const prW={urgent:4,high:3,med:2,low:1}[t.priority]||2;cons
 /* геймификация: баллы за выполненные задачи */
 function taskValue(t){const pm={urgent:1.5,high:1.25,med:1,low:1}[t.priority]||1;return Math.max(3,Math.round((t.estimate||5)*pm));}
 function awardForDone(data,t){
+  if(t.status==='done'&&!t.doneTs)t.doneTs=Date.now();
   if(t.isMilestone||t.status!=='done'||t.pointsAwarded||!t.assigneeId)return 0;
   const m=(data.members||[]).find(x=>x.id===t.assigneeId);if(!m)return 0;
   const v=taskValue(t);m.points=(m.points||0)+v;t.pointsAwarded=t.assigneeId;
@@ -1604,10 +1628,14 @@ function closeMonth(){
   localStorage.setItem('cockpit_month_result',JSON.stringify({month,payer:payer.name,lead:lead.name,scores:ps.map(x=>({name:x.name,points:x.points}))}));
   resetUndo();render();toast('Месяц закрыт ☕ кофе с '+payer.name,'☕');
 }
+function applyAccent(){const a=S.accent,r=document.documentElement;
+  if(a&&/^#[0-9a-f]{6}$/i.test(a)){r.style.setProperty('--acc2',a);r.style.setProperty('--acc',shade(a,20));r.style.setProperty('--acc3',shade(a,-28));}
+  else{r.style.removeProperty('--acc2');r.style.removeProperty('--acc');r.style.removeProperty('--acc3');}}
 function render(){
   $('#cntIdeas').textContent=S.ideas.length;
   $('#projLabel').textContent=S.projectName;
   $('#projEmoji').textContent=(reg.list.find(p=>p.id===S.id)||{}).emoji||'🚀';
+  applyAccent();
   // toolbar visibility
   const showTool=(view==='gantt'||view==='board');
   $('#toolbar').classList.toggle('hide',!showTool);
@@ -1679,6 +1707,22 @@ function momentumSpark(){
     </svg>
     <div class="mm-foot">${total} ${plural(total,'задача закрыта','задачи закрыто','задач закрыто')} за 2 недели · цель — держать линию вверх</div>
   </div>`;
+}
+function aiPayload(){const nameOf=id=>{const m=member(id);return m?m.name:null;};
+  return {today:todayISO(),project:S.projectName,
+    members:S.members.map(m=>({name:m.name,capacity:m.capacity,load:S.tasks.filter(t=>t.assigneeId===m.id&&t.status!=='done').reduce((a,t)=>a+(t.estimate||0),0)})),
+    tasks:S.tasks.map(t=>({title:t.title,status:stMap[t.status].n,assignee:nameOf(t.assigneeId),start:t.start,end:t.end,estimate:t.estimate||0,spent:t.spent||0,priority:prMap[t.priority].n,deps:(t.deps||[]).map(d=>{const x=task(d);return x?x.title:null;}).filter(Boolean),blocked:isBlocked(t),overdue:isOverdue(t),milestone:!!t.isMilestone}))};}
+async function aiToken(){try{const {data}=await sb.auth.getSession();return data&&data.session&&data.session.access_token;}catch(e){return null;}}
+async function fetchBriefAdvice(btn){
+  if(!cloudOn||!sb){toast('Войди в облако — совет от Claude для команды','🤖');return;}
+  const token=await aiToken();if(!token){toast('Нужен вход','🤖');return;}
+  if(btn){btn.disabled=true;btn.textContent='🤖 Думаю…';}
+  const c=$('#briefClaude');if(c)c.innerHTML='<div class="emptymini">🤖 Claude смотрит проект…</div>';
+  try{const r=await fetch(CFG.url+'/functions/v1/ai-review',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+token},body:JSON.stringify({project:aiPayload()})});
+    const res=normalizeAI(await r.json());
+    if(c)c.innerHTML=`<div class="airh">🤖 Совет от Claude</div>${res.summary?`<div class="aisummary" style="font-size:13px;padding:11px 13px">${esc(res.summary)}</div>`:''}${(res.suggestions||[]).slice(0,3).map(s=>`<div class="airow"><div class="aimain"><div class="aitt">${esc(s.taskTitle||({reestimate:'Переоценить',reprioritize:'Приоритет',reschedule:'Сдвинуть',reassign:'Переназначить'}[s.type]||''))}</div><div class="aire">${esc(s.reason||'')}</div></div></div>`).join('')}`;
+  }catch(e){if(c)c.innerHTML='<div class="emptymini">Claude недоступен сейчас</div>';}
+  if(btn){btn.disabled=false;btn.textContent='🤖 Совет от Claude';}
 }
 let claudeNow={};
 function claudeNowCard(){const c=claudeNow[S.id];if(!c)return '';
@@ -2032,6 +2076,49 @@ function renderSharePage(s){
     </div>
     <div class="pr-foot-brand"><span>Сделано в <b>Cockpit</b> · cock-pit.com</span><a class="btn primary" href="${location.origin+location.pathname}">Открыть свой Cockpit →</a></div>`;
   $('#present').classList.add('show');hideGate();
+}
+
+/* ---- кастом-цвет проекта (брендинг) ---- */
+const ACCENTS=['#a78bfa','#f472b6','#38bdf8','#34d399','#fbbf24','#fb7185','#22d3ee','#c084fc','#f59e0b','#6366f1','#ef4444','#14b8a6'];
+function openAccent(){
+  const draw=()=>{$('#balModal').innerHTML=`<div class="ob-art" style="font-size:46px">🎨</div>
+   <div class="ob-body"><h2>Цвет проекта «${esc(S.projectName)}»</h2>
+     <p>Свой акцент под проект или клиента — перекрашивает весь интерфейс. Проект узнаётся с одного взгляда.</p>
+     <div class="acc-grid">${ACCENTS.map(c=>`<button class="acc-sw ${S.accent===c?'on':''}" data-c="${c}" style="background:${c}"></button>`).join('')}
+       <label class="acc-sw cu" style="background:${S.accent||'#666'}" title="Свой цвет">＋<input type="color" id="accCustom" value="${S.accent||'#a78bfa'}"></label></div>
+     <button class="btn" id="accReset" style="margin-top:14px">Сбросить к стандартному</button></div>
+   <div class="ob-foot"><div class="spacer"></div><button class="btn primary" id="accDone">Готово</button></div>`;
+   const set=c=>{S.accent=c;applyAccent();save();draw();};
+   $$('#balModal .acc-sw[data-c]').forEach(b=>b.onclick=()=>set(b.dataset.c));
+   $('#accCustom').oninput=e=>set(e.target.value);
+   $('#accReset').onclick=()=>{delete S.accent;applyAccent();save();draw();toast('Стандартный цвет','🎨');};
+   $('#accDone').onclick=closeBal;};
+  draw();$('#balScrim').classList.add('show');
+}
+
+/* ---- аналитика по людям (cycle-time, выработка) ---- */
+function openAnalytics(){
+  const T=S.tasks.filter(t=>!t.isMilestone);const now=Date.now();const mAgo=now-30*dayMs;
+  const rows=S.members.map(m=>{
+    const mine=T.filter(t=>t.assigneeId===m.id);
+    const done=mine.filter(t=>t.status==='done');
+    const done30=done.filter(t=>t.doneTs&&t.doneTs>mAgo).length;
+    const hrs=done.reduce((a,t)=>a+(t.spent||t.estimate||0),0);
+    const cyc=done.filter(t=>t.doneTs&&t.createdTs).map(t=>(t.doneTs-t.createdTs)/dayMs);
+    const avg=cyc.length?(cyc.reduce((a,b)=>a+b,0)/cyc.length):null;
+    const load=mine.filter(t=>t.status!=='done').reduce((a,t)=>a+(t.estimate||0),0);
+    return {m,done:done.length,done30,hrs:Math.round(hrs),avg,load};
+  }).sort((a,b)=>b.done-a.done);
+  const maxDone=Math.max(1,...rows.map(r=>r.done));
+  $('#balModal').innerHTML=`<div class="ob-art" style="font-size:46px">📊</div>
+   <div class="ob-body"><h2>Аналитика команды</h2><p>Выработка и скорость по «${esc(S.projectName)}». Cycle-time — среднее от создания до «Готово».</p>
+     <div class="anlist">${rows.map(r=>`<div class="anrow"><div class="antop">${avatar(r.m.id)}<b>${esc(r.m.name)}</b>
+        <span class="anpts">${r.done} закрыто${r.done30?` · ${r.done30} за 30д`:''}</span></div>
+        <div class="anbar"><span style="width:${Math.round(r.done/maxDone*100)}%"></span></div>
+        <div class="anmeta">⏱ ${r.hrs}ч сделано · 🔄 ${r.avg!=null?r.avg.toFixed(1)+'д цикл':'—'} · 📦 ${r.load}ч в работе</div></div>`).join('')}</div>
+     <div class="keyhint">Cycle-time считается по задачам, закрытым после этого апдейта (дальше точность растёт).</div></div>
+   <div class="ob-foot"><div class="spacer"></div><button class="btn primary" id="anDone">Готово</button></div>`;
+  $('#balScrim').classList.add('show');$('#anDone').onclick=closeBal;
 }
 
 /* ============================ DASHBOARD ============================ */
@@ -2506,9 +2593,11 @@ function renderBrief(){
      ${b.iWait.length?`<div class="airh">🤝 Ждёшь от партнёра — ${b.iWait.length}</div>${b.iWait.map(x=>`<div class="trow" data-pid="${x.pid}" data-tid="${x.t.id}"><span class="dot" style="background:${stMap[x.t.status].c}"></span><span class="tn">${esc(x.t.title)}</span><span class="pbadge">от ${esc(x.who||'?')}</span></div>`).join('')}`:''}
      ${b.partner.length?`<div class="airh">🔔 Что сделал партнёр — ${b.partner.length}</div><div class="actfeed" style="max-height:220px">${b.partner.slice(0,15).map(a=>`<div class="actrow"><span class="ai">${a.icon}</span><span class="atx"><b>${esc(a.who)}</b> ${esc(a.text)} <span class="pbadge">${a.emoji||'📄'} ${esc(a.pname)}</span></span><span class="att">${relTime(a.ts)}</span></div>`).join('')}</div>`:''}
      ${empty?'<div class="emptymini" style="margin-top:14px">Чисто — ничего срочного. Можно спокойно планировать день 👌</div>':''}
+     <div id="briefClaude" style="margin-top:6px"></div>
    </div>
-   <div class="ob-foot"><div class="spacer"></div><button class="btn primary" id="briefClose">За работу 🚀</button></div>`;
+   <div class="ob-foot"><button class="btn" id="briefAi">🤖 Совет от Claude</button><div class="spacer"></div><button class="btn primary" id="briefClose">За работу 🚀</button></div>`;
   $('#briefClose').onclick=closeBrief;
+  $('#briefAi').onclick=()=>fetchBriefAdvice($('#briefAi'));
   $$('#briefModal .trow').forEach(el=>el.onclick=()=>{const pid=el.dataset.pid,tid=el.dataset.tid;closeBrief();if(pid!==S.id)switchProject(pid);setTimeout(()=>openTask(tid),90);});
 }
 $('#briefScrim').onclick=e=>{if(e.target===$('#briefScrim'))closeBrief();};
@@ -3105,7 +3194,17 @@ $('#dSpent').oninput=e=>{if(curTask)curTask.spent=parseFloat(e.target.value)||0;
 $('#dSpent').onblur=()=>{if(curTask)save();};
 $('#dStatus').onchange=e=>{if(curTask){curTask.status=e.target.value;if(curTask.status==='done'&&curTask.estimate&&!curTask.spent)curTask.spent=curTask.estimate;$('#dDot').style.background=stMap[curTask.status].c;logAct('🔀','«'+curTask.title+'» → '+stMap[curTask.status].n);const _v=awardForDone(S,curTask);save();render();if(_v)toast('+'+_v+' 🪙 за «'+curTask.title+'»','🪙');}};
 $('#dCmtBtn').onclick=addComment;
-$('#dCmtIn').onkeydown=e=>{if(e.key==='Enter')addComment();};
+$('#dCmtIn').onkeydown=e=>{if(e.key==='Enter'&&!$('#dMention').classList.contains('show'))addComment();
+  if(e.key==='Escape')$('#dMention').classList.remove('show');};
+$('#dCmtIn').addEventListener('input',e=>{
+  const v=e.target.value,box=$('#dMention'),m=v.match(/@([^@\s]*)$/);
+  if(!m){box.classList.remove('show');return;}
+  const q=m[1].toLowerCase();const list=S.members.filter(mm=>mm.name.toLowerCase().includes(q)).slice(0,6);
+  if(!list.length){box.classList.remove('show');return;}
+  box.innerHTML=list.map(mm=>`<button class="mention-i" data-n="${esc(mm.name)}">${avatarOf(mm,18)} ${esc(mm.name)}</button>`).join('');
+  box.classList.add('show');
+  $$('#dMention .mention-i').forEach(b=>b.onmousedown=ev=>{ev.preventDefault();e.target.value=v.replace(/@([^@\s]*)$/,'@'+b.dataset.n+' ');box.classList.remove('show');e.target.focus();});
+});
 $('#dSubBtn').onclick=addSub;
 $('#dSubIn').onkeydown=e=>{if(e.key==='Enter')addSub();};
 function addComment(){const v=$('#dCmtIn').value.trim();if(!v||!curTask)return;
@@ -3151,6 +3250,8 @@ menuEl.onclick=e=>{const b=e.target.closest('button');if(!b)return;menuEl.classL
   else if(act==='present'){openPresent();}
   else if(act==='rebalance'){openRebalance();}
   else if(act==='share'){openShare();}
+  else if(act==='analytics'){openAnalytics();}
+  else if(act==='accent'){openAccent();}
   else if(act==='sound'){const on=localStorage.getItem('cockpit_sound')!=='0';localStorage.setItem('cockpit_sound',on?'0':'1');toast(on?'Звук выключен 🔇':'Звук включён 🔔',on?'🔇':'🔔');if(!on)playDing();}
   else if(act==='export'){const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
     const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cockpit-'+todayISO()+'.json';a.click();toast('Экспортировано','💾');}
@@ -3738,6 +3839,8 @@ function buildPaletteIndex(){
     ['zap','Презентация · синк','полноэкранный обзор для созвона',()=>openPresent()],
     ['users','Разгрузить команду','выровнять загрузку',()=>openRebalance()],
     ['layers','Ссылка-снимок статуса','read-only для клиента/инвестора',()=>openShare()],
+    ['users','Аналитика команды','выработка и cycle-time',()=>openAnalytics()],
+    ['sparkles','Цвет проекта','брендинг под клиента',()=>openAccent()],
     ['sync','Светлая / тёмная тема','оформление',()=>$('#btnTheme').click()],
     ['idea','Добавить идею в бэклог','паркинг идей',()=>{setView('backlog');setTimeout(()=>{const i=$('#ideaIn');if(i)i.focus();},120);}],
     ['board','Сбросить порядок задач','вернуть авто-сортировку',()=>{S.tasks.forEach(t=>{delete t.rank;});save();render();toast('Авто-сортировка ↕','↕');}],
