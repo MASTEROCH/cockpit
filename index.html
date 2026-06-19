@@ -911,6 +911,24 @@ body.light .drawer,body.light .modal{background:var(--sheen),rgba(255,255,255,.9
 body.light .codebox{background:#0f1320}
 .codebox pre{margin:0;padding:14px 14px;overflow:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;line-height:1.6;color:#cfe3ff}
 .codebox .copycfg{position:absolute;top:8px;right:8px;padding:6px 11px;font-size:11.5px;z-index:2}
+/* шпаргалка быстрых команд */
+.cheat{margin:6px 0 16px;background:var(--bg2);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.cheat summary{cursor:pointer;list-style:none;padding:12px 15px;font-weight:700;font-size:13.5px;color:var(--txt);display:flex;align-items:center;gap:8px}
+.cheat summary::-webkit-details-marker{display:none}
+.cheat summary::after{content:'▾';margin-left:auto;color:var(--mut2);transition:.2s}
+.cheat[open] summary::after{transform:rotate(180deg)}
+.cheatbody{padding:2px 15px 15px}
+.cheatlead{font-size:12.5px;color:var(--mut);line-height:1.55;margin-bottom:11px}
+.cmdexs{display:flex;flex-direction:column;gap:7px;margin-bottom:13px}
+.cmdex{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:var(--sheen),var(--glass);border:1px solid var(--gbrd);border-radius:11px;padding:10px 12px;font-size:13px;font-weight:600;color:var(--txt);transition:.14s var(--ease)}
+.cmdex span{flex:1;min-width:0;line-height:1.4}
+.cmdex i{font-style:normal;font-size:10.5px;font-weight:700;color:var(--mut2);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:2px 7px;opacity:0;transition:.14s;flex:0 0 auto}
+.cmdex:hover{border-color:var(--acc2);transform:translateY(-1px)}
+.cmdex:hover i{opacity:1}
+@media (hover:none){.cmdex i{opacity:.7}}
+.dict{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--mut2);line-height:1.6;padding-top:11px;border-top:1px solid var(--line)}
+.dict b{color:var(--mut)}
+.cheatfoot{font-size:12px;color:var(--mut2);line-height:1.5;margin-top:11px;background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:10px;padding:9px 11px}
 </style>
 </head>
 <body>
@@ -1627,6 +1645,27 @@ function editIntake(id){
   decideIntake(id,'accepted',{target_project:pid,result_task_id:tid});
   if(pid!==S.id){switchProject(pid);setTimeout(()=>openTask(tid),120);}else{setView('board');openTask(tid);}
 }
+/* шпаргалка быстрых команд для Claude (фразы-триггеры) */
+const CHEAT_EXAMPLES=[
+  'Cockpit: созвон с Димой завтра 2ч срочно',
+  'в Кокпит: вёрстка лендинга с 22 по 28 июня 12ч @дима',
+  'Cockpit, проект AppHub: настроить аналитику на 3 дня важно',
+  'Закинь в Cockpit три задачи: проверить тексты, обновить лого, написать инвестору',
+  'Сделай из этого задачу в Cockpit',
+];
+function cheatsheetHTML(){return `<div class="cheatbody">
+  <div class="cheatlead">Начни с триггера <b>«Cockpit:»</b> или <b>«в&nbsp;Кокпит:»</b> — дальше обычным языком. Клик по фразе — скопировать.</div>
+  <div class="cmdexs">${CHEAT_EXAMPLES.map(x=>`<button class="cmdex" data-copy="${esc(x)}">🗣 <span>${esc(x)}</span><i>копировать</i></button>`).join('')}</div>
+  <div class="dict">
+    <span><b>кому:</b> @имя · «для Димы»</span>
+    <span><b>срок:</b> сегодня · завтра · послезавтра · «с 22 по 28 июня» · «на 3 дня»</span>
+    <span><b>оценка:</b> 2ч · 12ч</span>
+    <span><b>важность:</b> !срочно · важно</span>
+    <span><b>проект:</b> «в проект &lt;имя&gt;»</span>
+  </div>
+  <div class="cheatfoot">💡 Можно голосом, пачкой задач сразу, или «сделай из этого задачу» после обсуждения — Claude сам сформулирует. Всё прилетит сюда на подтверждение.</div>
+</div>`;}
+function bindCheat(scope){$$(scope+' .cmdex').forEach(b=>b.onclick=()=>{navigator.clipboard.writeText(b.dataset.copy);toast('Скопировано — вставь в Claude','📋');});}
 function renderIntake(){
   const el=$('#intake');if(!el)return;
   if(!cloudOn){el.innerHTML=`<div class="secttl">📥 На приёмке</div>`+emptyState('🔌','Нужен вход в облако','Приёмка работает для команды. Нажми 🔄 в шапке и войди — задачи из Claude будут прилетать сюда.');return;}
@@ -1635,7 +1674,8 @@ function renderIntake(){
     +emptyState('🛠','Приёмник не активирован','Нужно один раз прогнать SQL в Supabase (supabase/intake.sql). Деплоить ничего не надо. После этого задачи из Claude появятся здесь.');
     const cb=$('#intakeConnect');if(cb)cb.onclick=openConnect;return;}
   el.innerHTML=`<div class="secttl">📥 На приёмке <span style="color:var(--mut2);font-weight:500;text-transform:none;letter-spacing:0">заявки от Claude — подтверди, чтобы стали задачами</span>
-    <span style="margin-left:auto">${connectBtn}</span></div>`
+    <span style="margin-left:auto">${connectBtn}</span></div>
+    <details class="cheat" ${intakeRows.length?'':'open'}><summary>📋 Шпаргалка: быстрые команды для Claude</summary>${cheatsheetHTML()}</details>`
     +(intakeRows.length?`<div class="inolist">${intakeRows.map(r=>{
       const p=parseQuick(r.text);const m=p.assignee?member(p.assignee):null;
       const projOpts=reg.list.filter(x=>!x.archived).map(x=>{const sel=(projectMatch(r.target_project)||S.id)===x.id?'selected':'';return `<option value="${x.id}" ${sel}>${esc(x.emoji||'📄')} ${esc(x.name)}</option>`;}).join('');
@@ -1662,6 +1702,7 @@ function renderIntake(){
       </div>`;}).join('')}</div>`
     :emptyState('📭','Очередь пуста','Скажи своему Claude: «поставь в Cockpit задачу…» — она прилетит сюда на подтверждение. Кнопка «Подключить Claude» выше — если ещё не настроил.'));
   const cb=$('#intakeConnect');if(cb)cb.onclick=openConnect;
+  bindCheat('#intake');
   $$('#intake [data-acc]').forEach(b=>b.onclick=()=>acceptIntake(b.dataset.acc,false));
   $$('#intake [data-bl]').forEach(b=>b.onclick=()=>acceptIntake(b.dataset.bl,true));
   $$('#intake [data-edit]').forEach(b=>b.onclick=()=>editIntake(b.dataset.edit));
@@ -1705,7 +1746,8 @@ async function renderConnect(){
      <div class="cstep"><span class="cn">2</span><div><b>Вставь в Claude</b> (ключ уже подставлен ниже). Claude Code или Claude Desktop — выбери свой:</div></div>
      <div class="ctabs"><button class="ctab on" data-c="code">Claude Code (VS Code)</button><button class="ctab" data-c="desk">Claude Desktop</button></div>
      <div id="cfgArea"></div>
-     <div class="cstep"><span class="cn">3</span><div><b>Готово.</b> Скажи Claude: «поставь в Cockpit задачу: созвон с Димой завтра 2ч срочно». Заявка прилетит на приёмку.</div></div>
+     <div class="cstep"><span class="cn">3</span><div style="flex:1"><b>Командуй Claude</b> — голосом или текстом. Заявки прилетают сюда, во вкладку «Приёмка».</div></div>
+     ${cheatsheetHTML()}
    </div>
    <div class="ob-foot"><a href="#" id="connDocs" style="font-size:12px;color:var(--mut2)">Подробная инструкция</a><div class="spacer"></div><button class="btn primary" id="connDone">Закрыть</button></div>`;
   $('#connDone').onclick=closeConnect;
@@ -1747,6 +1789,7 @@ async function renderConnect(){
     $('#copyCfg').onclick=()=>{navigator.clipboard.writeText(code);toast('Конфиг скопирован','📋');};}
   showCfg('code');
   $$('#connectModal .ctab').forEach(t=>t.onclick=()=>{$$('#connectModal .ctab').forEach(x=>x.classList.remove('on'));t.classList.add('on');showCfg(t.dataset.c);});
+  bindCheat('#connectModal');
 }
 
 /* ============================ УТРЕННИЙ БРИФ ============================ */
