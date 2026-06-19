@@ -1193,7 +1193,6 @@ body.light .pr-ring-in{background:#f4f6fc}
 
   <div class="tabs" id="tabs">
     <button class="tab active" data-v="now" data-icon="zap"><span>Сейчас</span></button>
-    <button class="tab" data-v="dash" data-icon="home"><span>Обзор</span></button>
     <button class="tab" data-v="all" data-icon="layers"><span>Всё</span></button>
     <button class="tab" data-v="gantt" data-icon="gantt"><span>Гант</span></button>
     <button class="tab" data-v="board" data-icon="board"><span>Доска</span></button>
@@ -1339,17 +1338,12 @@ body.light .pr-ring-in{background:#f4f6fc}
 <div class="modal-scrim" id="authScrim"><div class="modal" id="authModal"></div></div>
 
 <div class="menu" id="menu">
+  <button data-act="palette">🔎 Все команды и поиск <span style="margin-left:auto;color:var(--mut2)">⌘K</span></button>
   <button data-act="connect">🔌 Подключить Claude</button>
-  <button data-act="autoschedule">🗓 Авто-расписание</button>
-  <button data-act="present">📺 Презентация (синк)</button>
-  <button data-act="rebalance">🪄 Разгрузить команду</button>
-  <button data-act="share">🔗 Ссылка-снимок статуса</button>
-  <button data-act="analytics">📊 Аналитика команды</button>
-  <button data-act="accent">🎨 Цвет проекта</button>
   <button data-act="sound">🔔 Звук вкл/выкл</button>
   <div class="sep"></div>
-  <button data-act="export">💾 Экспорт в файл</button>
-  <button data-act="import">📥 Импорт из файла</button>
+  <button data-act="export">💾 Экспорт</button>
+  <button data-act="import">📥 Импорт</button>
   <button data-act="section">📁 Добавить раздел</button>
   <button data-act="print">🖨 Печать / PDF</button>
   <div class="sep"></div>
@@ -1791,7 +1785,6 @@ function renderNow(){
     ${claudeNowCard()}
     <div class="now-sec">🧠 Что важно знать <span>проактивно — пока другие тулзы молчат</span>
       <button class="btn" id="claudeBtn" style="margin-left:auto;padding:8px 13px;font-size:12.5px">🤖 Claude</button>
-      <button class="btn" id="nowMic" style="padding:8px 13px;font-size:12.5px">🎙 Сказать</button>
       <button class="btn" id="aiPlanBtn" style="padding:8px 13px;font-size:12.5px">🧠 AI-План</button></div>
     <div class="insights">${ins.map((x,i)=>`<div class="insight ${x.act?'click':''}" data-i="${i}"><span class="ii">${x.ic}</span><div class="ib"><div class="it">${esc(x.title)}</div>${x.sub?`<div class="is">${esc(x.sub)}</div>`:''}</div>${x.act?'<span class="ia">→</span>':''}</div>`).join('')}</div>`;
   const ns=el.querySelector('.nh-title[data-open]');if(ns)ns.onclick=()=>openTask(ns.dataset.open);
@@ -3245,7 +3238,8 @@ const menuEl=$('#menu');
 $('#btnMenu').onclick=e=>{e.stopPropagation();menuEl.classList.toggle('show');};
 document.addEventListener('click',e=>{if(!menuEl.contains(e.target)&&e.target!==$('#btnMenu'))menuEl.classList.remove('show');});
 menuEl.onclick=e=>{const b=e.target.closest('button');if(!b)return;menuEl.classList.remove('show');const act=b.dataset.act;
-  if(act==='connect'){openConnect();}
+  if(act==='palette'){openPalette();}
+  else if(act==='connect'){openConnect();}
   else if(act==='autoschedule'){autoSchedule();}
   else if(act==='present'){openPresent();}
   else if(act==='rebalance'){openRebalance();}
@@ -3826,7 +3820,7 @@ let palItems=[], palFiltered=[], palSel=0;
 function buildPaletteIndex(){
   const items=[];
   const dot=c=>`<span class="pal-dot" style="background:${c}"></span>`;
-  const NAV=[['now','zap','Сейчас'],['dash','home','Обзор'],['board','board','Доска'],['gantt','gantt','Гант'],['week','cal','Неделя'],['backlog','idea','Бэклог'],['team','users','Команда'],['intake','inbox','Приёмка'],['all','layers','Все проекты']];
+  const NAV=[['now','zap','Сейчас'],['board','board','Доска'],['gantt','gantt','Гант'],['week','cal','Неделя'],['backlog','idea','Бэклог'],['team','users','Команда'],['intake','inbox','Приёмка'],['all','layers','Все проекты'],['dash','home','Обзор · детальная аналитика']];
   NAV.forEach(([v,ic,name])=>items.push({type:'Переход',icon:icon(ic,17),title:name,sub:'раздел',kw:name+' раздел перейти открыть',run:()=>setView(v)}));
   const ACT=[
     ['plus','Новая задача','создать пустую',()=>{$('#btnNew').click();}],
