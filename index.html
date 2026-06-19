@@ -929,6 +929,37 @@ body.light .codebox{background:#0f1320}
 .dict{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--mut2);line-height:1.6;padding-top:11px;border-top:1px solid var(--line)}
 .dict b{color:var(--mut)}
 .cheatfoot{font-size:12px;color:var(--mut2);line-height:1.5;margin-top:11px;background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:10px;padding:9px 11px}
+
+/* ====================================================================
+   ⌘K COMMAND PALETTE — нервная система: думаешь → происходит
+   ==================================================================== */
+.pal-scrim{position:fixed;inset:0;z-index:120;background:rgba(6,7,11,.5);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);display:none;align-items:flex-start;justify-content:center;padding:13vh 16px 16px}
+.pal-scrim.show{display:flex;animation:fade .14s}
+.pal{width:660px;max-width:100%;background:var(--sheen),rgba(20,24,36,.95);backdrop-filter:saturate(1.7) blur(36px);-webkit-backdrop-filter:saturate(1.7) blur(36px);border:1px solid var(--gbrd);border-radius:20px;box-shadow:0 36px 100px rgba(0,0,0,.62),var(--ghi);overflow:hidden;animation:palin .18s var(--ease)}
+@keyframes palin{from{opacity:0;transform:translateY(-10px) scale(.985)}to{opacity:1;transform:none}}
+.pal-in{display:flex;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.pal-in input{flex:1;background:none;border:none;outline:none;font-size:17px;color:var(--txt);font-weight:500}
+.pal-in input::placeholder{color:var(--mut2);font-weight:400}
+.pal-in .pal-ic{color:var(--acc2);display:grid;place-items:center}
+.pal-in kbd{font-size:10px;color:var(--mut2);border:1px solid var(--line2);border-radius:5px;padding:2px 6px;background:var(--bg)}
+.pal-list{max-height:48vh;overflow:auto;padding:8px;scrollbar-width:thin}
+.pal-row{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;cursor:pointer;transition:background .08s}
+.pal-row.sel{background:linear-gradient(180deg,rgba(167,139,250,.22),rgba(167,139,250,.08));box-shadow:inset 0 0 0 1px rgba(167,139,250,.34)}
+.pal-rico{width:24px;height:24px;display:grid;place-items:center;color:var(--mut);flex:0 0 auto}
+.pal-rico .av{width:22px;height:22px;font-size:10px}
+.pal-dot{width:9px;height:9px;border-radius:50%}
+.pal-emoji{font-size:18px}
+.pal-rt{flex:1;font-size:14.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pal-row.sel .pal-rt{color:#fff}
+.pal-rs{font-size:12px;color:var(--mut2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:42%;flex:0 1 auto}
+.pal-rtag{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--mut2);background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:2px 7px;flex:0 0 auto}
+.pal-row.sel .pal-rtag{color:var(--acc2);border-color:rgba(167,139,250,.4)}
+.pal-empty{padding:30px;text-align:center;color:var(--mut2);font-size:13.5px}
+.pal-foot{display:flex;align-items:center;gap:17px;padding:10px 16px;border-top:1px solid var(--line);font-size:11px;color:var(--mut2)}
+.pal-foot kbd{font-size:10px;border:1px solid var(--line2);border-radius:4px;padding:1px 5px;background:var(--bg);margin-right:3px}
+.pal-foot-r{margin-left:auto;font-weight:800;letter-spacing:.3px;opacity:.55}
+body.light .pal{background:var(--sheen),rgba(255,255,255,.97)}
+@media (max-width:680px){.pal-scrim{padding:0}.pal{width:100%;height:100%;max-width:none;border-radius:0;display:flex;flex-direction:column}.pal-list{max-height:none;flex:1}.pal-in input{font-size:16px}}
 </style>
 </head>
 <body>
@@ -1101,6 +1132,14 @@ body.light .codebox{background:#0f1320}
 </div>
 
 <div class="modal-scrim" id="connectScrim"><div class="modal" id="connectModal"></div></div>
+
+<div class="pal-scrim" id="palScrim">
+  <div class="pal" id="pal">
+    <div class="pal-in"><span class="pal-ic" id="palIcon"></span><input id="palQ" placeholder="Поиск задач, людей, проектов · команды · переход…" autocomplete="off" spellcheck="false"><kbd>esc</kbd></div>
+    <div class="pal-list" id="palList"></div>
+    <div class="pal-foot"><span><kbd>↑</kbd><kbd>↓</kbd> выбор</span><span><kbd>↵</kbd> открыть</span><span><kbd>⌘K</kbd> палитра</span><span class="pal-foot-r">Cockpit</span></div>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -2459,15 +2498,17 @@ const HINT=`<b>🎙 Командная строка</b> — говори или 
 <b style="color:#9aa0b3">Статус</b> <span class="ex">статус Вёрстка в работе</span> · <span class="ex">приоритет Тексты высокий</span><br>
 <b style="color:#9aa0b3">Люди/сроки</b> <span class="ex">назначь Тестирование на Дима</span> · <span class="ex">срок Релиз до 1 июля</span> · <span class="ex">эстимейт Геймдизайн 24ч</span><br>
 <b style="color:#9aa0b3">Ещё</b> <span class="ex">переименуй Тексты в Копирайтинг</span> · <span class="ex">коммент Тексты: нужен тон бренда</span> · <span class="ex">идея реферальная петля</span> · <span class="ex">удали задачу Саунддизайн</span><br>
-<span style="color:#838aa6">⌨ Хоткеи: <b>/</b> команда · <b>N</b> новая · <b>O</b>бзор · <b>B</b> доска · <b>G</b> гант · <b>W</b> неделя · <b>I</b> бэклог · <b>T</b> команда · <b>A</b> всё · <b>⌘Z</b> отмена</span>`;
+<span style="color:#838aa6">⌨ <b>⌘K</b> палитра (поиск + всё) · <b>/</b> команда · <b>N</b> новая · <b>O</b>бзор · <b>B</b> доска · <b>G</b> гант · <b>W</b> неделя · <b>I</b> бэклог · <b>T</b> команда · <b>A</b> всё · <b>⌘Z</b> отмена</span>`;
 cmdEl.onfocus=()=>{hintEl.innerHTML=HINT;hintEl.classList.add('show');bindEx();};
 cmdEl.onblur=()=>setTimeout(()=>hintEl.classList.remove('show'),180);
 function bindEx(){$$('#cmdhint .ex').forEach(e=>e.onmousedown=ev=>{ev.preventDefault();cmdEl.value=e.textContent;cmdEl.focus();});}
 cmdEl.onkeydown=e=>{if(e.key==='Enter'){runCmd(cmdEl.value);cmdEl.value='';}if(e.key==='Escape')cmdEl.blur();};
 document.addEventListener('keydown',e=>{
   const a=document.activeElement;const typing=a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.isContentEditable);
+  if((e.metaKey||e.ctrlKey)&&(e.key==='k'||e.key==='K')){e.preventDefault();$('#palScrim').classList.contains('show')?closePalette():openPalette();return;}
   if((e.metaKey||e.ctrlKey)&&!e.shiftKey&&e.code==='KeyZ'&&!typing){e.preventDefault();undo();return;}
   if(e.key==='Escape'){
+    if($('#palScrim').classList.contains('show'))return closePalette();
     if($('#obScrim').classList.contains('show'))closeOb();
     else if($('#npScrim').classList.contains('show'))$('#npScrim').classList.remove('show');
     else if($('#authScrim').classList.contains('show'))$('#authScrim').classList.remove('show');
@@ -2953,6 +2994,69 @@ function renderAuth(sent){
     catch(e){toast('Ошибка входа: '+(e.message||e),'⚠');}};
 }
 $('#authScrim').onclick=e=>{if(e.target===$('#authScrim'))closeAuth();};
+
+/* ============================ ⌘K COMMAND PALETTE ============================ */
+let palItems=[], palFiltered=[], palSel=0;
+function buildPaletteIndex(){
+  const items=[];
+  const dot=c=>`<span class="pal-dot" style="background:${c}"></span>`;
+  const NAV=[['dash','home','Обзор'],['board','board','Доска'],['gantt','gantt','Гант'],['week','cal','Неделя'],['backlog','idea','Бэклог'],['team','users','Команда'],['intake','inbox','Приёмка'],['all','layers','Все проекты']];
+  NAV.forEach(([v,ic,name])=>items.push({type:'Переход',icon:icon(ic,17),title:name,sub:'раздел',kw:name+' раздел перейти открыть',run:()=>setView(v)}));
+  const ACT=[
+    ['plus','Новая задача','создать пустую',()=>{$('#btnNew').click();}],
+    ['sparkles','AI-разбор доски','Claude посмотрит риски',()=>aiReview()],
+    ['cal','Бриф на сегодня','что важно прямо сейчас',()=>openBrief()],
+    ['plug','Подключить Claude','ключ для MCP',()=>openConnect()],
+    ['layers','Новый проект','создать проект',()=>openNewProject()],
+    ['sync','Светлая / тёмная тема','оформление',()=>$('#btnTheme').click()],
+    ['idea','Добавить идею в бэклог','паркинг идей',()=>{setView('backlog');setTimeout(()=>{const i=$('#ideaIn');if(i)i.focus();},120);}],
+  ];
+  ACT.forEach(([ic,name,sub,run])=>items.push({type:'Команда',icon:icon(ic,17),title:name,sub,kw:name+' '+sub,run}));
+  reg.list.filter(p=>!p.archived).forEach(p=>items.push({type:'Проект',icon:`<span class="pal-emoji">${esc(p.emoji||'📄')}</span>`,title:p.name,sub:p.id===S.id?'текущий':'переключиться',kw:p.name+' проект',run:()=>{if(p.id!==S.id)switchProject(p.id);else setView('board');}}));
+  S.members.forEach(m=>items.push({type:'Человек',icon:avatarOf(m,22),title:m.name,sub:m.role||'участник',kw:m.name+' '+(m.role||''),run:()=>openMember(m.id)}));
+  reg.list.filter(p=>!p.archived).forEach(p=>{const data=p.id===S.id?S:loadProj(p.id);if(!data)return;
+    (data.tasks||[]).forEach(t=>items.push({type:'Задача',icon:dot((stMap[t.status]||{}).c||'#888'),title:t.title,sub:`${p.emoji||'📄'} ${p.name}`,kw:t.title+' '+p.name,
+      run:()=>{if(p.id!==S.id){switchProject(p.id);setTimeout(()=>openTask(t.id),140);}else openTask(t.id);}}));});
+  return items;
+}
+function typeW(t){return {'Команда':24,'Переход':22,'Проект':16,'Человек':12,'Задача':0,'Создать':-5}[t]||0;}
+function palScore(q,it){
+  const ql=q.toLowerCase(),tl=it.title.toLowerCase(),hay=(it.title+' '+it.kw).toLowerCase();
+  if(tl.startsWith(ql))return 1200-tl.length;
+  let idx=hay.indexOf(ql);
+  if(idx>=0)return 900-idx;
+  let pi=0;for(let i=0;i<hay.length&&pi<ql.length;i++)if(hay[i]===ql[pi])pi++;
+  if(pi===ql.length)return 300-hay.length;
+  return -1;
+}
+function renderPalette(){
+  const q=($('#palQ').value||'').trim();
+  let list;
+  if(!q){list=palItems.filter(it=>it.type==='Переход'||it.type==='Команда');}
+  else{
+    list=palItems.map(it=>({it,s:palScore(q,it)+typeW(it.type)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s).slice(0,18).map(x=>x.it);
+    list.push({type:'Создать',icon:icon('plus',17),title:'Создать задачу: «'+q+'»',sub:'умный разбор @кто · срок · Nч · !срочно',kw:'',
+      run:()=>{const p=parseQuick(q);const t=applyQuick(newTask(p.title||q),p);t.status='todo';save();render();setView('board');openTask(t.id);toast('Задача создана','🚀');}});
+  }
+  palFiltered=list;if(palSel>=list.length)palSel=Math.max(0,list.length-1);
+  $('#palList').innerHTML=list.length?list.map((it,i)=>`<div class="pal-row ${i===palSel?'sel':''}" data-i="${i}">
+    <span class="pal-rico">${it.icon}</span><span class="pal-rt">${esc(it.title)}</span>
+    ${it.sub?`<span class="pal-rs">${esc(it.sub)}</span>`:''}<span class="pal-rtag">${it.type}</span></div>`).join(''):`<div class="pal-empty">Ничего не нашёл по «${esc(q)}»</div>`;
+  $$('#palList .pal-row').forEach(r=>{r.onmousemove=()=>{if(palSel!==+r.dataset.i){palSel=+r.dataset.i;markPalSel();}};r.onclick=()=>{palSel=+r.dataset.i;runPalSel();};});
+}
+function markPalSel(){$$('#palList .pal-row').forEach((r,i)=>r.classList.toggle('sel',i===palSel));const s=$('#palList .pal-row.sel');if(s)s.scrollIntoView({block:'nearest'});}
+function runPalSel(){const it=palFiltered[palSel];if(!it)return;closePalette();setTimeout(()=>{try{it.run();}catch(e){console.warn(e);}},0);}
+function openPalette(){palItems=buildPaletteIndex();palSel=0;$('#palScrim').classList.add('show');const i=$('#palQ');i.value='';renderPalette();setTimeout(()=>i.focus(),30);}
+function closePalette(){$('#palScrim').classList.remove('show');}
+$('#palQ').oninput=()=>{palSel=0;renderPalette();};
+$('#palQ').onkeydown=e=>{
+  if(e.key==='ArrowDown'){e.preventDefault();palSel=Math.min(palFiltered.length-1,palSel+1);markPalSel();}
+  else if(e.key==='ArrowUp'){e.preventDefault();palSel=Math.max(0,palSel-1);markPalSel();}
+  else if(e.key==='Enter'){e.preventDefault();runPalSel();}
+  else if(e.key==='Escape'){e.preventDefault();closePalette();}
+};
+$('#palScrim').onclick=e=>{if(e.target===$('#palScrim'))closePalette();};
+{const pi=$('#palIcon');if(pi)pi.innerHTML=icon('sparkles',17);}
 
 /* ============================ INIT ============================ */
 $$('[data-icon]').forEach(el=>el.insertAdjacentHTML('afterbegin',icon(el.dataset.icon)));
