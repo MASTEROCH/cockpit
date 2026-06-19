@@ -667,6 +667,17 @@ body.light .card .cdel{background:rgba(20,24,40,.1)}
 .airisks ul{margin:6px 0 0;padding-left:18px;line-height:1.6}
 .airisks b{color:var(--txt)}
 .aibtn{margin-left:auto}
+/* login gate */
+.gate{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;padding:22px;
+  background:radial-gradient(1100px 720px at 82% -10%, rgba(167,139,250,.18), transparent 60%),radial-gradient(900px 650px at -8% 6%, rgba(244,114,182,.13), transparent 55%),var(--bg)}
+.gate.hide{display:none}
+.gatecard{width:380px;max-width:100%;text-align:center;background:var(--sheen),var(--glass);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:1px solid var(--gbrd);border-radius:24px;box-shadow:var(--depth),var(--ghi);padding:34px 30px;animation:pop .25s}
+.gatelogo{width:56px;height:56px;border-radius:17px;margin:0 auto 16px;display:grid;place-items:center;font-size:28px;background:conic-gradient(from 200deg,var(--acc),var(--acc2),var(--acc3),var(--acc));box-shadow:0 0 26px rgba(167,139,250,.5),inset 0 1px 0 rgba(255,255,255,.4)}
+.gatecard h1{font-size:26px;font-weight:800;margin:0 0 8px;letter-spacing:-.4px}
+.gatecard .gp{color:var(--mut);font-size:14px;line-height:1.55;margin-bottom:18px}
+.gatecard .gp b{color:var(--txt)}
+.gateinp{font-size:16px;padding:13px 14px;text-align:center}
+.gatefoot{margin-top:16px;font-size:11.5px;color:var(--mut2);line-height:1.5}
 /* svg icons in buttons */
 .iconbtn svg,.mic svg,.cdel svg{display:block}
 .tab svg{flex:0 0 auto}
@@ -763,6 +774,7 @@ body.light .drawer,body.light .modal{background:var(--sheen),rgba(255,255,255,.9
 </style>
 </head>
 <body>
+<div class="gate" id="gate"><div class="gatecard"><div class="gatelogo">🚀</div><h1>Cockpit</h1><div class="gp">Загрузка…</div></div></div>
 
 <header>
   <div class="brand"><span class="logo">🚀</span> Cockpit <small>founder OS</small></div>
@@ -2107,15 +2119,46 @@ function loadSb(){return new Promise((res,rej)=>{if(window.supabase)return res()
 function updateCloudBadge(){const b=$('#btnCloud');if(!b)return;b.classList.toggle('on',cloudOn);b.classList.toggle('off',!cloudOn);
   b.innerHTML=cloudOn?icon('check'):icon('sync');
   b.title=cloudOn?'Синхронизировано с командой · нажми, чтобы выйти':'Войти и синхронизировать с командой';}
+/* ---- login gate (обязательный вход) ---- */
+function hideGate(){const g=$('#gate');if(g)g.classList.add('hide');}
+function showGate(){renderGate('login');}
+function renderGate(state,email){
+  const g=$('#gate');if(!g)return;g.classList.remove('hide');
+  if(state==='loading'){g.innerHTML=`<div class="gatecard"><div class="gatelogo">🚀</div><h1>Cockpit</h1><div class="gp">Проверяю вход…</div></div>`;return;}
+  if(state==='sent'){g.innerHTML=`<div class="gatecard"><div class="gatelogo">✉️</div><h1>Письмо отправлено</h1><div class="gp">Открой ссылку из письма на <b>${esc(email||'')}</b> на этом устройстве — и вернёшься сюда уже внутри. Загляни в «Спам», если не видно.</div><button class="btn" id="gateBack" style="margin-top:14px;width:100%;justify-content:center">← Другой email</button></div>`;
+    $('#gateBack').onclick=()=>renderGate('login',email);return;}
+  g.innerHTML=`<div class="gatecard"><div class="gatelogo">🚀</div><h1>Cockpit</h1>
+    <div class="gp">Внутренний рабочий инструмент команды. Доска откроется только после входа.</div>
+    <input class="inp gateinp" id="gateEmail" type="email" placeholder="ваш email" autocomplete="email" value="${esc(email||'')}">
+    <button class="btn primary" id="gateSend" style="width:100%;justify-content:center;margin-top:10px">Прислать ссылку для входа</button>
+    <div class="gatefoot">Доступ только для участников команды.<br>Вход и регистрация — по одной ссылке, без пароля.</div></div>`;
+  const send=()=>{const em=($('#gateEmail').value||'').trim();if(!em){toast('Введи email','⚠');return;}gateSend(em);};
+  $('#gateSend').onclick=send;$('#gateEmail').onkeydown=e=>{if(e.key==='Enter')send();};
+  setTimeout(()=>{const i=$('#gateEmail');if(i)i.focus();},60);
+}
+async function gateSend(email){
+  if(!sb){toast('Секунду, подключаюсь к серверу…','⏳');return;}
+  const b=$('#gateSend');if(b){b.textContent='Отправляю…';b.disabled=true;}
+  try{const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.href}});if(error)throw error;renderGate('sent',email);}
+  catch(e){toast('Ошибка входа: '+(e.message||e),'⚠');renderGate('login',email);}
+}
 async function cloudInit(){
   updateCloudBadge();
-  if(!CFG||!CFG.url||!CFG.anon)return;
-  try{await loadSb();}catch(e){toast('Не загрузился supabase-js (нет сети?)','⚠');return;}
-  try{sb=window.supabase.createClient(CFG.url,CFG.anon);}catch(e){toast('Неверные ключи Supabase','⚠');return;}
-  sb.auth.onAuthStateChange((_e,sess)=>{if(sess&&sess.user&&!cloudOn){me=sess.user.id;myEmail=(sess.user.email||'').toLowerCase();onLoggedIn();}});
-  try{const {data}=await sb.auth.getSession();if(data&&data.session){me=data.session.user.id;myEmail=(data.session.user.email||'').toLowerCase();onLoggedIn();}else updateCloudBadge();}catch(e){updateCloudBadge();}
+  if(!CFG||!CFG.url||!CFG.anon){hideGate();return;}
+  renderGate('loading');
+  try{await loadSb();}catch(e){renderGate('login');toast('Нет сети — не удалось загрузить вход','⚠');return;}
+  try{sb=window.supabase.createClient(CFG.url,CFG.anon,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});}catch(e){renderGate('login');return;}
+  sb.auth.onAuthStateChange((ev,sess)=>{
+    if(sess&&sess.user){myEmail=(sess.user.email||'').toLowerCase();if(!cloudOn){me=sess.user.id;onLoggedIn();}hideGate();}
+    else if(ev==='SIGNED_OUT'){cloudOn=false;updateCloudBadge();showGate();}
+  });
+  try{const {data}=await sb.auth.getSession();
+    if(data&&data.session){me=data.session.user.id;myEmail=(data.session.user.email||'').toLowerCase();hideGate();onLoggedIn();}
+    else showGate();
+  }catch(e){showGate();}
 }
-async function onLoggedIn(){cloudOn=true;closeAuth();updateCloudBadge();await cloudSync();subscribeRealtime();toast('Облако подключено','☁️');}
+async function onLoggedIn(){cloudOn=true;closeAuth();hideGate();updateCloudBadge();await cloudSync();subscribeRealtime();
+  if(!localStorage.getItem('cockpit_onboarded'))openOnboarding(0);}
 async function cloudSync(){
   let rows=[];try{const {data,error}=await sb.from('projects').select('*');if(error)throw error;rows=data||[];}
   catch(e){toast('Ошибка чтения облака: '+(e.message||e),'⚠');return;}
@@ -2170,11 +2213,11 @@ function cloudConnect(){
   if(!anon)return;CFG={url:url.trim(),anon:anon.trim()};localStorage.setItem('cockpit_cfg',JSON.stringify(CFG));
   toast('Ключи сохранены, подключаюсь…','☁️');cloudInit();
 }
-async function cloudLogout(){try{await sb.auth.signOut();}catch(e){}cloudOn=false;updateCloudBadge();toast('Вышел из облака (данные остались локально)','☁️');}
+async function cloudLogout(){try{await sb.auth.signOut();}catch(e){}cloudOn=false;updateCloudBadge();showGate();}
 $('#btnCloud').onclick=()=>{
   if(!CFG||!CFG.url){cloudConnect();return;}
-  if(!cloudOn){openAuth();return;}
-  if(confirm('Облако подключено и синхронизируется. Выйти из аккаунта?'))cloudLogout();
+  if(!cloudOn){showGate();return;}
+  if(confirm('Выйти из аккаунта? Снова попросит войти по email.'))cloudLogout();
 };
 function openAuth(){renderAuth();$('#authScrim').classList.add('show');}
 function closeAuth(){$('#authScrim').classList.remove('show');}
@@ -2205,7 +2248,6 @@ applyTheme();
 $('#sbLegend').innerHTML=legendHTML();
 resetUndo();
 render();
-if(!localStorage.getItem('cockpit_onboarded'))openOnboarding(0);
 cloudInit();
 </script>
 </body>
