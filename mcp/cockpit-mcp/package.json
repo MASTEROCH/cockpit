@@ -1,0 +1,15 @@
+{
+  "name": "cockpit-mcp",
+  "version": "1.0.0",
+  "description": "MCP-сервер Cockpit — отправляет задачи из Claude в очередь «На приёмке» Cockpit (cock-pit.com).",
+  "type": "module",
+  "bin": { "cockpit-mcp": "index.js" },
+  "main": "index.js",
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4"
+  },
+  "files": ["index.js", "README.md"],
+  "keywords": ["mcp", "claude", "cockpit", "tasks", "founders"],
+  "license": "MIT"
+}

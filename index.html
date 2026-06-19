@@ -201,7 +201,7 @@
   .card .ct{font-weight:600;font-size:13px;margin-bottom:8px}
   .card .cm{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--mut2);flex-wrap:wrap}
   .card .tag{padding:1px 7px;border-radius:6px;font-weight:700;font-size:10px}
-  .card .cm .av{width:20px;height:20px}
+  .card .cm .av{width:25px;height:25px;font-size:11px}
   .addcard{margin:0 10px 10px;padding:8px;border:1px dashed var(--line2);border-radius:9px;color:var(--mut2);background:none;font-size:12px;font-weight:600;transition:.15s}
   .addcard:hover{color:var(--txt);border-color:var(--acc2)}
 
@@ -476,7 +476,7 @@ header{background:rgba(18,21,31,.62);backdrop-filter:var(--blur);-webkit-backdro
 .dtitle{font-size:21px}
 .dhead h1{font-size:24px}
 .quickadd input{font-size:14.5px;padding:12px 15px;border-radius:13px}
-.av{width:24px;height:24px;font-size:11px}
+.av{width:30px;height:30px;font-size:13px}
 .trow{padding:10px 0}
 .trow .tn{font-size:14px}
 
@@ -864,6 +864,53 @@ body.light .bar .lbl{text-shadow:0 1px 2px rgba(0,0,0,.32)}
 body.light .menu{background:rgba(255,255,255,.985);box-shadow:0 22px 60px rgba(70,82,120,.28),var(--ghi)}
 body.light .toast{background:rgba(255,255,255,.97)}
 body.light .drawer,body.light .modal{background:var(--sheen),rgba(255,255,255,.96)}
+
+/* ====================================================================
+   INTAKE — очередь «На приёмке» + онбординг «Подключить Claude»
+   ==================================================================== */
+.inolist{display:flex;flex-direction:column;gap:13px}
+.ino{background:var(--sheen),var(--glass);border:1px solid var(--gbrd);border-radius:18px;padding:15px 16px;box-shadow:var(--ghi),var(--depth);position:relative;overflow:hidden}
+.ino::after{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(var(--acc2),var(--acc3))}
+.inohead{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--mut2);margin-bottom:9px}
+.inoby{color:var(--mut);font-weight:600}.inoby b{color:var(--txt)}
+.inosrc{font-size:10px;font-weight:700;color:var(--acc2);background:rgba(167,139,250,.13);border:1px solid rgba(167,139,250,.3);border-radius:6px;padding:1px 7px}
+.inotime{margin-left:auto;font-variant-numeric:tabular-nums}
+.inotitle{font-size:16px;font-weight:700;letter-spacing:-.2px;margin-bottom:10px}
+.inochips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px}
+.ichip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--txt);background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:4px 9px}
+.ichip.mut{color:var(--mut2)}
+.inonote{font-size:12.5px;color:var(--mut);background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:10px;line-height:1.5}
+.inofoot{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.inoproj{width:auto;min-width:140px;flex:0 1 200px;font-weight:600}
+.inoacts{display:flex;gap:7px;margin-left:auto;flex-wrap:wrap}
+.inoacts .btn{padding:9px 13px;font-size:13px}
+.inoacts .btn.danger{padding:9px 12px}
+/* bell — секция приёмки */
+.inbsec{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--acc2);padding:4px 2px 9px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.inbsec .c{color:var(--mut2);background:var(--bg2);padding:1px 8px;border-radius:20px;font-weight:700}
+.inboxrow.intake{cursor:pointer}.inboxrow.intake:hover .it{color:var(--acc2)}
+/* connect modal */
+.cstep{display:flex;align-items:flex-start;gap:11px;margin:16px 0 8px;font-size:13.5px;color:var(--mut);line-height:1.5}
+.cstep b{color:var(--txt)}
+.cstep .cn{flex:0 0 24px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff;background:linear-gradient(160deg,var(--acc2),#8b6ff0);box-shadow:0 3px 9px rgba(167,139,250,.4)}
+.keybox{display:flex;align-items:center;gap:9px;margin:4px 0;background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:10px 12px}
+.keybox.new{border-color:var(--ok);box-shadow:0 0 0 3px rgba(52,211,153,.13)}
+.keybox code{flex:1;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;color:var(--ok);word-break:break-all}
+.keybox .btn{padding:8px 13px;font-size:12.5px}
+.keyhint{font-size:11.5px;color:var(--mut2);margin:6px 0 2px;line-height:1.5}
+.keylist{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.keyrow{display:flex;align-items:center;gap:9px;font-size:12.5px;background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:7px 11px}
+.keyrow.rev{opacity:.5}
+.keyrow .kl{font-weight:700;color:var(--txt)}.keyrow .kt{color:var(--mut2);font-size:11.5px}
+.keyrow .kr{margin-left:auto;color:var(--bad);font-size:11px;font-weight:700}
+.keyrow .minibtn{margin-left:auto}
+.ctabs{display:flex;gap:6px;margin:6px 0 10px}
+.ctab{flex:1;padding:9px;border:1px solid var(--line);background:var(--bg2);border-radius:10px;font-size:12.5px;font-weight:700;color:var(--mut);transition:.14s}
+.ctab.on{border-color:var(--acc2);color:#fff;background:linear-gradient(180deg,rgba(167,139,250,.22),rgba(167,139,250,.07))}
+.codebox{position:relative;background:#0b0d14;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+body.light .codebox{background:#0f1320}
+.codebox pre{margin:0;padding:14px 14px;overflow:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;line-height:1.6;color:#cfe3ff}
+.codebox .copycfg{position:absolute;top:8px;right:8px;padding:6px 11px;font-size:11.5px;z-index:2}
 </style>
 </head>
 <body>
@@ -891,6 +938,7 @@ body.light .drawer,body.light .modal{background:var(--sheen),rgba(255,255,255,.9
     <button class="tab" data-v="week" data-icon="cal"><span>Неделя</span></button>
     <button class="tab" data-v="backlog" data-icon="idea"><span>Бэклог</span> <span class="cnt" id="cntIdeas">0</span></button>
     <button class="tab" data-v="team" data-icon="users"><span>Команда</span></button>
+    <button class="tab" data-v="intake" data-icon="inbox"><span>Приёмка</span> <span class="cnt" id="cntIntake" style="display:none">0</span></button>
   </div>
   <button class="iconbtn" id="btnNew" data-icon="plus" title="Новая задача"></button>
   <button class="iconbtn inbox" id="btnInbox" data-icon="bell" title="Инбокс — что нового для тебя"><span class="ibadge" id="inboxDot" style="display:none">0</span></button>
@@ -942,6 +990,7 @@ body.light .drawer,body.light .modal{background:var(--sheen),rgba(255,255,255,.9
       <div id="leaderboard"></div>
       <div class="grid" id="team"></div>
     </div></div>
+    <div class="view" id="v-intake"><div class="pad" id="intake"></div></div>
   </div>
 </main>
 
@@ -1023,6 +1072,8 @@ body.light .drawer,body.light .modal{background:var(--sheen),rgba(255,255,255,.9
 <div class="modal-scrim" id="authScrim"><div class="modal" id="authModal"></div></div>
 
 <div class="menu" id="menu">
+  <button data-act="connect">🔌 Подключить Claude</button>
+  <div class="sep"></div>
   <button data-act="export">💾 Экспорт в файл</button>
   <button data-act="import">📥 Импорт из файла</button>
   <button data-act="section">📁 Добавить раздел</button>
@@ -1030,6 +1081,8 @@ body.light .drawer,body.light .modal{background:var(--sheen),rgba(255,255,255,.9
   <div class="sep"></div>
   <button data-act="reset" class="dng">♻ Сбросить к демо</button>
 </div>
+
+<div class="modal-scrim" id="connectScrim"><div class="modal" id="connectModal"></div></div>
 
 <div class="toast" id="toast"></div>
 
@@ -1176,6 +1229,8 @@ const ICONS={
  users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>',
  cal:'<rect x="3" y="4.5" width="18" height="17" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>',
  sparkles:'<path d="M12 3l1.8 4.9L18.7 9 13.8 11 12 16l-1.8-5L5.3 9l4.9-1.1z"/><path d="M19 14l.6 1.7 1.7.6-1.7.6L19 19l-.6-1.5-1.7-.6 1.7-.6z"/>',
+ inbox:'<path d="M3 13h4l1.5 3h7L17 13h4M5 5h14a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/>',
+ plug:'<path d="M9 2v6M15 2v6M7 8h10v3a5 5 0 0 1-10 0zM12 16v6"/>',
 };
 function icon(n,s){s=s||18;return `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]||''}</svg>`;}
 const LOGO_PATHS='<path transform="translate(-239 -299)" d="M590.549 318.732C592.945 318.453 596.745 318.696 599.286 318.696C634.434 318.703 667.897 316.824 700.032 333.775C783.727 377.923 786.207 488.78 731.835 556.811C700.794 595.65 657.566 620.752 607.3 623.356C576.646 624.841 542.765 617.244 517.207 638.881C505.403 648.755 500.588 660.76 494.308 674.336C488.985 685.844 483.927 697.868 478.034 709.061C447.129 709.003 414.041 709.686 383.322 708.993C390.272 692.78 399.544 674.533 407.172 658.357C414.402 641.263 425.054 620.531 433.24 603.375L468.064 529.888C478.844 507.375 489.815 485.216 500.033 462.397C508.607 461.72 522.007 461.939 530.747 461.916C551.732 461.88 572.716 462.073 593.696 462.496C589.717 468.96 584.172 482.027 580.797 489.352C574.315 503.42 567.316 518.312 561.52 532.628C562.821 532.707 564.123 532.765 565.426 532.803C574.929 533.092 584.848 532.969 594.379 533.027C601.077 532.791 608.447 533.526 615.073 532.731C648.617 528.704 677.207 498.097 677.706 464.145C678.091 437.865 664.532 415.164 637.935 409.832C622.705 406.779 607.684 407.916 592.303 407.965C569.853 408.116 547.402 408.135 524.952 408.02C539.76 379.17 553.156 348.033 567.408 318.783C575.059 318.869 582.922 319.055 590.549 318.732Z"/><path transform="translate(-239 -299)" d="M436.648 318.711C438.535 318.361 446.366 318.402 448.541 318.408L474.9 318.684C498.905 318.824 523.676 318.103 547.68 318.994C534.009 349.063 519.82 378.173 505.694 407.974L452.824 407.966C437.639 407.999 418.311 406.719 404.007 410.92C374.633 419.548 349.545 452.473 349.489 483.221C349.376 496.888 354.815 510.016 364.561 519.599C378.937 533.945 398.3 532.85 417.331 532.946L446.601 533.036C439.517 549.455 431.978 565.674 423.991 581.673C417.562 595.433 410.688 609.303 404.066 623C374.725 623.045 349.066 625.26 321.887 611.554C233.151 566.808 241.2 449.578 300.225 384.017C338.665 341.322 379.901 322.449 436.648 318.711Z"/>';
@@ -1275,6 +1330,7 @@ function render(){
   else if(view==='week')renderWeek();
   else if(view==='backlog')renderBacklog();
   else if(view==='team')renderTeam();
+  else if(view==='intake')renderIntake();
   save();
 }
 function setView(v){view=v;if(v==='gantt')ganttNeedsScroll=true;$$('.tab').forEach(t=>t.classList.toggle('active',t.dataset.v===v));
@@ -1508,20 +1564,188 @@ function inboxItems(){
   out.sort((a,b)=>b.ts-a.ts);return out;
 }
 function inboxUnread(){try{return inboxItems().filter(i=>i.unread).length;}catch(e){return 0;}}
-function updateInboxBadge(){const b=$('#inboxDot');if(!b)return;const n=inboxUnread();b.style.display=n>0?'':'none';b.textContent=n>9?'9+':n;}
+function updateInboxBadge(){const b=$('#inboxDot');if(!b)return;const n=inboxUnread()+intakePending();b.style.display=n>0?'':'none';b.textContent=n>9?'9+':n;}
 function renderInbox(){
-  const items=inboxItems();
-  $('#inboxBody').innerHTML=items.length?items.map(i=>`
+  const items=inboxItems();const inq=intakeRows;
+  const intakeBlock=inq.length?`<div class="inbsec">📥 На приёмке от Claude <span class="c">${inq.length}</span> <button class="minibtn" id="inboxToIntake" style="margin-left:auto">Открыть очередь →</button></div>`
+    +inq.slice(0,6).map(r=>{const p=parseQuick(r.text);return `<div class="inboxrow intake" data-iid="${r.id}">
+      <span class="ii">📥</span><div class="ib"><div class="it"><b>${esc(r.by_name||r.by_email)}</b> предлагает: «${esc(p.title||r.text)}»</div>
+      <div class="is">через Claude · ${relTime(new Date(r.created_at).getTime())}</div></div></div>`;}).join(''):'';
+  $('#inboxBody').innerHTML=(intakeBlock||'')+(items.length?items.map(i=>`
     <div class="inboxrow ${i.unread?'unread':''}" data-pid="${i.pid}" data-tid="${i.tid}">
       <span class="ii">${i.icon}</span>
       <div class="ib"><div class="it">${i.text}</div><div class="is">${i.sub} · ${relTime(i.ts)}</div></div>
-    </div>`).join(''):emptyState('📭','Пока пусто','Сюда прилетят комментарии к твоим задачам и упоминания @тебя со всех проектов — ничего не потеряется');
-  $$('#inboxBody .inboxrow').forEach(e=>e.onclick=()=>{const pid=e.dataset.pid,tid=e.dataset.tid;closeInbox();if(pid!==S.id)switchProject(pid);setTimeout(()=>openTask(tid),90);});
+    </div>`).join(''):(intakeBlock?'':emptyState('📭','Пока пусто','Сюда прилетят комментарии к твоим задачам, упоминания @тебя и заявки от Claude — ничего не потеряется')));
+  const toIn=$('#inboxToIntake');if(toIn)toIn.onclick=()=>{closeInbox();setView('intake');};
+  $$('#inboxBody .inboxrow.intake').forEach(e=>e.onclick=()=>{closeInbox();setView('intake');});
+  $$('#inboxBody .inboxrow:not(.intake)').forEach(e=>e.onclick=()=>{const pid=e.dataset.pid,tid=e.dataset.tid;if(!pid)return;closeInbox();if(pid!==S.id)switchProject(pid);setTimeout(()=>openTask(tid),90);});
 }
 function openInbox(){renderInbox();$('#inboxDrawer').classList.add('show');syncScrim();
   setTimeout(()=>{localStorage.setItem('cockpit_inbox_seen',Date.now());updateInboxBadge();if($('#inboxDrawer').classList.contains('show'))renderInbox();},1500);}
 function closeInbox(){$('#inboxDrawer').classList.remove('show');syncScrim();}
 $('#btnInbox').onclick=openInbox;$('#inboxClose').onclick=closeInbox;
+
+/* ============================ ПРИЁМКА (Claude → очередь → подтверждение) ============================ */
+let intakeRows=[], intakeReady=true, intakeWorkspace='default';
+function intakePending(){return intakeRows.length;}
+function updateIntakeBadge(){const c=$('#cntIntake');if(c){c.textContent=intakeRows.length;c.style.display=intakeRows.length?'':'none';}updateInboxBadge();}
+async function loadIntake(){
+  if(!cloudOn||!sb){intakeRows=[];updateIntakeBadge();return;}
+  try{const {data,error}=await sb.from('intake').select('*').eq('status','pending').order('created_at',{ascending:false});
+    if(error)throw error;intakeReady=true;intakeRows=data||[];}
+  catch(e){intakeReady=false;intakeRows=[];if(!/relation|does not exist|schema cache/i.test(e.message||''))console.warn('intake',e);}
+  updateIntakeBadge();if(view==='intake')renderIntake();
+}
+function projectMatch(target){if(!target)return null;
+  let p=reg.list.find(x=>x.id===target);if(p)return p.id;
+  p=reg.list.find(x=>(x.name||'').toLowerCase()===String(target).toLowerCase());return p?p.id:null;}
+function addTaskToProject(pid,p,status){
+  if(pid===S.id){const t=applyQuick(newTask(p.title),p);t.status=status;save();return t.id;}
+  const data=loadProj(pid);if(!data)return null;migrate(data);
+  const t={id:uid('t'),title:p.title||'Задача',sectionId:(data.sections[0]||{}).id,assigneeId:p.assignee||null,
+    start:p.start||todayISO(),end:p.end||p.start||todayISO(),status,estimate:p.est||0,spent:0,priority:p.prio||'med',
+    description:'',comments:[],isMilestone:false,deps:[],createdTs:Date.now()};
+  data.tasks.push(t);data.activity=data.activity||[];data.activity.unshift({ts:Date.now(),who:meName(),icon:'➕',text:'из приёмки: «'+t.title+'»'});
+  data.updatedAt=Date.now();localStorage.setItem(pkey(pid),JSON.stringify(data));if(cloudOn)cloudPush(data,true);return t.id;}
+async function decideIntake(id,status,extra){
+  try{await sb.from('intake').update(Object.assign({status,decided_by:myEmail,decided_at:new Date().toISOString()},extra||{})).eq('id',id);}catch(e){}
+  intakeRows=intakeRows.filter(r=>r.id!==id);updateIntakeBadge();renderIntake();
+}
+function acceptIntake(id,backlog){
+  const r=intakeRows.find(x=>x.id===id);if(!r)return;
+  const sel=$('#iproj_'+id);const pid=(sel&&sel.value)||S.id;
+  const p=parseQuick(r.text);if(!p.title)p.title=r.text;
+  const tid=addTaskToProject(pid,p,backlog?'backlog':(p.start?'todo':'todo'));
+  decideIntake(id,backlog?'backlog':'accepted',{target_project:pid,result_task_id:tid});
+  toast(backlog?'В бэклог проекта 📥':'Задача добавлена ✓',backlog?'📥':'✓');
+}
+function editIntake(id){
+  const r=intakeRows.find(x=>x.id===id);if(!r)return;
+  const sel=$('#iproj_'+id);const pid=(sel&&sel.value)||S.id;
+  const p=parseQuick(r.text);if(!p.title)p.title=r.text;
+  const tid=addTaskToProject(pid,p,'todo');
+  decideIntake(id,'accepted',{target_project:pid,result_task_id:tid});
+  if(pid!==S.id){switchProject(pid);setTimeout(()=>openTask(tid),120);}else{setView('board');openTask(tid);}
+}
+function renderIntake(){
+  const el=$('#intake');if(!el)return;
+  if(!cloudOn){el.innerHTML=`<div class="secttl">📥 На приёмке</div>`+emptyState('🔌','Нужен вход в облако','Приёмка работает для команды. Нажми 🔄 в шапке и войди — задачи из Claude будут прилетать сюда.');return;}
+  const connectBtn=`<button class="btn" id="intakeConnect">${icon('plug',15)} Подключить Claude</button>`;
+  if(!intakeReady){el.innerHTML=`<div class="secttl">📥 На приёмке <span style="margin-left:auto">${connectBtn}</span></div>`
+    +emptyState('🛠','Приёмник не активирован','Нужно один раз прогнать SQL в Supabase (supabase/intake.sql). Деплоить ничего не надо. После этого задачи из Claude появятся здесь.');
+    const cb=$('#intakeConnect');if(cb)cb.onclick=openConnect;return;}
+  el.innerHTML=`<div class="secttl">📥 На приёмке <span style="color:var(--mut2);font-weight:500;text-transform:none;letter-spacing:0">заявки от Claude — подтверди, чтобы стали задачами</span>
+    <span style="margin-left:auto">${connectBtn}</span></div>`
+    +(intakeRows.length?`<div class="inolist">${intakeRows.map(r=>{
+      const p=parseQuick(r.text);const m=p.assignee?member(p.assignee):null;
+      const projOpts=reg.list.filter(x=>!x.archived).map(x=>{const sel=(projectMatch(r.target_project)||S.id)===x.id?'selected':'';return `<option value="${x.id}" ${sel}>${esc(x.emoji||'📄')} ${esc(x.name)}</option>`;}).join('');
+      return `<div class="ino" data-id="${r.id}">
+        <div class="inohead"><span class="inoby">🤖 <b>${esc(r.by_name||r.by_email)}</b> через Claude</span>
+          ${r.source?`<span class="inosrc">${esc(r.source)}</span>`:''}<span class="inotime">${relTime(new Date(r.created_at).getTime())}</span></div>
+        <div class="inotitle">${esc(p.title||r.text)}</div>
+        <div class="inochips">
+          ${m?`<span class="ichip" style="border-color:${m.color}">${avatarOf(m,18)} ${esc(m.name)}</span>`:'<span class="ichip mut">без исполнителя</span>'}
+          ${p.start?`<span class="ichip">📅 ${p.start.slice(8)}.${p.start.slice(5,7)}${p.end&&p.end!==p.start?'–'+p.end.slice(8)+'.'+p.end.slice(5,7):''}</span>`:''}
+          ${p.est?`<span class="ichip">⏱ ${p.est}ч</span>`:''}
+          ${p.prio==='urgent'?'<span class="ichip" style="color:var(--bad);border-color:var(--bad)">⚑ срочно</span>':p.prio==='high'?'<span class="ichip" style="color:var(--warn);border-color:var(--warn)">⚑ важно</span>':''}
+        </div>
+        ${r.note?`<div class="inonote">💬 ${esc(r.note)}</div>`:''}
+        <div class="inofoot">
+          <select class="inp inoproj" id="iproj_${r.id}">${projOpts}</select>
+          <div class="inoacts">
+            <button class="btn primary" data-acc="${r.id}">✓ Добавить</button>
+            <button class="btn" data-edit="${r.id}">✎ Править</button>
+            <button class="btn" data-bl="${r.id}">📥 В бэклог</button>
+            <button class="btn danger" data-rej="${r.id}">✕</button>
+          </div>
+        </div>
+      </div>`;}).join('')}</div>`
+    :emptyState('📭','Очередь пуста','Скажи своему Claude: «поставь в Cockpit задачу…» — она прилетит сюда на подтверждение. Кнопка «Подключить Claude» выше — если ещё не настроил.'));
+  const cb=$('#intakeConnect');if(cb)cb.onclick=openConnect;
+  $$('#intake [data-acc]').forEach(b=>b.onclick=()=>acceptIntake(b.dataset.acc,false));
+  $$('#intake [data-bl]').forEach(b=>b.onclick=()=>acceptIntake(b.dataset.bl,true));
+  $$('#intake [data-edit]').forEach(b=>b.onclick=()=>editIntake(b.dataset.edit));
+  $$('#intake [data-rej]').forEach(b=>b.onclick=()=>{decideIntake(b.dataset.rej,'rejected');toast('Отклонено','✕');});
+}
+function onIntakeRealtime(payload){
+  const r=payload.new||payload.old;if(!r)return;
+  if(payload.eventType==='INSERT'&&r.status==='pending'){
+    if(!intakeRows.find(x=>x.id===r.id))intakeRows.unshift(r);
+    updateIntakeBadge();if(view==='intake')renderIntake();
+    if((r.by_email||'')!==myEmail)toast('📥 Новая заявка от '+(r.by_name||r.by_email),'📥','Открыть',()=>setView('intake'));
+  }else{ // обновление/решение — убираем не-pending
+    if(r.status&&r.status!=='pending'){intakeRows=intakeRows.filter(x=>x.id!==r.id);updateIntakeBadge();if(view==='intake')renderIntake();}
+  }
+}
+
+/* ---- модалка «Подключить Claude» (онбординг + ключи) ---- */
+async function openConnect(){if(!cloudOn){toast('Сначала войди в облако (🔄 в шапке)','🔌');return;}$('#connectScrim').classList.add('show');renderConnect();}
+function closeConnect(){$('#connectScrim').classList.remove('show');_newKey=null;}
+$('#connectScrim').onclick=e=>{if(e.target===$('#connectScrim'))closeConnect();};
+async function sha256hex(s){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');}
+function b64url(bytes){let s=btoa(String.fromCharCode(...bytes));return s.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
+let _newKey=null;
+async function genKey(label){
+  const raw='cpk_'+b64url(crypto.getRandomValues(new Uint8Array(24)));
+  const hash=await sha256hex(raw);
+  const {error}=await sb.from('intake_tokens').insert({email:myEmail,label:label||'Claude',token_hash:hash,workspace:intakeWorkspace});
+  if(error){toast('Не удалось создать ключ: '+(error.message||''),'⚠');return;}
+  _newKey=raw;renderConnect();
+}
+async function loadKeys(){try{const {data}=await sb.from('intake_tokens').select('id,label,created_at,last_used_at,revoked').order('created_at',{ascending:false});return data||[];}catch(e){return [];}}
+async function revokeKey(id){try{await sb.from('intake_tokens').update({revoked:true}).eq('id',id);}catch(e){}renderConnect();}
+function fnUrl(){return (CFG&&CFG.url?CFG.url:'https://tonmsmxzmycimybzywqp.supabase.co')+'/functions/v1';}
+async function renderConnect(){
+  const m=$('#connectModal');
+  m.innerHTML=`<div class="ob-art" style="font-size:46px">🔌</div>
+   <div class="ob-body" style="max-height:78vh;overflow:auto">
+     <h2>Подключить Claude к Cockpit</h2>
+     <p>Кидай задачи прямо из Claude — они попадут в очередь <b>«На приёмке»</b>, где ты подтверждаешь, правишь или отклоняешь. Напрямую ничего не создаётся.</p>
+     <div id="keyArea"></div>
+     <div class="cstep"><span class="cn">2</span><div><b>Вставь в Claude</b> (ключ уже подставлен ниже). Claude Code или Claude Desktop — выбери свой:</div></div>
+     <div class="ctabs"><button class="ctab on" data-c="code">Claude Code (VS Code)</button><button class="ctab" data-c="desk">Claude Desktop</button></div>
+     <div id="cfgArea"></div>
+     <div class="cstep"><span class="cn">3</span><div><b>Готово.</b> Скажи Claude: «поставь в Cockpit задачу: созвон с Димой завтра 2ч срочно». Заявка прилетит на приёмку.</div></div>
+   </div>
+   <div class="ob-foot"><a href="#" id="connDocs" style="font-size:12px;color:var(--mut2)">Подробная инструкция</a><div class="spacer"></div><button class="btn primary" id="connDone">Закрыть</button></div>`;
+  $('#connDone').onclick=closeConnect;
+  $('#connDocs').onclick=e=>{e.preventDefault();toast('README в репозитории: mcp/cockpit-mcp/README.md','📖');};
+  // ----- блок ключа -----
+  const keys=await loadKeys();const live=keys.filter(k=>!k.revoked);
+  const ka=$('#keyArea');
+  ka.innerHTML=`<div class="cstep"><span class="cn">1</span><div style="flex:1"><b>Твой персональный ключ</b> — привязан к тебе (у Димы свой). Хранится только хэш; ключ показывается один раз.</div></div>`+
+    (_newKey?`<div class="keybox new"><code id="keyVal">${esc(_newKey)}</code><button class="btn" id="copyKey">Копировать</button></div>
+       <div class="keyhint">⚠ Сохрани сейчас — больше не покажем. Дальше ключ уже вставлен в конфиг ниже.</div>`
+     :`<button class="btn primary" id="genKey">＋ Сгенерировать ключ</button>`)+
+    (live.length?`<div class="keylist">${keys.map(k=>`<div class="keyrow ${k.revoked?'rev':''}"><span class="kl">${esc(k.label||'Claude')}</span><span class="kt">${k.last_used_at?'исп. '+relTime(new Date(k.last_used_at).getTime()):'не использован'}</span>${k.revoked?'<span class="kr">отозван</span>':`<button class="minibtn" data-rev="${k.id}">Отозвать</button>`}</div>`).join('')}</div>`:'');
+  const gk=$('#genKey');if(gk)gk.onclick=()=>genKey('Claude '+(meName()||''));
+  const ck=$('#copyKey');if(ck)ck.onclick=()=>{navigator.clipboard.writeText(_newKey);toast('Ключ скопирован','📋');};
+  $$('#keyArea [data-rev]').forEach(b=>b.onclick=()=>{if(confirm('Отозвать ключ? Это подключение перестанет работать.'))revokeKey(b.dataset.rev);});
+  // ----- блок конфига -----
+  const KEY=_newKey||'cpk_ВАШ_КЛЮЧ';const base=fnUrl().replace('/functions/v1','');
+  const cfgCode=`claude mcp add cockpit \\
+  --env COCKPIT_TOKEN=${KEY} \\
+  --env COCKPIT_SOURCE=claude-code \\
+  -- npx -y cockpit-mcp`;
+  const cfgDesk=`{
+  "mcpServers": {
+    "cockpit": {
+      "command": "npx",
+      "args": ["-y", "cockpit-mcp"],
+      "env": {
+        "COCKPIT_TOKEN": "${KEY}",
+        "COCKPIT_SOURCE": "claude-desktop"
+      }
+    }
+  }
+}`;
+  function showCfg(which){const code=which==='code'?cfgCode:cfgDesk;
+    $('#cfgArea').innerHTML=`<div class="codebox"><button class="btn copycfg" id="copyCfg">Копировать</button><pre>${esc(code)}</pre></div>`+
+      (which==='desk'?`<div class="keyhint">Claude Desktop → Settings → Developer → Edit Config → вставь и перезапусти приложение.</div>`:`<div class="keyhint">Вставь в терминал в любой папке. Нужен установленный Node 18+.</div>`);
+    $('#copyCfg').onclick=()=>{navigator.clipboard.writeText(code);toast('Конфиг скопирован','📋');};}
+  showCfg('code');
+  $$('#connectModal .ctab').forEach(t=>t.onclick=()=>{$$('#connectModal .ctab').forEach(x=>x.classList.remove('on'));t.classList.add('on');showCfg(t.dataset.c);});
+}
 
 /* ============================ УТРЕННИЙ БРИФ ============================ */
 function briefData(){
@@ -2156,7 +2380,8 @@ const menuEl=$('#menu');
 $('#btnMenu').onclick=e=>{e.stopPropagation();menuEl.classList.toggle('show');};
 document.addEventListener('click',e=>{if(!menuEl.contains(e.target)&&e.target!==$('#btnMenu'))menuEl.classList.remove('show');});
 menuEl.onclick=e=>{const b=e.target.closest('button');if(!b)return;menuEl.classList.remove('show');const act=b.dataset.act;
-  if(act==='export'){const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  if(act==='connect'){openConnect();}
+  else if(act==='export'){const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
     const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cockpit-'+todayISO()+'.json';a.click();toast('Экспортировано','💾');}
   else if(act==='import'){const inp=document.createElement('input');inp.type='file';inp.accept='.json';
     inp.onchange=()=>{const f=inp.files[0];const r=new FileReader();r.onload=()=>{try{S=migrate(JSON.parse(r.result));resetUndo();save();render();toast('Импортировано','📥');}catch(e){toast('Ошибка файла','⚠');}};r.readAsText(f);};inp.click();}
@@ -2204,6 +2429,7 @@ document.addEventListener('keydown',e=>{
     else if($('#reportScrim').classList.contains('show'))$('#reportScrim').classList.remove('show');
     else if($('#aiScrim').classList.contains('show'))$('#aiScrim').classList.remove('show');
     else if($('#briefScrim').classList.contains('show'))closeBrief();
+    else if($('#connectScrim').classList.contains('show'))closeConnect();
     else if($('#drawer').classList.contains('show'))closeDrawer();
     else if($('#mDrawer').classList.contains('show'))closeMember();
     else if($('#inboxDrawer').classList.contains('show'))closeInbox();
@@ -2545,7 +2771,7 @@ async function cloudInit(){
     else if(!cloudOn)showGate();
   }catch(e){if(!cloudOn)showGate();}
 }
-async function onLoggedIn(){cloudOn=true;closeAuth();hideGate();updateCloudBadge();await cloudSync();subscribeRealtime();
+async function onLoggedIn(){cloudOn=true;closeAuth();hideGate();updateCloudBadge();await cloudSync();subscribeRealtime();loadIntake();
   if(!localStorage.getItem('cockpit_profile_done'))openProfileSetup();
   else if(!localStorage.getItem('cockpit_onboarded'))openOnboarding(0);
   else if(localStorage.getItem('cockpit_brief_date')!==todayISO())openBrief();}
@@ -2636,7 +2862,7 @@ function subscribeRealtime(){
     if(payload.eventType==='DELETE'){const id=payload.old&&payload.old.id;if(!id)return;reg.list=reg.list.filter(p=>p.id!==id);localStorage.removeItem(pkey(id));
       if(S.id===id&&reg.list[0]){reg.active=reg.list[0].id;S=migrate(loadProj(reg.active));}saveReg();render();return;}
     const row=payload.new;if(!row||row.updated_by===me)return;applyRemote(row);
-  }).subscribe();}catch(e){console.warn('realtime',e);rtSubbed=false;}
+  }).on('postgres_changes',{event:'*',schema:'public',table:'intake'},onIntakeRealtime).subscribe();}catch(e){console.warn('realtime',e);rtSubbed=false;}
 }
 function applyRemote(row){
   localStorage.setItem(pkey(row.id),JSON.stringify(row.data));
