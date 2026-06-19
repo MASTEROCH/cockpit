@@ -1709,7 +1709,9 @@ async function renderConnect(){
    </div>
    <div class="ob-foot"><a href="#" id="connDocs" style="font-size:12px;color:var(--mut2)">Подробная инструкция</a><div class="spacer"></div><button class="btn primary" id="connDone">Закрыть</button></div>`;
   $('#connDone').onclick=closeConnect;
-  $('#connDocs').onclick=e=>{e.preventDefault();toast('README в репозитории: mcp/cockpit-mcp/README.md','📖');};
+  $('#connDocs').href='https://github.com/MASTEROCH/cockpit/blob/main/mcp/cockpit-mcp/README.md';
+  $('#connDocs').target='_blank';$('#connDocs').rel='noopener';
+  $('#connDocs').onclick=null;
   // ----- блок ключа -----
   const keys=await loadKeys();const live=keys.filter(k=>!k.revoked);
   const ka=$('#keyArea');
