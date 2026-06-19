@@ -1655,7 +1655,10 @@ function render(){
   $('#projLabel').textContent=S.projectName;
   $('#projEmoji').textContent=(reg.list.find(p=>p.id===S.id)||{}).emoji||'🚀';
   applyAccent();
-  {const _m=member(myId()),pb=$('#btnProfile');if(pb){if(_m&&_m.photo){pb.style.backgroundImage=`url('${_m.photo}')`;pb.style.background='';pb.style.backgroundSize='cover';pb.style.backgroundPosition='center';pb.innerHTML='';}else{pb.style.backgroundImage='none';pb.style.background=(_m&&_m.color)||'var(--acc2)';pb.innerHTML=initials((_m&&_m.name)||'Я');}}}
+  {const _m=member(myId()),pb=$('#btnProfile');if(pb){
+    if(_m&&_m.photo){pb.innerHTML='';pb.style.backgroundColor='transparent';pb.style.backgroundImage=`url('${_m.photo}')`;}
+    else{pb.style.backgroundImage='none';pb.style.backgroundColor=(_m&&_m.color)||'var(--acc2)';pb.innerHTML=initials((_m&&_m.name)||'Я');}
+  }}
   // toolbar visibility
   const showTool=(view==='gantt'||view==='board');
   $('#toolbar').classList.toggle('hide',!showTool);
