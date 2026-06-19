@@ -728,6 +728,32 @@ body.light .brand .logo{background:linear-gradient(157deg,#1b1d27,#08090d 72%)}
 .subtxt.done{color:var(--mut2);text-decoration:line-through}
 .subdel{flex:0 0 auto;width:24px;height:24px;border:none;background:none;color:var(--mut2);font-size:12px;cursor:pointer;border-radius:6px}
 .subdel:hover{color:var(--bad)}
+.ment{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.mentchip{font-size:11px;font-weight:700;color:var(--acc2);background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.28);border-radius:8px;padding:4px 9px;cursor:pointer}
+.mentchip:hover{background:rgba(167,139,250,.2)}
+.mention{color:var(--acc2);font-weight:700}
+/* моя неделя */
+.weekwrap{padding:16px;max-width:1500px;margin:0 auto}
+.whead{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.whead .wt{font-size:13px;color:var(--mut2)}
+.wgrid{display:flex;gap:10px;align-items:flex-start;overflow-x:auto;padding-bottom:6px}
+.wcol{flex:1 1 0;min-width:155px;background:var(--bg2);border:1px solid var(--line);border-radius:13px;display:flex;flex-direction:column;max-height:calc(100vh - 230px)}
+.wcol.today{border-color:var(--acc2);box-shadow:0 0 0 1px rgba(167,139,250,.3)}
+.wcol.over{border-color:rgba(248,113,113,.4)}
+.wcol.drop{outline:2px dashed var(--acc2);outline-offset:-3px}
+.wcolh{padding:9px 11px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:6px;font-weight:700;font-size:12.5px}
+.wcolh .wsub{font-size:10px;color:var(--mut2);font-weight:500}
+.wcolh .wcnt{margin-left:auto;font-size:11px;color:var(--mut2);background:var(--bg);padding:0 6px;border-radius:20px}
+.wcolb{padding:8px;display:flex;flex-direction:column;gap:7px;overflow:auto;flex:1;min-height:50px}
+.wempty{color:var(--mut2);font-size:12px;text-align:center;padding:8px 0;opacity:.45}
+.wcard{display:flex;gap:8px;align-items:flex-start;background:var(--glass-2);border:1px solid var(--gbrd);border-radius:10px;padding:9px;cursor:grab;box-shadow:var(--ghi)}
+.wcard:hover{border-color:var(--acc2)}
+.wcard.dragging{opacity:.4}
+.wcard .wcb{flex:1;min-width:0}
+.wct{font-size:12.5px;font-weight:600;line-height:1.3;margin-bottom:5px}
+.wcm{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.wcard .qdone{margin-top:1px}
+@media (max-width:680px){.wcol{min-width:78vw;scroll-snap-align:center}.wgrid{scroll-snap-type:x mandatory}}
 /* inbox */
 .iconbtn.inbox{position:relative}
 .ibadge{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;border-radius:20px;background:var(--bad);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;padding:0 4px;box-shadow:0 0 0 2px rgba(18,21,31,.9)}
@@ -840,6 +866,7 @@ body.light .drawer,body.light .modal{background:var(--sheen),rgba(255,255,255,.9
     <button class="tab" data-v="all" data-icon="layers"><span>Всё</span></button>
     <button class="tab" data-v="gantt" data-icon="gantt"><span>Гант</span></button>
     <button class="tab active" data-v="board" data-icon="board"><span>Доска</span></button>
+    <button class="tab" data-v="week" data-icon="cal"><span>Неделя</span></button>
     <button class="tab" data-v="backlog" data-icon="idea"><span>Бэклог</span> <span class="cnt" id="cntIdeas">0</span></button>
     <button class="tab" data-v="team" data-icon="users"><span>Команда</span></button>
   </div>
@@ -874,6 +901,7 @@ body.light .drawer,body.light .modal{background:var(--sheen),rgba(255,255,255,.9
     <div class="view" id="v-all"><div class="dash" id="portfolio"></div></div>
     <div class="view" id="v-gantt"><div class="gantt" id="gantt"></div></div>
     <div class="view active" id="v-board"><div class="board" id="board"></div></div>
+    <div class="view" id="v-week"><div class="weekwrap" id="week"></div></div>
     <div class="view" id="v-backlog">
       <div class="pad">
         <div class="secttl">💡 Бэклог идей <span style="margin-left:auto;color:var(--mut2);font-weight:500;text-transform:none;letter-spacing:0">паркинг для всего, что нельзя терять</span></div>
@@ -930,7 +958,8 @@ body.light .drawer,body.light .modal{background:var(--sheen),rgba(255,255,255,.9
     </div>
     <div class="field"><label>Комментарии</label>
       <div class="comments" id="dComments"></div>
-      <div class="cmtadd"><input class="inp" id="dCmtIn" placeholder="Написать комментарий…"><button class="btn" id="dCmtBtn">↑</button></div>
+      <div class="ment" id="dMention"></div>
+      <div class="cmtadd"><input class="inp" id="dCmtIn" placeholder="Написать комментарий… @имя — упомянуть"><button class="btn" id="dCmtBtn">↑</button></div>
     </div>
   </div>
   <div class="df">
@@ -1121,6 +1150,7 @@ const ICONS={
  board:'<path d="M4 4h16v16H4zM9 4v16M15 4v16"/>',
  idea:'<path d="M9 18h6M10 21.5h4M12 2.5a6.5 6.5 0 0 0-4 11.6c.6.5 1 1.2 1 2v.4h6v-.4c0-.8.4-1.5 1-2A6.5 6.5 0 0 0 12 2.5z"/>',
  users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>',
+ cal:'<rect x="3" y="4.5" width="18" height="17" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>',
  sparkles:'<path d="M12 3l1.8 4.9L18.7 9 13.8 11 12 16l-1.8-5L5.3 9l4.9-1.1z"/><path d="M19 14l.6 1.7 1.7.6-1.7.6L19 19l-.6-1.5-1.7-.6 1.7-.6z"/>',
 };
 function icon(n,s){s=s||18;return `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]||''}</svg>`;}
@@ -1190,6 +1220,7 @@ function render(){
   else if(view==='all')renderPortfolio();
   else if(view==='gantt')renderGantt();
   else if(view==='board')renderBoard();
+  else if(view==='week')renderWeek();
   else if(view==='backlog')renderBacklog();
   else if(view==='team')renderTeam();
   save();
@@ -1480,6 +1511,51 @@ function renderBrief(){
   $$('#briefModal .trow').forEach(el=>el.onclick=()=>{const pid=el.dataset.pid,tid=el.dataset.tid;closeBrief();if(pid!==S.id)switchProject(pid);setTimeout(()=>openTask(tid),90);});
 }
 $('#briefScrim').onclick=e=>{if(e.target===$('#briefScrim'))closeBrief();};
+
+/* ============================ МОЯ НЕДЕЛЯ ============================ */
+let weekOffset=0, weekDrag=null;
+function weekDays(offset){const now=new Date();const d=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const dow=(d.getDay()+6)%7;const mon=new Date(d);mon.setDate(d.getDate()-dow+offset*7);
+  const out=[];for(let i=0;i<7;i++){const x=new Date(mon);x.setDate(mon.getDate()+i);out.push(`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`);}return out;}
+function myWeekTasks(){const out=[];reg.list.filter(p=>!p.archived).forEach(p=>{const data=loadProj(p.id);if(!data)return;const me=myMemberIn(data);if(!me)return;
+  (data.tasks||[]).forEach(t=>{if(t.isMilestone)return;if(t.assigneeId===me.id&&t.status!=='done')out.push({t,pid:p.id,pname:p.name,emoji:p.emoji});});});return out;}
+function editTaskInProject(pid,tid,fn){
+  if(pid===S.id){const t=task(tid);if(t){fn(t);save();}return;}
+  const data=loadProj(pid);if(!data)return;const t=(data.tasks||[]).find(x=>x.id===tid);if(!t)return;fn(t);data.updatedAt=Date.now();localStorage.setItem(pkey(pid),JSON.stringify(data));if(cloudOn)cloudPush(data,true);}
+function renderWeek(){
+  const el=$('#week');const days=weekDays(weekOffset);const wstart=days[0],wend=days[6],tISO=todayISO();
+  const WD=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];const md=d=>d.slice(8)+'.'+d.slice(5,7);
+  const tasks=myWeekTasks();const by={over:[],later:[]};days.forEach(d=>by[d]=[]);
+  tasks.forEach(x=>{const e=x.t.end;if(e<wstart)by.over.push(x);else if(e>wend)by.later.push(x);else by[e].push(x);});
+  [...days,'over','later'].forEach(k=>by[k].sort((a,b)=>relScore(b.t)-relScore(a.t)));
+  const card=x=>`<div class="wcard" draggable="true" data-pid="${x.pid}" data-tid="${x.t.id}">
+    <button class="qdone" data-wd="${x.pid}|${x.t.id}" title="Готово" style="--c:${stMap[x.t.status].c}"></button>
+    <div class="wcb"><div class="wct">${x.t.waitingOn?'⏳ ':''}${esc(x.t.title)}</div>
+      <div class="wcm"><span class="pbadge">${x.emoji||'📄'} ${esc(x.pname)}</span>${x.t.estimate?`<span style="font-size:10px;color:var(--mut2)">${x.t.estimate}ч</span>`:''}${subTag(x.t)}</div></div></div>`;
+  const col=(key,label,sub,cls)=>`<div class="wcol ${cls||''}" data-day="${key}"><div class="wcolh"><span>${label}</span>${sub?`<span class="wsub">${sub}</span>`:''}<span class="wcnt">${by[key].length||''}</span></div><div class="wcolb">${by[key].map(card).join('')||'<div class="wempty">—</div>'}</div></div>`;
+  const wt=weekOffset===0?'Эта неделя':weekOffset===1?'Следующая неделя':weekOffset===-1?'Прошлая неделя':md(wstart)+'–'+md(wend);
+  let cols='';if(by.over.length)cols+=col('over','⚠️ Просрочено','перетащи в день',' over');
+  days.forEach((d,i)=>cols+=col(d,WD[i],md(d),d===tISO?'today':''));
+  if(by.later.length)cols+=col('later','Позже','за неделей','');
+  el.innerHTML=`<div class="whead"><h2 style="margin:0;font-size:18px">🗓 Моя неделя</h2><span class="wt">${wt} · ${md(wstart)}–${md(wend)}</span>
+      <div style="margin-left:auto;display:flex;gap:6px"><button class="btn" id="wPrev">←</button><button class="btn" id="wToday">Сегодня</button><button class="btn" id="wNext">→</button></div></div>
+    <div class="wgrid">${cols}</div>
+    <div style="font-size:12px;color:var(--mut2);margin-top:10px">Это твои задачи по всем проектам на неделю. Перетаскивай между днями — меняешь срок. Клик — открыть.</div>`;
+  $('#wPrev').onclick=()=>{weekOffset--;renderWeek();};
+  $('#wNext').onclick=()=>{weekOffset++;renderWeek();};
+  $('#wToday').onclick=()=>{weekOffset=0;renderWeek();};
+  $$('#week .wcard').forEach(c=>{
+    c.onclick=e=>{if(e.target.closest('.qdone'))return;const pid=c.dataset.pid,tid=c.dataset.tid;if(pid!==S.id)switchProject(pid);setTimeout(()=>openTask(tid),80);};
+    c.ondragstart=()=>{weekDrag={pid:c.dataset.pid,tid:c.dataset.tid};c.classList.add('dragging');};
+    c.ondragend=()=>c.classList.remove('dragging');});
+  $$('#week .qdone').forEach(b=>b.onclick=e=>{e.stopPropagation();const a=b.dataset.wd.split('|');editTaskInProject(a[0],a[1],t=>{t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;});toast('Готово ✅','✅');renderWeek();});
+  $$('#week .wcol').forEach(colEl=>{
+    colEl.ondragover=e=>{e.preventDefault();colEl.classList.add('drop');};
+    colEl.ondragleave=()=>colEl.classList.remove('drop');
+    colEl.ondrop=e=>{e.preventDefault();colEl.classList.remove('drop');const day=colEl.dataset.day;if(!weekDrag)return;
+      if(day!=='over'&&day!=='later')editTaskInProject(weekDrag.pid,weekDrag.tid,t=>{t.end=day;if(parseD(t.start)>parseD(day))t.start=day;});
+      weekDrag=null;renderWeek();};});
+}
 
 /* ============================ CLIENT REPORT (статус-сводка) ============================ */
 function fmtRu(iso){return iso.slice(8)+'.'+iso.slice(5,7);}
@@ -1923,11 +1999,15 @@ function openTask(id){
   renderComments(t);
   $('#drawer').classList.add('show');syncScrim();
 }
+function hlMentions(text){return esc(text).replace(/@([A-Za-zА-Яа-яЁё][\wА-Яа-яЁё.\-]*)/g,'<span class="mention">@$1</span>');}
 function renderComments(t){
   const c=$('#dComments');
-  if(!t.comments.length){c.innerHTML='<div style="color:var(--mut2);font-size:12px">Пока нет комментариев.</div>';return;}
-  c.innerHTML=t.comments.map(cm=>`<div class="cmt">${avatar(cm.authorId||'m1')}
-    <div class="cb"><div class="cmeta"><b>${esc(cm.author)}</b> · ${esc(cm.ts?relTime(cm.ts):cm.when)}</div>${esc(cm.text)}</div></div>`).join('');
+  if(!t.comments.length){c.innerHTML='<div style="color:var(--mut2);font-size:12px">Пока нет комментариев.</div>';}
+  else c.innerHTML=t.comments.map(cm=>`<div class="cmt">${avatar(cm.authorId||'m1')}
+    <div class="cb"><div class="cmeta"><b>${esc(cm.author)}</b> · ${esc(cm.ts?relTime(cm.ts):cm.when)}</div>${hlMentions(cm.text)}</div></div>`).join('');
+  const mn=$('#dMention');if(mn){const others=S.members.filter(m=>m.id!==myId());
+    mn.innerHTML=others.length?others.map(m=>`<button class="mentchip" data-mn="${esc(m.name)}">@${esc(m.name)}</button>`).join(''):'';
+    $$('#dMention .mentchip').forEach(b=>b.onclick=()=>{const inp=$('#dCmtIn');inp.value=(inp.value.trim()?inp.value.trim()+' ':'')+'@'+b.dataset.mn+' ';inp.focus();});}
 }
 function renderSubtasks(t){
   const c=$('#dSubs');if(!c)return;const subs=t.subtasks||(t.subtasks=[]);
