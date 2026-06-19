@@ -836,10 +836,10 @@ body.light .drawer,body.light .modal{background:var(--sheen),rgba(255,255,255,.9
   </div>
 
   <div class="tabs" id="tabs">
-    <button class="tab active" data-v="dash" data-icon="home"><span>Обзор</span></button>
+    <button class="tab" data-v="dash" data-icon="home"><span>Обзор</span></button>
     <button class="tab" data-v="all" data-icon="layers"><span>Всё</span></button>
     <button class="tab" data-v="gantt" data-icon="gantt"><span>Гант</span></button>
-    <button class="tab" data-v="board" data-icon="board"><span>Доска</span></button>
+    <button class="tab active" data-v="board" data-icon="board"><span>Доска</span></button>
     <button class="tab" data-v="backlog" data-icon="idea"><span>Бэклог</span> <span class="cnt" id="cntIdeas">0</span></button>
     <button class="tab" data-v="team" data-icon="users"><span>Команда</span></button>
   </div>
@@ -870,10 +870,10 @@ body.light .drawer,body.light .modal{background:var(--sheen),rgba(255,255,255,.9
   </div>
 
   <div class="content">
-    <div class="view active" id="v-dash"><div class="dash" id="dash"></div></div>
+    <div class="view" id="v-dash"><div class="dash" id="dash"></div></div>
     <div class="view" id="v-all"><div class="dash" id="portfolio"></div></div>
     <div class="view" id="v-gantt"><div class="gantt" id="gantt"></div></div>
-    <div class="view" id="v-board"><div class="board" id="board"></div></div>
+    <div class="view active" id="v-board"><div class="board" id="board"></div></div>
     <div class="view" id="v-backlog">
       <div class="pad">
         <div class="secttl">💡 Бэклог идей <span style="margin-left:auto;color:var(--mut2);font-weight:500;text-transform:none;letter-spacing:0">паркинг для всего, что нельзя терять</span></div>
@@ -1170,7 +1170,9 @@ function passFilter(t){
 function filterActive(){return filter.q||filter.assignee||filter.mine||filter.overdue;}
 
 /* ============================ RENDER ROUTER ============================ */
-let view='dash';
+let view='board';
+function relScore(t){const prW={urgent:4,high:3,med:2,low:1}[t.priority]||2;const dl=daysLeft(t);
+  const due=dl<0?(2000-dl):Math.max(0,400-dl*8);return due+prW*60;}
 function render(){
   $('#cntIdeas').textContent=S.ideas.length;
   $('#projLabel').textContent=S.projectName;
@@ -1400,7 +1402,7 @@ function renderPortfolio(){
    </div>
    <div class="panel-c" style="margin-top:16px"><h3>🕑 История компании <span class="c">${allAct.length}</span></h3>
      <div class="actfeed">${allAct.length?allAct.slice(0,50).map(a=>`<div class="actrow"><span class="ai">${a.icon}</span><span class="atx"><b>${esc(a.who)}</b> ${esc(a.text)} <span class="pbadge" style="margin-left:5px;vertical-align:middle">${a.emoji||'📄'} ${esc(a.pname)}</span></span><span class="att">${relTime(a.ts)}</span></div>`).join(''):'<div class="emptymini">История появится по мере работы команды</div>'}</div></div>`;
-  $$('#portfolio .prow').forEach(e=>e.onclick=()=>{const id=e.dataset.open;if(id===S.id)setView('dash');else switchProject(id);});
+  $$('#portfolio .prow').forEach(e=>e.onclick=()=>{const id=e.dataset.open;if(id===S.id)setView('board');else switchProject(id);});
   $$('#portfolio .trow').forEach(e=>e.onclick=()=>{const pid=e.dataset.pid,tid=e.dataset.tid;if(pid!==S.id)switchProject(pid);setTimeout(()=>openTask(tid),80);});
 }
 
@@ -1586,7 +1588,7 @@ function renderGantt(){
   let rowIdx=0;
   const pos={}; // taskId -> {x,w,y}
   S.sections.forEach(sec=>{
-    const st=all.filter(t=>t.sectionId===sec.id);
+    const st=all.filter(t=>t.sectionId===sec.id).sort((a,b)=>parseD(a.start)-parseD(b.start)||parseD(a.end)-parseD(b.end));
     if(!st.length) return;
     const isC=collapsed[sec.id];
     let smin=Infinity,smax=-Infinity;st.forEach(t=>{smin=Math.min(smin,parseD(t.start));smax=Math.max(smax,parseD(t.end));});
@@ -1719,7 +1721,7 @@ function renderBoard(){
   const b=$('#board');b.innerHTML='';
   STATUSES.forEach(st=>{
     const col=document.createElement('div');col.className='col';col.dataset.st=st.k;
-    const items=S.tasks.filter(t=>t.status===st.k&&passFilter(t));
+    const items=S.tasks.filter(t=>t.status===st.k&&passFilter(t)).sort((a,b)=>relScore(b)-relScore(a));
     col.innerHTML=`<div class="colh"><span class="pip" style="background:${st.c}"></span>${st.n}<span class="cnt">${items.length}</span></div>
       <div class="colb"></div><button class="addcard">＋ задача</button>`;
     const bodyEl=col.querySelector('.colb');
@@ -2231,7 +2233,7 @@ function createProject(name,tpl,parentId){
   save();const p=migrate(buildTemplate(tpl));if(name)p.projectName=name;p.parentId=parentId||null;
   reg.list.push({id:p.id,name:p.projectName,emoji:p.emoji||'📄',parentId:parentId||null});reg.active=p.id;saveReg();
   localStorage.setItem(pkey(p.id),JSON.stringify(p));S=p;resetUndo();if(cloudOn)cloudPush(p,true);
-  collapsed={};filter={q:'',assignee:'',mine:false,overdue:false};ganttNeedsScroll=true;setView('dash');toast('Проект создан: «'+p.projectName+'»','🚀');
+  collapsed={};filter={q:'',assignee:'',mine:false,overdue:false};ganttNeedsScroll=true;setView('board');toast('Проект создан: «'+p.projectName+'»','🚀');
 }
 function projMeta(id){return reg.list.find(p=>p.id===id);}
 function childrenOf(id){return reg.list.filter(p=>p.parentId===id&&!p.archived);}
@@ -2247,7 +2249,7 @@ function openParentChooser(){
   projMenu.classList.add('show');
 }
 function switchProject(id){if(id===S.id)return;save();const p=migrate(loadProj(id));if(!p)return;S=p;reg.active=id;saveReg();resetUndo();
-  collapsed={};filter={q:'',assignee:'',mine:false,overdue:false};ganttNeedsScroll=true;setView('dash');toast('Проект: «'+S.projectName+'»','📂');}
+  collapsed={};filter={q:'',assignee:'',mine:false,overdue:false};ganttNeedsScroll=true;setView('board');toast('Проект: «'+S.projectName+'»','📂');}
 function deleteProject(id){if(reg.list.length<=1){toast('Нельзя удалить единственный проект','⚠');return;}
   if(!confirm('Удалить проект целиком? Это необратимо.'))return;localStorage.removeItem(pkey(id));if(cloudOn)cloudDelete(id);reg.list=reg.list.filter(p=>p.id!==id);
   if(reg.active===id){reg.active=reg.list[0].id;S=migrate(loadProj(reg.active));}saveReg();render();toast('Проект удалён','🗑');}
@@ -2289,7 +2291,7 @@ function loadDemo(){
   const p=migrate(seed());
   reg.list.push({id:p.id,name:p.projectName,emoji:'🎬'});reg.active=p.id;saveReg();
   localStorage.setItem(pkey(p.id),JSON.stringify(p));S=p;resetUndo();if(cloudOn)cloudPush(p,true);
-  collapsed={};filter={q:'',assignee:'',mine:false,overdue:false};ganttNeedsScroll=true;setView('dash');toast('Демо-проект загружен','🎬');
+  collapsed={};filter={q:'',assignee:'',mine:false,overdue:false};ganttNeedsScroll=true;setView('board');toast('Демо-проект загружен','🎬');
 }
 let npTpl='mvp';
 function openNewProject(){npTpl='mvp';renderNP();$('#npScrim').classList.add('show');}
