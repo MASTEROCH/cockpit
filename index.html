@@ -717,6 +717,8 @@ body.light .brand .logo{background:linear-gradient(157deg,#1b1d27,#08090d 72%)}
 .qdone:hover::after{content:'✓';color:#fff;font-size:11px;font-weight:800;position:absolute;inset:0;display:grid;place-items:center}
 .subbadge.all{color:var(--ok);background:rgba(52,211,153,.13);border-color:rgba(52,211,153,.3)}
 .subhead{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.card .cm .cdone{width:17px;height:17px;border-width:2px}
+.card:hover .cdone{border-color:var(--ok)}
 .subprog{flex:1;height:6px;border-radius:20px;background:var(--bg2);overflow:hidden}
 .subprog span{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,var(--acc2),#8b6ff0)}
 .subcount{font-size:11px;color:var(--mut2);font-variant-numeric:tabular-nums}
@@ -985,6 +987,7 @@ body.light .drawer,body.light .modal{background:var(--sheen),rgba(255,255,255,.9
   </div>
   <div class="df">
     <button class="btn danger" id="dDelete">Удалить</button>
+    <button class="btn" id="dDup" title="Создать копию задачи">⧉ Дублировать</button>
     <div class="spacer"></div>
     <button class="btn primary" id="dClose">Готово</button>
   </div>
@@ -1659,11 +1662,11 @@ let collapsed={};
 let autoAddSec=null, pendingBoardAdd=null, ganttNeedsScroll=true;
 function openInlineAdd(el){
   const sec=el.dataset.addsec; autoAddSec=sec;
-  el.innerHTML='<input class="addinp" placeholder="Название · Enter — добавить, Esc — отмена">';
+  el.innerHTML='<input class="addinp" placeholder="«Вёрстка @дима с 22 по 28 июня 12ч !срочно» · Enter">';
   const inp=el.querySelector('input'); inp.focus();
   inp.onkeydown=ev=>{
     if(ev.key==='Enter'){const v=inp.value.trim();
-      if(v){const t=newTask(v);t.sectionId=sec;t.status='todo';const td=todayISO();t.start=td;t.end=fmtD(parseD(td)+2*dayMs);save();toast('Добавлено: «'+v+'»','🚀');}
+      if(v){const p=parseQuick(v);const t=newTask(p.title||v);t.sectionId=sec;t.status='todo';const td=todayISO();applyQuick(t,p);if(!p.start){t.start=td;t.end=fmtD(parseD(td)+2*dayMs);}save();toast('Добавлено: «'+(p.title||v)+'»','🚀');}
       autoAddSec=v?sec:null;renderGantt();}
     else if(ev.key==='Escape'){autoAddSec=null;renderGantt();}
   };
@@ -1856,6 +1859,7 @@ function renderBoard(){
       card.innerHTML=`<button class="cdel" title="Удалить задачу">${icon('x',13)}</button>
         <div class="ct">${t.isMilestone?'🔹 ':''}${blk?'🔒 ':''}${esc(t.title)}</div>
         <div class="cm">
+          ${t.status!=='done'&&!t.isMilestone?`<button class="qdone cdone" title="Отметить готовым" style="--c:${stMap[t.status].c}"></button>`:''}
           ${prTag(t)}
           ${waitTag(t)}
           ${subTag(t)}
@@ -1865,6 +1869,9 @@ function renderBoard(){
           <span style="margin-left:auto">${avatar(t.assigneeId)}</span>
         </div>`;
       card.onclick=()=>openTask(t.id);
+      const qd=card.querySelector('.cdone');if(qd)qd.onclick=ev=>{ev.stopPropagation();
+        t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;logAct('✅','«'+t.title+'» → Готово');
+        const _v=awardForDone(S,t);save();renderBoard();toast(_v?('+'+_v+' 🪙 за «'+t.title+'»'):('Готово: «'+t.title+'» ✅'),_v?'🪙':'✅');};
       card.querySelector('.cdel').onclick=ev=>{ev.stopPropagation();if(!confirm('Удалить задачу «'+t.title+'»?'))return;
         const idx=S.tasks.indexOf(t);S.tasks=S.tasks.filter(x=>x.id!==t.id);S.tasks.forEach(x=>x.deps=x.deps.filter(d=>d!==t.id));
         logAct('🗑','удалил «'+t.title+'»');save();renderBoard();
@@ -1886,10 +1893,10 @@ function renderBoard(){
 function openBoardAdd(col,status){
   pendingBoardAdd=status;
   const btn=col.querySelector('.addcard');if(!btn)return;
-  const inp=document.createElement('input');inp.className='addinp2';inp.placeholder='Новая задача · Enter';
+  const inp=document.createElement('input');inp.className='addinp2';inp.placeholder='«Созвон @дима завтра 2ч» · Enter';
   btn.replaceWith(inp);inp.focus();
   inp.onkeydown=ev=>{
-    if(ev.key==='Enter'){const v=inp.value.trim();if(v){const t=newTask(v);t.status=status;toast('Добавлено: «'+v+'»','🚀');}pendingBoardAdd=v?status:null;save();renderBoard();}
+    if(ev.key==='Enter'){const v=inp.value.trim();if(v){const p=parseQuick(v);const t=applyQuick(newTask(p.title||v),p);t.status=status;toast('Добавлено: «'+(p.title||v)+'»','🚀');}pendingBoardAdd=v?status:null;save();renderBoard();}
     else if(ev.key==='Escape'){pendingBoardAdd=null;renderBoard();}
   };
   inp.onblur=()=>{if(!inp.value.trim()&&pendingBoardAdd===status){pendingBoardAdd=null;renderBoard();}};
@@ -2117,6 +2124,11 @@ function addComment(){const v=$('#dCmtIn').value.trim();if(!v||!curTask)return;
 $('#dDelete').onclick=()=>{if(!curTask)return;const t=curTask;const idx=S.tasks.indexOf(t);
   S.tasks=S.tasks.filter(x=>x.id!==t.id);S.tasks.forEach(x=>x.deps=x.deps.filter(d=>d!==t.id));logAct('🗑','удалил «'+t.title+'»');closeDrawer();
   toast('Удалено: «'+t.title+'»','🗑','Отменить',()=>{S.tasks.splice(idx,0,t);logAct('↩️','вернул «'+t.title+'»');save();render();});};
+$('#dDup').onclick=()=>{if(!curTask)return;const t=curTask;
+  const c=JSON.parse(JSON.stringify(t));c.id=uid('t');c.title=t.title+' (копия)';
+  c.status='todo';c.spent=0;c.comments=[];c.pointsAwarded=undefined;c.createdTs=Date.now();
+  if(c.subtasks)c.subtasks=c.subtasks.map(s=>({...s,done:false}));
+  const idx=S.tasks.indexOf(t);S.tasks.splice(idx+1,0,c);logAct('⧉','дубль «'+t.title+'»');save();render();openTask(c.id);toast('Создан дубль','⧉');};
 $('#dClose').onclick=closeDrawer;$('#scrim').onclick=()=>{closeDrawer();closeMember();closeInbox();};
 
 /* ============================ TABS / TOPBAR / FILTERS ============================ */
@@ -2173,10 +2185,11 @@ micBtn.onclick=()=>{
 
 /* ============================ COMMAND BAR ============================ */
 const HINT=`<b>🎙 Командная строка</b> — говори или печатай. Прототип Telegram-бота. Кликни пример:<br>
-<b style="color:#9aa0b3">Создать</b> <span class="ex">добавь задачу Лендинг для Димы с 22 по 28 июня эстимейт 12ч</span> · <span class="ex">добавь задачу Созвон завтра срочно</span><br>
+<b style="color:#9aa0b3">Создать</b> <span class="ex">добавь задачу Лендинг @дима с 22 по 28 июня 12ч !срочно</span> · <span class="ex">добавь задачу Созвон завтра 2ч</span><br>
 <b style="color:#9aa0b3">Статус</b> <span class="ex">статус Вёрстка в работе</span> · <span class="ex">приоритет Тексты высокий</span><br>
 <b style="color:#9aa0b3">Люди/сроки</b> <span class="ex">назначь Тестирование на Дима</span> · <span class="ex">срок Релиз до 1 июля</span> · <span class="ex">эстимейт Геймдизайн 24ч</span><br>
-<b style="color:#9aa0b3">Ещё</b> <span class="ex">переименуй Тексты в Копирайтинг</span> · <span class="ex">коммент Тексты: нужен тон бренда</span> · <span class="ex">идея реферальная петля</span> · <span class="ex">удали задачу Саунддизайн</span>`;
+<b style="color:#9aa0b3">Ещё</b> <span class="ex">переименуй Тексты в Копирайтинг</span> · <span class="ex">коммент Тексты: нужен тон бренда</span> · <span class="ex">идея реферальная петля</span> · <span class="ex">удали задачу Саунддизайн</span><br>
+<span style="color:#838aa6">⌨ Хоткеи: <b>/</b> команда · <b>N</b> новая · <b>O</b>бзор · <b>B</b> доска · <b>G</b> гант · <b>W</b> неделя · <b>I</b> бэклог · <b>T</b> команда · <b>A</b> всё · <b>⌘Z</b> отмена</span>`;
 cmdEl.onfocus=()=>{hintEl.innerHTML=HINT;hintEl.classList.add('show');bindEx();};
 cmdEl.onblur=()=>setTimeout(()=>hintEl.classList.remove('show'),180);
 function bindEx(){$$('#cmdhint .ex').forEach(e=>e.onmousedown=ev=>{ev.preventDefault();cmdEl.value=e.textContent;cmdEl.focus();});}
@@ -2203,6 +2216,9 @@ document.addEventListener('keydown',e=>{
   else if(e.key==='b')setView('board');
   else if(e.key==='o')setView('dash');
   else if(e.key==='i')setView('backlog');
+  else if(e.key==='w')setView('week');
+  else if(e.key==='t')setView('team');
+  else if(e.key==='a')setView('all');
   else if(e.key==='?')openOnboarding(0);
 });
 
@@ -2210,6 +2226,46 @@ function monIdx(s){s=s.toLowerCase();for(let i=0;i<MONTHS.length;i++)if(s.starts
 function findMember(name){name=name.toLowerCase().trim();return S.members.find(m=>m.name.toLowerCase().startsWith(name)||name.startsWith(m.name.toLowerCase()));}
 function findTask(name){name=name.toLowerCase().trim();return S.tasks.find(t=>t.title.toLowerCase().includes(name))||S.tasks.find(t=>name.includes(t.title.toLowerCase()));}
 function curYear(){return new Date().getFullYear();}
+
+/* единый умный парсер для быстрого ввода (доска / гант / командная строка)
+   понимает: @имя или «для/на имя» · «2ч» или «эстимейт 12ч» · «!срочно»/«важно»
+   · «сегодня/завтра/послезавтра» · «с 22 по 28 июня» · «на 3 дня/2 недели» */
+function parseQuick(raw){
+  let body=(raw||'').replace(/^(добавь?|создай?|сделай|add|new)\s*(задачу|задача|таск|task)?\s*/i,'').trim();
+  let assignee=null,est=0,start=null,end=null,prio=null;
+  // эстимейт: с ключевым словом ИЛИ голое «Nч»/«Nh» (\b неприменим к кириллице — ловим юникод-границей)
+  let em=body.match(/(?:эстимейт|оцен\w*|est|estimate|~)\s*(\d+(?:[.,]\d+)?)\s*(?:часов|часа|час|ч|h)?/i)
+       ||body.match(/(\d+(?:[.,]\d+)?)\s*(?:часов|часа|час|ч|h)(?![а-яёa-z\d])/i);
+  if(em){est=parseFloat(em[1].replace(',','.'));body=body.replace(em[0],' ').trim();}
+  // приоритет (поддержка ведущего «!»; границы — пробел/начало/конец, не \b)
+  const RX_URG=/(?:^|[\s!])(срочно|urgent|критич[а-яё]*)(?=\s|$|[!.,])/i;
+  const RX_HI=/(?:^|[\s!])(важно|высокий приоритет|high)(?=\s|$|[!.,])/i;
+  if(RX_URG.test(body)){prio='urgent';body=body.replace(RX_URG,' ').trim();}
+  else if(RX_HI.test(body)){prio='high';body=body.replace(RX_HI,' ').trim();}
+  // исполнитель: @имя или «для/на имя»
+  let am=body.match(/@\s*([A-Za-zА-Яа-яЁё]+)/);
+  if(am){const m=findMember(am[1]);if(m){assignee=m.id;body=body.replace(am[0],' ').trim();}}
+  if(!assignee){am=body.match(/\s(?:для|на|to)\s+([A-Za-zА-Яа-яЁё]+)/i);
+    if(am){const m=findMember(am[1]);if(m){assignee=m.id;body=body.replace(am[0],' ').trim();}}}
+  // относительные даты (без \b — он не работает с кириллицей; «послезавтра» проверяем раньше «завтра»)
+  if(/послезавтра/i.test(body)){start=fmtD(parseD(todayISO())+2*dayMs);body=body.replace(/послезавтра/i,' ').trim();}
+  else if(/завтра/i.test(body)){start=fmtD(parseD(todayISO())+dayMs);body=body.replace(/завтра/i,' ').trim();}
+  else if(/сегодня/i.test(body)){start=todayISO();body=body.replace(/сегодня/i,' ').trim();}
+  // диапазон «с 22 по 28 июня» / «22-28 июн»
+  let dm=body.match(/с\s+(\d{1,2})\s*(?:по|до|[-–])\s*(\d{1,2})\s+([А-Яа-яёЁ]+)/i)||body.match(/(\d{1,2})\s*[-–]\s*(\d{1,2})\s+([А-Яа-яёЁ]+)/i);
+  if(dm){const mi=monIdx(dm[3]);if(mi>=0){const y=curYear();
+    start=`${y}-${String(mi+1).padStart(2,'0')}-${String(+dm[1]).padStart(2,'0')}`;
+    end=`${y}-${String(mi+1).padStart(2,'0')}-${String(+dm[2]).padStart(2,'0')}`;body=body.replace(dm[0],' ').trim();}}
+  else if(!start){const sm=body.match(/(?:с|от|до)\s+(\d{1,2})\s+([А-Яа-яёЁ]+)/i);
+    if(sm){const mi=monIdx(sm[2]);if(mi>=0){start=`${curYear()}-${String(mi+1).padStart(2,'0')}-${String(+sm[1]).padStart(2,'0')}`;body=body.replace(sm[0],' ').trim();}}}
+  // длительность «на N дней/недели»
+  const ndm=body.match(/на\s+(\d{1,2})\s*(дн[а-яё]*|день|недел[а-яё]*)/i);
+  if(ndm){const n=+ndm[1]*(/недел/i.test(ndm[2])?7:1);if(!start)start=todayISO();end=fmtD(parseD(start)+(n-1)*dayMs);body=body.replace(ndm[0],' ').trim();}
+  body=body.replace(/\s{2,}/g,' ').replace(/^[,;\-—\s]+|[,;\-—\s]+$/g,'').trim();
+  return {title:body,assignee,est,prio,start,end};
+}
+// применить разобранные поля к задаче (кроме названия)
+function applyQuick(t,p){if(p.assignee)t.assigneeId=p.assignee;if(p.est)t.estimate=p.est;if(p.prio)t.priority=p.prio;if(p.start){t.start=p.start;t.end=p.end||p.start;}return t;}
 
 function runCmd(raw){
   const s=(raw||'').trim();if(!s)return;
@@ -2264,36 +2320,10 @@ function runCmd(raw){
     const t=findTask(tn);if(!t){toast('Задача не найдена','⚠');return;}if(!nd){toast('Не понял дату (напр. «до 1 июля»)','⚠');return;}
     t.end=nd;if(parseD(t.start)>parseD(t.end))t.start=t.end;logAct('📅','срок «'+t.title+'» → '+nd.slice(8)+'.'+nd.slice(5,7));save();render();toast('Срок «'+t.title+'» → '+nd.slice(8)+'.'+nd.slice(5,7),'📅');return;}
   if(/^(добав|созда|сделай|задач|add|new|task)/i.test(s)){
-    let body=s.replace(/^(добавь?|создай?|сделай|add|new)\s*(задачу|задача|таск|task)?\s*/i,'').trim();
-    let assignee=null,est=0,start=null,end=null,prio=null;
-    // estimate (часов/ч/h)
-    const em=body.match(/(?:эстимейт|оцен\w*|est|estimate|~)\s*(\d+(?:[.,]\d+)?)\s*(?:часов|часа|час|ч|h)?/i);
-    if(em){est=parseFloat(em[1].replace(',','.'));body=body.replace(em[0],'').trim();}
-    // priority word
-    if(/\b(срочно|urgent|критич\w*)\b/i.test(body)){prio='urgent';body=body.replace(/\b(срочно|urgent|критич\w*)\b/i,'').trim();}
-    else if(/\b(важно|важн\w*приоритет|высокий приоритет|high)\b/i.test(body)){prio='high';body=body.replace(/\b(важно|высокий приоритет|high)\b/i,'').trim();}
-    // assignee
-    const am=body.match(/\s(?:для|на|to|@)\s+([A-Za-zА-Яа-яЁё]+)/);
-    if(am){const m=findMember(am[1]);if(m){assignee=m.id;body=body.replace(am[0],'').trim();}}
-    // relative dates
-    if(/\bсегодня\b/i.test(body)){start=todayISO();body=body.replace(/\bсегодня\b/i,'').trim();}
-    else if(/\bпослезавтра\b/i.test(body)){start=fmtD(parseD(todayISO())+2*dayMs);body=body.replace(/\bпослезавтра\b/i,'').trim();}
-    else if(/\bзавтра\b/i.test(body)){start=fmtD(parseD(todayISO())+dayMs);body=body.replace(/\bзавтра\b/i,'').trim();}
-    // range "с 22 по 28 июня" / "22-28 июн"
-    let dm=body.match(/с\s+(\d{1,2})\s*(?:по|до|[-–])\s*(\d{1,2})\s+([А-Яа-яёЁ]+)/i)||body.match(/(\d{1,2})\s*[-–]\s*(\d{1,2})\s+([А-Яа-яёЁ]+)/i);
-    if(dm){const mi=monIdx(dm[3]);if(mi>=0){const y=curYear();
-      start=`${y}-${String(mi+1).padStart(2,'0')}-${String(+dm[1]).padStart(2,'0')}`;
-      end=`${y}-${String(mi+1).padStart(2,'0')}-${String(+dm[2]).padStart(2,'0')}`;body=body.replace(dm[0],'').trim();}}
-    else if(!start){const sm=body.match(/(?:с|от|до)\s+(\d{1,2})\s+([А-Яа-яёЁ]+)/i);
-      if(sm){const mi=monIdx(sm[2]);if(mi>=0){start=`${curYear()}-${String(mi+1).padStart(2,'0')}-${String(+sm[1]).padStart(2,'0')}`;body=body.replace(sm[0],'').trim();}}}
-    // duration "на N дней/недели"
-    const ndm=body.match(/на\s+(\d{1,2})\s*(дн\w*|день|недел\w*)/i);
-    if(ndm){const n=+ndm[1]*(/недел/i.test(ndm[2])?7:1);if(!start)start=todayISO();end=fmtD(parseD(start)+(n-1)*dayMs);body=body.replace(ndm[0],'').trim();}
-    body=body.replace(/\s{2,}/g,' ').replace(/^[,;\-—\s]+|[,;\-—\s]+$/g,'').trim();
-    if(!body){toast('Не понял название задачи','⚠');return;}
-    const t=newTask(body);if(assignee)t.assigneeId=assignee;if(est)t.estimate=est;if(prio)t.priority=prio;
-    if(start){t.start=start;t.end=end||start;t.status='todo';}
-    save();render();toast('Задача создана: «'+body+'»','🚀');return;
+    const p=parseQuick(s);
+    if(!p.title){toast('Не понял название задачи','⚠');return;}
+    const t=applyQuick(newTask(p.title),p);if(p.start)t.status='todo';
+    save();render();toast('Задача создана: «'+p.title+'»','🚀');return;
   }
   toast('Не распознал команду. Жми / для подсказок','🤔');
   }catch(err){console.error(err);toast('Ошибка: '+err.message,'⚠');}
@@ -2661,6 +2691,13 @@ $('#sbLegend').innerHTML=legendHTML();
 resetUndo();
 render();
 cloudInit();
+// утренний бриф для локального режима (без облака) — один раз в день
+setTimeout(()=>{
+  if(cloudOn)return;
+  const anyModal=['#gate','#obScrim','#npScrim','#authScrim','#profileScrim','#briefScrim'].some(id=>{const el=$(id);return el&&(id==='#gate'?!el.classList.contains('hide'):el.classList.contains('show'));});
+  if(anyModal)return;
+  if(localStorage.getItem('cockpit_onboarded')&&localStorage.getItem('cockpit_brief_date')!==todayISO())openBrief();
+},1900);
 </script>
 </body>
 </html>
