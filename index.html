@@ -995,7 +995,7 @@ function loadProj(id){try{return JSON.parse(localStorage.getItem(pkey(id)));}cat
 function migrate(p){if(!p)return p;p.ui=p.ui||{zoom:38};if(!p.ui.zoom)p.ui.zoom=38;if(p.demo===undefined)p.demo=false;
   if(!p.id)p.id='p'+Math.random().toString(36).slice(2,8);p.ideas=p.ideas||[];p.tasks=p.tasks||[];p.members=p.members||[];p.sections=p.sections||[{id:'s1',name:'Задачи'}];
   p.tasks.forEach(t=>{if(!t.deps)t.deps=[];if(t.comments==null)t.comments=[];});
-  p.activity=p.activity||[];if(!p.updatedAt)p.updatedAt=0;return p;}
+  p.activity=p.activity||[];if(!p.updatedAt)p.updatedAt=0;if(p.parentId===undefined)p.parentId=null;return p;}
 
 function blankProject(){return {projectName:'Мой проект',emoji:'🚀',demo:false,ui:{zoom:38},
   members:[{id:'m1',name:'Я',role:'Founder',color:COLORS[1],capacity:30}],
@@ -1195,9 +1195,14 @@ function renderDash(){
           <div class="meter"><span style="width:${pct}%;${over?'background:linear-gradient(90deg,#fb7185,#f87171)':''}"></span></div>
           <span class="h" style="${over?'color:var(--bad)':''}">${load}/${m.capacity}ч</span></div>`;}).join('')}</div>
     </div>
+    ${childrenOf(S.id).length?`<div class="panel-c" style="margin-top:16px"><h3>📦 Дочерние проекты <span class="c">${childrenOf(S.id).length}</span></h3>
+      <div class="plist">${childrenOf(S.id).map(k=>{const kd=loadProj(k.id)||{tasks:[]};const kts=(kd.tasks||[]).filter(t=>!t.isMilestone);const kdone=kts.filter(t=>t.status==='done').length;const kpct=kts.length?Math.round(kdone/kts.length*100):0;const kov=(kd.tasks||[]).filter(t=>!t.isMilestone&&t.status!=='done'&&parseD(t.end)<parseD(tISO)).length;
+        return `<div class="prow" data-open="${k.id}"><div class="pemoji">${k.emoji||'📄'}</div><div class="pmain"><div class="pn">${esc(k.name)}</div><div class="pbar"><span style="width:${kpct}%;${kov?'background:linear-gradient(90deg,#fb7185,#f87171)':''}"></span></div><div class="pmeta">${kts.length} задач · ${kdone} готово${kov?` · <b style="color:var(--bad)">${kov} просроч.</b>`:''}</div></div><div class="ppct">${kpct}%</div></div>`;}).join('')}</div>
+      <div style="font-size:11.5px;color:var(--mut2);margin-top:9px">Клик по проекту — провалиться внутрь и работать с его задачами.</div></div>`:''}
     <div class="panel-c" style="margin-top:16px"><h3>🕑 Лента активности <span class="c">${(S.activity||[]).length}</span></h3>
       <div class="actfeed">${(S.activity||[]).length?S.activity.slice(0,20).map(a=>`<div class="actrow"><span class="ai">${a.icon}</span><span class="atx"><b>${esc(a.who)}</b> ${esc(a.text)}</span><span class="att">${relTime(a.ts)}</span></div>`).join(''):'<div class="emptymini">Здесь появится история: кто что создал, передвинул, закрыл. Ничего не теряется — всё под контролем.</div>'}</div></div>`;
   $$('#dash .trow').forEach(el=>el.onclick=()=>openTask(el.dataset.task));
+  $$('#dash .prow[data-open]').forEach(el=>el.onclick=()=>switchProject(el.dataset.open));
   const ab=$('#aiBtn');if(ab)ab.onclick=aiReview;
 }
 
@@ -2048,11 +2053,24 @@ function buildTemplate(tpl){
     p.tasks=[mk('Reels / видео','s1',0,1,'todo',3),mk('Пост-карусель','s1',1,2,'backlog',2),mk('Сторис-серия','s1',2,3,'backlog',2),mk('Email / рассылка','s1',3,4,'backlog',2),mk('Аналитика недели','s1',5,6,'backlog',1)];return p;}
   return base();
 }
-function createProject(name,tpl){
-  save();const p=migrate(buildTemplate(tpl));if(name)p.projectName=name;
-  reg.list.push({id:p.id,name:p.projectName,emoji:p.emoji||'📄'});reg.active=p.id;saveReg();
+function createProject(name,tpl,parentId){
+  save();const p=migrate(buildTemplate(tpl));if(name)p.projectName=name;p.parentId=parentId||null;
+  reg.list.push({id:p.id,name:p.projectName,emoji:p.emoji||'📄',parentId:parentId||null});reg.active=p.id;saveReg();
   localStorage.setItem(pkey(p.id),JSON.stringify(p));S=p;resetUndo();if(cloudOn)cloudPush(p,true);
   collapsed={};filter={q:'',assignee:'',mine:false,overdue:false};ganttNeedsScroll=true;setView('dash');toast('Проект создан: «'+p.projectName+'»','🚀');
+}
+function projMeta(id){return reg.list.find(p=>p.id===id);}
+function childrenOf(id){return reg.list.filter(p=>p.parentId===id&&!p.archived);}
+function setParent(id,parentId){const e=projMeta(id);if(!e)return;e.parentId=parentId||null;
+  const pr=(id===S.id)?S:loadProj(id);if(pr){pr.parentId=parentId||null;localStorage.setItem(pkey(id),JSON.stringify(pr));if(cloudOn)cloudPush(pr,true);}
+  saveReg();render();toast(parentId?'Вложено в проект':'Вынесено наверх',parentId?'📦':'⬆️');}
+function openParentChooser(){
+  const cur=S.id;const descend=new Set();(function walk(x){childrenOf(x).forEach(c=>{descend.add(c.id);walk(c.id);});})(cur);
+  const cands=reg.list.filter(p=>!p.archived&&p.id!==cur&&!descend.has(p.id));
+  projMenu.innerHTML=`<div style="font-size:10px;color:var(--mut2);padding:6px 11px;text-transform:uppercase;letter-spacing:.5px">Вложить «${esc(S.projectName)}» в:</div>`
+    +(cands.length?cands.map(p=>`<button data-parent="${p.id}">${p.emoji||'📄'} ${esc(p.name)}</button>`).join(''):'<div style="padding:6px 11px;color:var(--mut2);font-size:12px">Нет подходящих проектов</div>')
+    +`<div class="sep"></div><button>← Отмена</button>`;
+  projMenu.classList.add('show');
 }
 function switchProject(id){if(id===S.id)return;save();const p=migrate(loadProj(id));if(!p)return;S=p;reg.active=id;saveReg();resetUndo();
   collapsed={};filter={q:'',assignee:'',mine:false,overdue:false};ganttNeedsScroll=true;setView('dash');toast('Проект: «'+S.projectName+'»','📂');}
@@ -2067,9 +2085,13 @@ function archiveProject(id,val){const e=reg.list.find(p=>p.id===id);if(!e)return
 projBtn.onclick=e=>{e.stopPropagation();
   const active=reg.list.filter(p=>!p.archived), arch=reg.list.filter(p=>p.archived);
   const cur=reg.list.find(p=>p.id===S.id);
-  projMenu.innerHTML=active.map(p=>`<button class="${p.id===S.id?'cur':''}" data-switch="${p.id}">${p.emoji||'📄'} ${esc(p.name)}${p.id===S.id?' ✓':''}</button>`).join('')
+  const item=(p,ind)=>`<button class="${p.id===S.id?'cur':''}" data-switch="${p.id}"${ind?' style="padding-left:24px"':''}>${ind?'↳ ':''}${p.emoji||'📄'} ${esc(p.name)}${p.id===S.id?' ✓':''}</button>`+childrenOf(p.id).map(c=>item(c,true)).join('');
+  const tops=active.filter(p=>{const pr=p.parentId&&projMeta(p.parentId);return !pr||pr.archived;});
+  projMenu.innerHTML=tops.map(p=>item(p,false)).join('')
     +`<div class="sep"></div>`
     +`<button data-act="newp">＋ Новый проект</button>`
+    +`<button data-act="makechild">📦 Вложить в проект…</button>`
+    +`${cur&&cur.parentId?'<button data-act="unparent">⬆️ Вынести наверх</button>':''}`
     +`<button data-act="report">📄 Отчёт для клиента</button>`
     +`<button data-act="renp">✏️ Переименовать</button>`
     +`<button data-act="archive">${cur&&cur.archived?'♻️ Вернуть из архива':'🗄 В архив'}</button>`
@@ -2080,6 +2102,9 @@ projBtn.onclick=e=>{e.stopPropagation();
 document.addEventListener('click',e=>{if(!projMenu.contains(e.target)&&!projBtn.contains(e.target))projMenu.classList.remove('show');});
 projMenu.onclick=e=>{const b=e.target.closest('button');if(!b)return;projMenu.classList.remove('show');
   if(b.dataset.switch)switchProject(b.dataset.switch);
+  else if(b.hasAttribute('data-parent'))setParent(S.id,b.dataset.parent||null);
+  else if(b.dataset.act==='makechild')openParentChooser();
+  else if(b.dataset.act==='unparent')setParent(S.id,null);
   else if(b.dataset.act==='newp')openNewProject();
   else if(b.dataset.act==='report')openReport();
   else if(b.dataset.act==='renp'){const n=prompt('Название проекта:',S.projectName);if(n){S.projectName=n.trim();save();render();}}
@@ -2102,6 +2127,8 @@ function renderNP(){
       <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mut2);margin:16px 0 6px">Название проекта</label>
       <input class="inp" id="npName" placeholder="Например: AppHub — лендинг" style="font-size:16px;padding:12px 14px">
       <div class="tpl-grid">${TEMPLATES.map(t=>`<button class="tpl ${t.k===npTpl?'on':''}" data-tpl="${t.k}"><div class="tic">${t.emoji}</div><div class="tnm">${t.n}</div><div class="tds">${t.d}</div></button>`).join('')}</div>
+      <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mut2);margin:16px 0 6px">Вложить в проект (необязательно)</label>
+      <select class="inp" id="npParent"><option value="">— самостоятельный проект —</option>${reg.list.filter(p=>!p.archived).map(p=>`<option value="${p.id}">${esc(p.emoji||'📄')} ${esc(p.name)}</option>`).join('')}</select>
     </div>
     <div class="ob-foot"><div class="spacer"></div><button class="btn" id="npCancel">Отмена</button><button class="btn primary" id="npCreate">Создать проект</button></div>`;
   const nameEl=$('#npName');nameEl.value=TPL_NAME[npTpl]||'Мой проект';
@@ -2110,7 +2137,7 @@ function renderNP(){
     $$('#npModal .tpl').forEach(x=>x.classList.toggle('on',x===el));
     if(!edited)nameEl.value=TPL_NAME[npTpl]||'Мой проект';});
   $('#npCancel').onclick=()=>$('#npScrim').classList.remove('show');
-  $('#npCreate').onclick=()=>{const nm=(nameEl.value||'').trim()||TPL_NAME[npTpl]||'Мой проект';$('#npScrim').classList.remove('show');createProject(nm,npTpl);};
+  $('#npCreate').onclick=()=>{const nm=(nameEl.value||'').trim()||TPL_NAME[npTpl]||'Мой проект';const par=($('#npParent')||{}).value||'';$('#npScrim').classList.remove('show');createProject(nm,npTpl,par||null);};
   setTimeout(()=>{nameEl.focus();nameEl.select();},60);
 }
 $('#npScrim').onclick=e=>{if(e.target===$('#npScrim'))$('#npScrim').classList.remove('show');};
@@ -2224,7 +2251,7 @@ async function cloudSync(){
   reg.list.forEach(p=>{if(!cloudById[p.id]){const local=loadProj(p.id);if(local)cloudPush(local,true);}});
   // reg = объединение облака и локально-уникальных (флаг архива сохраняем — он локальный)
   const prevArch={};reg.list.forEach(p=>{if(p.archived)prevArch[p.id]=true;});
-  const union=rows.map(r=>({id:r.id,name:r.name,emoji:r.emoji||'📄',archived:!!prevArch[r.id]}));
+  const union=rows.map(r=>({id:r.id,name:r.name,emoji:r.emoji||'📄',archived:!!prevArch[r.id],parentId:(r.data&&r.data.parentId)||null}));
   reg.list.forEach(p=>{if(!cloudById[p.id])union.push(p);});
   if(union.length)reg.list=union;
   if(!reg.list.find(p=>p.id===reg.active))reg.active=(reg.list[0]||{}).id;
