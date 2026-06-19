@@ -754,6 +754,18 @@ body.light .brand .logo{background:linear-gradient(157deg,#1b1d27,#08090d 72%)}
 .wcm{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .wcard .qdone{margin-top:1px}
 @media (max-width:680px){.wcol{min-width:78vw;scroll-snap-align:center}.wgrid{scroll-snap-type:x mandatory}}
+/* fix: закрытый дровер не должен светить тенью на правый край экрана */
+.drawer:not(.show){box-shadow:none}
+/* геймификация: очки и лидерборд */
+.coins{font-size:12px;font-weight:800;color:#e8b94a;background:rgba(232,185,74,.13);border:1px solid rgba(232,185,74,.32);border-radius:8px;padding:2px 8px;white-space:nowrap;flex:0 0 auto;align-self:flex-start}
+.lbrow-wrap{display:flex;flex-direction:column;gap:4px}
+.lbrow{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)}
+.lbrow:last-child{border-bottom:none}
+.lbrank{font-size:15px;width:24px;text-align:center;font-weight:800;color:var(--mut2);flex:0 0 auto}
+.lbn{flex:1;font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lbpts{font-weight:800;color:#e8b94a;font-variant-numeric:tabular-nums;flex:0 0 auto}
+.coffeeline{margin-top:11px;font-size:13px;font-weight:600;color:var(--txt);background:rgba(232,185,74,.1);border:1px solid rgba(232,185,74,.25);border-radius:10px;padding:9px 12px}
+.coffeeline b{color:#e8b94a}
 /* inbox */
 .iconbtn.inbox{position:relative}
 .ibadge{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;border-radius:20px;background:var(--bad);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;padding:0 4px;box-shadow:0 0 0 2px rgba(18,21,31,.9)}
@@ -917,6 +929,7 @@ body.light .drawer,body.light .modal{background:var(--sheen),rgba(255,255,255,.9
         <span style="margin-left:auto;display:flex;align-items:center;gap:7px;text-transform:none;letter-spacing:0;font-weight:500;color:var(--mut)">Вы: <select class="fsel" id="whoAmI"></select></span>
       </div>
       <div style="font-size:12.5px;color:var(--mut2);margin:-6px 0 14px;line-height:1.5">👋 <b style="color:var(--mut)">Пригласить со-фаундера:</b> добавь участника → впиши его email → он войдёт этой почтой и сразу увидит ваши проекты и задачи. (Доступ открыт только участникам, прописанным в Supabase.)</div>
+      <div id="leaderboard"></div>
       <div class="grid" id="team"></div>
     </div></div>
   </div>
@@ -1203,6 +1216,12 @@ function filterActive(){return filter.q||filter.assignee||filter.mine||filter.ov
 let view='board';
 function relScore(t){const prW={urgent:4,high:3,med:2,low:1}[t.priority]||2;const dl=daysLeft(t);
   const due=dl<0?(2000-dl):Math.max(0,400-dl*8);return due+prW*60;}
+/* геймификация: баллы за выполненные задачи */
+function taskValue(t){const pm={urgent:1.5,high:1.25,med:1,low:1}[t.priority]||1;return Math.max(3,Math.round((t.estimate||5)*pm));}
+function awardForDone(data,t){
+  if(t.status!=='done'||t.pointsAwarded||!t.assigneeId)return 0;
+  const m=(data.members||[]).find(x=>x.id===t.assigneeId);if(!m)return 0;
+  const v=taskValue(t);m.points=(m.points||0)+v;t.pointsAwarded=t.assigneeId;return v;}
 function render(){
   $('#cntIdeas').textContent=S.ideas.length;
   $('#projLabel').textContent=S.projectName;
@@ -1299,7 +1318,7 @@ function renderDash(){
     <div class="panel-c" style="margin-top:16px"><h3>🕑 Лента активности <span class="c">${(S.activity||[]).length}</span></h3>
       <div class="actfeed">${(S.activity||[]).length?S.activity.slice(0,20).map(a=>`<div class="actrow"><span class="ai">${a.icon}</span><span class="atx"><b>${esc(a.who)}</b> ${esc(a.text)}</span><span class="att">${relTime(a.ts)}</span></div>`).join(''):'<div class="emptymini">Здесь появится история: кто что создал, передвинул, закрыл. Ничего не теряется — всё под контролем.</div>'}</div></div>`;
   $$('#dash .trow').forEach(el=>el.onclick=()=>openTask(el.dataset.task));
-  $$('#dash .qdone').forEach(b=>b.onclick=e=>{e.stopPropagation();const t=task(b.dataset.quickdone);if(t){t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;logAct('✅','«'+t.title+'» → Готово');save();render();toast('Готово: «'+t.title+'» ✅','✅');}});
+  $$('#dash .qdone').forEach(b=>b.onclick=e=>{e.stopPropagation();const t=task(b.dataset.quickdone);if(t){t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;logAct('✅','«'+t.title+'» → Готово');const _v=awardForDone(S,t);save();render();toast(_v?('+'+_v+' 🪙 за «'+t.title+'»'):('Готово: «'+t.title+'» ✅'),_v?'🪙':'✅');}});
   $$('#dash .prow[data-open]').forEach(el=>el.onclick=()=>switchProject(el.dataset.open));
   const ab=$('#aiBtn');if(ab)ab.onclick=aiReview;
   const bb=$('#briefBtn');if(bb)bb.onclick=openBrief;
@@ -1520,8 +1539,8 @@ function weekDays(offset){const now=new Date();const d=new Date(now.getFullYear(
 function myWeekTasks(){const out=[];reg.list.filter(p=>!p.archived).forEach(p=>{const data=loadProj(p.id);if(!data)return;const me=myMemberIn(data);if(!me)return;
   (data.tasks||[]).forEach(t=>{if(t.isMilestone)return;if(t.assigneeId===me.id&&t.status!=='done')out.push({t,pid:p.id,pname:p.name,emoji:p.emoji});});});return out;}
 function editTaskInProject(pid,tid,fn){
-  if(pid===S.id){const t=task(tid);if(t){fn(t);save();}return;}
-  const data=loadProj(pid);if(!data)return;const t=(data.tasks||[]).find(x=>x.id===tid);if(!t)return;fn(t);data.updatedAt=Date.now();localStorage.setItem(pkey(pid),JSON.stringify(data));if(cloudOn)cloudPush(data,true);}
+  if(pid===S.id){const t=task(tid);if(t){fn(t);awardForDone(S,t);save();}return;}
+  const data=loadProj(pid);if(!data)return;const t=(data.tasks||[]).find(x=>x.id===tid);if(!t)return;fn(t);awardForDone(data,t);data.updatedAt=Date.now();localStorage.setItem(pkey(pid),JSON.stringify(data));if(cloudOn)cloudPush(data,true);}
 function renderWeek(){
   const el=$('#week');const days=weekDays(weekOffset);const wstart=days[0],wend=days[6],tISO=todayISO();
   const WD=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];const md=d=>d.slice(8)+'.'+d.slice(5,7);
@@ -1720,7 +1739,7 @@ function renderGantt(){
   $$('#gantt .grow.sec').forEach(el=>el.querySelector('.tt').onclick=()=>{collapsed[el.dataset.sec]=!collapsed[el.dataset.sec];renderGantt();});
   $$('#gantt .tt[data-task]').forEach(el=>el.onclick=()=>openTask(el.dataset.task));
   $$('#gantt .bar[data-task]').forEach(el=>wireBar(el,min,DAY));
-  $$('#gantt .dot[data-cycle]').forEach(el=>el.onclick=e=>{e.stopPropagation();const t=task(el.dataset.cycle);const i=STATUSES.findIndex(s=>s.k===t.status);t.status=STATUSES[(i+1)%STATUSES.length].k;if(t.status==='done'&&t.estimate&&!t.spent)t.spent=t.estimate;logAct('🔀','«'+t.title+'» → '+stMap[t.status].n);save();renderGantt();toast('«'+t.title+'» → '+stMap[t.status].n,'✓');});
+  $$('#gantt .dot[data-cycle]').forEach(el=>el.onclick=e=>{e.stopPropagation();const t=task(el.dataset.cycle);const i=STATUSES.findIndex(s=>s.k===t.status);t.status=STATUSES[(i+1)%STATUSES.length].k;if(t.status==='done'&&t.estimate&&!t.spent)t.spent=t.estimate;logAct('🔀','«'+t.title+'» → '+stMap[t.status].n);const _v=awardForDone(S,t);save();renderGantt();toast(_v?('+'+_v+' 🪙 · «'+t.title+'» готово'):('«'+t.title+'» → '+stMap[t.status].n),_v?'🪙':'✓');});
   $$('#gantt .addrow').forEach(el=>el.onclick=()=>openInlineAdd(el));
   if(autoAddSec){const ar=document.querySelector('#gantt .addrow[data-addsec="'+autoAddSec+'"]');if(ar)openInlineAdd(ar);}
   if(ganttNeedsScroll&&tMs>=min&&tMs<=max){ganttNeedsScroll=false;
@@ -1829,7 +1848,7 @@ function renderBoard(){
     col.ondragover=e=>{e.preventDefault();col.classList.add('drop');};
     col.ondragleave=()=>col.classList.remove('drop');
     col.ondrop=e=>{e.preventDefault();col.classList.remove('drop');
-      if(dragCard){const t=task(dragCard);if(t){t.status=st.k;if(st.k==='done'&&t.estimate&&!t.spent)t.spent=t.estimate;logAct('🔀','«'+t.title+'» → '+st.n);save();renderBoard();}}};
+      if(dragCard){const t=task(dragCard);if(t){t.status=st.k;if(st.k==='done'&&t.estimate&&!t.spent)t.spent=t.estimate;logAct('🔀','«'+t.title+'» → '+st.n);const _v=awardForDone(S,t);save();renderBoard();if(_v)toast('+'+_v+' 🪙 за «'+t.title+'»','🪙');}}};
     b.appendChild(col);
   });
   if(pendingBoardAdd){const c=[...document.querySelectorAll('#board .col')].find(x=>x.dataset.st===pendingBoardAdd);if(c)openBoardAdd(c,pendingBoardAdd);}
@@ -1891,11 +1910,17 @@ function renderTeam(){
     return `<div class="mcard click" data-m="${m.id}">
       <div class="top">${av}<div style="min-width:0;flex:1">
         <div class="nm">${esc(m.name)} ${m.id===myId()?'<span class="youbadge">вы</span>':''}</div>
-        <div class="rl">${esc(m.role)}</div></div></div>
+        <div class="rl">${esc(m.role)}</div></div><span class="coins" title="Очки за выполненные задачи">🪙 ${m.points||0}</span></div>
       <div class="meter"><span style="width:${pct}%;${over?'background:linear-gradient(90deg,#fb7185,#f87171)':''}"></span></div>
       <div class="mstat"><span>${mt.length} задач · ${load}ч</span><span style="${over?'color:var(--bad)':''}">${load}/${m.capacity}ч ${over?'⚠':''}</span></div>
     </div>`;}).join('')
     +`<button class="addmcard" id="addMember2">＋ Добавить участника</button>`;
+  const ranked=[...S.members].sort((a,b)=>(b.points||0)-(a.points||0));
+  const payer=ranked.length>1?ranked[ranked.length-1]:null;
+  $('#leaderboard').innerHTML=ranked.length<2?'':`<div class="panel-c" style="margin-bottom:16px"><h3>🏆 Очки команды</h3>
+    <div class="lbrow-wrap">${ranked.map((m,i)=>`<div class="lbrow"><span class="lbrank">${['🥇','🥈','🥉'][i]||(i+1)}</span>${avatar(m.id)}<span class="lbn">${esc(m.name)}${m.id===myId()?' · вы':''}</span><span class="lbpts">🪙 ${m.points||0}</span></div>`).join('')}</div>
+    ${payer?`<div class="coffeeline">☕ Кофе пока с <b>${esc(payer.name)}</b> — у кого меньше всех баллов</div>`:''}
+    <div style="font-size:12px;color:var(--mut2);margin-top:9px;line-height:1.5">Баллы — за выполненные задачи (× приоритет). Можно потратить, чтобы перекинуть свою задачу на партнёра (откупиться). Купить или одолжить нельзя — только заработать. Это просто <b>мотиватор заходить и закрывать задачи регулярно</b> 🙂</div></div>`;
   $$('#team .mcard.click').forEach(el=>el.onclick=()=>openMember(el.dataset.m));
   $('#addMember2').onclick=addBlankMember;
 }
@@ -1985,7 +2010,15 @@ function openTask(id){
   $('#dSection').innerHTML=S.sections.map(s=>`<option value="${s.id}" ${s.id===t.sectionId?'selected':''}>${esc(s.name)}</option>`).join('');
   $('#dAssignee').innerHTML=S.members.map(m=>`<button class="chip ${t.assigneeId===m.id?'on':''}" data-as="${m.id}" style="${t.assigneeId===m.id?`background:${m.color}`:''}">${esc(m.name)}</button>`).join('')
     +`<button class="chip ${!t.assigneeId?'on':''}" data-as="">— никто</button>`;
-  $$('#dAssignee .chip').forEach(c=>c.onclick=()=>{t.assigneeId=c.dataset.as||null;logAct('👤','«'+t.title+'» → '+(member(t.assigneeId)?member(t.assigneeId).name:'без исполнителя'));save();openTask(id);render();});
+  $$('#dAssignee .chip').forEach(c=>c.onclick=()=>{
+    const newAs=c.dataset.as||null;
+    if(newAs&&newAs!==myId()&&t.assigneeId===myId()&&t.status!=='done'){
+      const me=member(myId())||{};const cost=taskValue(t);
+      if((me.points||0)<cost){toast('Не хватает баллов: '+(me.points||0)+'/'+cost+' 🪙. Сделай сам или заработай 💪','🪙');return;}
+      me.points-=cost;logAct('🪙',meName()+' −'+cost+' · перекинул «'+t.title+'» на '+((member(newAs)||{}).name||'?'));
+      toast('−'+cost+' 🪙 · «'+t.title+'» теперь у '+((member(newAs)||{}).name||''),'🪙');
+    }else{logAct('👤','«'+t.title+'» → '+(member(newAs)?member(newAs).name:'без исполнителя'));}
+    t.assigneeId=newAs;save();openTask(id);render();});
   $('#dPrio').innerHTML=PRIOS.map(p=>`<button class="chip ${t.priority===p.k?'on':''}" data-pr="${p.k}" style="${t.priority===p.k?`background:${p.c}`:''}">${p.n}</button>`).join('');
   $$('#dPrio .chip').forEach(c=>c.onclick=()=>{t.priority=c.dataset.pr;save();openTask(id);render();});
   // deps
@@ -2036,7 +2069,7 @@ $('#dEst').oninput=e=>{if(curTask)curTask.estimate=parseFloat(e.target.value)||0
 $('#dEst').onblur=()=>{if(curTask)save();};
 $('#dSpent').oninput=e=>{if(curTask)curTask.spent=parseFloat(e.target.value)||0;};
 $('#dSpent').onblur=()=>{if(curTask)save();};
-$('#dStatus').onchange=e=>{if(curTask){curTask.status=e.target.value;if(curTask.status==='done'&&curTask.estimate&&!curTask.spent)curTask.spent=curTask.estimate;$('#dDot').style.background=stMap[curTask.status].c;logAct('🔀','«'+curTask.title+'» → '+stMap[curTask.status].n);save();}};
+$('#dStatus').onchange=e=>{if(curTask){curTask.status=e.target.value;if(curTask.status==='done'&&curTask.estimate&&!curTask.spent)curTask.spent=curTask.estimate;$('#dDot').style.background=stMap[curTask.status].c;logAct('🔀','«'+curTask.title+'» → '+stMap[curTask.status].n);const _v=awardForDone(S,curTask);save();render();if(_v)toast('+'+_v+' 🪙 за «'+curTask.title+'»','🪙');}};
 $('#dCmtBtn').onclick=addComment;
 $('#dCmtIn').onkeydown=e=>{if(e.key==='Enter')addComment();};
 $('#dSubBtn').onclick=addSub;
