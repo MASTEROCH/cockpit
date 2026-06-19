@@ -663,9 +663,11 @@ body.light .card .cdel{background:rgba(20,24,40,.1)}
 .aichg{font-size:12.5px;color:var(--acc2);margin:3px 0;font-weight:600}
 .aire{font-size:12px;color:var(--mut);line-height:1.45}
 .airow .btn{flex:0 0 auto;padding:8px 13px;font-size:12.5px;align-self:center}
-.airisks{margin:12px 0 0;font-size:13px;color:var(--mut)}
-.airisks ul{margin:6px 0 0;padding-left:18px;line-height:1.6}
-.airisks b{color:var(--txt)}
+.aisummary{font-size:14.5px;line-height:1.6;color:var(--txt);background:var(--bg2);border:1px solid var(--line);border-radius:13px;padding:14px 16px}
+.airh{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--mut2);margin:18px 0 9px}
+.airisks{margin:14px 0 0;font-size:13.5px;color:var(--mut)}
+.airisks ul{margin:0;padding-left:18px;line-height:1.65}
+.airisks li{margin-bottom:3px}
 .aibtn{margin-left:auto}
 /* login gate */
 .gate{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;padding:22px;
@@ -1227,8 +1229,23 @@ async function aiReview(){
       body:JSON.stringify({project:payload})});
     const res=await r.json();
     if(!r.ok){renderAIError(res.error||('HTTP '+r.status));return;}
-    renderAI(res);
+    renderAI(normalizeAI(res));
   }catch(e){renderAIError(String(e));}
+}
+function normalizeAI(res){
+  if(!res||typeof res!=='object')return {summary:String(res||''),risks:[],suggestions:[]};
+  // если summary случайно содержит сырой JSON/markdown — вытащим чистый объект
+  if(typeof res.summary==='string'&&(/```/.test(res.summary)||/"summary"\s*:/.test(res.summary))){
+    const m=res.summary.match(/\{[\s\S]*\}/);
+    if(m){try{const inner=JSON.parse(m[0]);if(inner&&typeof inner==='object')
+      return {summary:typeof inner.summary==='string'?inner.summary:'',
+        risks:Array.isArray(inner.risks)?inner.risks:[],
+        suggestions:Array.isArray(inner.suggestions)?inner.suggestions:[]};}catch(e){}}
+  }
+  if(typeof res.summary==='string')res.summary=res.summary.replace(/```json|```/g,'').trim();
+  if(!Array.isArray(res.risks))res.risks=[];
+  if(!Array.isArray(res.suggestions))res.suggestions=[];
+  return res;
 }
 function renderAIError(msg){
   $('#aiModal').innerHTML=`<div class="ob-body" style="padding:30px 26px"><h2>🧠 AI-разбор</h2>
@@ -1253,9 +1270,9 @@ function renderAI(res){
   $('#aiModal').innerHTML=`
     <div class="ob-body" style="max-height:78vh;overflow:auto">
       <h2>🧠 AI-разбор доски</h2>
-      <p>${esc(res.summary||'')}</p>
-      ${res.risks&&res.risks.length?`<div class="airisks"><b>Риски:</b><ul>${res.risks.map(r=>`<li>${esc(r)}</li>`).join('')}</ul></div>`:''}
-      ${sug.length?`<div class="aisug">${sug.map((s,i)=>aiSugHTML(s,i)).join('')}</div>`:'<div class="emptymini" style="margin-top:14px">Доска в порядке — серьёзных правок не предлагаю 👍</div>'}
+      ${res.summary?`<div class="aisummary">${esc(res.summary)}</div>`:''}
+      ${res.risks&&res.risks.length?`<div class="airisks"><div class="airh">⚠️ На что обратить внимание</div><ul>${res.risks.map(r=>`<li>${esc(r)}</li>`).join('')}</ul></div>`:''}
+      ${sug.length?`<div class="airh" style="margin-top:18px">💡 Предложения — ${sug.length}</div><div class="aisug">${sug.map((s,i)=>aiSugHTML(s,i)).join('')}</div>`:'<div class="emptymini" style="margin-top:16px">Доска в порядке — серьёзных правок не предлагаю 👍</div>'}
     </div>
     <div class="ob-foot"><button class="btn" id="aiSpeak">🔊 Озвучить</button><div class="spacer"></div><button class="btn primary" id="aiClose">Готово</button></div>`;
   $('#aiClose').onclick=()=>$('#aiScrim').classList.remove('show');
