@@ -875,15 +875,18 @@ function migrate(p){if(!p)return p;p.ui=p.ui||{zoom:38};if(!p.ui.zoom)p.ui.zoom=
   p.tasks.forEach(t=>{if(!t.deps)t.deps=[];if(t.comments==null)t.comments=[];});
   p.activity=p.activity||[];if(!p.updatedAt)p.updatedAt=0;return p;}
 
+function blankProject(){return {projectName:'Мой проект',emoji:'🚀',demo:false,ui:{zoom:38},
+  members:[{id:'m1',name:'Я',role:'Founder',color:COLORS[1],capacity:30}],
+  sections:[{id:'s1',name:'Задачи'}],tasks:[],ideas:[]};}
 let reg=loadReg(), S;
 if(!reg){
   let old=null;try{old=JSON.parse(localStorage.getItem(LS));}catch(e){}
-  S=migrate((old&&old.tasks)?old:seed());
+  S=migrate((old&&old.tasks)?old:blankProject());
   reg={active:S.id,list:[{id:S.id,name:S.projectName,emoji:'🚀'}]};
   saveReg();localStorage.setItem(pkey(S.id),JSON.stringify(S));
 }else{
   S=migrate(loadProj(reg.active))||migrate(loadProj((reg.list[0]||{}).id));
-  if(!S){S=migrate(seed());reg={active:S.id,list:[{id:S.id,name:S.projectName,emoji:'🚀'}]};saveReg();localStorage.setItem(pkey(S.id),JSON.stringify(S));}
+  if(!S){S=migrate(blankProject());reg={active:S.id,list:[{id:S.id,name:S.projectName,emoji:'🚀'}]};saveReg();localStorage.setItem(pkey(S.id),JSON.stringify(S));}
 }
 function save(){S.updatedAt=Date.now();localStorage.setItem(pkey(S.id),JSON.stringify(S));const e=reg.list.find(p=>p.id===S.id);if(e)e.name=S.projectName;saveReg();if(cloudOn)cloudPush(S);}
 function myId(){const id=localStorage.getItem('cockpit_me');if(id&&member(id))return id;return (S.members[0]||{}).id||CURRENT_USER;}
@@ -1637,7 +1640,7 @@ function renderOb(){
       ${obStep>0?`<button class="btn" id="obPrev">Назад</button>`:''}
       <button class="btn primary" id="obNext">${last?'Поехали 🚀':'Далее →'}</button>
     </div>`;
-  const D=$('#obDemo');if(D)D.onclick=()=>{obStep++;renderOb();};
+  const D=$('#obDemo');if(D)D.onclick=()=>{loadDemo();obStep++;renderOb();};
   const F=$('#obFresh');if(F)F.onclick=()=>startFresh(false);
   const P=$('#obPrev');if(P)P.onclick=()=>{obStep--;renderOb();};
   $('#obNext').onclick=()=>{if(last)closeOb();else{obStep++;renderOb();}};
@@ -1691,6 +1694,12 @@ projMenu.onclick=e=>{const b=e.target.closest('button');if(!b)return;projMenu.cl
   else if(b.dataset.act==='renp'){const n=prompt('Название проекта:',S.projectName);if(n){S.projectName=n.trim();save();render();}}
   else if(b.dataset.act==='delp')deleteProject(S.id);};
 
+function loadDemo(){
+  const p=migrate(seed());
+  reg.list.push({id:p.id,name:p.projectName,emoji:'🎬'});reg.active=p.id;saveReg();
+  localStorage.setItem(pkey(p.id),JSON.stringify(p));S=p;if(cloudOn)cloudPush(p,true);
+  collapsed={};filter={q:'',assignee:'',mine:false,overdue:false};ganttNeedsScroll=true;setView('dash');toast('Демо-проект загружен','🎬');
+}
 let npTpl='mvp';
 function openNewProject(){npTpl='mvp';renderNP();$('#npScrim').classList.add('show');}
 function renderNP(){
