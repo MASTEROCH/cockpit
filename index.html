@@ -1030,8 +1030,15 @@ body.light .focusrun{background:rgba(255,255,255,.7)}
 .mm-foot{font-size:11.5px;color:var(--mut2);margin-top:7px}
 /* confetti */
 .confetti{position:fixed;width:9px;height:9px;border-radius:2px;pointer-events:none;z-index:200;will-change:transform,opacity}
-/* keyboard-selected board card */
+/* keyboard selection across views */
 .card.kbsel{border-color:var(--acc2)!important;box-shadow:0 0 0 2px rgba(167,139,250,.55),0 10px 24px rgba(0,0,0,.45)!important}
+.grow.task.kbsel{background:linear-gradient(90deg,rgba(167,139,250,.22),transparent);box-shadow:inset 2px 0 0 var(--acc2)}
+.wcard.kbsel{border-color:var(--acc2)!important;box-shadow:0 0 0 2px rgba(167,139,250,.55)!important}
+/* recording (voice) pulse on buttons */
+.btn.rec,.mic.rec{border-color:var(--acc)!important;color:#fff!important;background:var(--acc)!important;animation:fpulse 1.1s infinite}
+/* smooth screen transitions (opacity-only — safe for sticky/fixed) */
+.view.active{animation:viewIn .2s var(--ease)}
+@keyframes viewIn{from{opacity:0}to{opacity:1}}
 @media (max-width:680px){
   .now{padding:16px 14px 40px}
   .now-greet h1{font-size:26px}
@@ -1208,6 +1215,8 @@ body.light .focusrun{background:rgba(255,255,255,.7)}
 
 <div class="menu" id="menu">
   <button data-act="connect">🔌 Подключить Claude</button>
+  <button data-act="autoschedule">🗓 Авто-расписание</button>
+  <button data-act="sound">🔔 Звук вкл/выкл</button>
   <div class="sep"></div>
   <button data-act="export">💾 Экспорт в файл</button>
   <button data-act="import">📥 Импорт из файла</button>
@@ -1392,6 +1401,7 @@ function toast(msg,ic='✓',actLabel,actFn){const t=$('#toast');
   t.classList.add('show');clearTimeout(toast._);toast._=setTimeout(()=>t.classList.remove('show'),actLabel?5500:2400);
   if(actLabel){t.querySelector('.tact').onclick=()=>{t.classList.remove('show');actFn&&actFn();};}}
 function celebrate(x,y){
+  playDing();
   if(x==null){x=innerWidth/2;y=innerHeight/2;}
   const cols=['#f472b6','#a78bfa','#38bdf8','#34d399','#fbbf24','#fb7185'];
   for(let i=0;i<20;i++){const d=document.createElement('div');d.className='confetti';
@@ -1403,6 +1413,22 @@ function celebrate(x,y){
       {duration:850+Math.random()*600,easing:'cubic-bezier(.18,.7,.3,1)'}).onfinish=()=>d.remove();}
 }
 function celebrateAt(ev){if(ev&&ev.clientX)celebrate(ev.clientX,ev.clientY);else celebrate();}
+let _actx=null;
+function playDing(){if(localStorage.getItem('cockpit_sound')==='0')return;
+  try{_actx=_actx||new (window.AudioContext||window.webkitAudioContext)();const ctx=_actx,now=ctx.currentTime;
+    [[784,0],[1175,.09]].forEach(([f,t])=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=f;
+      o.connect(g);g.connect(ctx.destination);g.gain.setValueAtTime(0,now+t);g.gain.linearRampToValueAtTime(.11,now+t+.02);
+      g.gain.exponentialRampToValueAtTime(.0001,now+t+.3);o.start(now+t);o.stop(now+t+.32);});}catch(e){}}
+let _drec=null;
+function dictateTo(el,btn){const SRx=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SRx){toast('Голос — лучше в Chrome (десктоп/Android)','🎙');if(el)el.focus();return;}
+  if(_drec){_drec.stop();return;}
+  _drec=new SRx();_drec.lang='ru-RU';_drec.interimResults=true;_drec.continuous=false;
+  if(btn)btn.classList.add('rec');
+  _drec.onresult=e=>{let txt='';for(let i=0;i<e.results.length;i++)txt+=e.results[i][0].transcript;el.value=txt;el.dispatchEvent(new Event('input'));};
+  _drec.onend=()=>{_drec=null;if(btn)btn.classList.remove('rec');};
+  _drec.onerror=()=>{_drec=null;if(btn)btn.classList.remove('rec');};
+  try{_drec.start();}catch(e){_drec=null;if(btn)btn.classList.remove('rec');}}
 function isOverdue(t){return !t.isMilestone && t.status!=='done' && parseD(t.end)<parseD(todayISO());}
 function isBlocked(t){return (t.deps||[]).some(id=>{const d=task(id);return d&&d.status!=='done';});}
 const member2=(data,id)=>(data.members||[]).find(m=>m.id===id);
@@ -1586,7 +1612,8 @@ function renderNow(){
     </div>
     ${momentumSpark()}
     <div class="now-sec">🧠 Что важно знать <span>проактивно — пока другие тулзы молчат</span>
-      <button class="btn" id="aiPlanBtn" style="margin-left:auto;padding:8px 13px;font-size:12.5px">🧠 AI-План проекта</button></div>
+      <button class="btn" id="nowMic" style="margin-left:auto;padding:8px 13px;font-size:12.5px">🎙 Сказать задачу</button>
+      <button class="btn" id="aiPlanBtn" style="padding:8px 13px;font-size:12.5px">🧠 AI-План</button></div>
     <div class="insights">${ins.map((x,i)=>`<div class="insight ${x.act?'click':''}" data-i="${i}"><span class="ii">${x.ic}</span><div class="ib"><div class="it">${esc(x.title)}</div>${x.sub?`<div class="is">${esc(x.sub)}</div>`:''}</div>${x.act?'<span class="ia">→</span>':''}</div>`).join('')}</div>`;
   const ns=el.querySelector('.nh-title[data-open]');if(ns)ns.onclick=()=>openTask(ns.dataset.open);
   const fs=$('#focusStart');if(fs&&next)fs.onclick=()=>startFocus(next.id);
@@ -1596,16 +1623,33 @@ function renderNow(){
     t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;logAct('✅','«'+t.title+'» → Готово');const v=awardForDone(S,t);celebrateAt(ev);save();render();toast(v?('+'+v+' 🪙 за «'+t.title+'»'):'Готово ✅',v?'🪙':'✅');};
   ins.forEach((x,i)=>{const c=el.querySelector(`.insight[data-i="${i}"]`);if(c&&x.act)c.onclick=x.act;});
   const ap=$('#aiPlanBtn');if(ap)ap.onclick=openAiPlan;
+  const nm=$('#nowMic');if(nm)nm.onclick=()=>{const c=$('#cmd');if(c)c.focus();const mb=$('#micBtn');if(mb)mb.click();};
 }
 
 /* ---- AI-План проекта (Claude разбивает цель на задачи → Приёмка) ---- */
 function planPrompt(goal){
-  return `Распланируй проект в Cockpit. Цель: «${goal}».\n\n`+
-    `Разбей цель на 6–12 конкретных задач с короткими понятными названиями, в логичной последовательности и с реалистичными оценками. `+
-    `Для КАЖДОЙ задачи вызови инструмент cockpit_propose_task: параметр project = "${S.projectName}", `+
-    `а в text — название задачи естественным языком, по возможности со сроком и оценкой в часах `+
-    `(напр. «Дизайн лендинга на 3 дня 16ч», «Настроить аналитику завтра 4ч»). `+
-    `Если задачи зависят друг от друга — отрази это в сроках. После всех вызовов кратко перечисли, что создал.`;
+  const team=S.members.map(m=>m.name+(m.role&&m.role!=='—'?` (${m.role})`:'')).join(', ')||'—';
+  const existing=S.tasks.filter(t=>!t.isMilestone).map(t=>t.title).slice(0,40).join('; ')||'пока нет';
+  return `Ты — опытный продакт-лид. Распланируй проект в Cockpit под цель:
+«${goal}»
+
+Контекст:
+• Проект: "${S.projectName}"
+• Сегодня: ${todayISO()}
+• Команда: ${team}
+• Уже есть задачи (НЕ дублируй их): ${existing}
+
+Сделай так:
+1. Мысленно разбей цель на 2–4 фазы (отдельно их не выводи).
+2. Создай 6–12 атомарных задач с глаголом в названии («Сверстать…», «Настроить…»), в логичном порядке с учётом зависимостей (зависимые — позже по срокам).
+3. Для КАЖДОЙ задачи вызови инструмент cockpit_propose_task с полями:
+   • project: "${S.projectName}"
+   • text: название + реалистичная оценка в часах + срок/диапазон относительно сегодня + при необходимости @исполнитель из команды + !срочно для критичных. Пример: «Сверстать главную @Дима с 23 по 26 июня 14ч».
+   • note: одно предложение — зачем задача и на что влияет.
+4. Распределяй нагрузку равномерно по команде; не ставь зависимые задачи параллельно.
+5. Отметь одну ключевую веху словом «релиз» или «запуск» в названии.
+
+После всех вызовов выведи короткое резюме: фазы и сроки. Не задавай уточняющих вопросов — действуй по лучшим практикам и разумным допущениям.`;
 }
 function openAiPlan(){$('#planScrim').classList.add('show');renderPlan();}
 function closePlan(){$('#planScrim').classList.remove('show');}
@@ -1617,10 +1661,12 @@ function renderPlan(){
      <h2>AI-План проекта</h2>
      <p>Опиши цель — твой Claude (с подключённым Cockpit) разобьёт её на задачи и закинет в «Приёмку». Ты только подтвердишь.</p>
      <textarea class="inp" id="planGoal" style="min-height:84px;line-height:1.5" placeholder="Напр.: запустить лендинг AppHub с оплатой и аналитикой за 2 недели"></textarea>
+     <button class="btn" id="planMic" style="margin-top:8px;padding:8px 13px;font-size:12.5px">🎙 Надиктовать цель</button>
      <div id="planOut"></div>
    </div>
    <div class="ob-foot"><button class="btn" id="planClose">Закрыть</button><div class="spacer"></div><button class="btn primary" id="planGen">Сгенерировать промпт</button></div>`;
   $('#planClose').onclick=closePlan;
+  $('#planMic').onclick=()=>dictateTo($('#planGoal'),$('#planMic'));
   const gen=()=>{const g=($('#planGoal').value||'').trim();if(!g){toast('Опиши цель проекта','🧠');return;}
     const p=planPrompt(g);
     $('#planOut').innerHTML=`<div class="cstep"><span class="cn">→</span><div style="flex:1"><b>Готовый промпт.</b> Скопируй и вставь своему Claude (или скажи голосом) — он создаст задачи в «Приёмке».</div></div>
@@ -1632,16 +1678,56 @@ function renderPlan(){
   setTimeout(()=>{const g=$('#planGoal');if(g)g.focus();},40);
 }
 
-/* ---- клавиатурная навигация по доске (Superhuman-режим) ---- */
-function boardCards(){return $$('#board .card');}
-function boardMove(d){const cards=boardCards();if(!cards.length)return;
-  let i=cards.findIndex(c=>c.classList.contains('kbsel'));i=i<0?0:Math.max(0,Math.min(cards.length-1,i+d));
-  cards.forEach(c=>c.classList.remove('kbsel'));cards[i].classList.add('kbsel');cards[i].scrollIntoView({block:'nearest',inline:'nearest'});}
-function boardSelEl(){return $('#board .card.kbsel');}
-function boardOpenSel(){const c=boardSelEl();if(c)openTask(c.dataset.id);}
-function boardDoneSel(){const c=boardSelEl();if(!c)return;const t=task(c.dataset.id);if(!t||t.status==='done')return;
-  t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;logAct('✅','«'+t.title+'» → Готово');const v=awardForDone(S,t);
-  const r=c.getBoundingClientRect();celebrate(r.left+r.width/2,r.top+r.height/2);save();renderBoard();toast(v?('+'+v+' 🪙'):'Готово ✅',v?'🪙':'✅');}
+/* ---- клавиатурная навигация (Superhuman): доска · гант · неделя ---- */
+function kbItems(){
+  if(view==='board')return $$('#board .card').map(el=>({el,pid:S.id,tid:el.dataset.id}));
+  if(view==='gantt')return $$('#gantt .grow.task').map(el=>({el,pid:S.id,tid:el.dataset.id}));
+  if(view==='week')return $$('#week .wcard').map(el=>({el,pid:el.dataset.pid,tid:el.dataset.tid}));
+  return [];
+}
+function kbMove(d){const items=kbItems();if(!items.length)return;
+  let i=items.findIndex(x=>x.el.classList.contains('kbsel'));i=i<0?0:Math.max(0,Math.min(items.length-1,i+d));
+  items.forEach(x=>x.el.classList.remove('kbsel'));items[i].el.classList.add('kbsel');items[i].el.scrollIntoView({block:'nearest',inline:'nearest'});}
+function kbCur(){return kbItems().find(x=>x.el.classList.contains('kbsel'));}
+function kbOpen(){const it=kbCur();if(!it)return;if(it.pid===S.id)openTask(it.tid);else{switchProject(it.pid);setTimeout(()=>openTask(it.tid),140);}}
+function kbComment(){const it=kbCur();if(!it)return;const foc=()=>setTimeout(()=>{const c=$('#dCmtIn');if(c)c.focus();},130);
+  if(it.pid===S.id){openTask(it.tid);foc();}else{switchProject(it.pid);setTimeout(()=>{openTask(it.tid);foc();},150);}}
+function kbDone(){const it=kbCur();if(!it)return;const r=it.el.getBoundingClientRect();const cx=r.left+r.width/2,cy=r.top+r.height/2;
+  if(it.pid===S.id){const t=task(it.tid);if(!t||t.status==='done')return;t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;
+    logAct('✅','«'+t.title+'» → Готово');const v=awardForDone(S,t);celebrate(cx,cy);save();render();toast(v?('+'+v+' 🪙'):'Готово ✅',v?'🪙':'✅');}
+  else{editTaskInProject(it.pid,it.tid,t=>{if(t.status!=='done'){t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;}});celebrate(cx,cy);render();toast('Готово ✅','✅');}}
+function kbAssign(){const it=kbCur();if(!it||it.pid!==S.id){toast('Назначение — на доске или ганте','👤');return;}
+  const t=task(it.tid);if(!t)return;const ms=S.members;if(!ms.length)return;
+  const cur=ms.findIndex(m=>m.id===t.assigneeId);const nx=ms[(cur+1)%ms.length];
+  t.assigneeId=nx.id;logAct('👤','«'+t.title+'» → '+nx.name);save();render();toast('Назначено: '+nx.name+' (a — следующий)','👤');}
+
+/* ---- авто-расписание: раскидать активные задачи по загрузке и зависимостям ---- */
+function autoSchedule(){
+  const active=S.tasks.filter(t=>!t.isMilestone&&t.status!=='done');
+  if(!active.length){toast('Нет активных задач для планирования','🗓');return;}
+  if(!confirm('Авто-расписание расставит сроки '+active.length+' активным задачам по зависимостям и загрузке команды. Текущие даты перепишутся (отменяемо ⌘Z). Продолжить?'))return;
+  const byId={};S.tasks.forEach(t=>byId[t.id]=t);
+  const seen={},temp={},order=[];
+  (function(){const prW={urgent:0,high:1,med:2,low:3};
+    const visit=t=>{if(seen[t.id]||temp[t.id])return;temp[t.id]=1;(t.deps||[]).forEach(d=>{if(byId[d])visit(byId[d]);});temp[t.id]=0;seen[t.id]=1;order.push(t);};
+    [...active].sort((a,b)=>(prW[a.priority]??2)-(prW[b.priority]??2)).forEach(visit);})();
+  const sched=order.filter(t=>active.includes(t));
+  const endMs={};S.tasks.forEach(t=>{if(t.end)endMs[t.id]=parseD(t.end);});
+  const today=parseD(todayISO());const ptr={};
+  const isWE=ms=>{const d=new Date(ms).getUTCDay();return d===0||d===6;};
+  const nextWD=ms=>{let m=ms;while(isWE(m))m+=dayMs;return m;};
+  const perDay=id=>{const mm=member(id);return mm&&mm.capacity?Math.max(2,Math.round(mm.capacity/5)):6;};
+  sched.forEach(t=>{const who=t.assigneeId||'_';
+    let start=Math.max(ptr[who]||today,today);
+    (t.deps||[]).forEach(d=>{if(endMs[d])start=Math.max(start,endMs[d]+dayMs);});
+    start=nextWD(start);
+    const need=Math.max(1,Math.ceil((t.estimate||4)/perDay(t.assigneeId)));
+    let end=start;for(let k=1;k<need;k++)end=nextWD(end+dayMs);
+    t.start=fmtD(start);t.end=fmtD(end);endMs[t.id]=end;ptr[who]=nextWD(end+dayMs);});
+  logAct('🗓','авто-расписание · '+sched.length+' задач');save();
+  if(view!=='gantt')setView('gantt');else render();
+  toast('Расписание построено: '+sched.length+' задач 🗓','🗓','Отменить',()=>undo());
+}
 
 /* ============================ DASHBOARD ============================ */
 function renderDash(){
@@ -2285,7 +2371,7 @@ function renderGantt(){
     if(isC) return;
     st.forEach(t=>{
       const sc=stMap[t.status].c;const blocked=isBlocked(t);const ov=isOverdue(t);
-      left+=`<div class="grow ${t.status==='done'?'done':''}">
+      left+=`<div class="grow task ${t.status==='done'?'done':''}" data-id="${t.id}">
         <span class="dot" data-cycle="${t.id}" title="Кликни — сменить статус" style="background:${sc};cursor:pointer"></span>
         <span class="tt" data-task="${t.id}" style="${ov?'color:var(--bad)':''}">${prGlyph(t)}${t.isMilestone?'🔹 ':''}${blocked?'🔒 ':''}${t.waitingOn?`<span class="pf" title="ждёт от ${esc((member(t.waitingOn)||{}).name||'')}">⏳</span> `:''}${esc(t.title)}</span>
         ${t.estimate?`<span class="est">${t.estimate}ч</span>`:''}
@@ -2715,6 +2801,8 @@ $('#btnMenu').onclick=e=>{e.stopPropagation();menuEl.classList.toggle('show');};
 document.addEventListener('click',e=>{if(!menuEl.contains(e.target)&&e.target!==$('#btnMenu'))menuEl.classList.remove('show');});
 menuEl.onclick=e=>{const b=e.target.closest('button');if(!b)return;menuEl.classList.remove('show');const act=b.dataset.act;
   if(act==='connect'){openConnect();}
+  else if(act==='autoschedule'){autoSchedule();}
+  else if(act==='sound'){const on=localStorage.getItem('cockpit_sound')!=='0';localStorage.setItem('cockpit_sound',on?'0':'1');toast(on?'Звук выключен 🔇':'Звук включён 🔔',on?'🔇':'🔔');if(!on)playDing();}
   else if(act==='export'){const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
     const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cockpit-'+todayISO()+'.json';a.click();toast('Экспортировано','💾');}
   else if(act==='import'){const inp=document.createElement('input');inp.type='file';inp.accept='.json';
@@ -2783,11 +2871,13 @@ document.addEventListener('keydown',e=>{
     menuEl.classList.remove('show');if(window.projMenu)projMenu.classList.remove('show');
     if(typing&&a.blur)a.blur();return;}
   if(typing)return;
-  if(view==='board'&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
-    if(e.key==='j'||e.key==='ArrowDown'){e.preventDefault();boardMove(1);return;}
-    if(e.key==='k'||e.key==='ArrowUp'){e.preventDefault();boardMove(-1);return;}
-    if(e.key==='x'){e.preventDefault();boardDoneSel();return;}
-    if(e.key==='e'||e.key==='Enter'){e.preventDefault();boardOpenSel();return;}
+  if((view==='board'||view==='gantt'||view==='week')&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
+    if(e.key==='j'||e.key==='ArrowDown'){e.preventDefault();kbMove(1);return;}
+    if(e.key==='k'||e.key==='ArrowUp'){e.preventDefault();kbMove(-1);return;}
+    if(e.key==='x'){e.preventDefault();kbDone();return;}
+    if(e.key==='e'||e.key==='Enter'){e.preventDefault();kbOpen();return;}
+    if(e.key==='c'){e.preventDefault();kbComment();return;}
+    if(e.key==='a'){e.preventDefault();kbAssign();return;}
   }
   if(e.key==='/'){e.preventDefault();cmdEl.focus();}
   else if(e.key==='n'){e.preventDefault();$('#btnNew').click();}
@@ -3289,6 +3379,7 @@ function buildPaletteIndex(){
     ['cal','Бриф на сегодня','что важно прямо сейчас',()=>openBrief()],
     ['plug','Подключить Claude','ключ для MCP',()=>openConnect()],
     ['layers','Новый проект','создать проект',()=>openNewProject()],
+    ['cal','Авто-расписание','раскидать сроки по загрузке',()=>autoSchedule()],
     ['sync','Светлая / тёмная тема','оформление',()=>$('#btnTheme').click()],
     ['idea','Добавить идею в бэклог','паркинг идей',()=>{setView('backlog');setTimeout(()=>{const i=$('#ideaIn');if(i)i.focus();},120);}],
   ];
