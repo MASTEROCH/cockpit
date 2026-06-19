@@ -942,7 +942,9 @@ body.light .codebox{background:#0f1320}
 .pal-in input::placeholder{color:var(--mut2);font-weight:400}
 .pal-in .pal-ic{color:var(--acc2);display:grid;place-items:center}
 .pal-in kbd{font-size:10px;color:var(--mut2);border:1px solid var(--line2);border-radius:5px;padding:2px 6px;background:var(--bg)}
-.pal-list{max-height:48vh;overflow:auto;padding:8px;scrollbar-width:thin}
+.pal-list{max-height:52vh;overflow:auto;padding:8px;scrollbar-width:thin}
+.pal-h{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--mut2);padding:13px 12px 6px}
+.pal-list>.pal-h:first-child{padding-top:5px}
 .pal-row{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;cursor:pointer;transition:background .08s}
 .pal-row.sel{background:linear-gradient(180deg,rgba(167,139,250,.22),rgba(167,139,250,.08));box-shadow:inset 0 0 0 1px rgba(167,139,250,.34)}
 .pal-rico{width:24px;height:24px;display:grid;place-items:center;color:var(--mut);flex:0 0 auto}
@@ -1037,6 +1039,23 @@ body.light .focusrun{background:rgba(255,255,255,.7)}
 .mm-foot{font-size:11.5px;color:var(--mut2);margin-top:7px}
 /* confetti */
 .confetti{position:fixed;width:9px;height:9px;border-radius:2px;pointer-events:none;z-index:200;will-change:transform,opacity}
+/* HUD avatar + settings */
+.hud-av{width:34px;height:34px;border-radius:50%;border:1px solid var(--gbrd);display:grid;place-items:center;font-size:12px;font-weight:800;color:#0c0d12;flex:0 0 auto;cursor:pointer;background-size:cover;background-position:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 2px 7px rgba(0,0,0,.32);transition:.14s}
+.hud-av:hover{box-shadow:0 0 0 2px rgba(167,139,250,.5),0 2px 7px rgba(0,0,0,.32)}
+.hud-av:active{transform:scale(.94)}
+.set-head{display:flex;align-items:center;gap:15px}
+.set-bigav{width:66px;height:66px;border-radius:20px;display:grid;place-items:center;font-size:24px;font-weight:800;color:#0c0d12;flex:0 0 auto;background-size:cover;background-position:center;box-shadow:0 6px 18px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.3)}
+.set-name{font-size:19px;font-weight:800;width:100%;background:none;border:none;border-bottom:1px solid transparent;outline:none;color:var(--txt);padding:2px 0}
+.set-name:focus{border-color:var(--acc2)}
+.set-role{font-size:13px;width:100%;background:none;border:none;border-bottom:1px solid transparent;outline:none;color:var(--mut);padding:3px 0;margin-top:2px}
+.set-role:focus{border-color:var(--acc2)}
+.set-photobtns{display:flex;gap:7px;margin-top:7px}
+.set-sec{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--mut2);margin:20px 0 7px}
+.set-item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px}
+.set-item>span{flex:1;min-width:0;color:var(--txt)}
+.set-item .btn,.set-item .inp{flex:0 0 auto;padding:8px 13px;font-size:13px}
+.set-grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:13px}
+.set-grid2 .btn{justify-content:center}
 /* accent picker */
 .acc-grid{display:flex;flex-wrap:wrap;gap:11px;margin-top:14px}
 .acc-sw{width:42px;height:42px;border-radius:13px;border:2px solid transparent;cursor:pointer;position:relative;box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 3px 8px rgba(0,0,0,.3)}
@@ -1208,12 +1227,14 @@ body.light .pr-ring-in{background:#f4f6fc}
     <button class="tab" data-v="team" data-icon="users"><span>Команда</span></button>
     <button class="tab" data-v="intake" data-icon="inbox"><span>Приёмка</span> <span class="cnt" id="cntIntake" style="display:none">0</span></button>
   </div>
+  <button class="iconbtn" id="btnSearch" data-icon="search" title="Поиск и команды (⌘K)"></button>
   <button class="iconbtn" id="btnNew" data-icon="plus" title="Новая задача"></button>
   <button class="iconbtn inbox" id="btnInbox" data-icon="bell" title="Инбокс — что нового для тебя"><span class="ibadge" id="inboxDot" style="display:none">0</span></button>
   <button class="iconbtn" id="btnTheme" title="Светлая / тёмная тема"></button>
   <button class="iconbtn cloud off" id="btnCloud" title="Войти и синхронизировать с командой"></button>
   <button class="iconbtn" id="btnHelp" data-icon="help" title="Обучение и легенда"></button>
-  <button class="iconbtn" id="btnMenu" data-icon="dots" title="Данные"></button>
+  <button class="iconbtn" id="btnMenu" data-icon="dots" title="Ещё"></button>
+  <button class="hud-av" id="btnProfile" title="Профиль и настройки"></button>
 </header>
 
 <main>
@@ -1346,25 +1367,21 @@ body.light .pr-ring-in{background:#f4f6fc}
 
 <div class="menu" id="menu">
   <button data-act="palette">🔎 Все команды и поиск <span style="margin-left:auto;color:var(--mut2)">⌘K</span></button>
-  <button data-act="connect">🔌 Подключить Claude</button>
-  <button data-act="sound">🔔 Звук вкл/выкл</button>
+  <button data-act="settings">⚙️ Настройки и профиль</button>
   <div class="sep"></div>
-  <button data-act="export">💾 Экспорт</button>
-  <button data-act="import">📥 Импорт</button>
   <button data-act="section">📁 Добавить раздел</button>
   <button data-act="print">🖨 Печать / PDF</button>
-  <div class="sep"></div>
-  <button data-act="reset" class="dng">♻ Сбросить к демо</button>
 </div>
 
 <div class="modal-scrim" id="connectScrim"><div class="modal" id="connectModal"></div></div>
 <div class="modal-scrim" id="planScrim"><div class="modal" id="planModal"></div></div>
+<div class="modal-scrim" id="setScrim"><div class="modal" id="setModal"></div></div>
 <div class="modal-scrim" id="balScrim"><div class="modal" id="balModal"></div></div>
 <div class="present" id="present"></div>
 
 <div class="pal-scrim" id="palScrim">
   <div class="pal" id="pal">
-    <div class="pal-in"><span class="pal-ic" id="palIcon"></span><input id="palQ" placeholder="Поиск задач, людей, проектов · команды · переход…" autocomplete="off" spellcheck="false"><kbd>esc</kbd></div>
+    <div class="pal-in"><span class="pal-ic" id="palIcon"></span><input id="palQ" placeholder="Поиск по Cockpit — задачи, люди, проекты, команды…" autocomplete="off" spellcheck="false"><kbd>esc</kbd></div>
     <div class="pal-list" id="palList"></div>
     <div class="pal-foot"><span><kbd>↑</kbd><kbd>↓</kbd> выбор</span><span><kbd>↵</kbd> открыть</span><span><kbd>⌘K</kbd> палитра</span><span class="pal-foot-r">Cockpit</span></div>
   </div>
@@ -1518,6 +1535,7 @@ const ICONS={
  inbox:'<path d="M3 13h4l1.5 3h7L17 13h4M5 5h14a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/>',
  plug:'<path d="M9 2v6M15 2v6M7 8h10v3a5 5 0 0 1-10 0zM12 16v6"/>',
  zap:'<path d="M13 2 4 14h6l-1 8 9-12h-6z"/>',
+ search:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
  play:'<path d="M7 4v16l13-8z" fill="currentColor" stroke="none"/>',
  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
 };
@@ -1637,6 +1655,7 @@ function render(){
   $('#projLabel').textContent=S.projectName;
   $('#projEmoji').textContent=(reg.list.find(p=>p.id===S.id)||{}).emoji||'🚀';
   applyAccent();
+  {const _m=member(myId()),pb=$('#btnProfile');if(pb){if(_m&&_m.photo){pb.style.backgroundImage=`url('${_m.photo}')`;pb.style.background='';pb.style.backgroundSize='cover';pb.style.backgroundPosition='center';pb.innerHTML='';}else{pb.style.backgroundImage='none';pb.style.background=(_m&&_m.color)||'var(--acc2)';pb.innerHTML=initials((_m&&_m.name)||'Я');}}}
   // toolbar visibility
   const showTool=(view==='gantt'||view==='board');
   $('#toolbar').classList.toggle('hide',!showTool);
@@ -1834,27 +1853,56 @@ function planPrompt(goal){
 function openAiPlan(){$('#planScrim').classList.add('show');renderPlan();}
 function closePlan(){$('#planScrim').classList.remove('show');}
 $('#planScrim').onclick=e=>{if(e.target===$('#planScrim'))closePlan();};
+function createPlanTasks(tasks){
+  const byName=n=>{if(!n)return null;n=String(n).toLowerCase();const m=S.members.find(x=>x.name.toLowerCase()===n)||S.members.find(x=>x.name.toLowerCase().startsWith(n)||n.startsWith(x.name.toLowerCase()));return m?m.id:null;};
+  const pm={low:'low',med:'med',medium:'med',high:'high',urgent:'urgent'};let n=0;
+  tasks.slice(0,16).forEach(t=>{if(!t||!t.title)return;const nt=newTask(String(t.title).slice(0,140));
+    nt.status='todo';if(t.estimate)nt.estimate=+t.estimate||0;nt.priority=pm[(t.priority||'med')]||'med';
+    const aid=byName(t.assignee);if(aid)nt.assigneeId=aid;
+    if(t.start&&/^\d{4}-\d\d-\d\d$/.test(t.start))nt.start=t.start;
+    if(t.end&&/^\d{4}-\d\d-\d\d$/.test(t.end))nt.end=t.end;else nt.end=nt.start;
+    if(t.note)nt.description=String(t.note).slice(0,500);n++;});
+  if(n)save();return n;
+}
+function showPlanPrompt(goal,note){
+  const p=planPrompt(goal);
+  $('#planOut').innerHTML=`<div class="cstep"><span class="cn">→</span><div style="flex:1">${note||'<b>Готовый промпт.</b> Скопируй и вставь своему Claude (с подключённым Cockpit) — он создаст задачи в «Приёмке».'}</div></div>
+    <div class="codebox"><button class="btn copycfg" id="planCopy">Копировать</button><pre>${esc(p)}</pre></div>`;
+  $('#planCopy').onclick=()=>{navigator.clipboard.writeText(p);toast('Промпт скопирован — вставь в Claude','📋');};
+}
+async function runAiPlan(btn){
+  const g=($('#planGoal').value||'').trim();if(!g){toast('Опиши цель проекта','🧠');return;}
+  if(!cloudOn||!sb){showPlanPrompt(g,'<b>Нет облака.</b> Скопируй промпт и вставь своему Claude — он создаст задачи в «Приёмке».');return;}
+  const token=await aiToken();if(!token){showPlanPrompt(g);return;}
+  if(btn){btn.disabled=true;btn.textContent='🧠 Claude планирует…';}
+  $('#planOut').innerHTML='<div class="emptymini">🧠 Claude раскладывает цель на задачи…</div>';
+  try{
+    const r=await fetch(CFG.url+'/functions/v1/ai-review',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+token},body:JSON.stringify({mode:'plan',goal:g,project:aiPayload()})});
+    const res=await r.json();
+    if(r.ok&&Array.isArray(res.tasks)&&res.tasks.length){
+      const n=createPlanTasks(res.tasks);
+      closePlan();setView('gantt');
+      toast('Claude создал '+n+' задач 🧠','🧠','Отменить',()=>undo());
+      return;
+    }
+    showPlanPrompt(g,'<b>Авто-генерация недоступна</b> (обнови Edge-функцию). Пока — скопируй промпт своему Claude:');
+  }catch(e){showPlanPrompt(g,'<b>Не дозвонился до Claude.</b> Скопируй промпт своему Claude:');}
+  if(btn){btn.disabled=false;btn.textContent='🧠 Создать план';}
+}
 function renderPlan(){
   const m=$('#planModal');
   m.innerHTML=`<div class="ob-art" style="font-size:46px">🧠</div>
    <div class="ob-body">
      <h2>AI-План проекта</h2>
-     <p>Опиши цель — твой Claude (с подключённым Cockpit) разобьёт её на задачи и закинет в «Приёмку». Ты только подтвердишь.</p>
+     <p>Опиши цель — Claude разложит её на задачи и сразу создаст их в проекте. Лишнее уберёшь, чего не хватает — допишешь.</p>
      <textarea class="inp" id="planGoal" style="min-height:84px;line-height:1.5" placeholder="Напр.: запустить лендинг AppHub с оплатой и аналитикой за 2 недели"></textarea>
      <button class="btn" id="planMic" style="margin-top:8px;padding:8px 13px;font-size:12.5px">🎙 Надиктовать цель</button>
      <div id="planOut"></div>
    </div>
-   <div class="ob-foot"><button class="btn" id="planClose">Закрыть</button><div class="spacer"></div><button class="btn primary" id="planGen">Сгенерировать промпт</button></div>`;
+   <div class="ob-foot"><button class="btn" id="planClose">Закрыть</button><div class="spacer"></div><button class="btn primary" id="planGen">🧠 Создать план</button></div>`;
   $('#planClose').onclick=closePlan;
   $('#planMic').onclick=()=>dictateTo($('#planGoal'),$('#planMic'));
-  const gen=()=>{const g=($('#planGoal').value||'').trim();if(!g){toast('Опиши цель проекта','🧠');return;}
-    const p=planPrompt(g);
-    $('#planOut').innerHTML=`<div class="cstep"><span class="cn">→</span><div style="flex:1"><b>Готовый промпт.</b> Скопируй и вставь своему Claude (или скажи голосом) — он создаст задачи в «Приёмке».</div></div>
-      <div class="codebox"><button class="btn copycfg" id="planCopy">Копировать</button><pre>${esc(p)}</pre></div>
-      <button class="btn primary" id="planOpenIntake" style="margin-top:12px;width:100%;justify-content:center">Открыть «Приёмку» →</button>`;
-    $('#planCopy').onclick=()=>{navigator.clipboard.writeText(p);toast('Промпт скопирован — вставь в Claude','📋');};
-    $('#planOpenIntake').onclick=()=>{closePlan();setView('intake');};};
-  $('#planGen').onclick=gen;
+  $('#planGen').onclick=()=>runAiPlan($('#planGen'));
   setTimeout(()=>{const g=$('#planGoal');if(g)g.focus();},40);
 }
 
@@ -2119,6 +2167,53 @@ function openAnalytics(){
      <div class="keyhint">Cycle-time считается по задачам, закрытым после этого апдейта (дальше точность растёт).</div></div>
    <div class="ob-foot"><div class="spacer"></div><button class="btn primary" id="anDone">Готово</button></div>`;
   $('#balScrim').classList.add('show');$('#anDone').onclick=closeBal;
+}
+
+/* ---- Настройки и профиль (вход через аватар в шапке) ---- */
+function openSettings(){renderSettings();$('#setScrim').classList.add('show');}
+function closeSettings(){$('#setScrim').classList.remove('show');}
+$('#setScrim').onclick=e=>{if(e.target===$('#setScrim'))closeSettings();};
+function settingsPhoto(m){const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.onchange=()=>{const f=inp.files[0];if(f)cropPhoto(f,d=>{m.photo=d;save();render();renderSettings();});};inp.click();}
+function renderSettings(){
+  const me=member(myId());if(!me){toast('Профиль не найден','⚙️');return;}
+  const theme=localStorage.getItem('cockpit_theme')||'dark';
+  const sound=localStorage.getItem('cockpit_sound')!=='0';
+  const av=me.photo?`<span class="set-bigav" style="background-image:url('${me.photo}')"></span>`:`<span class="set-bigav" style="background:${me.color}">${initials(me.name||'Я')}</span>`;
+  $('#setModal').innerHTML=`
+   <div class="ob-body" style="max-height:84vh;overflow:auto">
+     <div class="set-head">${av}<div style="flex:1;min-width:0">
+       <input class="set-name" id="setName" value="${esc(me.name||'')}" placeholder="Имя">
+       <input class="set-role" id="setRole" value="${esc(me.role||'')}" placeholder="Роль / чем занимаешься">
+       <div class="set-photobtns"><button class="minibtn" id="setPhoto">📷 Фото</button>${me.photo?'<button class="minibtn" id="setPhotoDel">убрать</button>':''}</div>
+     </div></div>
+     <div class="colorrow" id="setColors" style="margin-top:14px">${COLORS.map(c=>`<span class="cdot ${me.color===c?'on':''}" data-c="${c}" style="background:${c}"></span>`).join('')}</div>
+     <div class="set-sec">Оформление</div>
+     <div class="set-item"><span>Тема</span><button class="btn" id="setTheme">${theme==='light'?'☀️ Светлая':'🌙 Тёмная'}</button></div>
+     <div class="set-item"><span>Звук при «Готово»</span><button class="btn" id="setSound">${sound?'🔔 Вкл':'🔇 Выкл'}</button></div>
+     <div class="set-item"><span>Цвет проекта «${esc(S.projectName)}»</span><button class="btn" id="setAccent">🎨 Выбрать</button></div>
+     <div class="set-sec">Команда и Claude</div>
+     <div class="set-item"><span>Вы в команде</span><select class="inp" id="setWho" style="width:auto;min-width:130px">${S.members.map(m=>`<option value="${m.id}" ${m.id===myId()?'selected':''}>${esc(m.name)}</option>`).join('')}</select></div>
+     <div class="set-item"><span>Подключить Claude (MCP)</span><button class="btn" id="setConnect">🔌 Открыть</button></div>
+     <div class="set-sec">Аккаунт и данные</div>
+     <div class="set-item"><span>${cloudOn?('☁️ '+esc(myEmail||'в облаке')):'☁️ Не в облаке'}</span><button class="btn" id="setCloud">${cloudOn?'Выйти':'Войти'}</button></div>
+     <div class="set-grid2"><button class="btn" id="setExport">💾 Экспорт</button><button class="btn" id="setImport">📥 Импорт</button></div>
+   </div>
+   <div class="ob-foot"><button class="btn danger" id="setReset">Сбросить к демо</button><div class="spacer"></div><button class="btn primary" id="setDone">Готово</button></div>`;
+  const upd=()=>{const n=$('#setName').value.trim();if(n)me.name=n;me.role=$('#setRole').value.trim();save();render();};
+  $('#setName').onblur=upd;$('#setRole').onblur=upd;
+  $('#setPhoto').onclick=()=>settingsPhoto(me);
+  const pd=$('#setPhotoDel');if(pd)pd.onclick=()=>{delete me.photo;save();render();renderSettings();};
+  $$('#setColors .cdot').forEach(d=>d.onclick=()=>{me.color=d.dataset.c;save();render();renderSettings();});
+  $('#setTheme').onclick=()=>{$('#btnTheme').click();renderSettings();};
+  $('#setSound').onclick=()=>{const on=localStorage.getItem('cockpit_sound')!=='0';localStorage.setItem('cockpit_sound',on?'0':'1');if(!on)playDing();renderSettings();};
+  $('#setAccent').onclick=()=>{closeSettings();openAccent();};
+  $('#setWho').onchange=e=>{localStorage.setItem('cockpit_me',e.target.value);render();renderSettings();toast('Теперь вы — '+meName(),'👤');};
+  $('#setConnect').onclick=()=>{closeSettings();openConnect();};
+  $('#setCloud').onclick=()=>{if(cloudOn){if(confirm('Выйти из облака на этом устройстве?'))sb.auth.signOut().then(()=>location.reload());}else{closeSettings();const b=$('#btnCloud');if(b)b.click();}};
+  $('#setExport').onclick=()=>{const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cockpit-'+todayISO()+'.json';a.click();toast('Экспортировано','💾');};
+  $('#setImport').onclick=()=>{const inp=document.createElement('input');inp.type='file';inp.accept='.json';inp.onchange=()=>{const f=inp.files[0];const r=new FileReader();r.onload=()=>{try{S=migrate(JSON.parse(r.result));resetUndo();save();render();closeSettings();toast('Импортировано','📥');}catch(e){toast('Ошибка файла','⚠');}};r.readAsText(f);};inp.click();};
+  $('#setReset').onclick=()=>{if(confirm('Сбросить к демо-данным? Текущее будет потеряно.')){S=seed();resetUndo();save();render();closeSettings();toast('Сброшено','♻');}};
+  $('#setDone').onclick=closeSettings;
 }
 
 /* ============================ DASHBOARD ============================ */
@@ -3247,6 +3342,7 @@ $('#btnMenu').onclick=e=>{e.stopPropagation();menuEl.classList.toggle('show');};
 document.addEventListener('click',e=>{if(!menuEl.contains(e.target)&&e.target!==$('#btnMenu'))menuEl.classList.remove('show');});
 menuEl.onclick=e=>{const b=e.target.closest('button');if(!b)return;menuEl.classList.remove('show');const act=b.dataset.act;
   if(act==='palette'){openPalette();}
+  else if(act==='settings'){openSettings();}
   else if(act==='connect'){openConnect();}
   else if(act==='autoschedule'){autoSchedule();}
   else if(act==='present'){openPresent();}
@@ -3303,6 +3399,8 @@ function cmdLiveChips(){const box=$('#cmdChips');const s=cmdEl.value;
 cmdEl.addEventListener('input',cmdLiveChips);
 cmdEl.onkeydown=e=>{if(e.key==='Enter'){runCmd(cmdEl.value);cmdEl.value='';$('#cmdChips').classList.remove('show');}if(e.key==='Escape')cmdEl.blur();};
 {const k=$('#cmdkBtn');if(k)k.onclick=()=>openPalette();}
+{const sb2=$('#btnSearch');if(sb2)sb2.onclick=()=>openPalette();}
+{const pb=$('#btnProfile');if(pb)pb.onclick=()=>openSettings();}
 document.addEventListener('keydown',e=>{
   const a=document.activeElement;const typing=a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.isContentEditable);
   if($('#present').classList.contains('show')&&!$('#present').querySelector('.pr-foot-brand')){
@@ -3322,6 +3420,7 @@ document.addEventListener('keydown',e=>{
     else if($('#briefScrim').classList.contains('show'))closeBrief();
     else if($('#connectScrim').classList.contains('show'))closeConnect();
     else if($('#planScrim').classList.contains('show'))closePlan();
+    else if($('#setScrim').classList.contains('show'))closeSettings();
     else if($('#balScrim').classList.contains('show'))closeBal();
     else if($('#drawer').classList.contains('show'))closeDrawer();
     else if($('#mDrawer').classList.contains('show'))closeMember();
@@ -3831,23 +3930,24 @@ function buildPaletteIndex(){
   const NAV=[['now','zap','Сейчас'],['board','board','Доска'],['gantt','gantt','Гант'],['week','cal','Неделя'],['backlog','idea','Бэклог'],['team','users','Команда'],['intake','inbox','Приёмка'],['all','layers','Все проекты'],['dash','home','Обзор · детальная аналитика']];
   NAV.forEach(([v,ic,name])=>items.push({type:'Переход',icon:icon(ic,17),title:name,sub:'раздел',kw:name+' раздел перейти открыть',run:()=>setView(v)}));
   const ACT=[
-    ['plus','Новая задача','создать пустую',()=>{$('#btnNew').click();}],
-    ['sparkles','AI-План проекта','Claude разобьёт цель на задачи',()=>openAiPlan()],
-    ['sparkles','AI-разбор доски','Claude посмотрит риски',()=>aiReview()],
-    ['cal','Бриф на сегодня','что важно прямо сейчас',()=>openBrief()],
-    ['plug','Подключить Claude','ключ для MCP',()=>openConnect()],
-    ['layers','Новый проект','создать проект',()=>openNewProject()],
-    ['cal','Авто-расписание','раскидать сроки по загрузке',()=>autoSchedule()],
-    ['zap','Презентация · синк','полноэкранный обзор для созвона',()=>openPresent()],
-    ['users','Разгрузить команду','выровнять загрузку',()=>openRebalance()],
-    ['layers','Ссылка-снимок статуса','read-only для клиента/инвестора',()=>openShare()],
-    ['users','Аналитика команды','выработка и cycle-time',()=>openAnalytics()],
-    ['sparkles','Цвет проекта','брендинг под клиента',()=>openAccent()],
-    ['sync','Светлая / тёмная тема','оформление',()=>$('#btnTheme').click()],
-    ['idea','Добавить идею в бэклог','паркинг идей',()=>{setView('backlog');setTimeout(()=>{const i=$('#ideaIn');if(i)i.focus();},120);}],
-    ['board','Сбросить порядок задач','вернуть авто-сортировку',()=>{S.tasks.forEach(t=>{delete t.rank;});save();render();toast('Авто-сортировка ↕','↕');}],
+    // grp: AI | Создать | Планирование | Команда | Делёжка | Настройки
+    ['sparkles','AI-План проекта','Claude разобьёт цель на задачи','AI',()=>openAiPlan()],
+    ['sparkles','AI-разбор доски','Claude посмотрит риски','AI',()=>aiReview()],
+    ['cal','Бриф на сегодня','что важно прямо сейчас','AI',()=>openBrief()],
+    ['plus','Новая задача','создать пустую','Создать',()=>{$('#btnNew').click();}],
+    ['idea','Добавить идею в бэклог','паркинг идей','Создать',()=>{setView('backlog');setTimeout(()=>{const i=$('#ideaIn');if(i)i.focus();},120);}],
+    ['layers','Новый проект','создать проект','Создать',()=>openNewProject()],
+    ['cal','Авто-расписание','раскидать сроки по загрузке','Планирование',()=>autoSchedule()],
+    ['board','Сбросить порядок задач','вернуть авто-сортировку','Планирование',()=>{S.tasks.forEach(t=>{delete t.rank;});save();render();toast('Авто-сортировка ↕','↕');}],
+    ['users','Разгрузить команду','выровнять загрузку','Команда',()=>openRebalance()],
+    ['users','Аналитика команды','выработка и cycle-time','Команда',()=>openAnalytics()],
+    ['zap','Презентация · синк','полноэкранный обзор для созвона','Делёжка',()=>openPresent()],
+    ['layers','Ссылка-снимок статуса','read-only для клиента/инвестора','Делёжка',()=>openShare()],
+    ['plug','Подключить Claude','ключ для MCP','Настройки',()=>openConnect()],
+    ['sparkles','Цвет проекта','брендинг под клиента','Настройки',()=>openAccent()],
+    ['sync','Светлая / тёмная тема','оформление','Настройки',()=>$('#btnTheme').click()],
   ];
-  ACT.forEach(([ic,name,sub,run])=>items.push({type:'Команда',icon:icon(ic,17),title:name,sub,kw:name+' '+sub,run}));
+  ACT.forEach(([ic,name,sub,grp,run])=>items.push({type:'Команда',grp,icon:icon(ic,17),title:name,sub,kw:name+' '+sub,run}));
   reg.list.filter(p=>!p.archived).forEach(p=>items.push({type:'Проект',icon:`<span class="pal-emoji">${esc(p.emoji||'📄')}</span>`,title:p.name,sub:p.id===S.id?'текущий':'переключиться',kw:p.name+' проект',run:()=>{if(p.id!==S.id)switchProject(p.id);else setView('board');}}));
   S.members.forEach(m=>items.push({type:'Человек',icon:avatarOf(m,22),title:m.name,sub:m.role||'участник',kw:m.name+' '+(m.role||''),run:()=>openMember(m.id)}));
   reg.list.filter(p=>!p.archived).forEach(p=>{const data=p.id===S.id?S:loadProj(p.id);if(!data)return;
@@ -3865,19 +3965,36 @@ function palScore(q,it){
   if(pi===ql.length)return 300-hay.length;
   return -1;
 }
+const PAL_GROUPS=[
+  ['🧭 Разделы', it=>it.type==='Переход'],
+  ['🧠 AI и Claude', it=>it.grp==='AI'],
+  ['➕ Создать', it=>it.grp==='Создать'],
+  ['🗓 Планирование', it=>it.grp==='Планирование'],
+  ['👥 Команда', it=>it.grp==='Команда'],
+  ['🔗 Поделиться', it=>it.grp==='Делёжка'],
+  ['📂 Проекты', it=>it.type==='Проект'],
+  ['⚙️ Настройки', it=>it.grp==='Настройки'],
+];
+function palRowHTML(it,i){return `<div class="pal-row ${i===palSel?'sel':''}" data-i="${i}">
+    <span class="pal-rico">${it.icon}</span><span class="pal-rt">${esc(it.title)}</span>
+    ${it.sub?`<span class="pal-rs">${esc(it.sub)}</span>`:''}<span class="pal-rtag">${esc(it.type)}</span></div>`;}
 function renderPalette(){
   const q=($('#palQ').value||'').trim();
-  let list;
-  if(!q){list=palItems.filter(it=>it.type==='Переход'||it.type==='Команда');}
-  else{
-    list=palItems.map(it=>({it,s:palScore(q,it)+typeW(it.type)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s).slice(0,18).map(x=>x.it);
-    list.push({type:'Создать',icon:icon('plus',17),title:'Создать задачу: «'+q+'»',sub:'умный разбор @кто · срок · Nч · !срочно',kw:'',
+  palFiltered=[];let html='';
+  if(!q){
+    PAL_GROUPS.forEach(([h,f])=>{const items=palItems.filter(f);if(!items.length)return;
+      html+=`<div class="pal-h">${h}</div>`+items.map(it=>{const i=palFiltered.length;palFiltered.push(it);return palRowHTML(it,i);}).join('');});
+    $('#palIcon').innerHTML=icon('sparkles',17);
+  }else{
+    const scored=palItems.map(it=>({it,s:palScore(q,it)+typeW(it.type)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s).slice(0,20).map(x=>x.it);
+    scored.push({type:'Создать',icon:icon('plus',17),title:'Создать задачу: «'+q+'»',sub:'умный разбор @кто · срок · Nч · !срочно',
       run:()=>{const p=parseQuick(q);const t=applyQuick(newTask(p.title||q),p);t.status='todo';save();render();setView('board');openTask(t.id);toast('Задача создана','🚀');}});
+    palFiltered=scored;
+    html=scored.length?scored.map((it,i)=>palRowHTML(it,i)).join(''):`<div class="pal-empty">Ничего не нашёл по «${esc(q)}»</div>`;
+    $('#palIcon').innerHTML=icon('search',17);
   }
-  palFiltered=list;if(palSel>=list.length)palSel=Math.max(0,list.length-1);
-  $('#palList').innerHTML=list.length?list.map((it,i)=>`<div class="pal-row ${i===palSel?'sel':''}" data-i="${i}">
-    <span class="pal-rico">${it.icon}</span><span class="pal-rt">${esc(it.title)}</span>
-    ${it.sub?`<span class="pal-rs">${esc(it.sub)}</span>`:''}<span class="pal-rtag">${it.type}</span></div>`).join(''):`<div class="pal-empty">Ничего не нашёл по «${esc(q)}»</div>`;
+  if(palSel>=palFiltered.length)palSel=Math.max(0,palFiltered.length-1);
+  $('#palList').innerHTML=html;
   $$('#palList .pal-row').forEach(r=>{r.onmousemove=()=>{if(palSel!==+r.dataset.i){palSel=+r.dataset.i;markPalSel();}};r.onclick=()=>{palSel=+r.dataset.i;runPalSel();};});
 }
 function markPalSel(){$$('#palList .pal-row').forEach((r,i)=>r.classList.toggle('sel',i===palSel));const s=$('#palList .pal-row.sel');if(s)s.scrollIntoView({block:'nearest'});}
@@ -3892,7 +4009,7 @@ $('#palQ').onkeydown=e=>{
   else if(e.key==='Escape'){e.preventDefault();closePalette();}
 };
 $('#palScrim').onclick=e=>{if(e.target===$('#palScrim'))closePalette();};
-{const pi=$('#palIcon');if(pi)pi.innerHTML=icon('sparkles',17);}
+{const pi=$('#palIcon');if(pi)pi.innerHTML=icon('search',17);}
 
 /* ============================ INIT ============================ */
 $$('[data-icon]').forEach(el=>el.insertAdjacentHTML('afterbegin',icon(el.dataset.icon)));
