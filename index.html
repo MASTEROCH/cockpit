@@ -709,6 +709,7 @@ body.light .card .cdel{background:rgba(20,24,40,.1)}
   background:radial-gradient(closest-side,rgba(255,255,255,.12),transparent);transform:rotate(18deg)}
 .brand .logo svg{position:relative;z-index:1}
 body.light .brand .logo{background:linear-gradient(157deg,#1b1d27,#08090d 72%)}
+.dcsel{position:absolute;height:26px;border-radius:9px;background:rgba(167,139,250,.30);border:1.6px dashed var(--acc2);pointer-events:none;z-index:9;box-shadow:0 0 0 1px rgba(167,139,250,.25),0 4px 12px rgba(167,139,250,.3)}
 /* inbox */
 .iconbtn.inbox{position:relative}
 .ibadge{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;border-radius:20px;background:var(--bad);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;padding:0 4px;box-shadow:0 0 0 2px rgba(18,21,31,.9)}
@@ -1533,19 +1534,19 @@ function renderGantt(){
       pos[t.id]={x,w,y};
       const prog=t.estimate? Math.min(100,Math.round((t.spent/t.estimate)*100)):(t.status==='done'?100:0);
       if(t.isMilestone){
-        body+=`<div class="growbg"><div class="bar mile" data-task="${t.id}" style="left:${x}px">
+        body+=`<div class="growbg" data-sec="${sec.id}"><div class="bar mile" data-task="${t.id}" style="left:${x}px">
           <div class="mileD"></div><div class="mileT">${esc(t.title)}</div></div></div>`;
       }else{
         const g=`linear-gradient(180deg,${sc},${shade(sc,-18)})`;
-        body+=`<div class="growbg"><div class="bar ${blocked?'blocked':''}" data-task="${t.id}" style="left:${x}px;width:${w}px;background:${g}">
+        body+=`<div class="growbg" data-sec="${sec.id}"><div class="bar ${blocked?'blocked':''}" data-task="${t.id}" style="left:${x}px;width:${w}px;background:${g}">
           <div class="prog" style="width:${prog}%"></div>
           <div class="h l"></div><span class="lbl">${esc(t.title)}</span><div class="h r"></div>
         </div></div>`;
       }
       rowIdx++;
     });
-    left+=`<div class="grow addrow" data-addsec="${sec.id}"><span class="dot" style="background:transparent;box-shadow:inset 0 0 0 1.5px var(--line2)"></span>＋ задача</div>`;
-    body+=`<div class="growbg"></div>`;
+    left+=`<div class="grow addrow" data-addsec="${sec.id}"><span class="dot" style="background:transparent;box-shadow:inset 0 0 0 1.5px var(--line2)"></span>＋ задача <span style="margin-left:auto;font-size:10px;color:var(--mut2);opacity:.7">или потяни на полотне →</span></div>`;
+    body+=`<div class="growbg" data-sec="${sec.id}"></div>`;
     rowIdx++;
   });
   // dependency arrows
@@ -1573,6 +1574,34 @@ function renderGantt(){
   if(autoAddSec){const ar=document.querySelector('#gantt .addrow[data-addsec="'+autoAddSec+'"]');if(ar)openInlineAdd(ar);}
   if(ganttNeedsScroll&&tMs>=min&&tMs<=max){ganttNeedsScroll=false;
     requestAnimationFrame(()=>{const v=$('#v-gantt');const lw=($('#gantt .gleft')||{}).offsetWidth||300;const tx=Math.round((tMs-min)/dayMs)*DAY;v.scrollLeft=Math.max(0,lw+tx-v.clientWidth*0.4);});}
+  // рисование задачи мышкой на пустом таймлайне: зажал → потянул → отпустил → карточка
+  (function(){
+    const bodyEl=$('#gantt .gbody');if(!bodyEl)return;
+    let dc=null;
+    const onMove=e=>{
+      if(!dc)return;const x=e.clientX-bodyEl.getBoundingClientRect().left;
+      if(!dc.el){if(Math.abs(x-dc.x0)<6)return;
+        dc.el=document.createElement('div');dc.el.className='dcsel';dc.el.style.top=(dc.top+10)+'px';bodyEl.appendChild(dc.el);}
+      const a=Math.max(0,Math.min(dc.x0,x)),b=Math.max(dc.x0,x);
+      dc.el.style.left=a+'px';dc.el.style.width=Math.max(2,b-a)+'px';
+    };
+    const onUp=e=>{
+      document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);
+      if(!dc)return;const made=dc.el,sec=dc.sec,x0=dc.x0;const x=e.clientX-bodyEl.getBoundingClientRect().left;
+      if(made)made.remove();dc=null;
+      if(!made||Math.abs(x-x0)<8)return;
+      const dA=Math.floor(Math.min(x0,x)/DAY),dB=Math.floor(Math.max(x0,x)/DAY);
+      const t=newTask('Новая задача');t.sectionId=sec;t.start=fmtD(min+dA*dayMs);t.end=fmtD(min+dB*dayMs);t.status='todo';
+      save();render();openTask(t.id);
+    };
+    bodyEl.addEventListener('mousedown',e=>{
+      if(e.button!==0||e.target.closest('.bar')||e.target.closest('input'))return;
+      const row=e.target.closest('.growbg[data-sec]');if(!row)return;
+      e.preventDefault();
+      dc={sec:row.dataset.sec,x0:e.clientX-bodyEl.getBoundingClientRect().left,top:row.offsetTop,el:null};
+      document.addEventListener('mousemove',onMove);document.addEventListener('mouseup',onUp);
+    });
+  })();
 }
 
 /* drag-to-move + resize on bars (mouse + touch) */
@@ -1824,13 +1853,17 @@ function closeDrawer(){$('#drawer').classList.remove('show');curTask=null;syncSc
 function autoGrow(el){el.style.height='auto';el.style.height=el.scrollHeight+'px';}
 
 $('#dTitle').oninput=e=>{if(curTask){curTask.title=e.target.value;autoGrow(e.target);}};
+$('#dTitle').onblur=()=>{if(curTask){if(!curTask.title.trim())curTask.title='Без названия';save();}};
 $('#dDesc').oninput=e=>{if(curTask)curTask.description=e.target.value;};
+$('#dDesc').onblur=()=>{if(curTask)save();};
 $('#dSection').onchange=e=>{if(curTask){curTask.sectionId=e.target.value;save();}};
 $('#dStart').onchange=e=>{if(curTask){curTask.start=e.target.value;if(parseD(curTask.end)<parseD(curTask.start))curTask.end=curTask.start;save();}};
 $('#dEnd').onchange=e=>{if(curTask){curTask.end=e.target.value;if(parseD(curTask.end)<parseD(curTask.start))curTask.start=curTask.end;save();}};
 $('#dMile').onchange=e=>{if(curTask){curTask.isMilestone=e.target.checked;if(e.target.checked)curTask.end=curTask.start;save();}};
 $('#dEst').oninput=e=>{if(curTask)curTask.estimate=parseFloat(e.target.value)||0;};
+$('#dEst').onblur=()=>{if(curTask)save();};
 $('#dSpent').oninput=e=>{if(curTask)curTask.spent=parseFloat(e.target.value)||0;};
+$('#dSpent').onblur=()=>{if(curTask)save();};
 $('#dStatus').onchange=e=>{if(curTask){curTask.status=e.target.value;if(curTask.status==='done'&&curTask.estimate&&!curTask.spent)curTask.spent=curTask.estimate;$('#dDot').style.background=stMap[curTask.status].c;logAct('🔀','«'+curTask.title+'» → '+stMap[curTask.status].n);save();}};
 $('#dCmtBtn').onclick=addComment;
 $('#dCmtIn').onkeydown=e=>{if(e.key==='Enter')addComment();};
