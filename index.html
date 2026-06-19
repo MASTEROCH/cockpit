@@ -710,6 +710,7 @@ body.light .card .cdel{background:rgba(20,24,40,.1)}
 .brand .logo svg{position:relative;z-index:1}
 body.light .brand .logo{background:linear-gradient(157deg,#1b1d27,#08090d 72%)}
 .dcsel{position:absolute;height:26px;border-radius:9px;background:rgba(167,139,250,.30);border:1.6px dashed var(--acc2);pointer-events:none;z-index:9;box-shadow:0 0 0 1px rgba(167,139,250,.25),0 4px 12px rgba(167,139,250,.3)}
+.wtag{font-size:10px;font-weight:700;color:var(--warn);background:rgba(251,191,36,.14);border:1px solid rgba(251,191,36,.32);border-radius:6px;padding:1px 6px;white-space:nowrap}
 /* inbox */
 .iconbtn.inbox{position:relative}
 .ibadge{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;border-radius:20px;background:var(--bad);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;padding:0 4px;box-shadow:0 0 0 2px rgba(18,21,31,.9)}
@@ -904,6 +905,7 @@ body.light .drawer,body.light .modal{background:var(--sheen),rgba(255,255,255,.9
         <input class="inp" type="number" id="dSpent" min="0" step="0.5" placeholder="0"> <span style="color:var(--mut2)">ч факт</span>
       </div></div>
     <div class="field"><label>Зависит от (блокеры)</label><div class="seg" id="dDeps"></div></div>
+    <div class="field"><label>⏳ Ждёт от — кто должен сделать шаг</label><div class="seg" id="dWaiting"></div></div>
     <div class="field"><label>Комментарии</label>
       <div class="comments" id="dComments"></div>
       <div class="cmtadd"><input class="inp" id="dCmtIn" placeholder="Написать комментарий…"><button class="btn" id="dCmtBtn">↑</button></div>
@@ -933,6 +935,7 @@ body.light .drawer,body.light .modal{background:var(--sheen),rgba(255,255,255,.9
 <div class="modal-scrim" id="reportScrim"><div class="modal" id="reportModal"></div></div>
 <div class="modal-scrim" id="aiScrim"><div class="modal" id="aiModal"></div></div>
 <div class="modal-scrim" id="profileScrim"><div class="modal" id="profileModal"></div></div>
+<div class="modal-scrim" id="briefScrim"><div class="modal" id="briefModal"></div></div>
 
 <footer class="statusbar" id="statusbar">
   <span class="sb-label">Цвета</span>
@@ -1112,6 +1115,8 @@ function toast(msg,ic='✓',actLabel,actFn){const t=$('#toast');
   if(actLabel){t.querySelector('.tact').onclick=()=>{t.classList.remove('show');actFn&&actFn();};}}
 function isOverdue(t){return !t.isMilestone && t.status!=='done' && parseD(t.end)<parseD(todayISO());}
 function isBlocked(t){return (t.deps||[]).some(id=>{const d=task(id);return d&&d.status!=='done';});}
+const member2=(data,id)=>(data.members||[]).find(m=>m.id===id);
+function waitTag(t){if(!t.waitingOn)return '';const m=member(t.waitingOn);return `<span class="wtag">⏳ ${m?esc(m.name):'?'}</span>`;}
 function daysLeft(t){return Math.round((parseD(t.end)-parseD(todayISO()))/dayMs);}
 function shade(hex,p){const n=parseInt(hex.slice(1),16);let r=(n>>16)+p*2.55,g=((n>>8)&255)+p*2.55,b=(n&255)+p*2.55;
   r=Math.max(0,Math.min(255,r|0));g=Math.max(0,Math.min(255,g|0));b=Math.max(0,Math.min(255,b|0));
@@ -1193,7 +1198,10 @@ function renderDash(){
     <div class="dhead">
       <h1>🛰 ${greet}, ${esc(meName())}</h1>
       <span class="sub">${esc(S.projectName)} · ${dn.getUTCDate?dn.getDate():''} ${MONTHF[dn.getMonth()]} ${dn.getFullYear()}</span>
-      <button class="btn primary aibtn" id="aiBtn">${icon('sparkles',16)} AI-разбор</button>
+      <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="briefBtn">☀️ Бриф</button>
+        <button class="btn primary" id="aiBtn">${icon('sparkles',16)} AI-разбор</button>
+      </div>
     </div>
     <div class="kpis">
       <div class="kpi"><div class="v">${T.length}</div><div class="l">Задач всего</div></div>
@@ -1238,6 +1246,7 @@ function renderDash(){
   $$('#dash .trow').forEach(el=>el.onclick=()=>openTask(el.dataset.task));
   $$('#dash .prow[data-open]').forEach(el=>el.onclick=()=>switchProject(el.dataset.open));
   const ab=$('#aiBtn');if(ab)ab.onclick=aiReview;
+  const bb=$('#briefBtn');if(bb)bb.onclick=openBrief;
 }
 
 /* ============================ AI-РАЗБОР ДОСКИ (Supabase Edge → Claude) ============================ */
@@ -1406,6 +1415,47 @@ function openInbox(){renderInbox();$('#inboxDrawer').classList.add('show');syncS
 function closeInbox(){$('#inboxDrawer').classList.remove('show');syncScrim();}
 $('#btnInbox').onclick=openInbox;$('#inboxClose').onclick=closeInbox;
 
+/* ============================ УТРЕННИЙ БРИФ ============================ */
+function briefData(){
+  const lastTs=+(localStorage.getItem('cockpit_brief_ts')||0);const tISO=todayISO();
+  const overdue=t=>!t.isMilestone&&t.status!=='done'&&parseD(t.end)<parseD(tISO);
+  const dueToday=t=>!t.isMilestone&&t.status!=='done'&&t.end===tISO;
+  const out={partner:[],today:[],onMe:[],iWait:[]};const myn=meName().toLowerCase();
+  reg.list.filter(p=>!p.archived).forEach(p=>{
+    const data=loadProj(p.id);if(!data)return;const me=myMemberIn(data);
+    (data.activity||[]).forEach(a=>{if(a.ts>lastTs&&(a.who||'').toLowerCase()!==myn)out.partner.push(Object.assign({},a,{pname:p.name,emoji:p.emoji}));});
+    if(!me)return;
+    (data.tasks||[]).forEach(t=>{
+      if(t.assigneeId===me.id&&(dueToday(t)||overdue(t)))out.today.push({t,pid:p.id,pname:p.name,emoji:p.emoji,ov:overdue(t)});
+      if(t.waitingOn===me.id&&t.status!=='done')out.onMe.push({t,pid:p.id,pname:p.name,emoji:p.emoji});
+      if(t.assigneeId===me.id&&t.waitingOn&&t.waitingOn!==me.id&&t.status!=='done')out.iWait.push({t,pid:p.id,pname:p.name,emoji:p.emoji,who:(member2(data,t.waitingOn)||{}).name});
+    });
+  });
+  out.partner.sort((a,b)=>b.ts-a.ts);out.today.sort((a,b)=>(b.ov-a.ov));
+  return out;
+}
+function openBrief(){renderBrief();$('#briefScrim').classList.add('show');}
+function closeBrief(){$('#briefScrim').classList.remove('show');localStorage.setItem('cockpit_brief_ts',Date.now());localStorage.setItem('cockpit_brief_date',todayISO());}
+function renderBrief(){
+  const b=briefData();const h=new Date().getHours();const greet=h<6?'Доброй ночи':h<12?'Доброе утро':h<18?'Добрый день':'Добрый вечер';
+  const empty=!b.partner.length&&!b.today.length&&!b.onMe.length&&!b.iWait.length;
+  const trow=x=>`<div class="trow" data-pid="${x.pid}" data-tid="${x.t.id}"><span class="dot" style="background:${stMap[x.t.status].c}"></span><span class="tn">${esc(x.t.title)}</span><span class="pbadge">${x.emoji||'📄'} ${esc(x.pname)}</span>${x.ov?'<span class="when over">просроч.</span>':''}</div>`;
+  $('#briefModal').innerHTML=`
+   <div class="ob-body" style="max-height:80vh;overflow:auto">
+     <h2>☀️ Бриф на сегодня</h2>
+     <p>${greet}, ${esc(meName())}. Коротко — что важно прямо сейчас.</p>
+     ${b.onMe.length?`<div class="airh">⏳ Висит на тебе — ${b.onMe.length}</div>${b.onMe.map(trow).join('')}`:''}
+     ${b.today.length?`<div class="airh">🔥 Сегодня / просрочено — ${b.today.length}</div>${b.today.map(trow).join('')}`:''}
+     ${b.iWait.length?`<div class="airh">🤝 Ждёшь от партнёра — ${b.iWait.length}</div>${b.iWait.map(x=>`<div class="trow" data-pid="${x.pid}" data-tid="${x.t.id}"><span class="dot" style="background:${stMap[x.t.status].c}"></span><span class="tn">${esc(x.t.title)}</span><span class="pbadge">от ${esc(x.who||'?')}</span></div>`).join('')}`:''}
+     ${b.partner.length?`<div class="airh">🔔 Что сделал партнёр — ${b.partner.length}</div><div class="actfeed" style="max-height:220px">${b.partner.slice(0,15).map(a=>`<div class="actrow"><span class="ai">${a.icon}</span><span class="atx"><b>${esc(a.who)}</b> ${esc(a.text)} <span class="pbadge">${a.emoji||'📄'} ${esc(a.pname)}</span></span><span class="att">${relTime(a.ts)}</span></div>`).join('')}</div>`:''}
+     ${empty?'<div class="emptymini" style="margin-top:14px">Чисто — ничего срочного. Можно спокойно планировать день 👌</div>':''}
+   </div>
+   <div class="ob-foot"><div class="spacer"></div><button class="btn primary" id="briefClose">За работу 🚀</button></div>`;
+  $('#briefClose').onclick=closeBrief;
+  $$('#briefModal .trow').forEach(el=>el.onclick=()=>{const pid=el.dataset.pid,tid=el.dataset.tid;closeBrief();if(pid!==S.id)switchProject(pid);setTimeout(()=>openTask(tid),90);});
+}
+$('#briefScrim').onclick=e=>{if(e.target===$('#briefScrim'))closeBrief();};
+
 /* ============================ CLIENT REPORT (статус-сводка) ============================ */
 function fmtRu(iso){return iso.slice(8)+'.'+iso.slice(5,7);}
 function openReport(){renderReport();$('#reportScrim').classList.add('show');}
@@ -1526,7 +1576,7 @@ function renderGantt(){
       const sc=stMap[t.status].c;const blocked=isBlocked(t);const ov=isOverdue(t);
       left+=`<div class="grow ${t.status==='done'?'done':''}">
         <span class="dot" data-cycle="${t.id}" title="Кликни — сменить статус" style="background:${sc};cursor:pointer"></span>
-        <span class="tt" data-task="${t.id}" style="${ov?'color:var(--bad)':''}">${prGlyph(t)}${t.isMilestone?'🔹 ':''}${blocked?'🔒 ':''}${esc(t.title)}</span>
+        <span class="tt" data-task="${t.id}" style="${ov?'color:var(--bad)':''}">${prGlyph(t)}${t.isMilestone?'🔹 ':''}${blocked?'🔒 ':''}${t.waitingOn?`<span class="pf" title="ждёт от ${esc((member(t.waitingOn)||{}).name||'')}">⏳</span> `:''}${esc(t.title)}</span>
         ${t.estimate?`<span class="est">${t.estimate}ч</span>`:''}
         ${avatar(t.assigneeId)}
       </div>`;
@@ -1657,6 +1707,7 @@ function renderBoard(){
         <div class="ct">${t.isMilestone?'🔹 ':''}${blk?'🔒 ':''}${esc(t.title)}</div>
         <div class="cm">
           ${prTag(t)}
+          ${waitTag(t)}
           ${t.estimate?`<span>⏱ ${t.estimate}ч</span>`:''}
           ${t.comments.length?`<span>💬 ${t.comments.length}</span>`:''}
           ${ov?`<span style="color:var(--bad);font-weight:700">⚠ просроч.</span>`:''}
@@ -1839,6 +1890,9 @@ function openTask(id){
   const others=S.tasks.filter(x=>x.id!==t.id);
   $('#dDeps').innerHTML=others.length?others.map(o=>`<button class="chip ${t.deps.includes(o.id)?'on':''}" data-dep="${o.id}" style="${t.deps.includes(o.id)?`background:${stMap[o.status].c}`:''}">${esc(o.title)}</button>`).join(''):'<span style="color:var(--mut2);font-size:12px">Других задач нет</span>';
   $$('#dDeps .chip').forEach(c=>c.onclick=()=>{const did=c.dataset.dep;t.deps=t.deps.includes(did)?t.deps.filter(x=>x!==did):[...t.deps,did];save();openTask(id);render();});
+  // ждёт от (waiting-on)
+  $('#dWaiting').innerHTML=S.members.map(m=>`<button class="chip ${t.waitingOn===m.id?'on':''}" data-wo="${m.id}" style="${t.waitingOn===m.id?`background:${m.color}`:''}">${esc(m.name)}</button>`).join('')+`<button class="chip ${!t.waitingOn?'on':''}" data-wo="">— никого</button>`;
+  $$('#dWaiting .chip').forEach(c=>c.onclick=()=>{const wid=c.dataset.wo||null;t.waitingOn=wid;logAct('⏳',wid?('«'+t.title+'» ждёт от '+((member(wid)||{}).name||'?')):('«'+t.title+'» — снято ожидание'));save();openTask(id);render();});
   renderComments(t);
   $('#drawer').classList.add('show');syncScrim();
 }
@@ -1945,6 +1999,7 @@ document.addEventListener('keydown',e=>{
     else if($('#authScrim').classList.contains('show'))$('#authScrim').classList.remove('show');
     else if($('#reportScrim').classList.contains('show'))$('#reportScrim').classList.remove('show');
     else if($('#aiScrim').classList.contains('show'))$('#aiScrim').classList.remove('show');
+    else if($('#briefScrim').classList.contains('show'))closeBrief();
     else if($('#drawer').classList.contains('show'))closeDrawer();
     else if($('#mDrawer').classList.contains('show'))closeMember();
     else if($('#inboxDrawer').classList.contains('show'))closeInbox();
@@ -2269,7 +2324,8 @@ async function cloudInit(){
 }
 async function onLoggedIn(){cloudOn=true;closeAuth();hideGate();updateCloudBadge();await cloudSync();subscribeRealtime();
   if(!localStorage.getItem('cockpit_profile_done'))openProfileSetup();
-  else if(!localStorage.getItem('cockpit_onboarded'))openOnboarding(0);}
+  else if(!localStorage.getItem('cockpit_onboarded'))openOnboarding(0);
+  else if(localStorage.getItem('cockpit_brief_date')!==todayISO())openBrief();}
 /* ---- профиль при первом входе ---- */
 let profileDraft=null;
 function cropPhoto(f,cb){const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const s=160,c=document.createElement('canvas');c.width=s;c.height=s;const ctx=c.getContext('2d');const mn=Math.min(img.width,img.height),sx=(img.width-mn)/2,sy=(img.height-mn)/2;ctx.drawImage(img,sx,sy,mn,mn,0,0,s,s);cb(c.toDataURL('image/jpeg',0.82));};img.src=r.result;};r.readAsDataURL(f);}
