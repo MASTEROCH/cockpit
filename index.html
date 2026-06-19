@@ -905,6 +905,7 @@ body.light .drawer,body.light .modal{background:var(--sheen),rgba(255,255,255,.9
 
 <div class="modal-scrim" id="reportScrim"><div class="modal" id="reportModal"></div></div>
 <div class="modal-scrim" id="aiScrim"><div class="modal" id="aiModal"></div></div>
+<div class="modal-scrim" id="profileScrim"><div class="modal" id="profileModal"></div></div>
 
 <footer class="statusbar" id="statusbar">
   <span class="sb-label">Цвета</span>
@@ -2158,7 +2159,56 @@ async function cloudInit(){
   }catch(e){showGate();}
 }
 async function onLoggedIn(){cloudOn=true;closeAuth();hideGate();updateCloudBadge();await cloudSync();subscribeRealtime();
-  if(!localStorage.getItem('cockpit_onboarded'))openOnboarding(0);}
+  if(!localStorage.getItem('cockpit_profile_done'))openProfileSetup();
+  else if(!localStorage.getItem('cockpit_onboarded'))openOnboarding(0);}
+/* ---- профиль при первом входе ---- */
+let profileDraft=null;
+function cropPhoto(f,cb){const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const s=160,c=document.createElement('canvas');c.width=s;c.height=s;const ctx=c.getContext('2d');const mn=Math.min(img.width,img.height),sx=(img.width-mn)/2,sy=(img.height-mn)/2;ctx.drawImage(img,sx,sy,mn,mn,0,0,s,s);cb(c.toDataURL('image/jpeg',0.82));};img.src=r.result;};r.readAsDataURL(f);}
+function pickProfilePhoto(){const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.onchange=()=>{const f=inp.files[0];if(f)cropPhoto(f,d=>{profileDraft.photo=d;renderProfileSetup();});};inp.click();}
+function openProfileSetup(){
+  const ex=S.members.find(x=>(x.email||'').toLowerCase()===myEmail);
+  let saved=null;try{saved=JSON.parse(localStorage.getItem('cockpit_profile'));}catch(e){}
+  const gn=n=>(n&&n!=='Я'&&n!=='Новый участник')?n:'';
+  profileDraft={name:gn(ex&&ex.name)||(saved&&saved.name)||'',
+    role:(ex&&ex.role&&ex.role!=='—'?ex.role:'')||(saved&&saved.role)||'',
+    color:(ex&&ex.color)||(saved&&saved.color)||COLORS[1],
+    photo:(ex&&ex.photo)||(saved&&saved.photo)||''};
+  renderProfileSetup();$('#profileScrim').classList.add('show');
+}
+function renderProfileSetup(){
+  const d=profileDraft;
+  $('#profileModal').innerHTML=`
+   <div class="ob-body" style="padding-top:26px;text-align:center">
+     <h2 style="text-align:center">Ваш профиль</h2>
+     <p style="text-align:center">Так вас будут видеть в команде. Настройте один раз — потом можно поменять в разделе «Команда».</p>
+     <div class="mbig edit" id="pfAvatar" style="margin:18px auto 10px;${d.photo?`background-image:url('${d.photo}')`:`background:${d.color}`}">${d.photo?'':(d.name?initials(d.name):'+')}<span class="cam">📷</span></div>
+     <div class="colorrow" id="pfColors" style="justify-content:center;margin-bottom:16px">${COLORS.map(c=>`<span class="cdot ${d.color===c&&!d.photo?'on':''}" data-c="${c}" style="background:${c}"></span>`).join('')}</div>
+     <input class="inp" id="pfName" placeholder="Ваше имя" value="${esc(d.name)}" style="text-align:center;font-size:16px;margin-bottom:9px">
+     <input class="inp" id="pfRole" placeholder="Роль (напр. Founder / Tech)" value="${esc(d.role)}" style="text-align:center;margin-bottom:9px">
+     <div class="inp" style="text-align:center;color:var(--mut2)">${esc(myEmail||'—')}</div>
+   </div>
+   <div class="ob-foot"><div class="spacer"></div><button class="btn primary" id="pfSave">Сохранить и начать</button></div>`;
+  $('#pfAvatar').onclick=pickProfilePhoto;
+  $$('#pfColors .cdot').forEach(el=>el.onclick=()=>{profileDraft.color=el.dataset.c;profileDraft.photo='';renderProfileSetup();});
+  $('#pfName').oninput=e=>profileDraft.name=e.target.value;
+  $('#pfRole').oninput=e=>profileDraft.role=e.target.value;
+  $('#pfSave').onclick=saveProfileSetup;
+  setTimeout(()=>{const i=$('#pfName');if(i&&!d.name)i.focus();},60);
+}
+function saveProfileSetup(){
+  const nm=($('#pfName').value||'').trim();if(!nm){toast('Введите имя','⚠');const i=$('#pfName');if(i)i.focus();return;}
+  profileDraft.name=nm;profileDraft.role=($('#pfRole').value||'').trim();
+  let m=S.members.find(x=>(x.email||'').toLowerCase()===myEmail);
+  if(!m)m=S.members.find(x=>!x.email&&(x.name==='Я'||x.name==='Новый участник')&&!S.tasks.some(t=>t.assigneeId===x.id));
+  if(!m){m={id:uid('m'),capacity:30};S.members.push(m);}
+  m.name=nm;m.role=profileDraft.role||'—';m.color=profileDraft.color;if(profileDraft.photo)m.photo=profileDraft.photo;m.email=myEmail||m.email||'';
+  localStorage.setItem('cockpit_me',m.id);
+  localStorage.setItem('cockpit_profile',JSON.stringify({name:nm,role:m.role,color:m.color,photo:m.photo||'',email:myEmail}));
+  localStorage.setItem('cockpit_profile_done','1');
+  logAct('🧑','настроил профиль');save();render();
+  $('#profileScrim').classList.remove('show');toast('Профиль сохранён','✅');
+  if(!localStorage.getItem('cockpit_onboarded'))openOnboarding(0);
+}
 async function cloudSync(){
   let rows=[];try{const {data,error}=await sb.from('projects').select('*');if(error)throw error;rows=data||[];}
   catch(e){toast('Ошибка чтения облака: '+(e.message||e),'⚠');return;}
