@@ -699,6 +699,16 @@ body.light .card .cdel{background:rgba(20,24,40,.1)}
 .tab svg{flex:0 0 auto}
 .btn svg{vertical-align:-3px}
 .menu button svg,.airow .aitt svg{vertical-align:-3px;margin-right:2px}
+/* brand logo — bigger, black glossy app-icon tile, gradient mark */
+.brand .logo{width:38px;height:38px;border-radius:12px;position:relative;overflow:hidden;font-size:0;
+  background:linear-gradient(157deg,#262834,#0b0c11 72%);border:1px solid rgba(255,255,255,.11);
+  box-shadow:0 7px 20px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.16)}
+.brand .logo::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.20),rgba(255,255,255,.05) 42%,transparent 58%)}
+.brand .logo::after{content:'';position:absolute;left:-30%;top:-60%;width:90%;height:120%;pointer-events:none;
+  background:radial-gradient(closest-side,rgba(255,255,255,.12),transparent);transform:rotate(18deg)}
+.brand .logo svg{position:relative;z-index:1}
+body.light .brand .logo{background:linear-gradient(157deg,#1b1d27,#08090d 72%)}
 /* inbox */
 .iconbtn.inbox{position:relative}
 .ibadge{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;border-radius:20px;background:var(--bad);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;padding:0 4px;box-shadow:0 0 0 2px rgba(18,21,31,.9)}
@@ -1089,7 +1099,10 @@ const ICONS={
 };
 function icon(n,s){s=s||18;return `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]||''}</svg>`;}
 const LOGO_PATHS='<path transform="translate(-239 -299)" d="M590.549 318.732C592.945 318.453 596.745 318.696 599.286 318.696C634.434 318.703 667.897 316.824 700.032 333.775C783.727 377.923 786.207 488.78 731.835 556.811C700.794 595.65 657.566 620.752 607.3 623.356C576.646 624.841 542.765 617.244 517.207 638.881C505.403 648.755 500.588 660.76 494.308 674.336C488.985 685.844 483.927 697.868 478.034 709.061C447.129 709.003 414.041 709.686 383.322 708.993C390.272 692.78 399.544 674.533 407.172 658.357C414.402 641.263 425.054 620.531 433.24 603.375L468.064 529.888C478.844 507.375 489.815 485.216 500.033 462.397C508.607 461.72 522.007 461.939 530.747 461.916C551.732 461.88 572.716 462.073 593.696 462.496C589.717 468.96 584.172 482.027 580.797 489.352C574.315 503.42 567.316 518.312 561.52 532.628C562.821 532.707 564.123 532.765 565.426 532.803C574.929 533.092 584.848 532.969 594.379 533.027C601.077 532.791 608.447 533.526 615.073 532.731C648.617 528.704 677.207 498.097 677.706 464.145C678.091 437.865 664.532 415.164 637.935 409.832C622.705 406.779 607.684 407.916 592.303 407.965C569.853 408.116 547.402 408.135 524.952 408.02C539.76 379.17 553.156 348.033 567.408 318.783C575.059 318.869 582.922 319.055 590.549 318.732Z"/><path transform="translate(-239 -299)" d="M436.648 318.711C438.535 318.361 446.366 318.402 448.541 318.408L474.9 318.684C498.905 318.824 523.676 318.103 547.68 318.994C534.009 349.063 519.82 378.173 505.694 407.974L452.824 407.966C437.639 407.999 418.311 406.719 404.007 410.92C374.633 419.548 349.545 452.473 349.489 483.221C349.376 496.888 354.815 510.016 364.561 519.599C378.937 533.945 398.3 532.85 417.331 532.946L446.601 533.036C439.517 549.455 431.978 565.674 423.991 581.673C417.562 595.433 410.688 609.303 404.066 623C374.725 623.045 349.066 625.26 321.887 611.554C233.151 566.808 241.2 449.578 300.225 384.017C338.665 341.322 379.901 322.449 436.648 318.711Z"/>';
-function logoSVG(s,fill){return `<svg viewBox="0 0 547 423" width="${s}" height="${Math.round(s*423/547)}" fill="${fill||'#fff'}">${LOGO_PATHS}</svg>`;}
+let _lgid=0;
+function logoSVG(s,fill){
+  if(fill==='grad'){const id='lg'+(++_lgid);return `<svg viewBox="0 0 547 423" width="${s}" height="${Math.round(s*423/547)}"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f472b6"/><stop offset="0.5" stop-color="#a78bfa"/><stop offset="1" stop-color="#38bdf8"/></linearGradient></defs><g fill="url(#${id})">${LOGO_PATHS}</g></svg>`;}
+  return `<svg viewBox="0 0 547 423" width="${s}" height="${Math.round(s*423/547)}" fill="${fill||'#fff'}">${LOGO_PATHS}</svg>`;}
 function faviconURI(){const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f472b6"/><stop offset="0.5" stop-color="#a78bfa"/><stop offset="1" stop-color="#38bdf8"/></linearGradient></defs><rect width="100" height="100" rx="24" fill="url(#g)"/><g transform="translate(18,25) scale(0.117)" fill="#fff">${LOGO_PATHS}</g></svg>`;return 'data:image/svg+xml,'+encodeURIComponent(svg);}
 function setFavicon(){try{let l=document.querySelector('link[rel="icon"]');if(!l){l=document.createElement('link');l.rel='icon';document.head.appendChild(l);}l.type='image/svg+xml';l.href=faviconURI();}catch(e){}}
 function toast(msg,ic='✓',actLabel,actFn){const t=$('#toast');
@@ -2357,7 +2370,7 @@ $('#authScrim').onclick=e=>{if(e.target===$('#authScrim'))closeAuth();};
 
 /* ============================ INIT ============================ */
 $$('[data-icon]').forEach(el=>el.insertAdjacentHTML('afterbegin',icon(el.dataset.icon)));
-{const bl=$('#brandLogo');if(bl)bl.innerHTML=logoSVG(18,'#fff');const gbl=$('#gateBootLogo');if(gbl)gbl.innerHTML=logoSVG(30,'#fff');}
+{const bl=$('#brandLogo');if(bl)bl.innerHTML=logoSVG(24,'grad');const gbl=$('#gateBootLogo');if(gbl)gbl.innerHTML=logoSVG(30,'#fff');}
 applyTheme();
 $('#sbLegend').innerHTML=legendHTML();
 resetUndo();
