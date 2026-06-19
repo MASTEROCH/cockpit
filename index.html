@@ -649,6 +649,18 @@ header{background:var(--sheen),rgba(18,21,31,.62)}
 .prow .ppct{font-weight:800;font-size:16px;flex:0 0 auto;width:46px;text-align:right;font-variant-numeric:tabular-nums}
 .pbadge{font-size:10.5px;font-weight:700;color:var(--mut);background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:2px 7px;white-space:nowrap;flex:0 0 auto}
 body.light .pdemo{background:rgba(20,24,40,.05)}
+/* AI review */
+.aisug{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.airow{display:flex;gap:11px;align-items:flex-start;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:12px}
+.airow .aimain{flex:1;min-width:0}
+.aitt{font-weight:700;font-size:13.5px}
+.aichg{font-size:12.5px;color:var(--acc2);margin:3px 0;font-weight:600}
+.aire{font-size:12px;color:var(--mut);line-height:1.45}
+.airow .btn{flex:0 0 auto;padding:8px 13px;font-size:12.5px;align-self:center}
+.airisks{margin:12px 0 0;font-size:13px;color:var(--mut)}
+.airisks ul{margin:6px 0 0;padding-left:18px;line-height:1.6}
+.airisks b{color:var(--txt)}
+.aibtn{margin-left:auto}
 /* inbox */
 .iconbtn.inbox{position:relative}
 .ibadge{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;border-radius:20px;background:var(--bad);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;padding:0 4px;box-shadow:0 0 0 2px rgba(18,21,31,.9)}
@@ -869,6 +881,7 @@ body.light .drawer,body.light .modal{background:var(--sheen),rgba(255,255,255,.9
 </aside>
 
 <div class="modal-scrim" id="reportScrim"><div class="modal" id="reportModal"></div></div>
+<div class="modal-scrim" id="aiScrim"><div class="modal" id="aiModal"></div></div>
 
 <footer class="statusbar" id="statusbar">
   <span class="sb-label">Цвета</span>
@@ -1084,6 +1097,7 @@ function renderDash(){
     <div class="dhead">
       <h1>🛰 ${greet}, ${esc(meName())}</h1>
       <span class="sub">${esc(S.projectName)} · ${dn.getUTCDate?dn.getDate():''} ${MONTHF[dn.getMonth()]} ${dn.getFullYear()}</span>
+      <button class="btn primary aibtn" id="aiBtn">🧠 AI-разбор</button>
     </div>
     <div class="kpis">
       <div class="kpi"><div class="v">${T.length}</div><div class="l">Задач всего</div></div>
@@ -1122,7 +1136,75 @@ function renderDash(){
     <div class="panel-c" style="margin-top:16px"><h3>🕑 Лента активности <span class="c">${(S.activity||[]).length}</span></h3>
       <div class="actfeed">${(S.activity||[]).length?S.activity.slice(0,20).map(a=>`<div class="actrow"><span class="ai">${a.icon}</span><span class="atx"><b>${esc(a.who)}</b> ${esc(a.text)}</span><span class="att">${relTime(a.ts)}</span></div>`).join(''):'<div class="emptymini">Здесь появится история: кто что создал, передвинул, закрыл. Ничего не теряется — всё под контролем.</div>'}</div></div>`;
   $$('#dash .trow').forEach(el=>el.onclick=()=>openTask(el.dataset.task));
+  const ab=$('#aiBtn');if(ab)ab.onclick=aiReview;
 }
+
+/* ============================ AI-РАЗБОР ДОСКИ (Supabase Edge → Claude) ============================ */
+async function aiReview(){
+  if(!cloudOn||!sb){toast('Войди в облако (🔄 в шапке) — AI-разбор работает для команды','🧠');return;}
+  let token;try{const {data}=await sb.auth.getSession();token=data&&data.session&&data.session.access_token;}catch(e){}
+  if(!token){toast('Нужен вход в облако','🧠');return;}
+  $('#aiModal').innerHTML=`<div class="ob-body" style="text-align:center;padding:54px 24px"><div style="font-size:42px">🧠</div><h2 style="margin:10px 0 4px">Анализирую доску…</h2><p>Claude смотрит задачи, эстимейты, загрузку и сроки</p></div>`;
+  $('#aiScrim').classList.add('show');
+  const nameOf=id=>{const m=member(id);return m?m.name:null;};
+  const payload={today:todayISO(),project:S.projectName,
+    members:S.members.map(m=>({name:m.name,capacity:m.capacity,
+      load:S.tasks.filter(t=>t.assigneeId===m.id&&t.status!=='done').reduce((a,t)=>a+(t.estimate||0),0)})),
+    tasks:S.tasks.map(t=>({title:t.title,status:stMap[t.status].n,assignee:nameOf(t.assigneeId),
+      start:t.start,end:t.end,estimate:t.estimate||0,spent:t.spent||0,priority:prMap[t.priority].n,
+      deps:(t.deps||[]).map(d=>{const x=task(d);return x?x.title:null;}).filter(Boolean),
+      blocked:isBlocked(t),overdue:isOverdue(t),milestone:!!t.isMilestone}))};
+  try{
+    const r=await fetch(CFG.url+'/functions/v1/ai-review',{method:'POST',
+      headers:{'content-type':'application/json','authorization':'Bearer '+token},
+      body:JSON.stringify({project:payload})});
+    const res=await r.json();
+    if(!r.ok){renderAIError(res.error||('HTTP '+r.status));return;}
+    renderAI(res);
+  }catch(e){renderAIError(String(e));}
+}
+function renderAIError(msg){
+  $('#aiModal').innerHTML=`<div class="ob-body" style="padding:30px 26px"><h2>🧠 AI-разбор</h2>
+    <p style="color:var(--bad)">${esc(msg)}</p>
+    <p style="font-size:12.5px;margin-top:10px">Похоже, функция ещё не задеплоена или не задан ключ. Это настраивается один раз — см. инструкцию.</p></div>
+    <div class="ob-foot"><div class="spacer"></div><button class="btn primary" id="aiClose">Закрыть</button></div>`;
+  $('#aiClose').onclick=()=>$('#aiScrim').classList.remove('show');
+}
+function aiSugHTML(s,i){
+  const icon={reestimate:'⏱',reprioritize:'⚑',reschedule:'📅',reassign:'👤'}[s.type]||'•';
+  let change='';
+  if(s.type==='reestimate')change=`эстимейт → <b>${esc(String(s.estimate))}ч</b>`;
+  else if(s.type==='reprioritize')change=`приоритет → <b>${esc(String(s.priority))}</b>`;
+  else if(s.type==='reschedule')change=`сроки → <b>${esc(String(s.start||''))} – ${esc(String(s.end||''))}</b>`;
+  else if(s.type==='reassign')change=`исполнитель → <b>${esc(String(s.assignee))}</b>`;
+  return `<div class="airow"><div class="aimain"><div class="aitt">${icon} ${esc(s.taskTitle||'')}</div>
+    <div class="aichg">${change}</div><div class="aire">${esc(s.reason||'')}</div></div>
+    <button class="btn" id="aiApply${i}">Применить</button></div>`;
+}
+function renderAI(res){
+  const sug=(res.suggestions||[]).filter(s=>s&&s.taskTitle);
+  $('#aiModal').innerHTML=`
+    <div class="ob-body" style="max-height:78vh;overflow:auto">
+      <h2>🧠 AI-разбор доски</h2>
+      <p>${esc(res.summary||'')}</p>
+      ${res.risks&&res.risks.length?`<div class="airisks"><b>Риски:</b><ul>${res.risks.map(r=>`<li>${esc(r)}</li>`).join('')}</ul></div>`:''}
+      ${sug.length?`<div class="aisug">${sug.map((s,i)=>aiSugHTML(s,i)).join('')}</div>`:'<div class="emptymini" style="margin-top:14px">Доска в порядке — серьёзных правок не предлагаю 👍</div>'}
+    </div>
+    <div class="ob-foot"><button class="btn" id="aiSpeak">🔊 Озвучить</button><div class="spacer"></div><button class="btn primary" id="aiClose">Готово</button></div>`;
+  $('#aiClose').onclick=()=>$('#aiScrim').classList.remove('show');
+  $('#aiSpeak').onclick=()=>speak((res.summary||'')+'. '+(res.risks||[]).join('. '));
+  sug.forEach((s,i)=>{const b=$('#aiApply'+i);if(b)b.onclick=()=>{applySuggestion(s);b.textContent='✓ Применено';b.disabled=true;b.style.opacity=.6;};});
+}
+function applySuggestion(s){
+  const t=findTask(s.taskTitle);if(!t){toast('Задача не найдена: '+s.taskTitle,'⚠');return;}
+  if(s.type==='reestimate'){t.estimate=parseFloat(s.estimate)||t.estimate;logAct('⏱','AI: эстимейт «'+t.title+'» = '+t.estimate+'ч');}
+  else if(s.type==='reprioritize'){const map={'низкий':'low','низк':'low','средний':'med','средн':'med','высокий':'high','высок':'high','важный':'high','срочно':'urgent','срочный':'urgent','urgent':'urgent','high':'high','medium':'med','med':'med','low':'low'};const k=map[String(s.priority||'').toLowerCase()]||s.priority;if(prMap[k]){t.priority=k;logAct('⚑','AI: приоритет «'+t.title+'» → '+prMap[k].n);}}
+  else if(s.type==='reschedule'){if(s.start)t.start=s.start;if(s.end)t.end=s.end;if(parseD(t.end)<parseD(t.start))t.end=t.start;logAct('📅','AI: сроки «'+t.title+'»');}
+  else if(s.type==='reassign'){const m=findMember(s.assignee);if(m){t.assigneeId=m.id;logAct('👤','AI: «'+t.title+'» → '+m.name);}else{toast('Участник не найден: '+s.assignee,'⚠');return;}}
+  save();render();toast('Применено: «'+t.title+'»','✅');
+}
+function speak(txt){try{if(!window.speechSynthesis)return;const u=new SpeechSynthesisUtterance(txt);u.lang='ru-RU';speechSynthesis.cancel();speechSynthesis.speak(u);}catch(e){}}
+$('#aiScrim').onclick=e=>{if(e.target===$('#aiScrim'))$('#aiScrim').classList.remove('show');};
 
 /* ============================ PORTFOLIO (все проекты) ============================ */
 function renderPortfolio(){
@@ -1700,6 +1782,7 @@ document.addEventListener('keydown',e=>{
     else if($('#npScrim').classList.contains('show'))$('#npScrim').classList.remove('show');
     else if($('#authScrim').classList.contains('show'))$('#authScrim').classList.remove('show');
     else if($('#reportScrim').classList.contains('show'))$('#reportScrim').classList.remove('show');
+    else if($('#aiScrim').classList.contains('show'))$('#aiScrim').classList.remove('show');
     else if($('#drawer').classList.contains('show'))closeDrawer();
     else if($('#mDrawer').classList.contains('show'))closeMember();
     else if($('#inboxDrawer').classList.contains('show'))closeInbox();
