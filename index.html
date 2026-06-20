@@ -730,6 +730,8 @@ body.light .brand .logo{background:linear-gradient(157deg,#1b1d27,#08090d 72%)}
 .subtxt.done{color:var(--mut2);text-decoration:line-through}
 .subdel{flex:0 0 auto;width:24px;height:24px;border:none;background:none;color:var(--mut2);font-size:12px;cursor:pointer;border-radius:6px}
 .subdel:hover{color:var(--bad)}
+.subto{flex:0 0 auto;width:24px;height:24px;border:none;background:none;color:var(--mut2);font-size:13px;cursor:pointer;border-radius:6px}
+.subto:hover{color:var(--acc2)}
 .ment{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
 .mentchip{font-size:11px;font-weight:700;color:var(--acc2);background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.28);border-radius:8px;padding:4px 9px;cursor:pointer}
 .mentchip:hover{background:rgba(167,139,250,.2)}
@@ -1407,6 +1409,14 @@ body.light .pr-ring-in{background:#f4f6fc}
       <label style="margin-top:10px;display:flex;gap:7px;align-items:center;cursor:pointer;text-transform:none;letter-spacing:0;font-size:12px;color:var(--mut)">
         <input type="checkbox" id="dMile"> 🔹 это веха / релиз (milestone)</label>
     </div>
+    <div class="field"><label>🔁 Повтор</label>
+      <select class="inp" id="dRepeat">
+        <option value="">Не повторять</option>
+        <option value="daily">Каждый день</option>
+        <option value="weekly">Каждую неделю</option>
+        <option value="monthly">Каждый месяц</option>
+      </select>
+      <div style="font-size:11px;color:var(--mut2);margin-top:5px">При «Готово» создастся следующая копия со сдвинутым сроком.</div></div>
     <div class="field"><label>Приоритет</label><div class="seg" id="dPrio"></div></div>
     <div class="field"><label>Эстимейт / факт</label>
       <div class="estbar">
@@ -1718,8 +1728,21 @@ function relScore(t){const prW={urgent:4,high:3,med:2,low:1}[t.priority]||2;cons
   const due=dl<0?(2000-dl):Math.max(0,400-dl*8);return due+prW*60;}
 /* геймификация: баллы за выполненные задачи */
 function taskValue(t){const pm={urgent:1.5,high:1.25,med:1,low:1}[t.priority]||1;return Math.max(3,Math.round((t.estimate||5)*pm));}
+function shiftDate(iso,repeat){if(!iso)return iso;const d=parseD(iso);
+  if(repeat==='daily')return fmtD(d+dayMs);
+  if(repeat==='weekly')return fmtD(d+7*dayMs);
+  if(repeat==='monthly'){const x=new Date(d);x.setUTCMonth(x.getUTCMonth()+1);return fmtD(x.getTime());}
+  return iso;}
+function spawnRepeat(data,t){
+  const c=JSON.parse(JSON.stringify(t));c.id=uid('t');c.status='todo';
+  delete c.doneTs;c.spent=0;delete c.pointsAwarded;c.comments=[];delete c.sessions;
+  if(c.subtasks)c.subtasks=c.subtasks.map(s=>({...s,done:false}));
+  c.start=shiftDate(t.start,t.repeat);c.end=shiftDate(t.end||t.start,t.repeat);c.createdTs=Date.now();
+  data.tasks.push(c);data.activity=data.activity||[];
+  data.activity.unshift({ts:Date.now(),who:meName(),icon:'🔁',text:'повтор: «'+c.title+'» на '+(c.start?c.start.slice(8)+'.'+c.start.slice(5,7):'')});
+}
 function awardForDone(data,t){
-  if(t.status==='done'&&!t.doneTs)t.doneTs=Date.now();
+  if(t.status==='done'&&!t.doneTs){t.doneTs=Date.now();if(t.repeat&&!t.isMilestone)spawnRepeat(data,t);}
   if(t.isMilestone||t.status!=='done'||t.pointsAwarded||!t.assigneeId)return 0;
   const m=(data.members||[]).find(x=>x.id===t.assigneeId);if(!m)return 0;
   const v=taskValue(t);m.points=(m.points||0)+v;t.pointsAwarded=t.assigneeId;
@@ -3143,7 +3166,7 @@ function renderBoard(){
       const card=document.createElement('div');card.className='card'+(boardSel.has(t.id)?' selected':'');card.draggable=!boardSelOn;card.dataset.id=t.id;
       const ov=isOverdue(t);const blk=isBlocked(t);
       card.innerHTML=`<button class="cdel" title="Удалить задачу">${icon('x',13)}</button>
-        <div class="ct">${t.isMilestone?'🔹 ':''}${blk?'🔒 ':''}${esc(t.title)}</div>
+        <div class="ct">${t.isMilestone?'🔹 ':''}${t.repeat?'🔁 ':''}${blk?'🔒 ':''}${esc(t.title)}</div>
         <div class="cm">
           ${t.status!=='done'&&!t.isMilestone?`<button class="qdone cdone" title="Отметить готовым" style="--c:${stMap[t.status].c}"></button>`:''}
           ${prTag(t)}
@@ -3344,6 +3367,7 @@ function openTask(id){
   $('#dDesc').value=t.description;
   $('#dStart').value=t.start;$('#dEnd').value=t.end;
   $('#dMile').checked=t.isMilestone;
+  $('#dRepeat').value=t.repeat||'';
   $('#dEst').value=t.estimate||'';$('#dSpent').value=t.spent||'';
   $('#dStatus').innerHTML=STATUSES.map(s=>`<option value="${s.k}" ${s.k===t.status?'selected':''}>${s.n}</option>`).join('');
   $('#dSection').innerHTML=S.sections.map(s=>`<option value="${s.id}" ${s.id===t.sectionId?'selected':''}>${esc(s.name)}</option>`).join('');
@@ -3385,9 +3409,12 @@ function renderSubtasks(t){
   const c=$('#dSubs');if(!c)return;const subs=t.subtasks||(t.subtasks=[]);
   const done=subs.filter(s=>s.done).length;
   c.innerHTML=(subs.length?`<div class="subhead"><div class="subprog"><span style="width:${Math.round(done/subs.length*100)}%"></span></div><span class="subcount">${done}/${subs.length}</span></div>`:'')
-    +subs.map(s=>`<div class="subrow"><button class="subck ${s.done?'on':''}" data-sub="${s.id}">${s.done?'✓':''}</button><input class="subtxt ${s.done?'done':''}" data-subt="${s.id}" value="${esc(s.text)}"><button class="subdel" data-subd="${s.id}">✕</button></div>`).join('');
+    +subs.map(s=>`<div class="subrow"><button class="subck ${s.done?'on':''}" data-sub="${s.id}">${s.done?'✓':''}</button><input class="subtxt ${s.done?'done':''}" data-subt="${s.id}" value="${esc(s.text)}"><button class="subto" data-subto="${s.id}" title="Сделать отдельной задачей">↗</button><button class="subdel" data-subd="${s.id}">✕</button></div>`).join('');
   $$('#dSubs .subck').forEach(b=>b.onclick=()=>{const s=subs.find(x=>x.id===b.dataset.sub);if(s){s.done=!s.done;save();renderSubtasks(t);render();}});
   $$('#dSubs .subtxt').forEach(i=>i.onblur=()=>{const s=subs.find(x=>x.id===i.dataset.subt);if(s){s.text=i.value.trim();save();}});
+  $$('#dSubs .subto').forEach(b=>b.onclick=()=>{const s=subs.find(x=>x.id===b.dataset.subto);if(!s||!s.text.trim())return;
+    const nt=newTask(s.text.trim());nt.sectionId=t.sectionId;nt.assigneeId=t.assigneeId;nt.status='todo';nt.start=t.start;nt.end=t.end;
+    t.subtasks=subs.filter(x=>x.id!==s.id);logAct('🧩','подзадача → задача «'+nt.title+'»');save();renderSubtasks(t);render();toast('Подзадача стала задачей','🧩');});
   $$('#dSubs .subdel').forEach(b=>b.onclick=()=>{t.subtasks=subs.filter(x=>x.id!==b.dataset.subd);save();renderSubtasks(t);render();});
 }
 function addSub(){const v=($('#dSubIn').value||'').trim();if(!v||!curTask)return;if(!curTask.subtasks)curTask.subtasks=[];curTask.subtasks.push({id:uid('sb'),text:v,done:false});$('#dSubIn').value='';save();renderSubtasks(curTask);render();}
@@ -3405,6 +3432,7 @@ $('#dSection').onchange=e=>{if(curTask){curTask.sectionId=e.target.value;save();
 $('#dStart').onchange=e=>{if(curTask){curTask.start=e.target.value;if(parseD(curTask.end)<parseD(curTask.start))curTask.end=curTask.start;save();}};
 $('#dEnd').onchange=e=>{if(curTask){curTask.end=e.target.value;if(parseD(curTask.end)<parseD(curTask.start))curTask.start=curTask.end;save();}};
 $('#dMile').onchange=e=>{if(curTask){curTask.isMilestone=e.target.checked;if(e.target.checked)curTask.end=curTask.start;save();}};
+$('#dRepeat').onchange=e=>{if(curTask){curTask.repeat=e.target.value||undefined;save();render();}};
 $('#dEst').oninput=e=>{if(curTask)curTask.estimate=parseFloat(e.target.value)||0;};
 $('#dEst').onblur=()=>{if(curTask)save();};
 $('#dSpent').oninput=e=>{if(curTask)curTask.spent=parseFloat(e.target.value)||0;};
