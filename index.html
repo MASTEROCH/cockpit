@@ -1166,6 +1166,52 @@ body.light .ment{background:rgba(255,255,255,.99)}
 .pr-line em{font-style:normal;font-size:14px}
 .pr-empty{color:var(--mut2);font-size:16px;padding:14px 0}
 body.light .pr-ring-in{background:#f4f6fc}
+
+/* ====================================================================
+   MOBILE POLISH — чистая шапка + таб-бар + удобные шиты (идеал)
+   ==================================================================== */
+@media (max-width:680px){
+  header{gap:7px;padding:8px 11px 7px;align-items:center}
+  .brand{font-size:0;gap:0;flex:0 0 auto}
+  .brand .logo{width:34px;height:34px}
+  .proj{display:inline-flex;max-width:40vw;font-size:13px;padding:7px 10px;flex:0 1 auto}
+  /* эти действия теперь в аватаре-настройках и в поиске ⌘K */
+  #btnTheme,#btnCloud,#btnHelp,#btnMenu{display:none}
+  #btnSearch{margin-left:auto}
+  .iconbtn{width:38px;height:38px;font-size:16px;flex:0 0 auto}
+  .hud-av{width:36px;height:36px;flex:0 0 auto}
+  .cmdwrap{order:5;flex:1 1 100%;max-width:none;margin-top:3px}
+  .cmd .cmdk{display:none}
+
+  /* нижний таб-бар: иконка всегда, подпись — только у активного → влезают 8 */
+  .tabs{padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+  .tab{flex:1;min-width:0;padding:5px 2px;min-height:46px}
+  .tab span:not(.cnt){display:none}
+  .tab.active span:not(.cnt){display:inline;font-size:9.5px}
+  .tab svg{width:21px;height:21px}
+
+  .cmdhint,.cmdchips{left:0;right:0}
+
+  /* секции, которые могут переполняться — аккуратный перенос */
+  .now-sec{flex-wrap:wrap;row-gap:8px}
+  .now-sec .btn{flex:1 1 auto;justify-content:center}
+  .toolbar{gap:7px}
+  .seg2{flex:1 1 100%;justify-content:center}
+  .inofoot{flex-direction:column;align-items:stretch}
+  .inoproj{flex:1 1 100%}
+  .inoacts{width:100%}.inoacts .btn{flex:1}
+
+  /* модалки — удобные bottom-sheet */
+  .modal{max-height:92vh}
+  .set-grid2{grid-template-columns:1fr 1fr}
+  .set-item{flex-wrap:wrap;row-gap:8px}
+  .df .btn,.ob-foot .btn{min-height:44px}
+}
+@media (max-width:380px){
+  .proj{max-width:30vw}
+  .iconbtn{width:36px;height:36px}
+  .hud-av{width:34px;height:34px}
+}
 .pr-slide{flex:1;display:flex;flex-direction:column;animation:viewIn .3s var(--ease)}
 .pr-nav{display:flex;align-items:center;gap:14px;justify-content:center;padding-top:18px}
 .pr-arrow{width:40px;height:40px;border-radius:50%;border:1px solid var(--gbrd);background:var(--glass);color:var(--txt);font-size:22px;line-height:1;display:grid;place-items:center}
@@ -3949,6 +3995,10 @@ function buildPaletteIndex(){
     ['plug','Подключить Claude','ключ для MCP','Настройки',()=>openConnect()],
     ['sparkles','Цвет проекта','брендинг под клиента','Настройки',()=>openAccent()],
     ['sync','Светлая / тёмная тема','оформление','Настройки',()=>$('#btnTheme').click()],
+    ['dots','Настройки и профиль','имя, фото, тема, аккаунт','Настройки',()=>openSettings()],
+    ['help','Обучение','как пользоваться','Настройки',()=>openOnboarding(0)],
+    ['board','Добавить раздел','новая колонка/группа','Создать',()=>{const n=prompt('Название раздела:');if(n){S.sections.push({id:uid('s'),name:n});save();render();toast('Раздел добавлен','📁');}}],
+    ['layers','Печать / PDF','распечатать обзор','Настройки',()=>window.print()],
   ];
   ACT.forEach(([ic,name,sub,grp,run])=>items.push({type:'Команда',grp,icon:icon(ic,17),title:name,sub,kw:name+' '+sub,run}));
   reg.list.filter(p=>!p.archived).forEach(p=>items.push({type:'Проект',icon:`<span class="pal-emoji">${esc(p.emoji||'📄')}</span>`,title:p.name,sub:p.id===S.id?'текущий':'переключиться',kw:p.name+' проект',run:()=>{if(p.id!==S.id)switchProject(p.id);else setView('board');}}));
