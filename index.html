@@ -1102,6 +1102,21 @@ body.light .ment{background:rgba(255,255,255,.99)}
 .claudecard b{color:var(--txt)}
 .claudecard .cc-risk{color:var(--warn);font-size:12.5px;margin-top:5px}
 .claudecard .cc-sug{color:var(--mut);font-size:12.5px;margin-top:3px}
+/* bulk select on board */
+.board.selecting .card{cursor:pointer}
+.board.selecting .card .cdel,.board.selecting .card .cdone{display:none}
+.card.selected{outline:2px solid var(--acc2);outline-offset:1px;box-shadow:0 0 0 4px rgba(167,139,250,.18),0 6px 16px rgba(0,0,0,.4)}
+.card.selected::after{content:'✓';position:absolute;top:7px;right:8px;width:20px;height:20px;border-radius:50%;background:var(--acc2);color:#0c0d12;font-size:12px;font-weight:800;display:grid;place-items:center;z-index:5}
+.bulkbar{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);z-index:70;display:none;align-items:center;gap:9px;
+  background:var(--sheen),rgba(28,32,46,.96);backdrop-filter:blur(26px) saturate(1.5);-webkit-backdrop-filter:blur(26px) saturate(1.5);
+  border:1px solid var(--gbrd);border-radius:15px;box-shadow:0 22px 60px rgba(0,0,0,.6),var(--ghi);padding:10px 12px;max-width:94vw;flex-wrap:wrap;justify-content:center}
+.bulkbar.show{display:flex;animation:bbin .2s var(--ease)}
+@keyframes bbin{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%)}}
+.bulkbar .bb-n{font-weight:800;font-size:13px;padding:0 4px;white-space:nowrap}
+.bulkbar .inp{padding:8px 11px;font-size:13px;width:auto;min-width:108px}
+.bulkbar .btn{padding:8px 13px;font-size:13px}
+body.light .bulkbar{background:var(--sheen),rgba(255,255,255,.97)}
+@media (max-width:680px){.bulkbar{bottom:calc(74px + env(safe-area-inset-bottom));left:8px;right:8px;transform:none;max-width:none}.bulkbar.show{animation:none}.bulkbar .inp{flex:1 1 auto}}
 /* keyboard selection across views */
 .card.kbsel{border-color:var(--acc2)!important;box-shadow:0 0 0 2px rgba(167,139,250,.55),0 10px 24px rgba(0,0,0,.45)!important}
 .grow.task.kbsel{background:linear-gradient(90deg,rgba(167,139,250,.22),transparent);box-shadow:inset 2px 0 0 var(--acc2)}
@@ -1335,6 +1350,7 @@ body.light .pr-ring-in{background:#f4f6fc}
       <button class="sgb on" data-bm="status">▦ Статусы</button>
       <button class="sgb" data-bm="people">👥 По людям</button>
     </div>
+    <button class="fchip" id="bSelect" style="display:none">☑ Выбрать</button>
     <div class="spacer"></div>
     <div class="zoom" id="zoomCtl"><button id="zOut">−</button><span>масштаб</span><button id="zIn">＋</button></div>
     <button class="fchip" id="fReset">Сброс</button>
@@ -1468,6 +1484,7 @@ body.light .pr-ring-in{background:#f4f6fc}
   </div>
 </div>
 
+<div class="bulkbar" id="bulkBar"></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1745,6 +1762,10 @@ function render(){
   $('#toolbar').classList.toggle('hide',!showTool);
   $('#zoomCtl').style.display=view==='gantt'?'':'none';
   $('#boardModeCtl').style.display=view==='board'?'':'none';
+  if(view!=='board'&&boardSelOn){boardSelOn=false;boardSel.clear();}
+  $('#bSelect').style.display=(view==='board'&&boardMode==='status')?'':'none';
+  $('#bSelect').classList.toggle('on',boardSelOn);
+  if(view!=='board')renderBulkBar();
   $('#banner').classList.toggle('hide',!S.demo||bannerDismissed);
   const _T=S.tasks.filter(t=>!t.isMilestone);
   $('#sbStats').textContent=`${_T.length} задач · ${_T.filter(t=>t.status==='done').length} готово · ${S.tasks.filter(isOverdue).length} просроч.`;
@@ -3063,7 +3084,23 @@ function wireBar(el,min,DAY){
 /* ============================ BOARD ============================ */
 let dragCard=null;
 let boardMode='status';
-function renderBoardPeople(){
+let boardSel=new Set(), boardSelOn=false;
+function toggleBoardSel(id,el){if(boardSel.has(id)){boardSel.delete(id);el.classList.remove('selected');}else{boardSel.add(id);el.classList.add('selected');}renderBulkBar();}
+function renderBulkBar(){
+  const bar=$('#bulkBar');if(!bar)return;const n=boardSel.size;
+  if(!boardSelOn||!n||view!=='board'||boardMode!=='status'){bar.classList.remove('show');return;}
+  bar.innerHTML=`<span class="bb-n">${n} ${plural(n,'выбрана','выбрано','выбрано')}</span>
+    <select class="inp" id="bbStatus"><option value="">Статус…</option>${STATUSES.map(s=>`<option value="${s.k}">${s.n}</option>`).join('')}</select>
+    <select class="inp" id="bbAssign"><option value="">Кому…</option>${S.members.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join('')}<option value="__none">— никто</option></select>
+    <button class="btn danger" id="bbDel">🗑</button>
+    <button class="btn" id="bbClear">Готово</button>`;
+  bar.classList.add('show');
+  $('#bbStatus').onchange=e=>{const v=e.target.value;if(!v)return;boardSel.forEach(id=>{const t=task(id);if(t){t.status=v;if(v==='done'){if(t.estimate&&!t.spent)t.spent=t.estimate;awardForDone(S,t);}}});logAct('🔀','массово → '+stMap[v].n+' ('+boardSel.size+')');save();renderBoard();toast('Статус обновлён у '+n,'🔀');};
+  $('#bbAssign').onchange=e=>{const v=e.target.value;if(!v)return;const aid=v==='__none'?null:v;boardSel.forEach(id=>{const t=task(id);if(t)t.assigneeId=aid;});logAct('👤','массово назначено ('+boardSel.size+')');save();renderBoard();toast('Исполнитель обновлён','👤');};
+  $('#bbDel').onclick=()=>{if(!confirm('Удалить выбранные ('+boardSel.size+')?'))return;const ids=new Set(boardSel);S.tasks=S.tasks.filter(t=>!ids.has(t.id));S.tasks.forEach(t=>t.deps=t.deps.filter(d=>!ids.has(d)));logAct('🗑','массово удалено '+ids.size);boardSel.clear();save();renderBoard();toast('Удалено','🗑');};
+  $('#bbClear').onclick=()=>{boardSel.clear();boardSelOn=false;renderBoard();};
+}
+function renderBoardPeople(){renderBulkBar();
   const b=$('#board');b.className='board people';b.innerHTML='';
   const lanes=[...S.members.map(m=>({id:m.id,m})),{id:'',m:null}];
   lanes.forEach(L=>{
@@ -3090,8 +3127,8 @@ function renderBoardPeople(){
   });
 }
 function renderBoard(){
-  if(boardMode==='people')return renderBoardPeople();
-  const b=$('#board');b.className='board';b.innerHTML='';
+  if(boardMode==='people'){boardSelOn=false;return renderBoardPeople();}
+  const b=$('#board');b.className='board'+(boardSelOn?' selecting':'');b.innerHTML='';
   STATUSES.forEach(st=>{
     const col=document.createElement('div');col.className='col';col.dataset.st=st.k;
     const items=S.tasks.filter(t=>t.status===st.k&&passFilter(t)).sort((a,b)=>{
@@ -3103,7 +3140,7 @@ function renderBoard(){
       <div class="colb"></div><button class="addcard">＋ задача</button>`;
     const bodyEl=col.querySelector('.colb');
     items.forEach(t=>{
-      const card=document.createElement('div');card.className='card';card.draggable=true;card.dataset.id=t.id;
+      const card=document.createElement('div');card.className='card'+(boardSel.has(t.id)?' selected':'');card.draggable=!boardSelOn;card.dataset.id=t.id;
       const ov=isOverdue(t);const blk=isBlocked(t);
       card.innerHTML=`<button class="cdel" title="Удалить задачу">${icon('x',13)}</button>
         <div class="ct">${t.isMilestone?'🔹 ':''}${blk?'🔒 ':''}${esc(t.title)}</div>
@@ -3117,8 +3154,8 @@ function renderBoard(){
           ${ov?`<span style="color:var(--bad);font-weight:700">⚠ просроч.</span>`:''}
           <span style="margin-left:auto">${avatar(t.assigneeId)}</span>
         </div>`;
-      card.onclick=()=>openTask(t.id);
-      const qd=card.querySelector('.cdone');if(qd)qd.onclick=ev=>{ev.stopPropagation();
+      card.onclick=()=>{if(boardSelOn)toggleBoardSel(t.id,card);else openTask(t.id);};
+      const qd=card.querySelector('.cdone');if(qd)qd.onclick=ev=>{ev.stopPropagation();if(boardSelOn){toggleBoardSel(t.id,card);return;}
         t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;logAct('✅','«'+t.title+'» → Готово');
         const _v=awardForDone(S,t);celebrateAt(ev);save();renderBoard();toast(_v?('+'+_v+' 🪙 за «'+t.title+'»'):('Готово: «'+t.title+'» ✅'),_v?'🪙':'✅');};
       card.querySelector('.cdel').onclick=ev=>{ev.stopPropagation();if(!confirm('Удалить задачу «'+t.title+'»?'))return;
@@ -3146,6 +3183,7 @@ function renderBoard(){
     b.appendChild(col);
   });
   if(pendingBoardAdd){const c=[...document.querySelectorAll('#board .col')].find(x=>x.dataset.st===pendingBoardAdd);if(c)openBoardAdd(c,pendingBoardAdd);}
+  renderBulkBar();
 }
 function openBoardAdd(col,status){
   pendingBoardAdd=status;
@@ -3415,7 +3453,8 @@ $('#fAssignee').onchange=e=>{filter.assignee=e.target.value;rerenderView();};
 $('#fMine').onclick=()=>{filter.mine=!filter.mine;render();};
 $('#fOver').onclick=()=>{filter.overdue=!filter.overdue;render();};
 $('#fReset').onclick=()=>{filter={q:'',assignee:'',mine:false,overdue:false};render();};
-$('#boardModeCtl').onclick=e=>{const b=e.target.closest('.sgb');if(!b)return;boardMode=b.dataset.bm;$$('#boardModeCtl .sgb').forEach(x=>x.classList.toggle('on',x===b));renderBoard();};
+$('#boardModeCtl').onclick=e=>{const b=e.target.closest('.sgb');if(!b)return;boardMode=b.dataset.bm;if(boardMode!=='status'){boardSelOn=false;boardSel.clear();}$$('#boardModeCtl .sgb').forEach(x=>x.classList.toggle('on',x===b));renderBoard();};
+$('#bSelect').onclick=()=>{boardSelOn=!boardSelOn;if(!boardSelOn)boardSel.clear();renderBoard();};
 $('#zOut').onclick=()=>{S.ui.zoom=Math.max(22,S.ui.zoom-8);save();renderGantt();};
 $('#zIn').onclick=()=>{S.ui.zoom=Math.min(64,S.ui.zoom+8);save();renderGantt();};
 function rerenderView(){if(view==='gantt')renderGantt();else if(view==='board')renderBoard();}
