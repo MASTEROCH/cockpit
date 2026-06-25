@@ -2760,12 +2760,12 @@ async function renderConnect(){
   const cfgCode=`claude mcp add cockpit \\
   --env COCKPIT_TOKEN=${KEY} \\
   --env COCKPIT_SOURCE=claude-code \\
-  -- npx -y cockpit-mcp`;
+  -- npx -y cockpit-tasks-mcp`;
   const cfgDesk=`{
   "mcpServers": {
     "cockpit": {
       "command": "npx",
-      "args": ["-y", "cockpit-mcp"],
+      "args": ["-y", "cockpit-tasks-mcp"],
       "env": {
         "COCKPIT_TOKEN": "${KEY}",
         "COCKPIT_SOURCE": "claude-desktop"

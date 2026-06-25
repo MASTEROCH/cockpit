@@ -21,7 +21,7 @@
 claude mcp add cockpit \
   --env COCKPIT_TOKEN=cpk_ВАШ_КЛЮЧ \
   --env COCKPIT_SOURCE=claude-code \
-  -- npx -y cockpit-mcp
+  -- npx -y cockpit-tasks-mcp
 ```
 (или укажи путь: `-- node /путь/к/cockpit/mcp/cockpit-mcp/index.js`)
 
@@ -32,7 +32,7 @@ Settings → Developer → Edit Config, добавь в `mcpServers`:
   "mcpServers": {
     "cockpit": {
       "command": "npx",
-      "args": ["-y", "cockpit-mcp"],
+      "args": ["-y", "cockpit-tasks-mcp"],
       "env": {
         "COCKPIT_TOKEN": "cpk_ВАШ_КЛЮЧ",
         "COCKPIT_SOURCE": "claude-desktop"

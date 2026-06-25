@@ -1,15 +1,17 @@
 {
-  "name": "cockpit-mcp",
+  "name": "cockpit-tasks-mcp",
   "version": "1.0.0",
   "description": "MCP-сервер Cockpit — отправляет задачи из Claude в очередь «На приёмке» Cockpit (cock-pit.com).",
   "type": "module",
-  "bin": { "cockpit-mcp": "index.js" },
+  "bin": { "cockpit-tasks-mcp": "index.js" },
   "main": "index.js",
   "engines": { "node": ">=18" },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4"
   },
   "files": ["index.js", "README.md"],
-  "keywords": ["mcp", "claude", "cockpit", "tasks", "founders"],
+  "repository": { "type": "git", "url": "https://github.com/MASTEROCH/cockpit", "directory": "mcp/cockpit-mcp" },
+  "homepage": "https://cock-pit.com",
+  "keywords": ["mcp", "claude", "cockpit", "tasks", "founders", "project-management"],
   "license": "MIT"
 }
