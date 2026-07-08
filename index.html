@@ -999,6 +999,18 @@ body.light .cmdchips{background:rgba(255,255,255,.98);box-shadow:0 18px 50px rgb
 .nh-meta .ichip.bad{color:#fff;background:rgba(248,113,113,.3);border-color:var(--bad)}
 body.light .nh-meta .ichip{background:rgba(255,255,255,.6)}
 .nh-acts{display:flex;gap:10px;flex-wrap:wrap;position:relative;z-index:1}
+.now-hero{display:flex;gap:26px;align-items:stretch}
+.nh-main{flex:1;min-width:0}
+.nh-side{flex:0 0 250px;position:relative;z-index:1;border-left:1px solid rgba(255,255,255,.12);padding-left:22px;display:flex;flex-direction:column}
+.nh-side-t{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--mut2);margin-bottom:6px}
+.nh-up{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:13.5px;cursor:pointer;color:var(--txt);transition:color .14s}
+.nh-up:last-child{border-bottom:none}
+.nh-up:hover{color:var(--acc2)}
+.nh-up .dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+.nh-up-t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nh-up-e{font-size:11.5px;color:var(--mut2);flex:0 0 auto;font-variant-numeric:tabular-nums}
+.mm-empty{font-size:13px;color:var(--mut2);padding:14px 2px 6px;line-height:1.5}
+@media (max-width:820px){.now-hero{flex-direction:column;gap:16px}.nh-side{flex-basis:auto;border-left:none;border-top:1px solid rgba(255,255,255,.1);padding-left:0;padding-top:14px}}
 .btn.big{padding:13px 20px;font-size:14.5px;border-radius:14px}
 .focusrun{display:flex;align-items:center;gap:12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:8px 8px 8px 16px}
 body.light .focusrun{background:rgba(255,255,255,.7)}
@@ -1185,6 +1197,16 @@ body.light .bulkbar{background:var(--sheen),rgba(255,255,255,.97)}
 body.light .pr-ring-in{background:#f4f6fc}
 
 /* ====================================================================
+   HEADER — clean two-tier on desktop, trimmed utilities
+   ==================================================================== */
+#btnTheme,#btnHelp{display:none}          /* → в Настройках (аватар) и ⌘K */
+@media (min-width:681px){
+  header{padding:9px 16px}
+  .tabs{order:9;flex:1 1 100%;margin-top:8px;justify-content:flex-start}
+  #btnSearch{margin-left:auto}
+}
+
+/* ====================================================================
    WANDO — living aurora backdrop + signature logo draw-in
    ==================================================================== */
 body::before{content:'';position:fixed;inset:-16%;z-index:-1;pointer-events:none;
@@ -1326,7 +1348,7 @@ body.light::before{background:
   <div class="cmdwrap">
     <div class="cmd" id="cmdBox">
       <button class="mic" id="micBtn" data-icon="mic" title="Голосовой ввод"></button>
-      <input id="cmd" placeholder="Напиши задачу или команду — Enter создаст. / подсказки, ⌘K поиск" autocomplete="off" />
+      <input id="cmd" placeholder="Напиши задачу или команду…  ⌘K — поиск" autocomplete="off" />
       <kbd class="cmdk" id="cmdkBtn" title="Палитра — поиск и переходы">⌘K</kbd>
       <kbd>↵</kbd>
     </div>
@@ -1863,6 +1885,8 @@ function momentumSpark(){
   const line=counts.map((c,i)=>{const[x,y]=xy(i);return `${x.toFixed(1)},${y.toFixed(1)}`;}).join(' ');
   const area=`0,${H} `+line+` ${W},${H}`;
   const total=counts.reduce((a,b)=>a+b,0);
+  if(total===0)return `<div class="momentum"><div class="mm-head"><span>💓 Моментум <b>· 14 дней</b></span></div>
+    <div class="mm-empty">Пока нет закрытых задач. Закрой первую — и здесь оживёт линия темпа 📈</div></div>`;
   const last7=counts.slice(7).reduce((a,b)=>a+b,0),prev7=counts.slice(0,7).reduce((a,b)=>a+b,0);
   const trend=last7>prev7?'↑ ускоряемся':last7<prev7?'↓ замедление':'→ ровно';
   const tcol=last7>prev7?'var(--ok)':last7<prev7?'var(--warn)':'var(--mut2)';
@@ -1925,13 +1949,15 @@ function renderNow(){
   const vel=(S.activity||[]).filter(a=>a.ts>weekAgo&&/Готово|✅/.test((a.text||'')+(a.icon||''))).length;
   const mine=T.filter(t=>t.assigneeId===me&&t.status!=='done');
   const pool=mine.length?mine:T.filter(t=>t.status!=='done');
-  const next=[...pool].sort((a,b)=>relScore(b)-relScore(a))[0];
+  const sortedPool=[...pool].sort((a,b)=>relScore(b)-relScore(a));
+  const next=sortedPool[0];const upNext=sortedPool.slice(1,4);
   const h=new Date().getHours();const greet=h<6?'Доброй ночи':h<12?'Доброе утро':h<18?'Добрый день':'Добрый вечер';
   const ins=buildInsights(T);const running=!!(focus.tid&&task(focus.tid));
   const foldOpen=localStorage.getItem('cockpit_now_fold')!=='0';
   let hero;
   if(next){const ovn=isOverdue(next);const dl=daysLeft(next);const isFoc=focus.tid===next.id;const m=next.assigneeId?member(next.assigneeId):null;
     hero=`<div class="now-hero ${ovn?'over':''}">
+     <div class="nh-main">
       <div class="nh-label">${mine.length?'🎯 Твой следующий шаг':'🎯 Главное в проекте сейчас'}</div>
       <div class="nh-title" data-open="${next.id}">${prGlyph(next)}${esc(next.title)}</div>
       <div class="nh-meta">
@@ -1944,7 +1970,10 @@ function renderNow(){
         ${isFoc?`<div class="focusrun"><span class="fdot"></span><span id="focusClock" class="fclock">00:00</span><button class="btn" id="focusStop">■ Стоп</button></div>`
                :`<button class="btn primary big" id="focusStart">${icon('play',15)} Фокус — поехали</button>`}
         <button class="btn big" data-done="${next.id}">✓ Готово</button>
-      </div></div>`;
+      </div>
+     </div>
+     ${upNext.length?`<div class="nh-side"><div class="nh-side-t">На очереди · ${upNext.length}</div>${upNext.map(t=>`<div class="nh-up" data-open="${t.id}"><span class="dot" style="background:${stMap[t.status].c}"></span><span class="nh-up-t">${prGlyph(t)}${esc(t.title)}</span>${t.estimate?`<span class="nh-up-e">${t.estimate}ч</span>`:''}</div>`).join('')}</div>`:''}
+    </div>`;
   }else hero=`<div class="now-hero done"><div class="nh-label">🎉 Чисто</div><div class="nh-title">Активных задач на тебе нет</div>
       <div class="nh-meta"><span class="ichip">создай задачу строкой сверху или ⌘K</span></div></div>`;
   el.innerHTML=`<div class="now-greet"><h1>${greet}, ${esc(meName())}</h1><span>${esc(S.projectName)} · пульс проекта</span></div>
@@ -1962,6 +1991,7 @@ function renderNow(){
       <button class="btn" id="aiPlanBtn" style="padding:8px 13px;font-size:12.5px">🧠 AI-План</button></div>
     <div class="insights">${ins.map((x,i)=>`<div class="insight ${x.act?'click':''}" data-i="${i}"><span class="ii">${x.ic}</span><div class="ib"><div class="it">${esc(x.title)}</div>${x.sub?`<div class="is">${esc(x.sub)}</div>`:''}</div>${x.act?'<span class="ia">→</span>':''}</div>`).join('')}</div>`;
   const ns=el.querySelector('.nh-title[data-open]');if(ns)ns.onclick=()=>openTask(ns.dataset.open);
+  $$('#now .nh-up[data-open]').forEach(e=>e.onclick=()=>openTask(e.dataset.open));
   const fs=$('#focusStart');if(fs&&next)fs.onclick=()=>startFocus(next.id);
   const fst=$('#focusStop');if(fst)fst.onclick=()=>stopFocus(false);
   if(running){if(!focus.iv)focus.iv=setInterval(updFocus,1000);updFocus();}
