@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>Cockpit — Founder Mission Control</title>
+<title>WANDO — Founder Mission Control</title>
 <meta name="theme-color" content="#a78bfa" />
-<meta property="og:title" content="Cockpit — Founder Mission Control" />
+<meta property="og:title" content="WANDO — Founder Mission Control" />
 <meta property="og:description" content="Внутренний рабочий инструмент команды: задачи, сроки, проекты, AI-разбор." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://cock-pit.com/" />
@@ -13,7 +13,7 @@
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="Cockpit — Founder Mission Control" />
+<meta name="twitter:title" content="WANDO — Founder Mission Control" />
 <meta name="twitter:description" content="Внутренний рабочий инструмент команды: задачи, сроки, проекты, AI-разбор." />
 <meta name="twitter:image" content="https://cock-pit.com/cockpit-og.png" />
 <link rel="apple-touch-icon" href="cockpit-icon-180.png" />
@@ -1185,6 +1185,25 @@ body.light .bulkbar{background:var(--sheen),rgba(255,255,255,.97)}
 body.light .pr-ring-in{background:#f4f6fc}
 
 /* ====================================================================
+   WANDO — living aurora backdrop + signature logo draw-in
+   ==================================================================== */
+body::before{content:'';position:fixed;inset:-16%;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(620px 480px at 24% 26%, rgba(167,139,250,.13), transparent 62%),
+    radial-gradient(580px 540px at 80% 74%, rgba(56,189,248,.11), transparent 60%),
+    radial-gradient(520px 500px at 62% 8%, rgba(244,114,182,.09), transparent 60%);
+  animation:auroraDrift 26s ease-in-out infinite alternate;will-change:transform}
+@keyframes auroraDrift{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(2.6%,-2%,0) scale(1.07)}}
+body.light::before{background:
+  radial-gradient(620px 480px at 24% 26%, rgba(167,139,250,.22), transparent 62%),
+  radial-gradient(580px 540px at 80% 74%, rgba(56,189,248,.20), transparent 60%),
+  radial-gradient(520px 500px at 62% 8%, rgba(244,114,182,.16), transparent 60%)}
+#brandLogo svg path{stroke-dasharray:64;stroke-dashoffset:64;animation:wdraw 1.1s cubic-bezier(.16,1,.3,1) .12s forwards}
+#gateBootLogo svg path{stroke-dasharray:64;stroke-dashoffset:64;animation:wdraw 1.2s cubic-bezier(.16,1,.3,1) forwards}
+@keyframes wdraw{to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){body::before{animation:none}#brandLogo svg path,#gateBootLogo svg path{animation:none;stroke-dashoffset:0}}
+
+/* ====================================================================
    MOBILE POLISH — чистая шапка + таб-бар + удобные шиты (идеал)
    ==================================================================== */
 @media (max-width:680px){
@@ -1297,10 +1316,10 @@ body.light .pr-ring-in{background:#f4f6fc}
 </style>
 </head>
 <body>
-<div class="gate" id="gate"><div class="gatecard"><div class="gatelogo" id="gateBootLogo"></div><h1>Cockpit</h1><div class="gp">Загрузка…</div></div></div>
+<div class="gate" id="gate"><div class="gatecard"><div class="gatelogo" id="gateBootLogo"></div><h1>WANDO</h1><div class="gp">Загрузка…</div></div></div>
 
 <header>
-  <div class="brand"><span class="logo" id="brandLogo"></span> Cockpit <small>founder OS</small></div>
+  <div class="brand"><span class="logo" id="brandLogo"></span> WANDO <small>что делать</small></div>
   <button class="proj" id="projBtn"><span id="projEmoji">🚀</span> <span id="projLabel">Проект</span> <span style="color:var(--mut2);font-size:10px">▾</span></button>
   <div class="menu" id="projMenu"></div>
 
@@ -1488,9 +1507,9 @@ body.light .pr-ring-in{background:#f4f6fc}
 
 <div class="pal-scrim" id="palScrim">
   <div class="pal" id="pal">
-    <div class="pal-in"><span class="pal-ic" id="palIcon"></span><input id="palQ" placeholder="Поиск по Cockpit — задачи, люди, проекты, команды…" autocomplete="off" spellcheck="false"><kbd>esc</kbd></div>
+    <div class="pal-in"><span class="pal-ic" id="palIcon"></span><input id="palQ" placeholder="Поиск по WANDO — задачи, люди, проекты, команды…" autocomplete="off" spellcheck="false"><kbd>esc</kbd></div>
     <div class="pal-list" id="palList"></div>
-    <div class="pal-foot"><span><kbd>↑</kbd><kbd>↓</kbd> выбор</span><span><kbd>↵</kbd> открыть</span><span><kbd>⌘K</kbd> палитра</span><span class="pal-foot-r">Cockpit</span></div>
+    <div class="pal-foot"><span><kbd>↑</kbd><kbd>↓</kbd> выбор</span><span><kbd>↵</kbd> открыть</span><span><kbd>⌘K</kbd> палитра</span><span class="pal-foot-r">WANDO</span></div>
   </div>
 </div>
 
@@ -1550,7 +1569,7 @@ function seed(){
     tasks:arr,
     ideas:[
       {id:uid('i'),title:'Battle Pass: сезонная механика на 30 дней',note:'Монетизация — приоритет флагмана',votes:5,createdTs:Date.now()},
-      {id:uid('i'),title:'Telegram-бот: голосовые команды в Cockpit',note:'Этот инструмент сам станет продуктом',votes:8,createdTs:Date.now()},
+      {id:uid('i'),title:'Telegram-бот: голосовые команды в WANDO',note:'Этот инструмент сам станет продуктом',votes:8,createdTs:Date.now()},
       {id:uid('i'),title:'Реферальная петля при первом входе',note:'',votes:2,createdTs:Date.now()},
     ],
   };
@@ -1650,10 +1669,11 @@ const ICONS={
 function icon(n,s){s=s||18;return `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]||''}</svg>`;}
 const LOGO_PATHS='<path transform="translate(-239 -299)" d="M590.549 318.732C592.945 318.453 596.745 318.696 599.286 318.696C634.434 318.703 667.897 316.824 700.032 333.775C783.727 377.923 786.207 488.78 731.835 556.811C700.794 595.65 657.566 620.752 607.3 623.356C576.646 624.841 542.765 617.244 517.207 638.881C505.403 648.755 500.588 660.76 494.308 674.336C488.985 685.844 483.927 697.868 478.034 709.061C447.129 709.003 414.041 709.686 383.322 708.993C390.272 692.78 399.544 674.533 407.172 658.357C414.402 641.263 425.054 620.531 433.24 603.375L468.064 529.888C478.844 507.375 489.815 485.216 500.033 462.397C508.607 461.72 522.007 461.939 530.747 461.916C551.732 461.88 572.716 462.073 593.696 462.496C589.717 468.96 584.172 482.027 580.797 489.352C574.315 503.42 567.316 518.312 561.52 532.628C562.821 532.707 564.123 532.765 565.426 532.803C574.929 533.092 584.848 532.969 594.379 533.027C601.077 532.791 608.447 533.526 615.073 532.731C648.617 528.704 677.207 498.097 677.706 464.145C678.091 437.865 664.532 415.164 637.935 409.832C622.705 406.779 607.684 407.916 592.303 407.965C569.853 408.116 547.402 408.135 524.952 408.02C539.76 379.17 553.156 348.033 567.408 318.783C575.059 318.869 582.922 319.055 590.549 318.732Z"/><path transform="translate(-239 -299)" d="M436.648 318.711C438.535 318.361 446.366 318.402 448.541 318.408L474.9 318.684C498.905 318.824 523.676 318.103 547.68 318.994C534.009 349.063 519.82 378.173 505.694 407.974L452.824 407.966C437.639 407.999 418.311 406.719 404.007 410.92C374.633 419.548 349.545 452.473 349.489 483.221C349.376 496.888 354.815 510.016 364.561 519.599C378.937 533.945 398.3 532.85 417.331 532.946L446.601 533.036C439.517 549.455 431.978 565.674 423.991 581.673C417.562 595.433 410.688 609.303 404.066 623C374.725 623.045 349.066 625.26 321.887 611.554C233.151 566.808 241.2 449.578 300.225 384.017C338.665 341.322 379.901 322.449 436.648 318.711Z"/>';
 let _lgid=0;
+const WPATH='M4 6.5 L9 18.5 L12 11 L15 18.5 L20 6.5';
 function logoSVG(s,fill){
-  if(fill==='grad'){const id='lg'+(++_lgid);return `<svg viewBox="0 0 547 423" width="${s}" height="${Math.round(s*423/547)}"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f472b6"/><stop offset="0.5" stop-color="#a78bfa"/><stop offset="1" stop-color="#38bdf8"/></linearGradient></defs><g fill="url(#${id})">${LOGO_PATHS}</g></svg>`;}
-  return `<svg viewBox="0 0 547 423" width="${s}" height="${Math.round(s*423/547)}" fill="${fill||'#fff'}">${LOGO_PATHS}</svg>`;}
-function faviconURI(){const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f472b6"/><stop offset="0.5" stop-color="#a78bfa"/><stop offset="1" stop-color="#38bdf8"/></linearGradient></defs><rect width="100" height="100" rx="24" fill="url(#g)"/><g transform="translate(18,25) scale(0.117)" fill="#fff">${LOGO_PATHS}</g></svg>`;return 'data:image/svg+xml,'+encodeURIComponent(svg);}
+  if(fill==='grad'){const id='lg'+(++_lgid);return `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="url(#${id})" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f472b6"/><stop offset="0.5" stop-color="#a78bfa"/><stop offset="1" stop-color="#38bdf8"/></linearGradient></defs><path d="${WPATH}"/></svg>`;}
+  return `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="${fill||'#fff'}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="${WPATH}"/></svg>`;}
+function faviconURI(){const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f472b6"/><stop offset="0.5" stop-color="#a78bfa"/><stop offset="1" stop-color="#38bdf8"/></linearGradient></defs><rect width="100" height="100" rx="24" fill="url(#g)"/><path d="M22 34 L42 76 L50 55 L58 76 L78 34" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg>`;return 'data:image/svg+xml,'+encodeURIComponent(svg);}
 function setFavicon(){try{let l=document.querySelector('link[rel="icon"]');if(!l){l=document.createElement('link');l.rel='icon';document.head.appendChild(l);}l.type='image/svg+xml';l.href=faviconURI();}catch(e){}}
 function toast(msg,ic='✓',actLabel,actFn){const t=$('#toast');
   t.innerHTML=`<span class="ic">${ic}</span>${esc(msg)}`+(actLabel?`<button class="tact">${esc(actLabel)}</button>`:'');
@@ -1957,7 +1977,7 @@ function renderNow(){
 function planPrompt(goal){
   const team=S.members.map(m=>m.name+(m.role&&m.role!=='—'?` (${m.role})`:'')).join(', ')||'—';
   const existing=S.tasks.filter(t=>!t.isMilestone).map(t=>t.title).slice(0,40).join('; ')||'пока нет';
-  return `Ты — опытный продакт-лид. Распланируй проект в Cockpit под цель:
+  return `Ты — опытный продакт-лид. Распланируй проект в WANDO под цель:
 «${goal}»
 
 Контекст:
@@ -1994,7 +2014,7 @@ function createPlanTasks(tasks){
 }
 function showPlanPrompt(goal,note){
   const p=planPrompt(goal);
-  $('#planOut').innerHTML=`<div class="cstep"><span class="cn">→</span><div style="flex:1">${note||'<b>Готовый промпт.</b> Скопируй и вставь своему Claude (с подключённым Cockpit) — он создаст задачи в «Приёмке».'}</div></div>
+  $('#planOut').innerHTML=`<div class="cstep"><span class="cn">→</span><div style="flex:1">${note||'<b>Готовый промпт.</b> Скопируй и вставь своему Claude (с подключённым WANDO) — он создаст задачи в «Приёмке».'}</div></div>
     <div class="codebox"><button class="btn copycfg" id="planCopy">Копировать</button><pre>${esc(p)}</pre></div>`;
   $('#planCopy').onclick=()=>{navigator.clipboard.writeText(p);toast('Промпт скопирован — вставь в Claude','📋');};
 }
@@ -2134,7 +2154,7 @@ function renderBal(){
   m.innerHTML=`<div class="ob-art" style="font-size:46px">🪄</div>
    <div class="ob-body">
      <h2>Разгрузить команду</h2>
-     <p>${moves.length?'Cockpit нашёл перекосы по загрузке. Перекинь — нагрузка выровняется. Можно по одной или всё сразу.':'Нагрузка сбалансирована — перекидывать нечего ✅'}</p>
+     <p>${moves.length?'WANDO нашёл перекосы по загрузке. Перекинь — нагрузка выровняется. Можно по одной или всё сразу.':'Нагрузка сбалансирована — перекидывать нечего ✅'}</p>
      ${moves.length?`<div class="balist">${moves.map((mv,i)=>`<div class="balrow" data-i="${i}">
         <div class="balmain"><b>${esc(mv.title)}</b><div class="bsub">${esc(nm(mv.fromId))} → <span style="color:var(--acc2)">${esc(nm(mv.toId))}</span> · ${mv.est}ч</div></div>
         <button class="btn" data-apply="${i}">Перекинуть</button></div>`).join('')}</div>`:''}
@@ -2250,7 +2270,7 @@ function renderSharePage(s){
       <div class="pr-col"><h3>🔧 В работе</h3>${s.pl&&s.pl.length?s.pl.map(x=>`<div class="pr-line">${av(x.a)}<span>${esc(x.t)}${x.a?` <em style="color:var(--mut2)">· ${esc(x.a)}</em>`:''}</span></div>`).join(''):'<div class="pr-empty">—</div>'}</div>
       <div class="pr-col">${s.ov2&&s.ov2.length?`<h3>🔴 Горит</h3>${s.ov2.map(x=>`<div class="pr-line"><span>${esc(x.t)} <em style="color:var(--bad)">${x.d}д</em></span></div>`).join('')}`:'<h3>✅ Просрочек нет</h3><div class="pr-empty">всё в графике</div>'}</div>
     </div>
-    <div class="pr-foot-brand"><span>Сделано в <b>Cockpit</b> · cock-pit.com</span><a class="btn primary" href="${location.origin+location.pathname}">Открыть свой Cockpit →</a></div>`;
+    <div class="pr-foot-brand"><span>Сделано в <b>WANDO</b> · cock-pit.com</span><a class="btn primary" href="${location.origin+location.pathname}">Открыть свой WANDO →</a></div>`;
   $('#present').classList.add('show');hideGate();
 }
 
@@ -2338,7 +2358,7 @@ function renderSettings(){
   $('#setWho').onchange=e=>{localStorage.setItem('cockpit_me',e.target.value);render();renderSettings();toast('Теперь вы — '+meName(),'👤');};
   $('#setConnect').onclick=()=>{closeSettings();openConnect();};
   $('#setCloud').onclick=()=>{if(cloudOn){if(confirm('Выйти из облака на этом устройстве?'))sb.auth.signOut().then(()=>location.reload());}else{closeSettings();const b=$('#btnCloud');if(b)b.click();}};
-  $('#setExport').onclick=()=>{const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cockpit-'+todayISO()+'.json';a.click();toast('Экспортировано','💾');};
+  $('#setExport').onclick=()=>{const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='wando-'+todayISO()+'.json';a.click();toast('Экспортировано','💾');};
   $('#setImport').onclick=()=>{const inp=document.createElement('input');inp.type='file';inp.accept='.json';inp.onchange=()=>{const f=inp.files[0];const r=new FileReader();r.onload=()=>{try{S=migrate(JSON.parse(r.result));resetUndo();save();render();closeSettings();toast('Импортировано','📥');}catch(e){toast('Ошибка файла','⚠');}};r.readAsText(f);};inp.click();};
   $('#setReset').onclick=()=>{if(confirm('Сбросить к демо-данным? Текущее будет потеряно.')){S=seed();resetUndo();save();render();closeSettings();toast('Сброшено','♻');}};
   $('#setDone').onclick=closeSettings;
@@ -2637,14 +2657,14 @@ function editIntake(id){
 }
 /* шпаргалка быстрых команд для Claude (фразы-триггеры) */
 const CHEAT_EXAMPLES=[
-  'Cockpit: созвон с Димой завтра 2ч срочно',
-  'в Кокпит: вёрстка лендинга с 22 по 28 июня 12ч @дима',
-  'Cockpit, проект AppHub: настроить аналитику на 3 дня важно',
-  'Закинь в Cockpit три задачи: проверить тексты, обновить лого, написать инвестору',
-  'Сделай из этого задачу в Cockpit',
+  'WANDO: созвон с Димой завтра 2ч срочно',
+  'в WANDO: вёрстка лендинга с 22 по 28 июня 12ч @дима',
+  'WANDO, проект AppHub: настроить аналитику на 3 дня важно',
+  'Закинь в WANDO три задачи: проверить тексты, обновить лого, написать инвестору',
+  'Сделай из этого задачу в WANDO',
 ];
 function cheatsheetHTML(){return `<div class="cheatbody">
-  <div class="cheatlead">Начни с триггера <b>«Cockpit:»</b> или <b>«в&nbsp;Кокпит:»</b> — дальше обычным языком. Клик по фразе — скопировать.</div>
+  <div class="cheatlead">Начни с триггера <b>«WANDO:»</b> или <b>«в&nbsp;WANDO:»</b> — дальше обычным языком. Клик по фразе — скопировать.</div>
   <div class="cmdexs">${CHEAT_EXAMPLES.map(x=>`<button class="cmdex" data-copy="${esc(x)}">🗣 <span>${esc(x)}</span><i>копировать</i></button>`).join('')}</div>
   <div class="dict">
     <span><b>кому:</b> @имя · «для Димы»</span>
@@ -2690,7 +2710,7 @@ function renderIntake(){
           </div>
         </div>
       </div>`;}).join('')}</div>`
-    :emptyState('📭','Очередь пуста','Скажи своему Claude: «поставь в Cockpit задачу…» — она прилетит сюда на подтверждение. Кнопка «Подключить Claude» выше — если ещё не настроил.'));
+    :emptyState('📭','Очередь пуста','Скажи своему Claude: «поставь в WANDO задачу…» — она прилетит сюда на подтверждение. Кнопка «Подключить Claude» выше — если ещё не настроил.'));
   const cb=$('#intakeConnect');if(cb)cb.onclick=openConnect;
   bindCheat('#intake');
   $$('#intake [data-acc]').forEach(b=>b.onclick=()=>acceptIntake(b.dataset.acc,false));
@@ -2730,7 +2750,7 @@ async function renderConnect(){
   const m=$('#connectModal');
   m.innerHTML=`<div class="ob-art" style="font-size:46px">🔌</div>
    <div class="ob-body" style="max-height:78vh;overflow:auto">
-     <h2>Подключить Claude к Cockpit</h2>
+     <h2>Подключить Claude к WANDO</h2>
      <p>Кидай задачи прямо из Claude — они попадут в очередь <b>«На приёмке»</b>, где ты подтверждаешь, правишь или отклоняешь. Напрямую ничего не создаётся.</p>
      <div id="keyArea"></div>
      <div class="cstep"><span class="cn">2</span><div><b>Вставь в Claude</b> (ключ уже подставлен ниже). Claude Code или Claude Desktop — выбери свой:</div></div>
@@ -2897,7 +2917,7 @@ function renderReport(){
         <div><b style="${ovc?'color:#d33':''}">${ovc}</b>просрочено</div>
       </div>
       ${sections||'<div style="color:#9095a3">Задач пока нет.</div>'}
-      <div style="margin-top:24px;font-size:11px;color:#aeb2bd">Сформировано в Cockpit · ${dateStr}</div>
+      <div style="margin-top:24px;font-size:11px;color:#aeb2bd">Сформировано в WANDO · ${dateStr}</div>
     </div>
     <div class="rp-actions"><div class="spacer"></div>
       <button class="btn" id="rpCopy">📋 Скопировать текст</button>
@@ -3503,7 +3523,7 @@ menuEl.onclick=e=>{const b=e.target.closest('button');if(!b)return;menuEl.classL
   else if(act==='accent'){openAccent();}
   else if(act==='sound'){const on=localStorage.getItem('cockpit_sound')!=='0';localStorage.setItem('cockpit_sound',on?'0':'1');toast(on?'Звук выключен 🔇':'Звук включён 🔔',on?'🔇':'🔔');if(!on)playDing();}
   else if(act==='export'){const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
-    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cockpit-'+todayISO()+'.json';a.click();toast('Экспортировано','💾');}
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='wando-'+todayISO()+'.json';a.click();toast('Экспортировано','💾');}
   else if(act==='import'){const inp=document.createElement('input');inp.type='file';inp.accept='.json';
     inp.onchange=()=>{const f=inp.files[0];const r=new FileReader();r.onload=()=>{try{S=migrate(JSON.parse(r.result));resetUndo();save();render();toast('Импортировано','📥');}catch(e){toast('Ошибка файла','⚠');}};r.readAsText(f);};inp.click();}
   else if(act==='section'){const n=prompt('Название раздела:');if(n){S.sections.push({id:uid('s'),name:n});save();render();toast('Раздел добавлен','📁');}}
@@ -3730,7 +3750,7 @@ $('#btnTheme').onclick=()=>{const cur=localStorage.getItem('cockpit_theme')||'da
 function startFresh(){closeOb();openNewProject();}
 
 const OB=[
- {art:'🚀',h:'Cockpit — пульт фаундера',
+ {art:'🚀',h:'WANDO — пульт фаундера',
   p:'Один экран для всего, что важно в стартапе: задачи, сроки, кто что делает, идеи. Проще Asana, но с самым нужным на борту. Осмотрись на демо — или сразу начни с чистого листа.',
   choice:true},
  {art:'🛰',h:'Обзор — пульс проекта',
@@ -3901,11 +3921,11 @@ function hideGate(){const g=$('#gate');if(g)g.classList.add('hide');}
 function showGate(){renderGate('login');}
 function renderGate(state,email){
   const g=$('#gate');if(!g)return;g.classList.remove('hide');
-  if(location.protocol==='file:'){g.innerHTML=`<div class="gatecard"><div class="gatelogo">${logoSVG(30,'#fff')}</div><h1>Cockpit</h1><div class="gp">Это локальная копия для разработки — вход здесь не работает.<br>Рабочая версия (вход запоминается):</div><a class="btn primary" href="https://cock-pit.com" target="_blank" rel="noopener" style="width:100%;justify-content:center;text-decoration:none">Открыть cock-pit.com →</a></div>`;return;}
-  if(state==='loading'){g.innerHTML=`<div class="gatecard"><div class="gatelogo">${logoSVG(30,'#fff')}</div><h1>Cockpit</h1><div class="gp">Проверяю вход…</div></div>`;return;}
+  if(location.protocol==='file:'){g.innerHTML=`<div class="gatecard"><div class="gatelogo">${logoSVG(30,'#fff')}</div><h1>WANDO</h1><div class="gp">Это локальная копия для разработки — вход здесь не работает.<br>Рабочая версия (вход запоминается):</div><a class="btn primary" href="https://cock-pit.com" target="_blank" rel="noopener" style="width:100%;justify-content:center;text-decoration:none">Открыть cock-pit.com →</a></div>`;return;}
+  if(state==='loading'){g.innerHTML=`<div class="gatecard"><div class="gatelogo">${logoSVG(30,'#fff')}</div><h1>WANDO</h1><div class="gp">Проверяю вход…</div></div>`;return;}
   if(state==='sent'){g.innerHTML=`<div class="gatecard"><div class="gatelogo">✉️</div><h1>Письмо отправлено</h1><div class="gp">Открой ссылку из письма на <b>${esc(email||'')}</b> на этом устройстве — и вернёшься сюда уже внутри. Загляни в «Спам», если не видно.</div><button class="btn" id="gateBack" style="margin-top:14px;width:100%;justify-content:center">← Другой email</button></div>`;
     $('#gateBack').onclick=()=>renderGate('login',email);return;}
-  g.innerHTML=`<div class="gatecard"><div class="gatelogo">${logoSVG(30,'#fff')}</div><h1>Cockpit</h1>
+  g.innerHTML=`<div class="gatecard"><div class="gatelogo">${logoSVG(30,'#fff')}</div><h1>WANDO</h1>
     <div class="gp">Внутренний рабочий инструмент команды. Доска откроется только после входа.</div>
     <input class="inp gateinp" id="gateEmail" type="email" placeholder="ваш email" autocomplete="email" value="${esc(email||'')}">
     <button class="btn primary" id="gateSend" style="width:100%;justify-content:center;margin-top:10px">Прислать ссылку для входа</button>
@@ -4169,6 +4189,7 @@ $('#palScrim').onclick=e=>{if(e.target===$('#palScrim'))closePalette();};
 /* ============================ INIT ============================ */
 $$('[data-icon]').forEach(el=>el.insertAdjacentHTML('afterbegin',icon(el.dataset.icon)));
 {const bl=$('#brandLogo');if(bl)bl.innerHTML=logoSVG(24,'grad');const gbl=$('#gateBootLogo');if(gbl)gbl.innerHTML=logoSVG(30,'#fff');}
+setFavicon();
 applyTheme();
 $('#sbLegend').innerHTML=legendHTML();
 resetUndo();

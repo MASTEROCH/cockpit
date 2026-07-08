@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
- * Cockpit MCP server
+ * WANDO MCP server
  * Даёт любому Claude (Claude Code в VS Code, Claude Desktop, и т.д.) инструменты,
- * чтобы кидать задачи в очередь «На приёмке» Cockpit. На сайте человек подтверждает.
+ * чтобы кидать задачи в очередь «На приёмке» WANDO. На сайте человек подтверждает.
  *
  * Конфиг через переменные окружения:
  *   COCKPIT_TOKEN  (обязателен) — персональный ключ cpk_… (генерируется на cock-pit.com → Подключить Claude)
- *   COCKPIT_URL    (необязателен) — URL проекта Supabase. По умолчанию общий проект Cockpit.
+ *   COCKPIT_URL    (необязателен) — URL проекта Supabase. По умолчанию общий проект WANDO.
  *   COCKPIT_ANON   (необязателен) — публичный anon-ключ Supabase (безопасно встраивать).
  *   COCKPIT_SOURCE (необязателен) — метка устройства, например "claude-desktop-dima".
  */
@@ -37,12 +37,12 @@ const TOOLS = [
   {
     name: "cockpit_propose_task",
     description:
-      "Отправить задачу в Cockpit (cock-pit.com). Задача попадает в очередь «На приёмке», " +
+      "Отправить задачу в WANDO (cock-pit.com). Задача попадает в очередь «На приёмке», " +
       "где человек её подтверждает, правит, отправляет в бэклог или отклоняет — НЕ создаётся напрямую. " +
-      "ВЫЗЫВАЙ этот инструмент, когда пользователь начинает с триггера «Cockpit:», «в Кокпит:», «Cockpit, проект X:», " +
-      "«поставь/закинь в Cockpit», «сделай из этого задачу в Cockpit», или иначе просит поставить задачу/напоминание себе или партнёру. " +
+      "ВЫЗЫВАЙ этот инструмент, когда пользователь начинает с триггера «WANDO:», «в WANDO:», «WANDO, проект X:», " +
+      "«поставь/закинь в WANDO», «сделай из этого задачу в WANDO», или иначе просит поставить задачу/напоминание себе или партнёру. " +
       "Если пользователь перечислил несколько задач — вызови инструмент по разу на каждую. " +
-      "В text передавай задачу естественным текстом БЕЗ триггера; Cockpit сам распознаёт исполнителя (@имя или «для Димы»), " +
+      "В text передавай задачу естественным текстом БЕЗ триггера; WANDO сам распознаёт исполнителя (@имя или «для Димы»), " +
       "сроки (сегодня/завтра/послезавтра, «с 22 по 28 июня», «на 3 дня»), оценку (2ч, 12ч) и приоритет (!срочно, важно). " +
       "Если назван проект («в проект AppHub») — клади его имя в параметр project, а не в text.",
     inputSchema: {
@@ -57,7 +57,7 @@ const TOOLS = [
   },
   {
     name: "cockpit_list_projects",
-    description: "Показать проекты Cockpit (id, имя, эмодзи), чтобы выбрать project для cockpit_propose_task.",
+    description: "Показать проекты WANDO (id, имя, эмодзи), чтобы выбрать project для cockpit_propose_task.",
     inputSchema: { type: "object", properties: {} },
   },
 ];
@@ -78,7 +78,7 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
         p_token: TOKEN, p_text: text,
         p_project: args.project || null, p_note: args.note || null, p_source: SOURCE,
       });
-      return { content: [{ type: "text", text: `✅ ${r.message || "Заявка отправлена в Cockpit."} (id ${r.id})` }] };
+      return { content: [{ type: "text", text: `✅ ${r.message || "Заявка отправлена в WANDO."} (id ${r.id})` }] };
     }
 
     if (name === "cockpit_list_projects") {
