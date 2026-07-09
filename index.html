@@ -2273,6 +2273,28 @@ function renderNow(){
   const wm=$('#wnMore');if(wm)wm.onclick=openInbox;
   clearTimeout(_nowSeenT);_nowSeenT=setTimeout(()=>{try{localStorage.setItem('cockpit_seen_'+S.id,Date.now());}catch(e){}},4200);
 }
+// ===== СВАЙПЫ: вправо = готово, влево = на завтра =====
+function attachSwipe(el,taskId){
+  let sx=0,sy=0,dx=0,swiping=false;
+  el.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;dx=0;swiping=false;},{passive:true});
+  el.addEventListener('touchmove',e=>{
+    const mx=e.touches[0].clientX-sx,my=e.touches[0].clientY-sy;
+    if(!swiping&&Math.abs(mx)>14&&Math.abs(mx)>Math.abs(my)*1.4)swiping=true;
+    if(!swiping)return;dx=mx;
+    el.style.transform='translateX('+dx+'px)';el.style.transition='none';
+    el.style.background=dx>50?'rgba(52,211,153,.18)':dx<-50?'rgba(167,139,250,.15)':'';
+  },{passive:true});
+  el.addEventListener('touchend',()=>{
+    el.style.transition='transform .22s var(--ease), background .22s';
+    if(swiping&&dx>80){el.style.transform='translateX(110%)';
+      setTimeout(()=>{const t=task(taskId);if(!t)return;t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;
+        logAct('✅','«'+t.title+'» → Готово (свайп)');awardForDone(S,t);celebrate();save();render();toast('Готово ✅','✅');},160);}
+    else if(swiping&&dx<-80){el.style.transform='translateX(-110%)';
+      setTimeout(()=>{const t=task(taskId);if(!t)return;const tm=fmtD(parseD(todayISO())+dayMs);
+        t.end=tm;if(parseD(t.start)>parseD(tm))t.start=tm;logAct('🌙','«'+t.title+'» → завтра (свайп)');save();render();toast('🌙 На завтра','🌙');},160);}
+    else{el.style.transform='';el.style.background='';}
+  },{passive:true});
+}
 // ===== МОБИЛЬНЫЙ «Сегодня»: один вопрос на экран =====
 function renderNowMobile(ctx){
   const {el,greet,next,upNext,ins,running}=ctx;
@@ -2305,7 +2327,7 @@ function renderNowMobile(ctx){
       <div class="insights" style="margin-top:12px">${ins.map((x,i)=>`<div class="insight ${x.act?'click':''}" data-i="${i}"><span class="ii">${x.ic}</span><div class="ib"><div class="it">${esc(x.title)}</div>${x.sub?`<div class="is">${esc(x.sub)}</div>`:''}</div></div>`).join('')}</div>
       ${momentumSpark()}</details>`;
   const mh=el.querySelector('.mhero[data-open] .mh-title');if(mh)mh.onclick=()=>openTask(el.querySelector('.mhero').dataset.open);
-  $$('#now .mrow[data-open]').forEach(e=>e.onclick=()=>openTask(e.dataset.open));
+  $$('#now .mrow[data-open]').forEach(e=>{e.onclick=()=>openTask(e.dataset.open);attachSwipe(e,e.dataset.open);});
   const fs=$('#focusStart');if(fs&&ctx.next)fs.onclick=()=>startFocus(ctx.next.id);
   const fst=$('#focusStop');if(fst)fst.onclick=()=>stopFocus(false);
   if(ctx.running){if(!focus.iv)focus.iv=setInterval(updFocus,1000);updFocus();}
@@ -3694,6 +3716,8 @@ function renderBoardPeople(){renderBulkBar();
     b.appendChild(lane);
   });
 }
+function boardSwipes(){if(window.innerWidth>680)return;
+  $$('#board .card[data-id]').forEach(c=>attachSwipe(c,c.dataset.id));}
 function renderBoard(){
   if(boardMode==='people'){boardSelOn=false;return renderBoardPeople();}
   const b=$('#board');b.className='board'+(boardSelOn?' selecting':'');b.innerHTML='';
@@ -3751,7 +3775,7 @@ function renderBoard(){
     b.appendChild(col);
   });
   if(pendingBoardAdd){const c=[...document.querySelectorAll('#board .col')].find(x=>x.dataset.st===pendingBoardAdd);if(c)openBoardAdd(c,pendingBoardAdd);}
-  renderBulkBar();
+  renderBulkBar();boardSwipes();
 }
 function openBoardAdd(col,status){
   pendingBoardAdd=status;
