@@ -1751,7 +1751,7 @@ function loadProj(id){try{return JSON.parse(localStorage.getItem(pkey(id)));}cat
 function migrate(p){if(!p)return p;p.ui=p.ui||{zoom:38};if(!p.ui.zoom)p.ui.zoom=38;if(p.demo===undefined)p.demo=false;
   if(!p.id)p.id='p'+Math.random().toString(36).slice(2,8);p.ideas=p.ideas||[];p.tasks=p.tasks||[];p.members=p.members||[];p.sections=p.sections||[{id:'s1',name:'Задачи'}];
   p.tasks.forEach(t=>{if(!t.deps)t.deps=[];if(t.comments==null)t.comments=[];});
-  p.activity=p.activity||[];if(!p.updatedAt)p.updatedAt=0;if(p.parentId===undefined)p.parentId=null;return p;}
+  p.activity=p.activity||[];p.notes=p.notes||[];if(!p.updatedAt)p.updatedAt=0;if(p.parentId===undefined)p.parentId=null;return p;}
 
 function blankProject(){return {projectName:'Мой проект',emoji:'🚀',demo:false,ui:{zoom:38},
   members:[{id:'m1',name:'Я',role:'Founder',color:COLORS[1],capacity:30}],
@@ -4026,7 +4026,7 @@ const HINT=`<b>🎙 Командная строка</b> — говори или 
 <b style="color:#9aa0b3">Статус</b> <span class="ex">статус Вёрстка в работе</span> · <span class="ex">приоритет Тексты высокий</span><br>
 <b style="color:#9aa0b3">Люди/сроки</b> <span class="ex">назначь Тестирование на меня</span> · <span class="ex">срок Релиз до 1 июля</span> · <span class="ex">эстимейт Геймдизайн 24ч</span><br>
 <b style="color:#9aa0b3">Командуй планом</b> <span class="ex">перенеси все просрочки на следующую неделю</span> · <span class="ex">сделай Тексты срочным и назначь на меня</span> · <span class="ex">что горит</span><br>
-<b style="color:#9aa0b3">Ещё</b> <span class="ex">переименуй Тексты в Копирайтинг</span> · <span class="ex">коммент Тексты: нужен тон бренда</span> · <span class="ex">идея реферальная петля</span> · <span class="ex">удали задачу Саунддизайн</span><br>
+<b style="color:#9aa0b3">Ещё</b> <span class="ex">переименуй Тексты в Копирайтинг</span> · <span class="ex">коммент Тексты: нужен тон бренда</span> · <span class="ex">идея реферальная петля</span> · <span class="ex">запомни с клиентом Х работаем по предоплате</span> · <span class="ex">удали задачу Саунддизайн</span><br>
 <span style="color:#838aa6">⌨ <b>⌘K</b> палитра · <b>/</b> команда · <b>N</b> новая · на доске <b>J/K</b> ходи · <b>X</b> готово · <b>E</b> открыть · <b>⌘Z</b> отмена · разделы O/B/G/W/I/T/A</span>`;
 cmdEl.onfocus=()=>{hintEl.innerHTML=HINT;hintEl.classList.add('show');bindEx();};
 cmdEl.onblur=()=>setTimeout(()=>{hintEl.classList.remove('show');$('#cmdChips').classList.remove('show');},180);
@@ -4144,7 +4144,7 @@ function nlpChips(p){const out=[];
   else if(p.prio==='high')out.push(`<span class="ichip" style="color:var(--warn);border-color:var(--warn)">⚑ важно</span>`);
   return out;}
 // это команда-управление (статус/назначь/…), а не создание задачи?
-function isManageCmd(s){return /^\s*(статус|status|назнач|assign|эстимейт|оцен|estimate|est|приоритет|priorit|приор|переимену|rename|срок|дедлайн|due|удали|удалить|delete|del|коммент|comment|идея|idea|перекин|перенес|перенос|сдвин|отлож|reschedule|разгруз|что\s+горит|покажи\s+горящ|горящ|аврал)/i.test(s);}
+function isManageCmd(s){return /^\s*(статус|status|назнач|assign|эстимейт|оцен|estimate|est|приоритет|priorit|приор|переимену|rename|срок|дедлайн|due|удали|удалить|delete|del|коммент|comment|идея|idea|запомни|memo|заметка|перекин|перенес|перенос|сдвин|отлож|reschedule|разгруз|что\s+горит|покажи\s+горящ|горящ|аврал)/i.test(s);}
 
 /* ============================ ЯЗЫК КАК ИНТЕРФЕЙС — массовые операции ============================ */
 function nextMondayISO(){const d=parseD(todayISO());const dow=(new Date(d).getDay()+6)%7;return fmtD(d+(7-dow)*dayMs);}
@@ -4215,6 +4215,11 @@ function runCmd(raw){
       else{t.status=val;if(val==='done'&&t.estimate&&!t.spent)t.spent=t.estimate;}
       save();render();toast('«'+t.title+'» → '+(act==='prio'?prMap[val].n:stMap[val].n)+(assignee?' · '+(member(assignee)||{}).name:''),act==='prio'?'⚑':'✓');return;}
   }
+  // память компании: «запомни …» — Вандо будет это знать
+  let mm=s.match(/^(запомни|memo|заметка)[:\s]+(.+)$/i);
+  if(mm){S.notes.push({id:uid('n'),text:mm[2].trim(),who:meName(),ts:Date.now()});
+    logAct('📌','запомнил: «'+mm[2].trim().slice(0,60)+'»');save();
+    toast('📌 Запомнил — теперь Вандо это знает','🧠');return;}
   if(/^(идея|idea)\b/i.test(s)){
     const title=s.replace(/^(идея|idea)\s*/i,'').trim();if(!title)return;
     S.ideas.push({id:uid('i'),title,note:'',votes:1,createdTs:Date.now()});save();
@@ -4593,7 +4598,9 @@ function vandoContext(){
     return {name:p.name,emoji:p.emoji,parent:(projMeta(p.parentId)||{}).name||null,
       tasks:ts.map(t=>({title:t.title,cash:!!t.cash,status:t.status,assignee:(d.members.find(m=>m.id===t.assigneeId)||{}).name||null,end:t.end,estimate:t.estimate||0,priority:t.priority,overdue:t.status!=='done'&&parseD(t.end)<parseD(todayISO())})),
       members:(d.members||[]).map(m=>({name:m.name,role:m.role,capacity:m.capacity})),
-      ideas:(d.ideas||[]).slice(0,20).map(i=>i.title)};}).filter(Boolean);
+      ideas:(d.ideas||[]).slice(0,20).map(i=>i.title),
+      memory:(d.notes||[]).slice(-30).map(n=>({when:new Date(n.ts).toISOString().slice(0,10),who:n.who,note:n.text})),
+      history:(d.activity||[]).slice(0,25).map(a=>({when:new Date(a.ts||0).toISOString().slice(0,10),who:a.who,what:(a.icon||'')+' '+(a.text||'')}))};}).filter(Boolean);
   return {today:todayISO(),me:meName(),team:teamRows.map(t=>t.name||t.email),projects:projs,usage:usageStats(),
     tool:'WANDO — таск-трекер фаундеров: Сейчас/Всё/Гант/Доска/Неделя/Бэклог/Команда/Приёмка, Telegram-бот (голос, кнопки, брифы 9:00 и 18:00), Claude-вход'};
 }
