@@ -1437,6 +1437,59 @@ body.light .vando-panel{background:var(--sheen),rgba(255,255,255,.97)}
 .energyrow{display:inline-flex;gap:5px;margin-left:12px;vertical-align:middle}
 .energyrow button{border:1px solid var(--line);background:var(--bg2);border-radius:9px;padding:3px 9px;font-size:14px;cursor:pointer;opacity:.5;transition:.15s}
 .energyrow button.on{opacity:1;border-color:var(--acc2);box-shadow:0 0 10px rgba(167,139,250,.3)}
+/* ---- Mobile 10/10: нижняя навигация 4+➕ и лист захвата ---- */
+.mnav{display:none}
+@media (max-width:680px){
+  .tabs{display:none!important}
+  .statusbar{display:none!important}
+  .vando-fab{display:none!important}
+  main{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
+  .mnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:36;align-items:flex-end;justify-content:space-around;
+    gap:2px;padding:8px 8px calc(9px + env(safe-area-inset-bottom));
+    background:rgba(15,18,27,.97);border-top:1px solid var(--gbrd)}
+  body.light .mnav{background:rgba(250,251,254,.98);border-top:1px solid rgba(0,0,0,.08)}
+  .mnav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;border:none;background:none;
+    color:var(--mut2);font-size:10px;font-weight:700;padding:4px 2px;border-radius:12px;transition:color .15s}
+  .mnav button i{font-style:normal;font-size:21px;line-height:1;filter:grayscale(1);opacity:.6;transition:.15s}
+  .mnav button.on{color:var(--txt)}
+  .mnav button.on i{filter:none;opacity:1;transform:scale(1.08)}
+  .mnav .mplus{flex:0 0 auto;width:56px;height:56px;margin:0 6px;border-radius:19px;transform:translateY(-14px);
+    background:linear-gradient(135deg,#5472F0,#a78bfa 55%,#FE5C97);color:#fff;font-size:30px;font-weight:400;line-height:1;
+    box-shadow:0 12px 28px rgba(84,114,240,.5),inset 0 1px 0 rgba(255,255,255,.35);display:grid;place-items:center;padding:0}
+  .mnav .mplus:active{transform:translateY(-14px) scale(.93)}
+  .vando-panel{bottom:calc(96px + env(safe-area-inset-bottom));height:min(560px,70vh)}
+}
+.capsheet{width:min(640px,94vw);border-radius:24px;padding:0;overflow:hidden}
+.cap-b{padding:22px 20px 14px;display:flex;flex-direction:column;gap:14px}
+.cap-t{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--mut2)}
+#capIn{width:100%;min-height:120px;background:none;border:none;outline:none;resize:none;color:var(--txt);
+  font-size:22px;font-weight:600;line-height:1.4;font-family:inherit}
+#capIn::placeholder{color:var(--mut2);font-weight:500}
+.cap-chips{display:flex;gap:6px;flex-wrap:wrap;min-height:26px}
+.cap-f{display:flex;gap:10px;padding:14px 20px calc(16px + env(safe-area-inset-bottom));border-top:1px solid var(--line);align-items:center}
+.cap-mic{width:52px;height:52px;border-radius:16px;border:1px solid var(--line);background:var(--bg2);color:var(--acc);
+  font-size:22px;display:grid;place-items:center;cursor:pointer;flex:0 0 auto}
+.cap-mic.rec{background:var(--acc);color:#fff;animation:pulse 1s infinite}
+.cap-go{flex:1;border:none;border-radius:16px;padding:15px;background:linear-gradient(135deg,#a78bfa,#5472F0);
+  color:#fff;font-weight:800;font-size:16px;cursor:pointer}
+@media (max-width:680px){
+  #capScrim{padding:0}
+  .capsheet{width:100vw;height:100dvh;max-width:none;border-radius:0;display:flex;flex-direction:column}
+  .cap-b{flex:1;padding-top:30px}
+  #capIn{font-size:26px}
+}
+/* Проекты (мобильный корень) */
+.mplist{display:flex;flex-direction:column;gap:10px}
+.mprow{display:flex;align-items:center;gap:13px;background:var(--sheen),var(--glass);border:1px solid var(--gbrd);
+  border-radius:18px;padding:15px 16px;box-shadow:var(--ghi);cursor:pointer}
+.mprow .pe{font-size:26px;flex:0 0 auto}
+.mprow .pm{flex:1;min-width:0}
+.mprow .pn2{font-size:16px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mprow .ps2{font-size:12px;color:var(--mut2);margin-top:2px}
+.mprow .pbar{height:5px;border-radius:3px;background:var(--bg);margin-top:8px;overflow:hidden}
+.mprow .pbar span{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,var(--acc2),#38bdf8)}
+.mprow.child{margin-left:22px}
+.mprow .arr{color:var(--mut2);font-size:18px}
 /* ---- карточка задачи: центр-модалка, прогрессивное раскрытие ---- */
 #drawer{top:50%;left:50%;right:auto;bottom:auto;width:min(720px,94vw);height:auto;max-height:88vh;
   border-radius:24px;border:1px solid var(--gbrd);border-left:1px solid var(--gbrd);
@@ -1553,6 +1606,7 @@ body.light .vando-panel{background:var(--sheen),rgba(255,255,255,.97)}
       <div id="accessPanel"></div>
     </div></div>
     <div class="view" id="v-intake"><div class="pad" id="intake"></div></div>
+    <div class="view" id="v-mprojects"><div class="pad" id="mprojects"></div></div>
   </div>
 </main>
 
@@ -1684,6 +1738,14 @@ body.light .vando-panel{background:var(--sheen),rgba(255,255,255,.97)}
   <div class="vando-hint" id="vandoHints"></div>
   <div class="vando-in"><input id="vandoIn" placeholder="Спроси: что горит? кому что делегировать?…" autocomplete="off"><button id="vandoSend">↑</button></div>
 </div>
+<nav class="mnav" id="mnav">
+  <button data-mv="now"><i>⚡</i><span>Сегодня</span></button>
+  <button data-mv="mprojects"><i>📁</i><span>Проекты</span></button>
+  <button class="mplus" id="mPlus" title="Новая задача">＋</button>
+  <button data-mv="intake" id="mnavIntake"><i>📥</i><span>Приёмка</span></button>
+  <button id="mnavVando"><i>🤖</i><span>Вандо</span></button>
+</nav>
+<div class="modal-scrim" id="capScrim"><div class="modal capsheet" id="capModal"></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1997,6 +2059,8 @@ function render(){
   $('#banner').classList.toggle('hide',!S.demo||bannerDismissed);
   // гость (не в team): Приёмка и админ-действия скрыты — доступ режет и RLS
   {const ti=document.querySelector('.tab[data-v="intake"]');if(ti)ti.style.display=isTeam?'':'none';
+   const mi=$('#mnavIntake');if(mi){if(isTeam){mi.dataset.mv='intake';mi.innerHTML='<i>📥</i><span>Приёмка</span>';}
+     else{mi.dataset.mv='backlog';mi.innerHTML='<i>💡</i><span>Бэклог</span>';}}
    if(!isTeam&&view==='intake'){setView('now');return;}}
   const _T=S.tasks.filter(t=>!t.isMilestone);
   $('#sbStats').textContent=`${_T.length} задач · ${_T.filter(t=>t.status==='done').length} готово · ${S.tasks.filter(isOverdue).length} просроч.`;
@@ -2011,9 +2075,11 @@ function render(){
   else if(view==='backlog')renderBacklog();
   else if(view==='team')renderTeam();
   else if(view==='intake')renderIntake();
+  else if(view==='mprojects')renderMProjects();
   save();
 }
-function setView(v){view=v;if(typeof track==='function')track('view:'+v);if(v==='gantt')ganttNeedsScroll=true;$$('.tab').forEach(t=>t.classList.toggle('active',t.dataset.v===v));
+function setView(v){view=v;if(typeof track==='function')track('view:'+v);
+  $$('.mnav [data-mv]').forEach(b=>b.classList.toggle('on',b.dataset.mv===v));if(v==='gantt')ganttNeedsScroll=true;$$('.tab').forEach(t=>t.classList.toggle('active',t.dataset.v===v));
   $$('.view').forEach(el=>el.classList.toggle('active',el.id==='v-'+v));render();}
 
 /* ============================ СЕЙЧАС — MISSION CONTROL ============================ */
@@ -4675,6 +4741,49 @@ async function vandoSend(){
  const a=$('#vandoAva');if(a)a.innerHTML=logoMarkSVG(16);
  const si=$('#vandoIn');if(si)si.onkeydown=e=>{if(e.key==='Enter')vandoSend();if(e.key==='Escape')vandoToggle(false);};
  const sb2=$('#vandoSend');if(sb2)sb2.onclick=vandoSend;}
+
+/* ============================ MOBILE: лист захвата и Проекты ============================ */
+function openCap(){
+  $('#capModal').innerHTML=`<div class="cap-b">
+    <div class="cap-t">Новая задача · говори или пиши</div>
+    <textarea id="capIn" placeholder="созвон с Димой завтра 2ч срочно…"></textarea>
+    <div class="cap-chips" id="capChips"></div></div>
+   <div class="cap-f"><button class="cap-mic" id="capMic">🎙</button>
+    <button class="cap-go" id="capGo">⚡ Создать задачу</button></div>`;
+  $('#capScrim').classList.add('show');
+  const inp=$('#capIn');
+  const chips=()=>{const p=parseQuick(inp.value);$('#capChips').innerHTML=nlpChips(p).join('');};
+  inp.oninput=chips;
+  inp.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('#capGo').click();}if(e.key==='Escape')closeCap();};
+  $('#capMic').onclick=()=>dictateTo(inp,$('#capMic'));
+  $('#capGo').onclick=()=>{const v=inp.value.trim();if(!v){inp.focus();return;}closeCap();runCmd(v);};
+  setTimeout(()=>inp.focus(),80);
+}
+function closeCap(){$('#capScrim').classList.remove('show');}
+$('#capScrim').onclick=e=>{if(e.target===$('#capScrim'))closeCap();};
+function renderMProjects(){
+  const el=$('#mprojects');if(!el)return;
+  const projs=reg.list.filter(p=>!p.archived).map(p=>({meta:p,data:p.id===S.id?S:loadProj(p.id)})).filter(x=>x.data);
+  const row=({meta,data},child)=>{const ts=(data.tasks||[]).filter(t=>!t.isMilestone);
+    const done=ts.filter(t=>t.status==='done').length;const ov=ts.filter(t=>t.status!=='done'&&parseD(t.end)<parseD(todayISO())).length;
+    const pct=ts.length?Math.round(done/ts.length*100):0;
+    return `<div class="mprow ${child?'child':''}" data-p="${meta.id}"><span class="pe">${child?'↳ ':''}${meta.emoji||'📄'}</span>
+      <div class="pm"><div class="pn2">${esc(meta.name)}</div>
+        <div class="ps2">${ts.length} задач · ${done} готово${ov?` · <b style="color:var(--bad)">${ov} горит</b>`:''}</div>
+        <div class="pbar"><span style="width:${pct}%"></span></div></div><span class="arr">›</span></div>`;};
+  const tops=projs.filter(x=>{const pr=x.meta.parentId&&projMeta(x.meta.parentId);return !pr||pr.archived;});
+  let html='';tops.forEach(t=>{html+=row(t,false);projs.filter(k=>k.meta.parentId===t.meta.id).forEach(k=>html+=row(k,true));});
+  el.innerHTML=`<div class="secttl">📁 Проекты <span style="margin-left:auto;text-transform:none;letter-spacing:0;font-weight:500;color:var(--mut2)">${projs.length}</span></div>
+    <div class="mplist">${html}</div>
+    <button class="btn" style="width:100%;margin-top:14px;justify-content:center" id="mpAll">🌐 Пульс всей компании</button>
+    ${isTeam?'<button class="btn" style="width:100%;margin-top:8px;justify-content:center" id="mpNew">＋ Новый проект</button>':''}`;
+  $$('#mprojects .mprow').forEach(r=>r.onclick=()=>{const id=r.dataset.p;if(id!==S.id)switchProject(id);else setView('board');});
+  const a=$('#mpAll');if(a)a.onclick=()=>setView('all');
+  const n=$('#mpNew');if(n)n.onclick=openNewProject;
+}
+{const mp=$('#mPlus');if(mp)mp.onclick=openCap;
+ const mv=$('#mnavVando');if(mv)mv.onclick=()=>vandoToggle();
+ $$('.mnav [data-mv]').forEach(b=>b.onclick=()=>setView(b.dataset.mv));}
 
 /* ============================ CLOUD SYNC (Supabase) ============================ */
 function loadSb(){return new Promise((res,rej)=>{if(window.supabase)return res();const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';s.onload=()=>res();s.onerror=rej;document.head.appendChild(s);});}
