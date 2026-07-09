@@ -1428,6 +1428,30 @@ body.light .vando-panel{background:var(--sheen),rgba(255,255,255,.97)}
   .vando-fab{bottom:calc(132px + env(safe-area-inset-bottom));right:12px}
   .vando-panel{right:8px;left:8px;width:auto;bottom:calc(196px + env(safe-area-inset-bottom));height:min(480px,58vh)}
 }
+/* ---- карточка задачи: центр-модалка, прогрессивное раскрытие ---- */
+#drawer{top:50%;left:50%;right:auto;bottom:auto;width:min(720px,94vw);height:auto;max-height:88vh;
+  border-radius:24px;border:1px solid var(--gbrd);border-left:1px solid var(--gbrd);
+  box-shadow:0 40px 100px rgba(0,0,0,.65),var(--ghi);
+  transform:translate(-50%,-50%) scale(.95);opacity:0;pointer-events:none;
+  transition:transform .3s var(--ease),opacity .22s}
+#drawer.show{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:auto}
+#drawer .db{padding:18px 22px}
+#drawer .dh{padding:14px 22px}
+#drawer .df{padding:14px 22px}
+.dmore{border:1px solid var(--line);border-radius:14px;background:var(--bg2)}
+.dmore>summary{cursor:pointer;list-style:none;padding:12px 15px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);display:flex;align-items:center;gap:8px}
+.dmore>summary::-webkit-details-marker{display:none}
+.dmore>summary::after{content:'▾';margin-left:auto;color:var(--mut2);transition:transform .18s}
+.dmore[open]>summary::after{transform:rotate(180deg)}
+.dmore .dmb{padding:4px 15px 15px;display:flex;flex-direction:column;gap:15px}
+.qdates{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+.qdates button{border:1px solid var(--line);background:var(--bg2);color:var(--mut);border-radius:9px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;transition:.14s}
+.qdates button:hover{border-color:var(--acc2);color:var(--txt)}
+@media (max-width:680px){
+  #drawer{top:auto;left:0;right:0;bottom:0;width:100vw;max-height:92dvh;border-radius:22px 22px 0 0;
+    transform:translateY(100%);opacity:1}
+  #drawer.show{transform:none}
+}
 </style>
 </head>
 <body>
@@ -1532,38 +1556,45 @@ body.light .vando-panel{background:var(--sheen),rgba(255,255,255,.97)}
   </div>
   <div class="db">
     <textarea class="dtitle" id="dTitle" rows="1" placeholder="Название задачи"></textarea>
-    <div class="field"><label>Описание / план</label>
-      <textarea class="inp" id="dDesc" placeholder="Что именно сделать, контекст, ссылки…"></textarea></div>
-    <div class="field"><label>Исполнитель</label><div class="seg" id="dAssignee"></div></div>
-    <div class="field"><label>Раздел</label><select class="inp" id="dSection"></select></div>
-    <div class="field"><label>Сроки</label>
+    <div class="field"><label>Кто делает</label><div class="seg" id="dAssignee"></div></div>
+    <div class="field"><label>Когда</label>
       <div class="row">
         <div style="flex:1"><div style="font-size:10px;color:var(--mut2);margin-bottom:4px">Старт</div><input type="date" class="inp" id="dStart"></div>
         <div style="flex:1"><div style="font-size:10px;color:var(--mut2);margin-bottom:4px">Финиш</div><input type="date" class="inp" id="dEnd"></div>
       </div>
-      <label style="margin-top:10px;display:flex;gap:7px;align-items:center;cursor:pointer;text-transform:none;letter-spacing:0;font-size:12px;color:var(--mut)">
-        <input type="checkbox" id="dMile"> 🔹 это веха / релиз (milestone)</label>
+      <div class="qdates" id="dQDates">
+        <button data-qd="0">Сегодня</button><button data-qd="1">Завтра</button><button data-qd="3">+3 дня</button><button data-qd="mon">Понедельник</button><button data-qd="7">+неделя</button>
+      </div>
     </div>
-    <div class="field"><label>🔁 Повтор</label>
-      <select class="inp" id="dRepeat">
-        <option value="">Не повторять</option>
-        <option value="daily">Каждый день</option>
-        <option value="weekly">Каждую неделю</option>
-        <option value="monthly">Каждый месяц</option>
-      </select>
-      <div style="font-size:11px;color:var(--mut2);margin-top:5px">При «Готово» создастся следующая копия со сдвинутым сроком.</div></div>
     <div class="field"><label>Приоритет</label><div class="seg" id="dPrio"></div></div>
-    <div class="field"><label>Эстимейт / факт</label>
-      <div class="estbar">
-        <input class="inp" type="number" id="dEst" min="0" step="0.5" placeholder="0"> <span style="color:var(--mut2)">ч оценка</span>
-        <input class="inp" type="number" id="dSpent" min="0" step="0.5" placeholder="0"> <span style="color:var(--mut2)">ч факт</span>
-      </div></div>
-    <div class="field"><label>Зависит от (блокеры)</label><div class="seg" id="dDeps"></div></div>
-    <div class="field"><label>⏳ Ждёт от — кто должен сделать шаг</label><div class="seg" id="dWaiting"></div></div>
     <div class="field"><label>✓ Чеклист / подзадачи</label>
       <div id="dSubs"></div>
       <div class="cmtadd"><input class="inp" id="dSubIn" placeholder="Добавить пункт… (Enter)"><button class="btn" id="dSubBtn">＋</button></div>
     </div>
+    <details class="dmore" id="dMore"><summary>⚙️ Ещё: описание, оценка, зависимости, повтор</summary>
+      <div class="dmb">
+        <div class="field"><label>Описание / план</label>
+          <textarea class="inp" id="dDesc" placeholder="Что именно сделать, контекст, ссылки…"></textarea></div>
+        <div class="field"><label>Эстимейт / факт</label>
+          <div class="estbar">
+            <input class="inp" type="number" id="dEst" min="0" step="0.5" placeholder="0"> <span style="color:var(--mut2)">ч оценка</span>
+            <input class="inp" type="number" id="dSpent" min="0" step="0.5" placeholder="0"> <span style="color:var(--mut2)">ч факт</span>
+          </div></div>
+        <div class="field"><label>Раздел</label><select class="inp" id="dSection"></select></div>
+        <div class="field"><label>Зависит от (блокеры)</label><div class="seg" id="dDeps"></div></div>
+        <div class="field"><label>⏳ Ждёт от — кто должен сделать шаг</label><div class="seg" id="dWaiting"></div></div>
+        <div class="field"><label>🔁 Повтор</label>
+          <select class="inp" id="dRepeat">
+            <option value="">Не повторять</option>
+            <option value="daily">Каждый день</option>
+            <option value="weekly">Каждую неделю</option>
+            <option value="monthly">Каждый месяц</option>
+          </select>
+          <div style="font-size:11px;color:var(--mut2);margin-top:5px">При «Готово» создастся следующая копия со сдвинутым сроком.</div></div>
+        <label style="display:flex;gap:7px;align-items:center;cursor:pointer;font-size:12px;color:var(--mut)">
+          <input type="checkbox" id="dMile"> 🔹 это веха / релиз (milestone)</label>
+      </div>
+    </details>
     <div class="field"><label>Комментарии</label>
       <div class="comments" id="dComments"></div>
       <div class="ment" id="dMention"></div>
@@ -1612,6 +1643,7 @@ body.light .vando-panel{background:var(--sheen),rgba(255,255,255,.97)}
   <button data-act="palette">🔎 Все команды и поиск <span style="margin-left:auto;color:var(--mut2)">⌘K</span></button>
   <button data-act="tg">🤖 Подключить Telegram</button>
   <button data-act="connect">🔌 Подключить Claude</button>
+  <button data-act="tour">🎓 Обучение · как всё устроено</button>
   <button data-act="settings">⚙️ Настройки и профиль</button>
   <div class="sep"></div>
   <button data-act="section">📁 Добавить раздел</button>
@@ -3883,6 +3915,14 @@ $('#dCmtIn').addEventListener('input',e=>{
   $$('#dMention .mention-i').forEach(b=>b.onmousedown=ev=>{ev.preventDefault();e.target.value=v.replace(/@([^@\s]*)$/,'@'+b.dataset.n+' ');box.classList.remove('show');e.target.focus();});
 });
 $('#dSubBtn').onclick=addSub;
+// быстрые сроки одним тапом
+$$('#dQDates button').forEach(b=>b.onclick=()=>{if(!curTask)return;
+  const q=b.dataset.qd;let d;
+  if(q==='mon'){const t=parseD(todayISO());const dow=(new Date(t).getDay()+6)%7;d=fmtD(t+(7-dow)*dayMs);}
+  else d=fmtD(parseD(todayISO())+(+q)*dayMs);
+  curTask.end=d;if(parseD(curTask.start)>parseD(d))curTask.start=d;
+  $('#dStart').value=curTask.start;$('#dEnd').value=curTask.end;save();
+  toast('Срок → '+d.slice(8)+'.'+d.slice(5,7),'📅');});
 $('#dSubIn').onkeydown=e=>{if(e.key==='Enter')addSub();};
 function addComment(){const v=$('#dCmtIn').value.trim();if(!v||!curTask)return;
   curTask.comments.push({text:v,author:meName(),authorId:myId(),when:'сейчас',ts:Date.now()});logAct('💬','коммент к «'+curTask.title+'»');$('#dCmtIn').value='';save();renderComments(curTask);}
@@ -3927,6 +3967,7 @@ menuEl.onclick=e=>{const b=e.target.closest('button');if(!b)return;menuEl.classL
   if(act==='palette'){openPalette();}
   else if(act==='settings'){openSettings();}
   else if(act==='tg'){if(!cloudOn){toast('Сначала войди в облако','🤖');}else openTgGate();}
+  else if(act==='tour'){openOnboarding(0);}
   else if(act==='connect'){openConnect();}
   else if(act==='autoschedule'){autoSchedule();}
   else if(act==='present'){openPresent();}
@@ -4228,24 +4269,27 @@ $('#btnTheme').onclick=()=>{const cur=localStorage.getItem('cockpit_theme')||'da
 function startFresh(){closeOb();openNewProject();}
 
 const OB=[
- {art:'🚀',h:'WANDO — пульт фаундера',
-  p:'Один экран для всего, что важно в стартапе: задачи, сроки, кто что делает, идеи. Проще Asana, но с самым нужным на борту. Осмотрись на демо — или сразу начни с чистого листа.',
+ {art:'🧭',h:'WANDO — что делать',
+  p:'Пульт фаундера: все компании, проекты, задачи и люди — в одном месте, с ИИ на борту. Правило дома: система никогда не угадывает молча — она знает или спрашивает. Осмотрись на демо — или начни с чистого листа.',
   choice:true},
- {art:'🛰',h:'Обзор — пульс проекта',
-  p:'Стартовый экран. Заходи сюда каждое утро — за 5 секунд видно состояние проекта.',
-  list:[['🔥','<b>Фокус на сегодня</b> — что горит прямо сейчас'],['📅','<b>Дедлайны 7 дней</b> — ничего не пропустишь'],['👥','<b>Загрузка</b> — кто перегружен (красный = перебор)']]},
- {art:'📊',h:'Гант — сроки и зависимости',
-  p:'Визуальный таймлайн проекта. Тащи бар мышкой — двигаешь даты, тяни за край — меняешь длительность.',
-  list:[['➕','<b>＋ задача</b> под разделом — добавляй в один клик'],['🟢','<b>Клик по точке</b> слева — циклом меняет статус'],['🔗','<b>Стрелки</b> — зависимости, 🔒 = задача заблокирована'],['🔍','<b>Зум и фильтры</b> сверху — поиск, по человеку, «Моё»']]},
- {art:'🗂',h:'Доска и Бэклог идей',
-  p:'Доска — канбан: перетаскивай карточки между статусами. Бэклог — копилка идей: голосуй ▲ и превращай лучшие в задачи.',
-  list:[['🗂','<b>Доска</b> — Бэклог → В работе → Готово'],['💡','<b>Бэклог</b> — ничего не теряется, кнопка «→ В задачи»']]},
- {art:'🎨',h:'Логика цветов',
-  p:'Один цвет = один смысл, везде одинаково. Это держит экран читабельным:',
+ {art:'⚡',h:'«Сейчас» — день начинается здесь',
+  p:'Один экран отвечает на главный вопрос: что делать прямо сейчас.',
+  list:[['🎯','<b>Твой следующий шаг</b> — самое важное, с кнопкой «Фокус»'],['🩹','<b>Просрочки?</b> Один тап «→ На сегодня» — план снова честный'],['👀','<b>«Было без тебя»</b> — что сделал партнёр, пока тебя не было']]},
+ {art:'📥',h:'Захват отовсюду → Приёмка',
+  p:'Мысль не должна ждать, пока откроешь трекер. Кидай как удобно — всё падает в Приёмку, команда подтверждает одним тапом:',
+  list:[['⌨️','<b>Строка сверху</b> — «созвон с Димой завтра 2ч срочно»'],['🎙','<b>Голосом боту</b> в Telegram — распознает и разберёт'],['🤖','<b>Из Claude</b> — «WANDO: поставь задачу…»'],['📁','Бот спросит «Куда?» одним тапом — и запомнит твой выбор']]},
+ {art:'📱',h:'Telegram-бот — WANDO в кармане',
+  p:'@wando_tasks_bot — карманная версия всего инструмента:',
+  list:[['🧭','<b>Мои задачи</b> · «задачи Димы» · «проект Датум» — выжимки'],['✓','<b>Приёмка прямо в чате</b> — кнопки ✓/✕ создают задачи'],['☀️','<b>9:00 бриф</b>: твой день · <b>18:00 разбор</b>: перенос незакрытого одним тапом'],['🔔','<b>«Пингануть»</b> — бот вежливо дожимает за тебя']]},
+ {art:'🤖',h:'Вандо — сверхразум-проджект',
+  p:'Кнопка в правом нижнем углу. Вандо видит все проекты, загрузку и даже то, как вы пользуетесь инструментом:',
+  list:[['🔥','«Что горит по всем проектам?» — ответ по данным, не по воде'],['⚖️','«Кто перегружен и что перекинуть?» — с именами и часами'],['📊','Раз в неделю сам подсветит, что оптимизировать в WANDO'],['🤝','Пн/ср/пт сам выйдет на связь в TG — только если есть что сказать']]},
+ {art:'🏢',h:'Компании, проекты, роли',
+  p:'Порядок в империи: наверху «🏢 Компания», внутри — проекты.',
+  list:[['👑','<b>Команда</b> видит всё, включая личные проекты друг друга'],['🔐','<b>Гость</b> (фрилансер) — только выданный проект: «ведёт» или «смотрит»'],['➕','Команда → «Доступ и роли» — люди добавляются в 1 клик']]},
+ {art:'🎨',h:'Цвета и клавиши',
+  p:'Один цвет = один смысл, везде одинаково:',
   legend:true},
- {art:'🎙',h:'Командная строка и голос',
-  p:'Главная фишка. Управляй голосом 🎙 или текстом в строке сверху — это прототип будущего Telegram-бота. Примеры команд:',
-  list:[['🗣','«добавь задачу Лендинг для Ани с 22 по 28 июня эстимейт 12ч»'],['💡','«идея реферальная петля при онбординге»'],['✅','«статус Верстка в работе»'],['👤','«назначь Тестирование на Я»']]},
 ];
 let obStep=0;
 function openOnboarding(i){obStep=i||0;renderOb();$('#obScrim').classList.add('show');}
