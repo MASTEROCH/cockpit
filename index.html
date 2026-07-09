@@ -1491,7 +1491,7 @@ body.light .vando-panel{background:var(--sheen),rgba(255,255,255,.97)}
     <button class="tab" data-v="team" data-icon="users"><span>Команда</span></button>
     <button class="tab" data-v="intake" data-icon="inbox"><span>Приёмка</span> <span class="cnt" id="cntIntake" style="display:none">0</span></button>
   </div>
-  <button class="iconbtn" id="btnSearch" data-icon="search" title="Поиск и команды (⌘K)"></button>
+  <button class="iconbtn" id="btnUndo" title="Отменить (⌘Z / Ctrl+Z)" style="font-size:16px">↩</button><button class="iconbtn" id="btnRedo" title="Вернуть (⌘⇧Z / Ctrl+Shift+Z)" style="font-size:16px">↪</button><button class="iconbtn" id="btnSearch" data-icon="search" title="Поиск и команды (⌘K)"></button>
   <button class="iconbtn" id="btnNew" data-icon="plus" title="Новая задача"></button>
   <button class="iconbtn inbox" id="btnInbox" data-icon="bell" title="Инбокс — что нового для тебя"><span class="ibadge" id="inboxDot" style="display:none">0</span></button>
   <button class="iconbtn" id="btnTheme" title="Светлая / тёмная тема"></button>
@@ -1766,13 +1766,14 @@ if(!reg){
   S=migrate(loadProj(reg.active))||migrate(loadProj((reg.list[0]||{}).id));
   if(!S){S=migrate(blankProject());reg={active:S.id,list:[{id:S.id,name:S.projectName,emoji:'🚀'}]};saveReg();localStorage.setItem(pkey(S.id),JSON.stringify(S));}
 }
-let undoStack=[],lastSnap=null,undoing=false;
+let undoStack=[],redoStack=[],lastSnap=null,undoing=false;
 function snap(){const u=S.updatedAt;S.updatedAt=0;const s=JSON.stringify(S);S.updatedAt=u;return s;}
 function resetUndo(){undoStack=[];lastSnap=snap();}
 function save(){S.updatedAt=Date.now();const cur=snap();
-  if(!undoing&&lastSnap!==null&&cur!==lastSnap){undoStack.push(lastSnap);if(undoStack.length>40)undoStack.shift();}
+  if(!undoing&&lastSnap!==null&&cur!==lastSnap){undoStack.push(lastSnap);if(undoStack.length>40)undoStack.shift();redoStack=[];}
   lastSnap=cur;localStorage.setItem(pkey(S.id),JSON.stringify(S));const e=reg.list.find(p=>p.id===S.id);if(e)e.name=S.projectName;saveReg();if(cloudOn)cloudPush(S);}
 function undo(){if(!undoStack.length){toast('Нечего отменять','↩️');return;}
+  redoStack.push(snap());if(redoStack.length>40)redoStack.shift();
   const prev=undoStack.pop();undoing=true;
   try{S=JSON.parse(prev);}catch(e){undoing=false;return;}
   migrate(S);lastSnap=snap();
@@ -1780,6 +1781,15 @@ function undo(){if(!undoStack.length){toast('Нечего отменять','↩
   if(cloudOn)cloudPush(S);undoing=false;
   if($('#drawer').classList.contains('show'))closeDrawer();
   render();toast('Действие отменено','↩️');}
+function redo(){if(!redoStack.length){toast('Нечего возвращать','↪️');return;}
+  undoStack.push(snap());if(undoStack.length>40)undoStack.shift();
+  const nxt=redoStack.pop();undoing=true;
+  try{S=JSON.parse(nxt);}catch(e){undoing=false;return;}
+  migrate(S);lastSnap=snap();
+  localStorage.setItem(pkey(S.id),JSON.stringify(S));const e=reg.list.find(p=>p.id===S.id);if(e)e.name=S.projectName;saveReg();
+  if(cloudOn)cloudPush(S);undoing=false;
+  if($('#drawer').classList.contains('show'))closeDrawer();
+  render();toast('Действие возвращено','↪️');}
 function myId(){
   if(myEmail){const m=S.members.find(x=>(x.email||'').toLowerCase()===myEmail);if(m)return m.id;}
   const id=localStorage.getItem('cockpit_me');if(id&&member(id))return id;
@@ -4051,6 +4061,7 @@ document.addEventListener('keydown',e=>{
     if(e.key==='ArrowLeft'){e.preventDefault();presNav(-1);return;}
   }
   if((e.metaKey||e.ctrlKey)&&(e.key==='k'||e.key==='K')){e.preventDefault();$('#palScrim').classList.contains('show')?closePalette():openPalette();return;}
+  if((e.metaKey||e.ctrlKey)&&e.shiftKey&&e.code==='KeyZ'&&!typing){e.preventDefault();redo();return;}
   if((e.metaKey||e.ctrlKey)&&!e.shiftKey&&e.code==='KeyZ'&&!typing){e.preventDefault();undo();return;}
   if(e.key==='Escape'){
     if($('#present').classList.contains('show'))return closePresent();
@@ -4287,6 +4298,7 @@ let bannerDismissed=false;
 $('#bannerHide').onclick=()=>{bannerDismissed=true;$('#banner').classList.add('hide');};
 $('#bannerFresh').onclick=()=>{if(confirm('Удалить демо-проект и начать по-настоящему?'))exitDemo();};
 $('#btnHelp').onclick=()=>openOnboarding(0);
+{const u=$('#btnUndo');if(u)u.onclick=()=>undo();const r=$('#btnRedo');if(r)r.onclick=()=>redo();}
 function applyTheme(){const t=localStorage.getItem('cockpit_theme')||'dark';document.body.classList.toggle('light',t==='light');const b=$('#btnTheme');if(b)b.innerHTML=t==='light'?icon('moon'):icon('sun');}
 $('#btnTheme').onclick=()=>{const cur=localStorage.getItem('cockpit_theme')||'dark';localStorage.setItem('cockpit_theme',cur==='light'?'dark':'light');applyTheme();toast(cur==='light'?'Тёмная тема':'Светлая тема','🎨');};
 
