@@ -1428,6 +1428,14 @@ body.light .vando-panel{background:var(--sheen),rgba(255,255,255,.97)}
   .vando-fab{bottom:calc(132px + env(safe-area-inset-bottom));right:12px}
   .vando-panel{right:8px;left:8px;width:auto;bottom:calc(196px + env(safe-area-inset-bottom));height:min(480px,58vh)}
 }
+/* ---- деньги и энергия ---- */
+.cashbtn{margin-left:auto;border:1px solid var(--line);background:var(--bg2);border-radius:9px;padding:5px 10px;font-size:15px;cursor:pointer;filter:grayscale(1);opacity:.55;transition:.15s}
+.cashbtn.on{filter:none;opacity:1;border-color:rgba(52,211,153,.5);background:rgba(52,211,153,.12);box-shadow:0 0 12px rgba(52,211,153,.25)}
+#dCash+#dStatus{margin-left:8px!important}
+.cashtag{font-size:11px}
+.energyrow{display:inline-flex;gap:5px;margin-left:12px;vertical-align:middle}
+.energyrow button{border:1px solid var(--line);background:var(--bg2);border-radius:9px;padding:3px 9px;font-size:14px;cursor:pointer;opacity:.5;transition:.15s}
+.energyrow button.on{opacity:1;border-color:var(--acc2);box-shadow:0 0 10px rgba(167,139,250,.3)}
 /* ---- карточка задачи: центр-модалка, прогрессивное раскрытие ---- */
 #drawer{top:50%;left:50%;right:auto;bottom:auto;width:min(720px,94vw);height:auto;max-height:88vh;
   border-radius:24px;border:1px solid var(--gbrd);border-left:1px solid var(--gbrd);
@@ -1552,7 +1560,7 @@ body.light .vando-panel{background:var(--sheen),rgba(255,255,255,.97)}
   <div class="dh">
     <span class="dot" id="dDot" style="width:9px;height:9px;border-radius:50%;background:var(--acc)"></span>
     <span style="font-size:12px;color:var(--mut2);font-weight:600" id="dId">TASK</span>
-    <select class="inp" id="dStatus" style="width:auto;margin-left:auto"></select>
+    <button class="cashbtn" id="dCash" title="Двигает деньги">💰</button><select class="inp" id="dStatus" style="width:auto;margin-left:auto"></select>
   </div>
   <div class="db">
     <textarea class="dtitle" id="dTitle" rows="1" placeholder="Название задачи"></textarea>
@@ -1909,8 +1917,8 @@ function filterActive(){return filter.q||filter.assignee||filter.mine||filter.ov
 
 /* ============================ RENDER ROUTER ============================ */
 let view='now';
-function relScore(t){const prW={urgent:4,high:3,med:2,low:1}[t.priority]||2;const dl=daysLeft(t);
-  const due=dl<0?(2000-dl):Math.max(0,400-dl*8);return due+prW*60;}
+function relScore(t){const prW={urgent:4,high:3,med:2,low:1}[t.priority]||2;const dl=daysLeft(t);const cashW=t.cash?2.5:0;
+  const due=dl<0?(2000-dl):Math.max(0,400-dl*8);return cashW+due+prW*60;}
 /* геймификация: баллы за выполненные задачи */
 function taskValue(t){const pm={urgent:1.5,high:1.25,med:1,low:1}[t.priority]||1;return Math.max(3,Math.round((t.estimate||5)*pm));}
 function shiftDate(iso,repeat){if(!iso)return iso;const d=parseD(iso);
@@ -2100,7 +2108,9 @@ function renderNow(){
   const vel=(S.activity||[]).filter(a=>a.ts>weekAgo&&/Готово|✅/.test((a.text||'')+(a.icon||''))).length;
   const mine=T.filter(t=>t.assigneeId===me&&t.status!=='done');
   const pool=mine.length?mine:T.filter(t=>t.status!=='done');
-  const sortedPool=[...pool].sort((a,b)=>relScore(b)-relScore(a));
+  const _energy=localStorage.getItem('cockpit_energy_'+todayISO())||'';
+  const enW=t=>_energy==='lo'?((t.estimate&&t.estimate<=2)?1.6:0):_energy==='hi'?((t.estimate>=4||t.priority==='high'||t.priority==='urgent')?1.2:0):0;
+  const sortedPool=[...pool].sort((a,b)=>(relScore(b)+enW(b))-(relScore(a)+enW(a)));
   const next=sortedPool[0];const upNext=sortedPool.slice(1,4);
   const h=new Date().getHours();const greet=h<6?'Доброй ночи':h<12?'Доброе утро':h<18?'Добрый день':'Добрый вечер';
   const ins=buildInsights(T);const running=!!(focus.tid&&task(focus.tid));
@@ -2110,7 +2120,7 @@ function renderNow(){
     hero=`<div class="now-hero ${ovn?'over':''}">
      <div class="nh-main">
       <div class="nh-label">${mine.length?'🎯 Твой следующий шаг':'🎯 Главное в проекте сейчас'}</div>
-      <div class="nh-title" data-open="${next.id}">${prGlyph(next)}${esc(next.title)}</div>
+      <div class="nh-title" data-open="${next.id}">${next.cash?'💰 ':''}${prGlyph(next)}${esc(next.title)}</div>
       <div class="nh-meta">
         <span class="ichip">${avatar(next.assigneeId)} ${m?esc(m.name):'без исполнителя'}</span>
         <span class="ichip" style="border-color:${stMap[next.status].c}"><span class="pal-dot" style="background:${stMap[next.status].c}"></span> ${stMap[next.status].n}</span>
@@ -2127,7 +2137,9 @@ function renderNow(){
     </div>`;
   }else hero=`<div class="now-hero done"><div class="nh-label">🎉 Чисто</div><div class="nh-title">Активных задач на тебе нет</div>
       <div class="nh-meta"><span class="ichip">создай задачу строкой сверху или ⌘K</span></div></div>`;
-  el.innerHTML=`<div class="now-greet"><h1>${greet}, ${esc(meName())}</h1><span>${esc(S.projectName)} · пульс проекта</span></div>
+  const energy=localStorage.getItem('cockpit_energy_'+todayISO())||'';
+  el.innerHTML=`<div class="now-greet"><h1>${greet}, ${esc(meName())}</h1><span>${esc(S.projectName)} · пульс проекта
+      <span class="energyrow" title="Заряд сегодня: подстрою следующий шаг"><button data-en="hi" class="${energy==='hi'?'on':''}">🔋</button><button data-en="lo" class="${energy==='lo'?'on':''}">🪫</button></span></span></div>
     ${whatsNewStrip()}
     ${hero}
     <div class="pulse-row">
@@ -2154,6 +2166,9 @@ function renderNow(){
   const ap=$('#aiPlanBtn');if(ap)ap.onclick=openAiPlan;
   const cb=$('#claudeBtn');if(cb)cb.onclick=()=>fetchClaudeInsight(cb);
   const nf=$('#nowFold');if(nf)nf.ontoggle=()=>localStorage.setItem('cockpit_now_fold',nf.open?'1':'0');
+  $$('#now .energyrow button').forEach(b=>b.onclick=()=>{const k='cockpit_energy_'+todayISO();const cur=localStorage.getItem(k);
+    if(cur===b.dataset.en)localStorage.removeItem(k);else localStorage.setItem(k,b.dataset.en);
+    toast(b.dataset.en==='lo'&&cur!==b.dataset.en?'🪫 Режим разгона: подкину мелкие добивания':b.dataset.en==='hi'&&cur!==b.dataset.en?'🔋 Полный заряд: сначала глубокая работа':'Заряд сброшен','⚡');renderNow();});
   const ht=$('#healToday');if(ht)ht.onclick=()=>healOverdue('today');
   const hw=$('#healWeek');if(hw)hw.onclick=()=>healOverdue('week');
   const ho=$('#healOpen');if(ho)ho.onclick=()=>{filter={q:'',assignee:'',mine:false,overdue:true};setView('board');};
@@ -3551,7 +3566,7 @@ function renderBoard(){
       const card=document.createElement('div');card.className='card'+(boardSel.has(t.id)?' selected':'');card.draggable=!boardSelOn;card.dataset.id=t.id;
       const ov=isOverdue(t);const blk=isBlocked(t);
       card.innerHTML=`<button class="cdel" title="Удалить задачу">${icon('x',13)}</button>
-        <div class="ct">${t.isMilestone?'🔹 ':''}${t.repeat?'🔁 ':''}${blk?'🔒 ':''}${esc(t.title)}</div>
+        <div class="ct">${t.cash?'💰 ':''}${t.isMilestone?'🔹 ':''}${t.repeat?'🔁 ':''}${blk?'🔒 ':''}${esc(t.title)}</div>
         <div class="cm">
           ${t.status!=='done'&&!t.isMilestone?`<button class="qdone cdone" title="Отметить готовым" style="--c:${stMap[t.status].c}"></button>`:''}
           ${prTag(t)}
@@ -3832,6 +3847,7 @@ function openTask(id){
   $('#dStart').value=t.start;$('#dEnd').value=t.end;
   $('#dMile').checked=t.isMilestone;
   $('#dRepeat').value=t.repeat||'';
+  {const c=$('#dCash');if(c){c.classList.toggle('on',!!t.cash);c.title=t.cash?'Двигает деньги — снять метку':'Пометить: двигает деньги';}}
   $('#dEst').value=t.estimate||'';$('#dSpent').value=t.spent||'';
   $('#dStatus').innerHTML=STATUSES.map(s=>`<option value="${s.k}" ${s.k===t.status?'selected':''}>${s.n}</option>`).join('');
   $('#dSection').innerHTML=S.sections.map(s=>`<option value="${s.id}" ${s.id===t.sectionId?'selected':''}>${esc(s.name)}</option>`).join('');
@@ -3915,6 +3931,9 @@ $('#dCmtIn').addEventListener('input',e=>{
   $$('#dMention .mention-i').forEach(b=>b.onmousedown=ev=>{ev.preventDefault();e.target.value=v.replace(/@([^@\s]*)$/,'@'+b.dataset.n+' ');box.classList.remove('show');e.target.focus();});
 });
 $('#dSubBtn').onclick=addSub;
+$('#dCash').onclick=()=>{if(!curTask)return;curTask.cash=!curTask.cash;
+  $('#dCash').classList.toggle('on',!!curTask.cash);save();
+  toast(curTask.cash?'💰 Двигает деньги — подниму в приоритетах':'Метка денег снята','💰');};
 // быстрые сроки одним тапом
 $$('#dQDates button').forEach(b=>b.onclick=()=>{if(!curTask)return;
   const q=b.dataset.qd;let d;
@@ -4572,7 +4591,7 @@ function vandoContext(){
   const projs=reg.list.filter(p=>!p.archived).map(p=>{const d=p.id===S.id?S:loadProj(p.id);if(!d)return null;
     const ts=(d.tasks||[]).filter(t=>!t.isMilestone);
     return {name:p.name,emoji:p.emoji,parent:(projMeta(p.parentId)||{}).name||null,
-      tasks:ts.map(t=>({title:t.title,status:t.status,assignee:(d.members.find(m=>m.id===t.assigneeId)||{}).name||null,end:t.end,estimate:t.estimate||0,priority:t.priority,overdue:t.status!=='done'&&parseD(t.end)<parseD(todayISO())})),
+      tasks:ts.map(t=>({title:t.title,cash:!!t.cash,status:t.status,assignee:(d.members.find(m=>m.id===t.assigneeId)||{}).name||null,end:t.end,estimate:t.estimate||0,priority:t.priority,overdue:t.status!=='done'&&parseD(t.end)<parseD(todayISO())})),
       members:(d.members||[]).map(m=>({name:m.name,role:m.role,capacity:m.capacity})),
       ideas:(d.ideas||[]).slice(0,20).map(i=>i.title)};}).filter(Boolean);
   return {today:todayISO(),me:meName(),team:teamRows.map(t=>t.name||t.email),projects:projs,usage:usageStats(),
