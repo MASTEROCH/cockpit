@@ -1478,6 +1478,17 @@ body.light .vando-panel{background:var(--sheen),rgba(255,255,255,.97)}
   .cap-b{flex:1;padding-top:30px}
   #capIn{font-size:26px}
 }
+/* Сегмент-контрол внутри проекта (мобайл) */
+.mseg{position:sticky;top:0;z-index:30;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;
+  padding:9px 12px;background:rgba(15,18,27,.95);border-bottom:1px solid var(--gbrd)}
+.mseg::-webkit-scrollbar{display:none}
+body.light .mseg{background:rgba(250,251,254,.97)}
+.mseg button{flex:0 0 auto;border:1px solid var(--line);background:var(--bg2);color:var(--mut);
+  border-radius:12px;padding:8px 14px;font-size:13px;font-weight:700;white-space:nowrap}
+.mseg button.on{background:linear-gradient(135deg,rgba(167,139,250,.25),rgba(84,114,240,.2));border-color:rgba(167,139,250,.4);color:var(--txt)}
+/* пружинный переход экранов */
+.view.active{animation:vfade .18s var(--ease)}
+@keyframes vfade{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
 /* Мобильный «Сегодня» */
 .mgreet{display:flex;align-items:center;gap:10px;margin:6px 2px 14px}
 .mgreet h1{font-size:24px;margin:0;letter-spacing:-.5px}
@@ -1576,6 +1587,7 @@ body.light .vando-panel{background:var(--sheen),rgba(255,255,255,.97)}
 </header>
 
 <main>
+  <div class="mseg" id="mseg" style="display:none"></div>
   <div class="banner hide" id="banner">
     🎬 <span><b>Демо-режим.</b> Это пример данных, чтобы показать как всё работает.</span>
     <div class="acts">
@@ -2083,6 +2095,12 @@ function render(){
    if(!isTeam&&view==='intake'){setView('now');return;}}
   const _T=S.tasks.filter(t=>!t.isMilestone);
   $('#sbStats').textContent=`${_T.length} задач · ${_T.filter(t=>t.status==='done').length} готово · ${S.tasks.filter(isOverdue).length} просроч.`;
+  {const ms=$('#mseg');if(ms){const pv=['board','gantt','week','backlog','team'];
+    const show=pv.includes(view)&&window.innerWidth<=680;
+    ms.style.display=show?'':'none';
+    if(show){ms.innerHTML=[['board','▦ Доска'],['gantt','📊 Гант'],['week','🗓 Неделя'],['backlog','💡 Бэклог'],['team','👥 Команда']]
+      .map(([v,n])=>`<button class="${view===v?'on':''}" data-v="${v}">${n}</button>`).join('');
+      $$('#mseg button').forEach(b=>b.onclick=()=>setView(b.dataset.v));}}}
   updateInboxBadge();
   syncFilterUI();
   if(view==='now')renderNow();
@@ -2098,7 +2116,8 @@ function render(){
   save();
 }
 function setView(v){view=v;if(typeof track==='function')track('view:'+v);
-  $$('.mnav [data-mv]').forEach(b=>b.classList.toggle('on',b.dataset.mv===v));if(v==='gantt')ganttNeedsScroll=true;$$('.tab').forEach(t=>t.classList.toggle('active',t.dataset.v===v));
+  {const mvMap={board:'mprojects',gantt:'mprojects',week:'mprojects',backlog:'mprojects',team:'mprojects',all:'mprojects',dash:'mprojects'};
+   const hv=mvMap[v]||v;$$('.mnav [data-mv]').forEach(b=>b.classList.toggle('on',b.dataset.mv===hv));}if(v==='gantt')ganttNeedsScroll=true;$$('.tab').forEach(t=>t.classList.toggle('active',t.dataset.v===v));
   $$('.view').forEach(el=>el.classList.toggle('active',el.id==='v-'+v));render();}
 
 /* ============================ СЕЙЧАС — MISSION CONTROL ============================ */
@@ -4907,6 +4926,23 @@ async function gateSend(email){
 }
 // TMA: внутри Telegram initData лежит в hash — авто-вход без почты
 function tmaInitData(){try{const m=location.hash.match(/tgWebAppData=([^&]+)/);return m?decodeURIComponent(m[1]):null;}catch(e){return null;}}
+function tmaBoot(){
+  if(!tmaInitData())return;
+  const sc=document.createElement('script');sc.src='https://telegram.org/js/telegram-web-app.js';
+  sc.onload=()=>{try{const T=window.Telegram&&window.Telegram.WebApp;if(!T)return;
+    T.ready();T.expand();
+    try{T.setHeaderColor('#0f121b');T.setBackgroundColor('#0d0f17');}catch(e){}
+    T.BackButton.onClick(()=>{ // системный «назад» закрывает верхний слой
+      const layers=[['#capScrim',closeCap],['#vandoPanel',()=>vandoToggle(false)],['#drawer',()=>closeDrawer&&closeDrawer()]];
+      for(const [sel,fn] of layers){const el=$(sel);if(el&&el.classList.contains('show')){fn();return;}}
+      if(view!=='now')setView('now');});
+    setInterval(()=>{try{
+      const open=['#capScrim','#drawer'].some(id=>{const el=$(id);return el&&el.classList.contains('show');})||($('#vandoPanel')&&$('#vandoPanel').classList.contains('show'))||view!=='now';
+      if(open)T.BackButton.show();else T.BackButton.hide();
+    }catch(e){}},600);
+  }catch(e){}};
+  document.head.appendChild(sc);
+}
 async function tmaLogin(){
   const init=tmaInitData();if(!init||!sb)return false;
   try{
@@ -5193,7 +5229,7 @@ render();
 const _share=(location.hash.match(/[#&]s=([^&]+)/)||[])[1];
 const _shareSnap=_share?decodeShare(_share):null;
 if(_shareSnap){renderSharePage(_shareSnap);}
-else cloudInit();
+else{tmaBoot();cloudInit();}
 // утренний бриф для локального режима (без облака) — один раз в день
 if(!_shareSnap)setTimeout(()=>{
   if(cloudOn)return;
