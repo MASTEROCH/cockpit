@@ -1392,6 +1392,8 @@ body.light::before{background:
 .accadd{display:flex;gap:7px;margin-top:8px;flex-wrap:wrap}
 .accadd .inp{flex:1;min-width:170px}
 .accadd .fsel{width:auto}
+.inp.warn{border-color:var(--warn)!important;box-shadow:0 0 0 3px rgba(251,191,36,.22)!important;animation:warnpulse 1.1s ease 2}
+@keyframes warnpulse{50%{box-shadow:0 0 0 6px rgba(251,191,36,.12)}}
 </style>
 </head>
 <body>
@@ -2734,13 +2736,19 @@ function renderPortfolio(){
          <span class="tn">${esc(x.t.title)}</span><span class="pbadge">${x.emoji||'📄'} ${esc(x.pname)}</span>
          <span class="when ${ov?'over':''}">${ov?'просроч.':dl<=0?'сегодня':'через '+dl+'д'}</span></div>`;}).join('')}</div>`:''}
    <div class="panel-c"><h3>📊 Проекты <span class="c">${projs.length}</span></h3>
-     <div class="plist">${projs.map(({meta,data})=>{
+     <div class="plist">${(()=>{ // порядок деревом: компания → её проекты → одиночки
+       const byId={};projs.forEach(x=>byId[x.meta.id]=x);
+       const tops=projs.filter(x=>{const pr=x.meta.parentId&&projMeta(x.meta.parentId);return !pr||pr.archived;});
+       const ordered=[];tops.forEach(t=>{ordered.push({...t,depth:0});
+         projs.filter(k=>k.meta.parentId===t.meta.id).forEach(k=>ordered.push({...k,depth:1}));});
+       projs.forEach(x=>{if(!ordered.find(o=>o.meta.id===x.meta.id))ordered.push({...x,depth:0});});
+       return ordered;})().map(({meta,data,depth})=>{
        const ts=(data.tasks||[]).filter(t=>!t.isMilestone);const done=ts.filter(t=>t.status==='done').length;
        const ov=(data.tasks||[]).filter(over).length;const p=ts.length?Math.round(done/ts.length*100):0;
        const next=(data.tasks||[]).filter(t=>t.status!=='done'&&!t.isMilestone).sort((a,b)=>parseD(a.end)-parseD(b.end))[0];
        const team=(data.members||[]).filter(m=>(data.tasks||[]).some(t=>t.assigneeId===m.id&&t.status!=='done')).slice(0,5);
-       return `<div class="prow" data-open="${meta.id}">
-         <div class="pemoji">${meta.emoji||'📄'}</div>
+       return `<div class="prow" data-open="${meta.id}"${depth?' style="margin-left:26px"':''}>
+         <div class="pemoji">${depth?'<span style="color:var(--mut2);margin-right:2px">↳</span>':''}${meta.emoji||'📄'}</div>
          <div class="pmain"><div class="pn">${esc(meta.name)}${data.demo?' <span class="pdemo">демо</span>':''}</div>
            <div class="pbar"><span style="width:${p}%;${ov?'background:linear-gradient(90deg,#fb7185,#f87171)':''}"></span></div>
            <div class="pmeta">${ts.length} задач · ${done} готово${ov?` · <b style="color:var(--bad)">${ov} просроч.</b>`:''}${next?` · срок ${next.end.slice(8)}.${next.end.slice(5,7)}`:''}</div></div>
@@ -2823,21 +2831,45 @@ async function decideIntake(id,status,extra){
   intakeRows=intakeRows.filter(r=>r.id!==id);updateIntakeBadge();renderIntake();
   if($('#inboxDrawer').classList.contains('show'))renderInbox();
 }
+// проект ОБЯЗАТЕЛЕН: тихие дефолты = каша. Нет выбора — просим выбрать.
+function intakePid(id){
+  const r=intakeRows.find(x=>x.id===id);
+  const sel=$('#iproj_'+id);
+  const pid=sel?sel.value:((r&&projectMatch(r.target_project))||'');
+  if(!pid){
+    if(sel){toast('Выбери проект — куда именно добавить задачу','📁');
+      sel.classList.add('warn');sel.focus();setTimeout(()=>sel.classList.remove('warn'),2200);}
+    else{closeInbox();setView('intake');toast('Заявка без проекта — выбери его здесь','📁');}
+    return null;}
+  return pid;
+}
 function acceptIntake(id,backlog){
   const r=intakeRows.find(x=>x.id===id);if(!r)return;
-  const sel=$('#iproj_'+id);const pid=(sel&&sel.value)||S.id;
+  const pid=intakePid(id);if(!pid)return;
   const p=parseQuick(r.text);if(!p.title)p.title=r.text;
-  const tid=addTaskToProject(pid,p,backlog?'backlog':(p.start?'todo':'todo'));
+  const tid=addTaskToProject(pid,p,backlog?'backlog':'todo');
   decideIntake(id,backlog?'backlog':'accepted',{target_project:pid,result_task_id:tid});
-  toast(backlog?'В бэклог проекта 📥':'Задача добавлена ✓',backlog?'📥':'✓');
+  const pm=projMeta(pid);toast((backlog?'В бэклог':'Задача')+' → '+((pm&&pm.emoji)||'📄')+' '+((pm&&pm.name)||'проект')+' ✓',backlog?'📥':'✓');
 }
 function editIntake(id){
   const r=intakeRows.find(x=>x.id===id);if(!r)return;
-  const sel=$('#iproj_'+id);const pid=(sel&&sel.value)||S.id;
+  const pid=intakePid(id);if(!pid)return;
   const p=parseQuick(r.text);if(!p.title)p.title=r.text;
   const tid=addTaskToProject(pid,p,'todo');
   decideIntake(id,'accepted',{target_project:pid,result_task_id:tid});
   if(pid!==S.id){switchProject(pid);setTimeout(()=>openTask(tid),120);}else{setView('board');openTask(tid);}
+}
+// селект проектов, сгруппированный по компаниям (вложенности)
+function projectSelectHTML(id,target){
+  const sel=projectMatch(target); // null → «выбери» (никаких тихих дефолтов!)
+  const opt=p=>`<option value="${p.id}" ${sel===p.id?'selected':''}>${esc(p.emoji||'📄')} ${esc(p.name)}</option>`;
+  const active=reg.list.filter(p=>!p.archived);
+  const tops=active.filter(p=>{const pr=p.parentId&&projMeta(p.parentId);return !pr||pr.archived;});
+  let html=`<option value="" ${sel?'':'selected'}>📁 — выбери проект —</option>`;
+  tops.forEach(t=>{const kids=childrenOf(t.id);
+    if(kids.length){html+=`<optgroup label="${esc(t.emoji||'🏢')} ${esc(t.name)}">`+opt(t)+kids.map(opt).join('')+`</optgroup>`;}
+    else html+=opt(t);});
+  return `<select class="inp inoproj" id="iproj_${id}">${html}</select>`;
 }
 /* шпаргалка быстрых команд для Claude (фразы-триггеры) */
 const CHEAT_EXAMPLES=[
@@ -2872,12 +2904,13 @@ function renderIntake(){
     <details class="cheat" ${intakeRows.length?'':'open'}><summary>📋 Шпаргалка: быстрые команды для Claude</summary>${cheatsheetHTML()}</details>`
     +(intakeRows.length?`<div class="inolist">${intakeRows.map(r=>{
       const p=parseQuick(r.text);const m=p.assignee?member(p.assignee):null;
-      const projOpts=reg.list.filter(x=>!x.archived).map(x=>{const sel=(projectMatch(r.target_project)||S.id)===x.id?'selected':'';return `<option value="${x.id}" ${sel}>${esc(x.emoji||'📄')} ${esc(x.name)}</option>`;}).join('');
+      const noTarget=!projectMatch(r.target_project);
       return `<div class="ino" data-id="${r.id}">
-        <div class="inohead"><span class="inoby">🤖 <b>${esc(r.by_name||r.by_email)}</b> через Claude</span>
+        <div class="inohead"><span class="inoby">🤖 <b>${esc(r.by_name||r.by_email)}</b>${/telegram/i.test(r.source||'')?' из Telegram':' через Claude'}</span>
           ${r.source?`<span class="inosrc">${esc(r.source)}</span>`:''}<span class="inotime">${relTime(new Date(r.created_at).getTime())}</span></div>
         <div class="inotitle">${esc(p.title||r.text)}</div>
         <div class="inochips">
+          ${noTarget?'<span class="ichip" style="color:var(--warn);border-color:rgba(251,191,36,.5)">📁 без проекта — выбери ниже</span>':''}
           ${m?`<span class="ichip" style="border-color:${m.color}">${avatarOf(m,18)} ${esc(m.name)}</span>`:'<span class="ichip mut">без исполнителя</span>'}
           ${p.start?`<span class="ichip">📅 ${p.start.slice(8)}.${p.start.slice(5,7)}${p.end&&p.end!==p.start?'–'+p.end.slice(8)+'.'+p.end.slice(5,7):''}</span>`:''}
           ${p.est?`<span class="ichip">⏱ ${p.est}ч</span>`:''}
@@ -2885,7 +2918,7 @@ function renderIntake(){
         </div>
         ${r.note?`<div class="inonote">💬 ${esc(r.note)}</div>`:''}
         <div class="inofoot">
-          <select class="inp inoproj" id="iproj_${r.id}">${projOpts}</select>
+          ${projectSelectHTML(r.id,r.target_project)}
           <div class="inoacts">
             <button class="btn primary" data-acc="${r.id}">✓ Добавить</button>
             <button class="btn" data-edit="${r.id}">✎ Править</button>
@@ -4318,12 +4351,13 @@ $('#wizScrim').onclick=e=>{if(e.target===$('#wizScrim'))closeWiz();};
 
 /* ============================ PROJECTS + TEMPLATES ============================ */
 const TEMPLATES=[
+ {k:'company',emoji:'🏢',n:'Компания',d:'Контейнер: проекты внутри'},
  {k:'empty',emoji:'📄',n:'Пустой',d:'С чистого листа'},
  {k:'mvp',emoji:'🚀',n:'Запуск MVP',d:'Продукт → релиз'},
  {k:'marketing',emoji:'📣',n:'Маркетинг-спринт',d:'Оффер → аналитика'},
  {k:'content',emoji:'✍️',n:'Контент-план',d:'Неделя контента'},
 ];
-const TPL_NAME={mvp:'Запуск MVP',marketing:'Маркетинг-спринт',content:'Контент-план'};
+const TPL_NAME={company:'Моя компания',mvp:'Запуск MVP',marketing:'Маркетинг-спринт',content:'Контент-план'};
 // мой сохранённый профиль (имя/роль/цвет/фото/email) — чтобы в новых проектах я оставался собой
 function myProfileMember(){
   let p=null;try{p=JSON.parse(localStorage.getItem('cockpit_profile'));}catch(e){}
@@ -4339,6 +4373,7 @@ function buildTemplate(tpl){
     sections:[{id:'s1',name:'Задачи'}],tasks:[],ideas:[]});
   const today=parseD(todayISO());const D=i=>fmtD(today+i*dayMs);
   const mk=(title,sec,s,e,st,est,extra={})=>Object.assign({id:uid('t'),title,sectionId:sec,assigneeId:'m1',start:D(s),end:D(e),status:st||'backlog',estimate:est||0,spent:0,priority:'med',description:'',comments:[],isMilestone:false,deps:[],createdTs:0},extra);
+  if(tpl==='company'){const p=base();p.projectName='Моя компания';p.emoji='🏢';p.sections=[{id:'s1',name:'Общее'}];return p;}
   if(tpl==='mvp'){const p=base();p.projectName='Запуск MVP';p.emoji='🚀';p.sections=[{id:'s1',name:'Продукт'},{id:'s2',name:'Запуск'}];
     p.tasks=[mk('Концепт и скоуп','s1',0,2,'todo',8,{priority:'high'}),mk('Прототип / дизайн','s1',2,7,'backlog',24),mk('Разработка MVP','s1',7,21,'backlog',60,{priority:'high'}),mk('Тестирование','s1',21,26,'backlog',16),mk('Лендинг','s2',14,20,'backlog',12),mk('Подготовка к запуску','s2',24,29,'backlog',10),mk('Релиз','s2',30,30,'backlog',0,{isMilestone:true,priority:'urgent'})];return p;}
   if(tpl==='marketing'){const p=base();p.projectName='Маркетинг-спринт';p.emoji='📣';p.sections=[{id:'s1',name:'Подготовка'},{id:'s2',name:'Запуск'}];
@@ -4423,8 +4458,9 @@ function renderNP(){
       <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mut2);margin:16px 0 6px">Название проекта</label>
       <input class="inp" id="npName" placeholder="Например: AppHub — лендинг" style="font-size:16px;padding:12px 14px">
       <div class="tpl-grid">${TEMPLATES.map(t=>`<button class="tpl ${t.k===npTpl?'on':''}" data-tpl="${t.k}"><div class="tic">${t.emoji}</div><div class="tnm">${t.n}</div><div class="tds">${t.d}</div></button>`).join('')}</div>
-      <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mut2);margin:16px 0 6px">Вложить в проект (необязательно)</label>
-      <select class="inp" id="npParent"><option value="">— самостоятельный проект —</option>${reg.list.filter(p=>!p.archived).map(p=>`<option value="${p.id}">${esc(p.emoji||'📄')} ${esc(p.name)}</option>`).join('')}</select>
+      <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mut2);margin:16px 0 6px">Компания / родительский проект</label>
+      <select class="inp" id="npParent"><option value="">— верхний уровень (сам контейнер) —</option>${reg.list.filter(p=>!p.archived).map(p=>`<option value="${p.id}">${esc(p.emoji||'📄')} ${esc(p.name)}</option>`).join('')}</select>
+      <div style="font-size:11.5px;color:var(--mut2);margin-top:6px">💡 Порядок в империи: создай «🏢 Компанию», а проекты клади внутрь — Приёмка и бот будут показывать их деревом.</div>
     </div>
     <div class="ob-foot"><div class="spacer"></div><button class="btn" id="npCancel">Отмена</button><button class="btn primary" id="npCreate">Создать проект</button></div>`;
   const nameEl=$('#npName');nameEl.value=TPL_NAME[npTpl]||'Мой проект';

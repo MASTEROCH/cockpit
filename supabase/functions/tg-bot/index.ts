@@ -37,8 +37,8 @@ const esc = (s: string) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, 
 
 const KEYBOARD = {
   keyboard: [
-    [{ text: "🔥 Что горит" }, { text: "📊 Статус" }],
-    [{ text: "📥 Приёмка" }, { text: "❓ Помощь" }],
+    [{ text: "🔥 Что горит" }, { text: "📊 Статус" }, { text: "🧭 Мои задачи" }],
+    [{ text: "📥 Приёмка" }, { text: "💡 Идея" }, { text: "❓ Помощь" }],
   ],
   resize_keyboard: true, is_persistent: true,
 };
@@ -196,6 +196,24 @@ async function briefFor(link: Link): Promise<string> {
 }
 
 // ---------- Приёмка из Telegram ----------
+// ответ после захвата: мгновенно в Приёмке + один необязательный тап «Куда?»
+async function captureReply(chatId: number, link: Link, intakeId: string, text: string, prefix: string) {
+  const p = parseTask(text);
+  // если проект назван голосом/текстом («проект X: …») — вопросов нет
+  if (p.project) {
+    const proj = await pickProjectStrict(p.project);
+    if (proj) {
+      await sb.from("intake").update({ target_project: proj.id }).eq("id", intakeId);
+      await rememberChoice(chatId, proj.id);
+      await sayInline(chatId, `${prefix} → ${proj.emoji ?? "📄"} <b>${esc(proj.name)}</b>: «${esc(p.title || text)}»${chips(p)}`,
+        [[{ text: "✕ Отозвать", callback_data: "undo:" + intakeId }]]);
+      return;
+    }
+  }
+  const kb = await projectButtons(link.email, intakeId, "route", (link as Record<string, any>).last_project);
+  kb.push([{ text: "🤷 решу позже", callback_data: "route:" + intakeId + ":none" }, { text: "✕ Отозвать", callback_data: "undo:" + intakeId }]);
+  await sayInline(chatId, `${prefix}: «${esc(p.title || text)}»${chips(p)}\n\n📁 <b>Куда?</b> <i>(один тап — и я запомню)</i>`, kb);
+}
 async function createIntake(link: Link, text: string, source: string): Promise<{ id: string | null; err?: string }> {
   const { data, error } = await sb.from("intake").insert({
     by_email: link.email, by_name: link.name ?? link.email.split("@")[0],
@@ -206,25 +224,38 @@ async function createIntake(link: Link, text: string, source: string): Promise<{
   return { id: data.id };
 }
 
-async function pickProject(target: string | null) {
-  const { data } = await sb.from("projects").select("id,name,emoji,data,updated_at").order("updated_at", { ascending: false });
+// СТРОГИЙ выбор проекта: никакого «возьмём последний» — либо нашли, либо null.
+// Тихие догадки = каша; система знает или спрашивает.
+async function pickProjectStrict(target: string | null) {
+  if (!target) return null;
+  const { data } = await sb.from("projects").select("id,name,emoji,data").order("updated_at", { ascending: false });
   const rows = (data ?? []).filter((p: Record<string, any>) => !(p.data?.demo === true) && !(p.data?.archived === true));
-  if (!rows.length) return null;
-  if (target) {
-    const t = target.toLowerCase();
-    const hit = rows.find((p) => p.id === target) || rows.find((p) => (p.name ?? "").toLowerCase() === t) || rows.find((p) => (p.name ?? "").toLowerCase().includes(t));
-    if (hit) return hit;
-  }
-  return rows[0];
+  const t = target.toLowerCase();
+  return rows.find((p) => p.id === target) || rows.find((p) => (p.name ?? "").toLowerCase() === t) || rows.find((p) => (p.name ?? "").toLowerCase().includes(t)) || null;
+}
+// кнопки «Куда?» — проекты пользователя, его последний выбор первым (бот учится)
+async function projectButtons(email: string, intakeId: string, prefix: string, lastProject?: string | null) {
+  const { rows } = await myProjects(email);
+  const ordered = [...rows];
+  if (lastProject) { const i = ordered.findIndex((p) => p.id === lastProject); if (i > 0) { const [x] = ordered.splice(i, 1); ordered.unshift(x); } }
+  const btns = ordered.slice(0, 8).map((p) => ({ text: `${p.emoji ?? "📄"} ${String(p.name ?? "").slice(0, 22)}`, callback_data: `${prefix}:${intakeId}:${p.id}` }));
+  const kb: Array<Array<Record<string, string>>> = [];
+  for (let i = 0; i < btns.length; i += 2) kb.push(btns.slice(i, i + 2));
+  return kb;
+}
+async function rememberChoice(chatId: number, projectId: string) {
+  try { await sb.from("tg_links").update({ last_project: projectId }).eq("chat_id", chatId); } catch { /* колонки может не быть до followup.sql */ }
 }
 
-async function acceptIntake(intakeId: string, by: Link): Promise<string> {
+// принять заявку; projectId обязателен (из target или из явного выбора кнопкой).
+// Возвращает "" если проект не определён — вызывающий покажет кнопки выбора.
+async function acceptIntake(intakeId: string, by: Link, projectId?: string): Promise<string> {
   const { data: row } = await sb.from("intake").select("*").eq("id", intakeId).maybeSingle();
   if (!row) return "⚠ Заявка не найдена";
   if (row.status !== "pending") return "Уже решено (" + row.status + ")";
   const p = parseTask(row.text); if (!p.title) p.title = row.text.slice(0, 140);
-  const proj = await pickProject(row.target_project || p.project);
-  if (!proj) return "⚠ Нет активных проектов — создай на сайте";
+  const proj = await pickProjectStrict(projectId || row.target_project || p.project);
+  if (!proj) return ""; // не угадываем — спросим кнопками
   const d = proj.data ?? {};
   d.tasks = d.tasks ?? []; d.sections = d.sections?.length ? d.sections : [{ id: "s1", name: "Задачи" }]; d.members = d.members ?? [];
   let assigneeId: string | null = null;
@@ -258,6 +289,11 @@ async function rejectIntake(intakeId: string, by: Link, own: boolean): Promise<s
   return own ? "🗑 Отозвано: «" + esc(String(row.text).slice(0, 80)) + "»" : "✕ Отклонено: «" + esc(String(row.text).slice(0, 80)) + "»";
 }
 
+async function targetLabel(target: string | null): Promise<string> {
+  if (!target) return "\n📁 <i>без проекта — выберем при добавлении</i>";
+  const proj = await pickProjectStrict(target);
+  return proj ? `\n📁 ${proj.emoji ?? "📄"} ${esc(proj.name)}` : "\n📁 <i>без проекта</i>";
+}
 async function listIntake(chatId: number, link: Link) {
   if (!(await isTeam(link.email))) { await say(chatId, "Приёмку решает команда. Твои заявки появятся у них с кнопками ✓/✕."); return; }
   const { data } = await sb.from("intake").select("*").eq("status", "pending").order("created_at", { ascending: false }).limit(6);
@@ -265,9 +301,57 @@ async function listIntake(chatId: number, link: Link) {
   await say(chatId, `📥 <b>На приёмке · ${data.length}</b>`);
   for (const r of data) {
     const p = parseTask(r.text);
-    await sayInline(chatId, `<b>${esc(r.by_name ?? r.by_email)}</b>${r.source ? " · " + esc(r.source) : ""}\n«${esc(p.title || r.text)}»${chips(p)}`,
+    await sayInline(chatId, `<b>${esc(r.by_name ?? r.by_email)}</b>${r.source ? " · " + esc(r.source) : ""}\n«${esc(p.title || r.text)}»${chips(p)}${await targetLabel(r.target_project)}`,
       [[{ text: "✓ Добавить", callback_data: "acc:" + r.id }, { text: "✕ Отклонить", callback_data: "rej:" + r.id }]]);
   }
+}
+// ---------- карманные выжимки: мои / человека / проекта ----------
+async function myTasksList(link: Link): Promise<string> {
+  const { rows } = await myProjects(link.email);
+  const today = todayISO(0);
+  const items: Array<{ s: string; end: string }> = [];
+  for (const p of rows) {
+    const me = ((p.data?.members ?? []) as Record<string, any>[]).find((m) => (m.email ?? "").toLowerCase() === link.email.toLowerCase());
+    if (!me) continue;
+    for (const t of taskList(p)) {
+      if (t.status === "done" || t.assigneeId !== me.id) continue;
+      const over = (t.end ?? "9999") < today;
+      items.push({ end: t.end ?? "9999", s: `${over ? "🔴" : t.end === today ? "🟡" : "•"} ${esc(t.title)} <i>(${p.emoji ?? "📄"} ${esc(p.name)}${t.end ? " · до " + t.end.slice(8) + "." + t.end.slice(5, 7) : ""})</i>` });
+    }
+  }
+  if (!items.length) return "🧘 На тебе нет открытых задач.";
+  items.sort((a, b) => (a.end < b.end ? -1 : 1));
+  return `🧭 <b>Твои задачи · ${items.length}</b>\n${items.slice(0, 12).map((x) => x.s).join("\n")}${items.length > 12 ? "\n…и ещё " + (items.length - 12) : ""}`;
+}
+async function memberTasksList(link: Link, whoName: string): Promise<string> {
+  const { rows } = await myProjects(link.email);
+  const today = todayISO(0); const wn = whoName.toLowerCase();
+  const items: Array<{ s: string; end: string }> = []; let realName = whoName;
+  for (const p of rows) {
+    const m = ((p.data?.members ?? []) as Record<string, any>[]).find((m) => (m.name ?? "").toLowerCase().startsWith(wn));
+    if (!m) continue; realName = m.name;
+    for (const t of taskList(p)) {
+      if (t.status === "done" || t.assigneeId !== m.id) continue;
+      const over = (t.end ?? "9999") < today;
+      items.push({ end: t.end ?? "9999", s: `${over ? "🔴" : t.end === today ? "🟡" : "•"} ${esc(t.title)} <i>(${p.emoji ?? "📄"} ${esc(p.name)})</i>` });
+    }
+  }
+  if (!items.length) return `У <b>${esc(realName)}</b> нет открытых задач (или не нашёл такого).`;
+  items.sort((a, b) => (a.end < b.end ? -1 : 1));
+  return `👤 <b>${esc(realName)} · ${items.length} в работе</b>\n${items.slice(0, 12).map((x) => x.s).join("\n")}`;
+}
+async function projectDigest(link: Link, name: string): Promise<string> {
+  const { rows } = await myProjects(link.email);
+  const t = name.toLowerCase();
+  const p = rows.find((x) => (x.name ?? "").toLowerCase() === t) || rows.find((x) => (x.name ?? "").toLowerCase().includes(t));
+  if (!p) return `Проект «${esc(name)}» не нашёл. Мои проекты: ${rows.map((x) => esc(x.name)).join(", ")}`;
+  const today = todayISO(0);
+  const tasks = taskList(p); const open = tasks.filter((x) => x.status !== "done");
+  const over = open.filter((x) => (x.end ?? "9999") < today);
+  const members = (p.data?.members ?? []) as Record<string, any>[];
+  const nameOf = (id: string) => members.find((m) => m.id === id)?.name ?? "—";
+  const next = open.sort((a, b) => ((a.end ?? "9999") < (b.end ?? "9999") ? -1 : 1)).slice(0, 6);
+  return `${p.emoji ?? "📄"} <b>${esc(p.name)}</b> · ${tasks.length - open.length}/${tasks.length} готово${over.length ? ` · ⚠ ${over.length} просрочено` : ""}\n\n${next.map((x) => `${(x.end ?? "9999") < today ? "🔴" : "•"} ${esc(x.title)} <i>(${esc(nameOf(x.assigneeId))}${x.end ? " · " + x.end.slice(8) + "." + x.end.slice(5, 7) : ""})</i>`).join("\n") || "Открытых задач нет ✨"}`;
 }
 
 // ---------- уведомления (вызываются триггерами БД через notify.sql) ----------
@@ -279,9 +363,11 @@ async function teamLinks(exceptEmail?: string): Promise<Link[]> {
   return ((links ?? []) as Link[]).filter((l) => emails.includes(l.email.toLowerCase()));
 }
 async function notifyNewIntake(rec: Record<string, any>) {
+  if (rec.source === "telegram-idea") return; // идеи маршрутизирует сам автор — не шумим
   const p = parseTask(rec.text ?? "");
+  const tl = await targetLabel(rec.target_project);
   for (const l of await teamLinks(rec.by_email)) {
-    await sayInline(l.chat_id, `📥 <b>Новая заявка</b> от <b>${esc(rec.by_name ?? rec.by_email)}</b>${rec.source ? " · " + esc(rec.source) : ""}\n«${esc(p.title || rec.text)}»${chips(p)}`,
+    await sayInline(l.chat_id, `📥 <b>Новая заявка</b> от <b>${esc(rec.by_name ?? rec.by_email)}</b>${rec.source ? " · " + esc(rec.source) : ""}\n«${esc(p.title || rec.text)}»${chips(p)}${tl}`,
       [[{ text: "✓ Добавить", callback_data: "acc:" + rec.id }, { text: "✕ Отклонить", callback_data: "rej:" + rec.id }]]);
   }
 }
@@ -296,7 +382,105 @@ async function notifyDecision(rec: Record<string, any>) {
 async function morningBrief() {
   const { data: links } = await sb.from("tg_links").select("*").eq("revoked", false);
   for (const l of (links ?? []) as Link[]) {
-    try { await say(l.chat_id, await briefFor(l)); } catch { /* один упал — остальные получат */ }
+    try { await sendBrief(l); } catch { /* один упал — остальные получат */ }
+  }
+}
+// бриф + отдельные «ждёшь от X» с кнопкой пинга (бот — плохой полицейский, не ты)
+async function sendBrief(link: Link) {
+  await say(link.chat_id, await briefFor(link));
+  const waits = await myWaits(link.email);
+  for (const w of waits.slice(0, 3)) {
+    await sayInline(link.chat_id, `🤝 Ждёшь от <b>${esc(w.whoName)}</b>: «${esc(w.title)}» <i>(${w.pemoji} ${esc(w.pname)})</i>`,
+      [[{ text: "🔔 Пингануть " + w.whoName.split(" ")[0], callback_data: `ping:${w.pid}:${w.tid}` }]]);
+  }
+}
+// задачи, где я исполнитель, но жду шага от другого (waitingOn)
+async function myWaits(email: string) {
+  const { rows } = await myProjects(email);
+  const out: Array<{ pid: string; pname: string; pemoji: string; tid: string; title: string; whoId: string; whoName: string }> = [];
+  for (const p of rows) {
+    const members = (p.data?.members ?? []) as Record<string, any>[];
+    const me = members.find((m) => (m.email ?? "").toLowerCase() === email.toLowerCase());
+    if (!me) continue;
+    for (const t of taskList(p)) {
+      if (t.status === "done" || t.assigneeId !== me.id || !t.waitingOn || t.waitingOn === me.id) continue;
+      const who = members.find((m) => m.id === t.waitingOn);
+      out.push({ pid: p.id, pname: p.name, pemoji: p.emoji ?? "📄", tid: t.id, title: t.title, whoId: t.waitingOn, whoName: who?.name ?? "партнёра" });
+    }
+  }
+  return out;
+}
+async function pingWaiting(asker: Link, projectId: string, taskId: string): Promise<string> {
+  const { data: p } = await sb.from("projects").select("id,name,emoji,data").eq("id", projectId).maybeSingle();
+  if (!p) return "⚠ Проект не найден";
+  const t = ((p.data?.tasks ?? []) as Record<string, any>[]).find((x) => x.id === taskId);
+  if (!t || t.status === "done") return "Задача уже закрыта ✨";
+  const who = ((p.data?.members ?? []) as Record<string, any>[]).find((m) => m.id === t.waitingOn);
+  if (!who?.email) return "⚠ У того, кого ждём, не указан email";
+  const { data: wl } = await sb.from("tg_links").select("chat_id").ilike("email", who.email).eq("revoked", false).maybeSingle();
+  if (!wl) return `⚠ ${esc(who.name ?? "Он")} ещё не подключил Telegram — пингани лично`;
+  await say(wl.chat_id, `🔔 <b>${esc(asker.name ?? asker.email)}</b> ждёт от тебя шага:\n«${esc(t.title)}» <i>(${p.emoji ?? "📄"} ${esc(p.name)})</i>\n\nСделай ход — и напиши в задаче или здесь 🙌`);
+  return `🔔 Пингнул ${esc(who.name ?? "")} — теперь мяч на его стороне ✅`;
+}
+// вечерний разбор: закрыто сегодня + незакрытое с переносом одним тапом
+function nextMondayISO(): string {
+  const now = new Date(Date.now() + TZ * 3600_000);
+  const dow = (now.getUTCDay() + 6) % 7; // пн=0
+  return todayISO(7 - dow);
+}
+async function shiftMyTasks(email: string, targetISO: string): Promise<number> {
+  const { rows } = await myProjects(email);
+  const today = todayISO(0);
+  let n = 0;
+  for (const p of rows) {
+    const members = (p.data?.members ?? []) as Record<string, any>[];
+    const me = members.find((m) => (m.email ?? "").toLowerCase() === email.toLowerCase());
+    if (!me) continue;
+    let touched = false;
+    for (const t of taskList(p)) {
+      if (t.status === "done" || t.assigneeId !== me.id) continue;
+      if ((t.end ?? "9999") > today) continue; // переносим только сегодняшнее/просроченное
+      t.end = targetISO;
+      if ((t.start ?? targetISO) > targetISO) t.start = targetISO;
+      touched = true; n++;
+    }
+    if (touched) {
+      p.data.updatedAt = Date.now();
+      p.data.activity = p.data.activity ?? [];
+      p.data.activity.unshift({ ts: Date.now(), who: email.split("@")[0] + " · TG", icon: "🌙", text: "вечерний разбор: перенос незакрытого" });
+      await sb.from("projects").update({ data: p.data, updated_at: new Date().toISOString(), updated_by: null }).eq("id", p.id);
+    }
+  }
+  return n;
+}
+async function eveningReview() {
+  const { data: links } = await sb.from("tg_links").select("*").eq("revoked", false);
+  const today = todayISO(0);
+  for (const l of (links ?? []) as Link[]) {
+    try {
+      const { rows } = await myProjects(l.email);
+      let doneToday = 0; const open: string[] = [];
+      const dayStart = new Date(today + "T00:00:00Z").getTime() - TZ * 3600_000;
+      for (const p of rows) {
+        const members = (p.data?.members ?? []) as Record<string, any>[];
+        const me = members.find((m) => (m.email ?? "").toLowerCase() === l.email.toLowerCase());
+        if (!me) continue;
+        for (const t of taskList(p)) {
+          if (t.assigneeId !== me.id) continue;
+          if (t.status === "done" && t.doneTs && t.doneTs >= dayStart) doneToday++;
+          if (t.status !== "done" && (t.end ?? "9999") <= today) open.push(`${t.title} <i>(${p.emoji ?? "📄"} ${esc(p.name)})</i>`);
+        }
+      }
+      if (!doneToday && !open.length) continue; // тишина лучше пустого отчёта
+      let text = `🌇 <b>Вечерний разбор</b>\n`;
+      text += doneToday ? `\n✅ Закрыто сегодня: <b>${doneToday}</b> — красавчик!\n` : "";
+      if (open.length) text += `\n🌙 Не закрылось · ${open.length}:\n${open.slice(0, 6).map((t) => "• " + t).join("\n")}\n\nПеренести одним тапом — и план снова честный:`;
+      if (open.length) {
+        await sayInline(l.chat_id, text, [[{ text: "🌙 На завтра", callback_data: "shiftall:tomorrow:x" }, { text: "📆 На понедельник", callback_data: "shiftall:monday:x" }]]);
+      } else {
+        await say(l.chat_id, text + "\n🏁 Все дедлайны дня закрыты. Чистый вечер!");
+      }
+    } catch { /* следующий */ }
   }
 }
 
@@ -342,23 +526,21 @@ async function transcribe(fileId: string): Promise<{ text?: string; err?: string
 // ---------- справка ----------
 const HELP = `<b>WANDO-бот — пульт в кармане</b>
 
-🎙 <b>Голос или текст</b> — задача улетает в Приёмку:
+🎙 <b>Голос или текст</b> — задача мгновенно в Приёмке, а куда именно — один тап по кнопке (я запоминаю твой выбор):
 • <i>созвон с Димой завтра 2ч срочно</i>
-• <i>проект AppHub: настроить аналитику важно</i>
-Понимаю: @имя · сегодня/завтра/послезавтра · «с 22 по 28 июля» · «до 15 июля» · «на 3 дня» · 2ч · !срочно/важно · «проект Х: …»
+• <i>проект AppHub: настроить аналитику важно</i> — с названием проекта вопросов не будет
+💡 <i>идея реферальная программа</i> — в бэклог идей проекта
 
-<b>Кнопки снизу</b>
-🔥 Что горит — просрочки и срочное
-📊 Статус — сводка всех проектов
-📥 Приёмка — заявки с кнопками ✓/✕ (команда)
-❓ Помощь — это сообщение
+<b>Быстрые выжимки</b>
+🧭 Мои задачи · <i>задачи Димы</i> · <i>проект Датум</i> — состояние в один взгляд
+🔥 Что горит · 📊 Статус · 📥 Приёмка (✓/✕ прямо здесь)
 
 <b>Автомагия</b>
-• Новая заявка → команде пуш с кнопками ✓/✕
-• Решение по твоей заявке → тебе пуш
-• ☀️ 9:00 — утренний бриф: твой день + пульс проектов
+• ☀️ 9:00 — утренний бриф: твой день + «ждёшь от…» с кнопкой 🔔 Пингануть
+• 🌇 18:00 — вечерний разбор: что закрыто, незакрытое — на завтра одним тапом
+• Новая заявка → команде пуш с ✓/✕; решение → автору пуш
 
-/key cpk_… — привязка (ключ: ${SITE} → ⋯ → «Подключить Claude»)`;
+Понимаю: @имя · сегодня/завтра/послезавтра · «с 22 по 28 июля» · «до 15 июля» · «на 3 дня» · 2ч · !срочно/важно`;
 
 // ---------- main ----------
 Deno.serve(async (req) => {
@@ -371,6 +553,7 @@ Deno.serve(async (req) => {
       if (ev.kind === "intake_insert") await notifyNewIntake(ev.record ?? {});
       else if (ev.kind === "intake_decided") await notifyDecision(ev.record ?? {});
       else if (ev.kind === "morning_brief") await morningBrief();
+      else if (ev.kind === "evening_review") await eveningReview();
     } catch { /* не роняем */ }
     return new Response("ok");
   }
@@ -381,24 +564,82 @@ Deno.serve(async (req) => {
   let update: Record<string, any>;
   try { update = await req.json(); } catch { return new Response("ok"); }
 
-  // --- кнопки ✓/✕/отозвать ---
+  // --- кнопки: ✓/✕, «Куда?», отозвать, перенос, пинг ---
   const cb = update.callback_query;
   if (cb?.data && cb.message?.chat?.id) {
     const chatId = cb.message.chat.id as number;
-    const [act, id] = String(cb.data).split(":");
+    const parts = String(cb.data).split(":");
+    const act = parts[0], id = parts[1], arg = parts[2];
     const link = await getLink(chatId);
-    let result = "⚠ Сначала привяжи ключ: /key cpk_…";
+    let result = "⚠ Сначала привяжи Telegram на " + SITE;
+    let handled = false;
     if (link) {
-      if (act === "acc" || act === "rej") {
-        result = (await isTeam(link.email))
-          ? (act === "acc" ? await acceptIntake(id, link) : await rejectIntake(id, link, false))
-          : "Решает команда 🙂";
+      if (act === "acc" || act === "accto") {
+        if (!(await isTeam(link.email))) result = "Решает команда 🙂";
+        else {
+          result = await acceptIntake(id, link, act === "accto" ? arg : undefined);
+          if (result === "") { // проект не определён — спрашиваем, не угадываем
+            const kb = await projectButtons(link.email, id, "accto", (link as Record<string, any>).last_project);
+            kb.push([{ text: "✕ Отклонить", callback_data: "rej:" + id }]);
+            await TG("answerCallbackQuery", { callback_query_id: cb.id, text: "Выбери проект 📁" });
+            await TG("editMessageText", { chat_id: chatId, message_id: cb.message.message_id, text: cb.message.text + "\n\n📁 <b>Куда добавить?</b>", parse_mode: "HTML", reply_markup: { inline_keyboard: kb } });
+            handled = true;
+          } else if (act === "accto") { await rememberChoice(chatId, arg); }
+        }
+      } else if (act === "rej") {
+        result = (await isTeam(link.email)) ? await rejectIntake(id, link, false) : "Решает команда 🙂";
       } else if (act === "undo") {
         result = await rejectIntake(id, link, true);
+      } else if (act === "route") { // маршрутизация своей заявки: intakeId + projectId|none
+        const { data: row } = await sb.from("intake").select("id,status,text").eq("id", id).maybeSingle();
+        if (!row || row.status !== "pending") result = "Уже решено";
+        else if (arg === "none") {
+          result = `📥 В Приёмке <i>(проект решат при разборе)</i>: «${esc(parseTask(row.text).title || row.text)}»`;
+          await TG("answerCallbackQuery", { callback_query_id: cb.id, text: "Ок, решат в Приёмке" });
+          await TG("editMessageText", { chat_id: chatId, message_id: cb.message.message_id, text: result, parse_mode: "HTML", reply_markup: { inline_keyboard: [[{ text: "✕ Отозвать", callback_data: "undo:" + id }]] } });
+          handled = true;
+        } else {
+          const proj = await pickProjectStrict(arg);
+          if (!proj) result = "⚠ Проект не найден";
+          else {
+            await sb.from("intake").update({ target_project: proj.id }).eq("id", id);
+            await rememberChoice(chatId, proj.id);
+            result = `📥 В Приёмке → ${proj.emoji ?? "📄"} <b>${esc(proj.name)}</b>: «${esc(parseTask(row.text).title || row.text)}»`;
+            await TG("answerCallbackQuery", { callback_query_id: cb.id, text: "→ " + proj.name });
+            await TG("editMessageText", { chat_id: chatId, message_id: cb.message.message_id, text: result, parse_mode: "HTML", reply_markup: { inline_keyboard: [[{ text: "✕ Отозвать", callback_data: "undo:" + id }]] } });
+            handled = true;
+          }
+        }
+      } else if (act === "ideato") { // идея → в бэклог идей выбранного проекта
+        const { data: row } = await sb.from("intake").select("*").eq("id", id).maybeSingle();
+        if (!row || row.status !== "pending") result = "Уже решено";
+        else {
+          const proj = await pickProjectStrict(arg);
+          if (!proj) result = "⚠ Проект не найден";
+          else {
+            const d = proj.data ?? {}; d.ideas = d.ideas ?? [];
+            d.ideas.push({ id: "i" + Math.random().toString(36).slice(2, 9), title: String(row.text).slice(0, 200), note: "", votes: 1, createdTs: Date.now() });
+            d.updatedAt = Date.now();
+            d.activity = d.activity ?? [];
+            d.activity.unshift({ ts: Date.now(), who: (link.name ?? link.email) + " · TG", icon: "💡", text: "идея: «" + String(row.text).slice(0, 80) + "»" });
+            await sb.from("projects").update({ data: d, updated_at: new Date().toISOString(), updated_by: null }).eq("id", proj.id);
+            await sb.from("intake").update({ status: "backlog", decided_by: link.email, decided_at: new Date().toISOString(), target_project: proj.id }).eq("id", id);
+            await rememberChoice(chatId, proj.id);
+            result = `💡 В бэклоге идей ${proj.emoji ?? "📄"} <b>${esc(proj.name)}</b>: «${esc(String(row.text).slice(0, 100))}»`;
+          }
+        }
+      } else if (act === "shiftall") { // вечерний разбор: перенос незакрытого
+        const target = id === "monday" ? nextMondayISO() : todayISO(1);
+        const n = await shiftMyTasks(link.email, target);
+        result = n ? `🌙 Перенёс ${n} задач(и) на ${target.slice(8)}.${target.slice(5, 7)} — план снова честный ✅` : "Нечего переносить — всё чисто ✨";
+      } else if (act === "ping") { // вежливый пинг того, от кого ждёшь
+        result = await pingWaiting(link, id, arg);
       }
     }
-    await TG("answerCallbackQuery", { callback_query_id: cb.id, text: result.replace(/<[^>]+>/g, "").slice(0, 190) });
-    await TG("editMessageText", { chat_id: chatId, message_id: cb.message.message_id, text: result, parse_mode: "HTML" });
+    if (!handled) {
+      await TG("answerCallbackQuery", { callback_query_id: cb.id, text: result.replace(/<[^>]+>/g, "").slice(0, 190) });
+      await TG("editMessageText", { chat_id: chatId, message_id: cb.message.message_id, text: result, parse_mode: "HTML" });
+    }
     return new Response("ok");
   }
 
@@ -418,9 +659,7 @@ Deno.serve(async (req) => {
       if (!tr.text) { await say(chatId, "⚠ " + esc(tr.err ?? "не распознал")); return new Response("ok"); }
       const res = await createIntake(link, tr.text, "telegram-voice");
       if (!res.id) { await say(chatId, "⚠ " + esc(res.err ?? "не отправилось")); return new Response("ok"); }
-      const p = parseTask(tr.text);
-      await sayInline(chatId, `🎙 Распознал: «${esc(p.title || tr.text)}»${chips(p)}\n📥 Улетело в Приёмку`,
-        [[{ text: "✕ Отозвать", callback_data: "undo:" + res.id }]]);
+      await captureReply(chatId, link, res.id, tr.text, "🎙 Распознал");
       return new Response("ok");
     }
 
@@ -447,19 +686,32 @@ Deno.serve(async (req) => {
     } else {
       const link = await getLink(chatId);
       if (!link) { await say(chatId, "Сначала привяжи ключ: <code>/key cpk_…</code>\nКлюч: " + SITE + " → ⋯ → «Подключить Claude». /help — подробнее"); return new Response("ok"); }
-      if (/^\/brief|^☀️/.test(text)) { await say(chatId, await briefFor(link)); }
+      if (/^\/brief|^☀️/.test(text)) { await sendBrief(link); }
       else if (/^🔥|^\/fire|что горит|^аврал/i.test(text)) { await say(chatId, await statusSummary(link.email, true)); }
       else if (/^📊|^\/status|^стат/i.test(text)) { await say(chatId, await statusSummary(link.email, false)); }
       else if (/^📥|^\/intake|^приёмка|^приемка/i.test(text)) { await listIntake(chatId, link); }
+      else if (/^💡( Идея)?$/i.test(text)) { await say(chatId, "💡 Пиши: <code>идея твоя мысль…</code> — закину в бэклог идей нужного проекта (спрошу куда одним тапом)."); }
+      else if (/^(💡\s*)?идея[:\s]/i.test(text)) {
+        const ideaText = text.replace(/^(💡\s*)?идея[:\s]+/i, "").trim();
+        if (!ideaText) { await say(chatId, "Пустая идея 🙂 Пиши: <code>идея …</code>"); }
+        else {
+          const res = await createIntake(link, ideaText, "telegram-idea");
+          if (!res.id) await say(chatId, "⚠ " + esc(res.err ?? "не отправилось"));
+          else {
+            const kb = await projectButtons(link.email, res.id, "ideato", (link as Record<string, any>).last_project);
+            kb.push([{ text: "✕ Отозвать", callback_data: "undo:" + res.id }]);
+            await sayInline(chatId, `💡 Идея: «${esc(ideaText)}»\n\n📁 <b>В бэклог какого проекта?</b>`, kb);
+          }
+        }
+      }
+      else if (/^\/my|^🧭|^мои задачи|^мои дела|^что у меня/i.test(text)) { await say(chatId, await myTasksList(link)); }
+      else if (/^задачи\s+[А-Яа-яЁёA-Za-z]/i.test(text)) { await say(chatId, await memberTasksList(link, text.replace(/^задачи\s+/i, "").trim())); }
+      else if (/^проект\s+[^:]+$/i.test(text)) { await say(chatId, await projectDigest(link, text.replace(/^проект\s+/i, "").trim())); }
       else if (/^\//.test(text)) { await say(chatId, "Не знаю такую команду. /help"); }
       else {
         const res = await createIntake(link, text, "telegram");
         if (!res.id) { await say(chatId, "⚠ " + esc(res.err ?? "не отправилось")); }
-        else {
-          const p = parseTask(text);
-          await sayInline(chatId, `📥 В Приёмке: «${esc(p.title || text)}»${chips(p)}`,
-            [[{ text: "✕ Отозвать", callback_data: "undo:" + res.id }]]);
-        }
+        else await captureReply(chatId, link, res.id, text, "📥 В Приёмке");
       }
     }
   } catch (e) {
