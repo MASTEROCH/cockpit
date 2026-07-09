@@ -16,12 +16,27 @@ create table if not exists public.team (
   created_at timestamptz not null default now()
 );
 alter table public.team enable row level security;
+
+-- ⚠️ ВАЖНО: политики НЕ должны подзапрашивать таблицы с RLS напрямую —
+-- policy на team, ссылающаяся на team, даёт infinite recursion (42P17).
+-- Поэтому проверки — через SECURITY DEFINER функции (обходят RLS):
+create or replace function public.is_team(p_email text)
+returns boolean language sql stable security definer set search_path = public as
+$$ select exists(select 1 from public.team where lower(email) = lower(coalesce(p_email,''))) $$;
+grant execute on function public.is_team(text) to anon, authenticated;
+
+create or replace function public.guest_role(p_email text, p_project text)
+returns text language sql stable security definer set search_path = public as
+$$ select role from public.project_access
+   where lower(email) = lower(coalesce(p_email,'')) and project_id = p_project limit 1 $$;
+grant execute on function public.guest_role(text,text) to anon, authenticated;
+
 -- команду видят только члены команды; менять состав — тоже они
 drop policy if exists team_rw on public.team;
 create policy team_rw on public.team
   for all
-  using (exists (select 1 from public.team t where lower(t.email) = lower((auth.jwt() ->> 'email'))))
-  with check (exists (select 1 from public.team t where lower(t.email) = lower((auth.jwt() ->> 'email'))));
+  using (public.is_team(auth.jwt() ->> 'email'))
+  with check (public.is_team(auth.jwt() ->> 'email'));
 
 insert into public.team(email, name) values
   ('romi4rv23@gmail.com',      'Роман'),
@@ -48,8 +63,8 @@ alter table public.project_access enable row level security;
 drop policy if exists pa_team_all on public.project_access;
 create policy pa_team_all on public.project_access
   for all
-  using (exists (select 1 from public.team t where lower(t.email) = lower((auth.jwt() ->> 'email'))))
-  with check (exists (select 1 from public.team t where lower(t.email) = lower((auth.jwt() ->> 'email'))));
+  using (public.is_team(auth.jwt() ->> 'email'))
+  with check (public.is_team(auth.jwt() ->> 'email'));
 drop policy if exists pa_guest_see_own on public.project_access;
 create policy pa_guest_see_own on public.project_access
   for select
@@ -68,25 +83,17 @@ end $$;
 
 create policy projects_team_all on public.projects
   for all
-  using (exists (select 1 from public.team t where lower(t.email) = lower((auth.jwt() ->> 'email'))))
-  with check (exists (select 1 from public.team t where lower(t.email) = lower((auth.jwt() ->> 'email'))));
+  using (public.is_team(auth.jwt() ->> 'email'))
+  with check (public.is_team(auth.jwt() ->> 'email'));
 
 create policy projects_guest_select on public.projects
   for select
-  using (exists (select 1 from public.project_access pa
-    where pa.project_id = projects.id
-      and lower(pa.email) = lower((auth.jwt() ->> 'email'))));
+  using (public.guest_role(auth.jwt() ->> 'email', projects.id) is not null);
 
 create policy projects_guest_update on public.projects
   for update
-  using (exists (select 1 from public.project_access pa
-    where pa.project_id = projects.id
-      and lower(pa.email) = lower((auth.jwt() ->> 'email'))
-      and pa.role = 'member'))
-  with check (exists (select 1 from public.project_access pa
-    where pa.project_id = projects.id
-      and lower(pa.email) = lower((auth.jwt() ->> 'email'))
-      and pa.role = 'member'));
+  using (public.guest_role(auth.jwt() ->> 'email', projects.id) = 'member')
+  with check (public.guest_role(auth.jwt() ->> 'email', projects.id) = 'member');
 -- (insert/delete проектов гостям намеренно не даём)
 
 -- ----------------------------------------------------------------------------
@@ -94,13 +101,13 @@ create policy projects_guest_update on public.projects
 -- ----------------------------------------------------------------------------
 drop policy if exists intake_select on public.intake;
 create policy intake_select on public.intake for select
-  using (exists (select 1 from public.team t where lower(t.email) = lower((auth.jwt() ->> 'email'))));
+  using (public.is_team(auth.jwt() ->> 'email'));
 drop policy if exists intake_update on public.intake;
 create policy intake_update on public.intake for update
-  using (exists (select 1 from public.team t where lower(t.email) = lower((auth.jwt() ->> 'email'))));
+  using (public.is_team(auth.jwt() ->> 'email'));
 drop policy if exists intake_delete on public.intake;
 create policy intake_delete on public.intake for delete
-  using (exists (select 1 from public.team t where lower(t.email) = lower((auth.jwt() ->> 'email'))));
+  using (public.is_team(auth.jwt() ->> 'email'));
 
 -- ----------------------------------------------------------------------------
 -- 5) Привязка Telegram-аккаунтов (пишет только edge-функция сервис-ключом)
