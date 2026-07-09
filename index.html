@@ -4703,6 +4703,18 @@ async function gateSend(email){
   try{const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.href}});if(error)throw error;renderGate('sent',email);}
   catch(e){toast('Ошибка входа: '+(e.message||e),'⚠');renderGate('login',email);}
 }
+// TMA: внутри Telegram initData лежит в hash — авто-вход без почты
+function tmaInitData(){try{const m=location.hash.match(/tgWebAppData=([^&]+)/);return m?decodeURIComponent(m[1]):null;}catch(e){return null;}}
+async function tmaLogin(){
+  const init=tmaInitData();if(!init||!sb)return false;
+  try{
+    const r=await fetch(CFG.url+'/functions/v1/tma-auth',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({initData:init})});
+    const d=await r.json();
+    if(d&&d.token_hash){const {error}=await sb.auth.verifyOtp({type:'email',token_hash:d.token_hash});if(!error)return true;}
+    if(d&&d.error==='not_linked'){const g=$('#gate');if(g)g.querySelector('.gp').innerHTML='Сначала привяжи Telegram: открой cock-pit.com в браузере, войди и нажми «Подключить Telegram».';}
+  }catch(e){}
+  return false;
+}
 async function cloudInit(){
   updateCloudBadge();
   if(!CFG||!CFG.url||!CFG.anon){hideGate();return;}
@@ -4715,6 +4727,7 @@ async function cloudInit(){
   });
   try{const {data}=await sb.auth.getSession();
     if(data&&data.session){me=data.session.user.id;myEmail=(data.session.user.email||'').toLowerCase();hideGate();onLoggedIn();}
+    else if(await tmaLogin()){/* onAuthStateChange докрутит вход */}
     else if(!cloudOn)showGate();
   }catch(e){if(!cloudOn)showGate();}
 }
