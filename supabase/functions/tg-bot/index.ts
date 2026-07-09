@@ -484,6 +484,43 @@ async function eveningReview() {
   }
 }
 
+// ---------- Вандо-пульс: ИИ сам выходит на связь, но НИКОГДА не спамит ----------
+// Тройной антиспам: cron 3р/нед + пауза ≥48ч на человека + право ответить SKIP.
+const ANTHROPIC = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
+const PULSE_SYSTEM = `Ты — Вандо, живой ум таск-трекера WANDO и супер-проджект команды фаундеров. Тебе дают состояние проектов человека.
+Твоя задача — решить: есть ли ОДНА вещь, ради которой стоит написать ему сегодня. Это может быть:
+• назревающая проблема (перекос нагрузки, тихо гниющая задача, риск по срокам) — скажи прямо и предложи конкретный ход;
+• реальный повод похвалить (серия закрытий, чистый день) — коротко и искренне, без сиропа;
+• процесс/культура (например, всё висит на одном человеке — предложи делегировать).
+ЖЕЛЕЗНЫЕ ПРАВИЛА: максимум 3 коротких предложения. Никаких общих фраз («не забывай отдыхать»), никакой воды, ничего, что видно и так. Не повторяй то, что говорил в прошлый раз (тебе покажут). Если сегодня НЕТ ничего по-настоящему стоящего — ответь ровно одним словом: SKIP. Пиши по-русски, на «ты», тепло и по делу. Начни с подходящего эмодзи.`;
+async function askClaude(system: string, user: string, maxTokens = 400): Promise<string> {
+  const r = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": ANTHROPIC, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: maxTokens, system, messages: [{ role: "user", content: user }] }),
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data?.error?.message || "anthropic " + r.status);
+  return String(data?.content?.[0]?.text ?? "").trim();
+}
+async function aiPulse() {
+  if (!ANTHROPIC) return;
+  const { data: links } = await sb.from("tg_links").select("*").eq("revoked", false);
+  for (const l of (links ?? []) as Array<Link & { last_ai_ping?: string; last_ai_text?: string }>) {
+    try {
+      if (!(await isTeam(l.email))) continue; // пульс — для фаундеров
+      if (l.last_ai_ping && Date.now() - new Date(l.last_ai_ping).getTime() < 48 * 3600_000) continue;
+      const status = (await statusSummary(l.email, false)).replace(/<[^>]+>/g, "");
+      const waits = await myWaits(l.email);
+      const ctx = `Человек: ${l.name ?? l.email}\nСегодня: ${todayISO(0)}\n\nСостояние проектов:\n${status}\n\nОн ждёт шагов от других: ${waits.map((w) => `«${w.title}» от ${w.whoName}`).join("; ") || "нет"}\n\nЧто ты говорил ему в прошлый раз (НЕ повторяйся): ${l.last_ai_text ?? "ничего"}`;
+      const out = await askClaude(PULSE_SYSTEM, ctx);
+      if (!out || /^skip\b/i.test(out)) continue;
+      await say(l.chat_id, `<b>Вандо на связи</b> 🤝\n\n${esc(out)}`);
+      await sb.from("tg_links").update({ last_ai_ping: new Date().toISOString(), last_ai_text: out.slice(0, 500) }).eq("chat_id", l.chat_id);
+    } catch { /* следующий */ }
+  }
+}
+
 // ---------- голос → текст (каскад: Groq → OpenAI → ElevenLabs) ----------
 async function sttWhisper(base: string, key: string, model: string, audio: ArrayBuffer): Promise<string> {
   const fd = new FormData();
@@ -554,6 +591,7 @@ Deno.serve(async (req) => {
       else if (ev.kind === "intake_decided") await notifyDecision(ev.record ?? {});
       else if (ev.kind === "morning_brief") await morningBrief();
       else if (ev.kind === "evening_review") await eveningReview();
+      else if (ev.kind === "ai_pulse") await aiPulse();
     } catch { /* не роняем */ }
     return new Response("ok");
   }
