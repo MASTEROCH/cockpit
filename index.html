@@ -1478,6 +1478,25 @@ body.light .vando-panel{background:var(--sheen),rgba(255,255,255,.97)}
   .cap-b{flex:1;padding-top:30px}
   #capIn{font-size:26px}
 }
+/* Мобильный «Сегодня» */
+.mgreet{display:flex;align-items:center;gap:10px;margin:6px 2px 14px}
+.mgreet h1{font-size:24px;margin:0;letter-spacing:-.5px}
+.mhero{position:relative;border-radius:26px;padding:26px 22px;margin-bottom:14px;
+  background:var(--sheen),linear-gradient(135deg,rgba(167,139,250,.16),rgba(84,114,240,.08) 70%),var(--glass);
+  border:1px solid var(--gbrd);box-shadow:var(--ghi),0 18px 50px rgba(0,0,0,.35)}
+.mhero.over{background:var(--sheen),linear-gradient(135deg,rgba(248,113,113,.2),rgba(251,191,36,.08) 70%),var(--glass);border-color:rgba(248,113,113,.38)}
+.mhero.done{border-color:rgba(52,211,153,.32)}
+.mh-label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--mut2);margin-bottom:10px}
+.mhero.over .mh-label{color:var(--bad)}
+.mh-title{font-size:30px;font-weight:800;line-height:1.16;letter-spacing:-.5px;margin-bottom:10px}
+.mh-meta{font-size:13.5px;color:var(--mut);margin-bottom:20px}
+.mh-acts{display:flex;gap:10px}
+.mh-go{flex:1.4;border:none;border-radius:16px;padding:16px;background:linear-gradient(135deg,#a78bfa,#5472F0);color:#fff;font-weight:800;font-size:16px}
+.mh-done{flex:1;border:1px solid var(--line2);border-radius:16px;padding:16px;background:var(--bg2);color:var(--txt);font-weight:700;font-size:15px}
+.msec{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--mut2);margin:16px 2px 8px}
+.mrow{display:flex;align-items:center;gap:11px;background:var(--sheen),var(--glass);border:1px solid var(--gbrd);border-radius:15px;padding:14px;margin-bottom:8px}
+.mrow .mr-t{flex:1;font-size:14.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mrow .mr-e{font-size:11px;color:var(--mut2)}
 /* Проекты (мобильный корень) */
 .mplist{display:flex;flex-direction:column;gap:10px}
 .mprow{display:flex;align-items:center;gap:13px;background:var(--sheen),var(--glass);border:1px solid var(--gbrd);
@@ -2216,6 +2235,7 @@ function renderNow(){
   }else hero=`<div class="now-hero done"><div class="nh-label">🎉 Чисто</div><div class="nh-title">Активных задач на тебе нет</div>
       <div class="nh-meta"><span class="ichip">создай задачу строкой сверху или ⌘K</span></div></div>`;
   const energy=localStorage.getItem('cockpit_energy_'+todayISO())||'';
+  if(window.innerWidth<=680){renderNowMobile({el,greet,next,upNext,mine,pct,prog,ov,vel,ins,running,energy:localStorage.getItem('cockpit_energy_'+todayISO())||''});return;}
   el.innerHTML=`<div class="now-greet"><h1>${greet}, ${esc(meName())}</h1><span>${esc(S.projectName)} · пульс проекта
       <span class="energyrow" title="Заряд сегодня: подстрою следующий шаг"><button data-en="hi" class="${energy==='hi'?'on':''}">🔋</button><button data-en="lo" class="${energy==='lo'?'on':''}">🪫</button></span></span></div>
     ${whatsNewStrip()}
@@ -2251,6 +2271,53 @@ function renderNow(){
   const hw=$('#healWeek');if(hw)hw.onclick=()=>healOverdue('week');
   const ho=$('#healOpen');if(ho)ho.onclick=()=>{filter={q:'',assignee:'',mine:false,overdue:true};setView('board');};
   const wm=$('#wnMore');if(wm)wm.onclick=openInbox;
+  clearTimeout(_nowSeenT);_nowSeenT=setTimeout(()=>{try{localStorage.setItem('cockpit_seen_'+S.id,Date.now());}catch(e){}},4200);
+}
+// ===== МОБИЛЬНЫЙ «Сегодня»: один вопрос на экран =====
+function renderNowMobile(ctx){
+  const {el,greet,next,upNext,ins,running}=ctx;
+  const energy=ctx.energy;
+  const hero=next?`<div class="mhero ${isOverdue(next)?'over':''}" data-open="${next.id}">
+      <div class="mh-label">${ctx.mine.length?'Твой следующий шаг':'Главное сейчас'}</div>
+      <div class="mh-title">${next.cash?'💰 ':''}${prGlyph(next)}${esc(next.title)}</div>
+      <div class="mh-meta">${(m=>m?esc(m.name):'без исполнителя')(next.assigneeId?member(next.assigneeId):null)}${next.estimate?` · ${next.spent||0}/${next.estimate}ч`:''}${(d=>d<0?` · <b style="color:var(--bad)">просрочено ${-d}д</b>`:d===0?' · сегодня':d===1?' · завтра':'')(daysLeft(next))}</div>
+      <div class="mh-acts">
+        ${running&&focus.tid===next.id?`<div class="focusrun"><span class="fdot"></span><span id="focusClock" class="fclock">00:00</span><button class="btn" id="focusStop">■</button></div>`
+          :`<button class="mh-go" id="focusStart">▶ Фокус</button>`}
+        <button class="mh-done" data-done="${next.id}">✓ Готово</button>
+      </div></div>`
+    :`<div class="mhero done"><div class="mh-label">🎉 Чисто</div><div class="mh-title">На тебе задач нет</div><div class="mh-meta">жми ➕ и создай первую</div></div>`;
+  const rows=upNext.map(t=>`<div class="mrow" data-open="${t.id}"><span class="dot" style="background:${stMap[t.status].c}"></span><span class="mr-t">${t.cash?'💰 ':''}${prGlyph(t)}${esc(t.title)}</span>${t.estimate?`<span class="mr-e">${t.estimate}ч</span>`:''}</div>`).join('');
+  el.innerHTML=`
+    <div class="mgreet"><h1>${greet.split(' ')[0]} ${greet.split(' ').slice(1).join(' ')}, ${esc(meName().split(' ')[0])}</h1>
+      <span class="energyrow"><button data-en="hi" class="${energy==='hi'?'on':''}">🔋</button><button data-en="lo" class="${energy==='lo'?'on':''}">🪫</button></span></div>
+    ${whatsNewStrip()}
+    ${hero}
+    ${rows?`<div class="msec">Ещё сегодня · ${upNext.length}</div>${rows}`:''}
+    ${selfHealCard()}
+    <details class="fold" style="margin-top:14px"><summary>📊 Подробности дня</summary>
+      <div class="pulse-row" style="margin-top:12px">
+        <div class="pulse-card"><div class="pv" style="color:var(--ok)">${ctx.pct}%</div><div class="pl">готово</div></div>
+        <div class="pulse-card"><div class="pv" style="color:var(--warn)">${ctx.prog}</div><div class="pl">в работе</div></div>
+        <div class="pulse-card"><div class="pv" style="color:${ctx.ov?'var(--bad)':'var(--mut)'}">${ctx.ov}</div><div class="pl">просроч.</div></div>
+        <div class="pulse-card"><div class="pv">${ctx.vel}</div><div class="pl">за 7 дней</div></div></div>
+      ${claudeNowCard()}
+      <div class="insights" style="margin-top:12px">${ins.map((x,i)=>`<div class="insight ${x.act?'click':''}" data-i="${i}"><span class="ii">${x.ic}</span><div class="ib"><div class="it">${esc(x.title)}</div>${x.sub?`<div class="is">${esc(x.sub)}</div>`:''}</div></div>`).join('')}</div>
+      ${momentumSpark()}</details>`;
+  const mh=el.querySelector('.mhero[data-open] .mh-title');if(mh)mh.onclick=()=>openTask(el.querySelector('.mhero').dataset.open);
+  $$('#now .mrow[data-open]').forEach(e=>e.onclick=()=>openTask(e.dataset.open));
+  const fs=$('#focusStart');if(fs&&ctx.next)fs.onclick=()=>startFocus(ctx.next.id);
+  const fst=$('#focusStop');if(fst)fst.onclick=()=>stopFocus(false);
+  if(ctx.running){if(!focus.iv)focus.iv=setInterval(updFocus,1000);updFocus();}
+  const dn=el.querySelector('[data-done]');if(dn)dn.onclick=(ev)=>{const t=task(dn.dataset.done);if(!t)return;if(focus.tid===t.id)stopFocus(true);
+    t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;logAct('✅','«'+t.title+'» → Готово');const v=awardForDone(S,t);celebrateAt(ev);save();render();toast(v?('+'+v+' 🪙'):'Готово ✅',v?'🪙':'✅');};
+  ins.forEach((x,i)=>{const c=el.querySelector(`.insight[data-i="${i}"]`);if(c&&x.act)c.onclick=x.act;});
+  const ht=$('#healToday');if(ht)ht.onclick=()=>healOverdue('today');
+  const hw=$('#healWeek');if(hw)hw.onclick=()=>healOverdue('week');
+  const ho=$('#healOpen');if(ho)ho.onclick=()=>{filter={q:'',assignee:'',mine:false,overdue:true};setView('board');};
+  const wm=$('#wnMore');if(wm)wm.onclick=openInbox;
+  $$('#now .energyrow button').forEach(b=>b.onclick=()=>{const k='cockpit_energy_'+todayISO();const cur=localStorage.getItem(k);
+    if(cur===b.dataset.en)localStorage.removeItem(k);else localStorage.setItem(k,b.dataset.en);renderNow();});
   clearTimeout(_nowSeenT);_nowSeenT=setTimeout(()=>{try{localStorage.setItem('cockpit_seen_'+S.id,Date.now());}catch(e){}},4200);
 }
 // проактивная актуализация просрочек прямо с «Сейчас»
