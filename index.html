@@ -1574,6 +1574,7 @@ body.light::before{background:
 
 <div class="menu" id="menu">
   <button data-act="palette">🔎 Все команды и поиск <span style="margin-left:auto;color:var(--mut2)">⌘K</span></button>
+  <button data-act="tg">🤖 Подключить Telegram</button>
   <button data-act="connect">🔌 Подключить Claude</button>
   <button data-act="settings">⚙️ Настройки и профиль</button>
   <div class="sep"></div>
@@ -1583,6 +1584,7 @@ body.light::before{background:
 </div>
 
 <div class="modal-scrim" id="connectScrim"><div class="modal" id="connectModal"></div></div>
+<div class="modal-scrim" id="tgScrim"><div class="modal" id="tgModal"></div></div>
 <div class="modal-scrim" id="planScrim"><div class="modal" id="planModal"></div></div>
 <div class="modal-scrim" id="setScrim"><div class="modal" id="setModal"></div></div>
 <div class="modal-scrim" id="balScrim"><div class="modal" id="balModal"></div></div>
@@ -2481,6 +2483,7 @@ function renderSettings(){
      <div class="set-item"><span>Цвет проекта «${esc(S.projectName)}»</span><button class="btn" id="setAccent">🎨 Выбрать</button></div>
      <div class="set-sec">Команда и Claude</div>
      <div class="set-item"><span>Вы в команде</span><select class="inp" id="setWho" style="width:auto;min-width:130px">${S.members.map(m=>`<option value="${m.id}" ${m.id===myId()?'selected':''}>${esc(m.name)}</option>`).join('')}</select></div>
+     <div class="set-item"><span>Telegram-бот (голос, пуши, бриф)</span><button class="btn" id="setTg">🤖 Подключить</button></div>
      <div class="set-item"><span>Подключить Claude (MCP)</span><button class="btn" id="setConnect">🔌 Открыть</button></div>
      <div class="set-sec">Аккаунт и данные</div>
      <div class="set-item"><span>${cloudOn?('☁️ '+esc(myEmail||'в облаке')):'☁️ Не в облаке'}</span><button class="btn" id="setCloud">${cloudOn?'Выйти':'Войти'}</button></div>
@@ -2497,6 +2500,7 @@ function renderSettings(){
   $('#setAccent').onclick=()=>{closeSettings();openAccent();};
   $('#setWho').onchange=e=>{localStorage.setItem('cockpit_me',e.target.value);render();renderSettings();toast('Теперь вы — '+meName(),'👤');};
   $('#setConnect').onclick=()=>{closeSettings();openConnect();};
+  {const st=$('#setTg');if(st)st.onclick=()=>{closeSettings();openTgGate();};}
   $('#setCloud').onclick=()=>{if(cloudOn){if(confirm('Выйти из облака на этом устройстве?'))sb.auth.signOut().then(()=>location.reload());}else{closeSettings();const b=$('#btnCloud');if(b)b.click();}};
   $('#setExport').onclick=exportBackup;
   $('#setImport').onclick=importBackup;
@@ -2907,6 +2911,81 @@ function onIntakeRealtime(payload){
   }else{ // обновление/решение — убираем не-pending
     if(r.status&&r.status!=='pending'){intakeRows=intakeRows.filter(x=>x.id!==r.id);updateIntakeBadge();if(view==='intake')renderIntake();}
   }
+}
+
+/* ---- Telegram в один тап (deep-link, ключ не показываем вообще) ---- */
+const TG_BOT='wando_tasks_bot';
+let tgLinked=false,_tgPoll=null,_tgBinding=false;
+async function checkTgLink(){
+  if(!cloudOn||!sb||!myEmail)return false;
+  try{const {data}=await sb.from('tg_links').select('chat_id').ilike('email',myEmail).eq('revoked',false).limit(1);
+    tgLinked=!!(data&&data.length);}catch(e){/* таблицы может не быть */}
+  return tgLinked;
+}
+async function createTgBind(){
+  const raw='cpk_'+b64url(crypto.getRandomValues(new Uint8Array(24)));
+  const hash=await sha256hex(raw);
+  const {error:e1}=await sb.from('intake_tokens').insert({email:myEmail,label:'Telegram',token_hash:hash,workspace:intakeWorkspace});
+  if(e1)throw new Error(e1.message||'ключ не создался');
+  const code=b64url(crypto.getRandomValues(new Uint8Array(18)));
+  const {error:e2}=await sb.from('tg_bind_codes').insert({code,email:myEmail,token_hash:hash,workspace:intakeWorkspace});
+  if(e2)throw new Error(/relation|does not exist/i.test(e2.message||'')?'Миграция bind.sql ещё не применена':e2.message);
+  return code;
+}
+function stopTgPoll(){if(_tgPoll){clearInterval(_tgPoll);_tgPoll=null;}}
+function closeTgGate(){stopTgPoll();$('#tgScrim').classList.remove('show');}
+async function startTgBind(){
+  if(_tgBinding)return;_tgBinding=true;
+  const b=$('#tgGo');if(b){b.disabled=true;b.textContent='Создаю привязку…';}
+  try{
+    const code=await createTgBind();
+    window.open(`https://t.me/${TG_BOT}?start=bind_${code}`,'_blank');
+    renderTgGate('waiting');
+    let tries=0;stopTgPoll();
+    _tgPoll=setInterval(async()=>{
+      tries++;
+      if(await checkTgLink()){stopTgPoll();renderTgGate('done');celebrate();
+        setTimeout(()=>{closeTgGate();render();},1600);}
+      else if(tries>40){stopTgPoll();renderTgGate('timeout');}
+    },2500);
+  }catch(e){toast('Не получилось: '+(e.message||e),'⚠');renderTgGate('start');}
+  _tgBinding=false;
+}
+function renderTgGate(state){
+  const m=$('#tgModal');state=state||'start';
+  if(state==='done'){m.innerHTML=`<div class="ob-art" style="font-size:52px">🎉</div>
+    <div class="ob-body" style="text-align:center"><h2 style="text-align:center">Telegram подключён!</h2>
+    <p style="text-align:center">Теперь задачи можно кидать голосом на ходу, а утром в 9:00 придёт бриф. Погнали!</p></div>`;return;}
+  const wait=state==='waiting',to=state==='timeout';
+  m.innerHTML=`<div class="ob-art" style="font-size:48px">🤖</div>
+   <div class="ob-body">
+     <h2>Подключи Telegram — и WANDO всегда в кармане</h2>
+     <p>Один тап — без ключей и копирования:</p>
+     <ul class="ob-list">
+       <li><span class="k">🎙</span><span><b>Голосом на ходу</b> — надиктовал, задача в Приёмке</span></li>
+       <li><span class="k">📬</span><span><b>Пуши</b> — новые заявки с кнопками ✓/✕, решения по твоим</span></li>
+       <li><span class="k">☀️</span><span><b>Бриф в 9:00</b> — твой день приходит сам</span></li>
+     </ul>
+     ${wait?`<div class="emptymini" style="margin-top:14px">⏳ Жду нажатия <b>Start</b> в Telegram… Открылась вкладка с ботом — нажми там кнопку, я замечу сам.</div>`:''}
+     ${to?`<div class="emptymini" style="margin-top:14px">Не дождался 🙂 Если Start нажат — обнови страницу; если нет — попробуй ещё раз.</div>`:''}
+   </div>
+   <div class="ob-foot">
+     <button class="wiz-skip" id="tgLater">позже</button><div class="spacer"></div>
+     <button class="btn primary big" id="tgGo">${wait?'↻ Открыть Telegram ещё раз':'✈️ Открыть Telegram и привязать'}</button>
+   </div>`;
+  $('#tgGo').onclick=startTgBind;
+  $('#tgLater').onclick=()=>{localStorage.setItem('cockpit_tg_skip',todayISO());closeTgGate();};
+}
+function openTgGate(){renderTgGate('start');$('#tgScrim').classList.add('show');}
+// после логина: если Telegram не привязан — это следующий шаг онбординга
+async function maybeTgGate(){
+  if(!cloudOn)return;
+  if(await checkTgLink())return;
+  if(localStorage.getItem('cockpit_tg_skip')===todayISO())return; // «позже» действует день
+  // не поверх других модалок первого запуска
+  const busy=['#profileScrim','#wizScrim','#obScrim','#briefScrim'].some(id=>{const el=$(id);return el&&el.classList.contains('show');});
+  if(busy){setTimeout(maybeTgGate,4000);return;}
+  openTgGate();
 }
 
 /* ---- модалка «Подключить Claude» (онбординг + ключи) ---- */
@@ -3777,6 +3856,7 @@ document.addEventListener('click',e=>{if(!menuEl.contains(e.target)&&e.target!==
 menuEl.onclick=e=>{const b=e.target.closest('button');if(!b)return;menuEl.classList.remove('show');const act=b.dataset.act;
   if(act==='palette'){openPalette();}
   else if(act==='settings'){openSettings();}
+  else if(act==='tg'){if(!cloudOn){toast('Сначала войди в облако','🤖');}else openTgGate();}
   else if(act==='connect'){openConnect();}
   else if(act==='autoschedule'){autoSchedule();}
   else if(act==='present'){openPresent();}
@@ -4179,17 +4259,16 @@ function renderWiz(){
     </div>
     <div class="ob-foot">${dots}<button class="wiz-skip" id="wizSkip">Пропустить</button><div class="spacer"></div><button class="btn primary" id="wizNext">Дальше →</button></div>`;
   } else {
-    body=`<div class="ob-art" style="font-size:44px">🔌</div><div class="ob-body">
-      <h2>Подключи свой Claude</h2>
-      <p>Суперсила WANDO: ставь задачи прямо из чата с Claude — они попадают в «Приёмку», где ты подтверждаешь. Твой ИИ становится входом в проект.</p>
+    body=`<div class="ob-art" style="font-size:44px">🤖</div><div class="ob-body">
+      <h2>Подключи Telegram — пульт в кармане</h2>
+      <p>Один тап, без ключей: задачи голосом на ходу, пуши о заявках с кнопками ✓/✕, утренний бриф в 9:00.</p>
       <ul class="ob-list">
-        <li><span class="k">🗣</span><span>«WANDO: созвон с Димой завтра 2ч срочно» — и задача прилетела</span></li>
-        <li><span class="k">✓</span><span>Ты подтверждаешь — только тогда она станет задачей</span></li>
-        <li><span class="k">👥</span><span>У тебя и партнёра каждый свой ключ и свой Claude</span></li>
+        <li><span class="k">🎙</span><span>Надиктовал боту — задача в Приёмке</span></li>
+        <li><span class="k">📬</span><span>Новые заявки приходят пушем — решаешь не открывая сайт</span></li>
+        <li><span class="k">🔌</span><span>Claude тоже подключается: меню ⋯ → «Подключить Claude»</span></li>
       </ul>
-      <div style="font-size:11.5px;color:var(--mut2);margin-top:4px">Настроить можно и позже: меню ⋯ → «Подключить Claude».</div>
     </div>
-    <div class="ob-foot">${dots}<button class="wiz-skip" id="wizLater">Позже</button><div class="spacer"></div><button class="btn primary" id="wizConnect">🔌 Подключить и готово</button></div>`;
+    <div class="ob-foot">${dots}<button class="wiz-skip" id="wizLater">Позже</button><div class="spacer"></div><button class="btn primary" id="wizConnect">✈️ Подключить Telegram</button></div>`;
   }
   $('#wizModal').innerHTML=body;
   if(wizStep===0){
@@ -4232,7 +4311,7 @@ function finishWizard(openConn){
   }
   localStorage.setItem('cockpit_onboarded','1');
   setView('now');
-  if(openConn){setTimeout(()=>openConnect(),320);}
+  if(openConn){setTimeout(()=>{openTgGate();setTimeout(startTgBind,350);},320);}
   else{setTimeout(()=>{const c=$('#cmd');if(c)c.focus();},220);toast('Готово! Кидай первую задачу строкой сверху ⌘','🚀');}
 }
 $('#wizScrim').onclick=e=>{if(e.target===$('#wizScrim'))closeWiz();};
@@ -4406,7 +4485,8 @@ async function cloudInit(){
 async function onLoggedIn(){cloudOn=true;closeAuth();hideGate();updateCloudBadge();await cloudSync();subscribeRealtime();loadIntake();loadAccess();
   if(!localStorage.getItem('cockpit_profile_done'))openProfileSetup();
   else if(!localStorage.getItem('cockpit_onboarded'))openSetupWizard();
-  else if(localStorage.getItem('cockpit_brief_date')!==todayISO())openBrief();}
+  else if(localStorage.getItem('cockpit_brief_date')!==todayISO())openBrief();
+  setTimeout(maybeTgGate,2200);} // Telegram — обязательный шаг: гейт сам дождётся очереди
 /* ---- профиль при первом входе ---- */
 let profileDraft=null;
 function cropPhoto(f,cb){const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const s=160,c=document.createElement('canvas');c.width=s;c.height=s;const ctx=c.getContext('2d');const mn=Math.min(img.width,img.height),sx=(img.width-mn)/2,sy=(img.height-mn)/2;ctx.drawImage(img,sx,sy,mn,mn,0,0,s,s);cb(c.toDataURL('image/jpeg',0.82));};img.src=r.result;};r.readAsDataURL(f);}
@@ -4564,6 +4644,7 @@ function buildPaletteIndex(){
     ['users','Аналитика команды','выработка и cycle-time','Команда',()=>openAnalytics()],
     ['zap','Презентация · синк','полноэкранный обзор для созвона','Делёжка',()=>openPresent()],
     ['layers','Ссылка-снимок статуса','read-only для клиента/инвестора','Делёжка',()=>openShare()],
+    ['plug','Подключить Telegram','голос, пуши, бриф — 1 тап','Настройки',()=>openTgGate()],
     ['plug','Подключить Claude','ключ для MCP','Настройки',()=>openConnect()],
     ['sparkles','Цвет проекта','брендинг под клиента','Настройки',()=>openAccent()],
     ['sync','Светлая / тёмная тема','оформление','Настройки',()=>$('#btnTheme').click()],

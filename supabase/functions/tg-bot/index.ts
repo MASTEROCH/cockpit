@@ -120,6 +120,17 @@ async function bindKey(chatId: number, name: string, raw: string): Promise<strin
   await sb.from("tg_links").upsert({ chat_id: chatId, email: tok.email, name, token_hash: hash, workspace: tok.workspace, revoked: false });
   return `✅ Привязано: <b>${esc(tok.email)}</b>\nПиши задачи текстом или голосом 🎙 — всё улетит в Приёмку.`;
 }
+// привязка в один тап: сайт открыл t.me/бот?start=bind_<код> → мы по коду знаем, кто это
+async function bindByCode(chatId: number, name: string, code: string): Promise<string> {
+  const { data: bc } = await sb.from("tg_bind_codes").select("*").eq("code", code).maybeSingle();
+  if (!bc || bc.used) return `⚠ Код не найден или уже использован. Открой ${SITE} и нажми «Подключить Telegram» ещё раз.`;
+  if (Date.now() - new Date(bc.created_at).getTime() > 15 * 60_000) {
+    return `⚠ Код истёк (живёт 15 минут). Открой ${SITE} и нажми «Подключить Telegram» ещё раз.`;
+  }
+  await sb.from("tg_links").upsert({ chat_id: chatId, email: bc.email, name, token_hash: bc.token_hash, workspace: bc.workspace, revoked: false });
+  await sb.from("tg_bind_codes").update({ used: true }).eq("code", code);
+  return `✅ <b>Telegram подключён: ${esc(bc.email)}</b>\n\nТеперь просто пиши задачи — текстом или голосом 🎙\nКнопки снизу: 🔥 Что горит · 📊 Статус · 📥 Приёмка\n\nВернись на сайт — он уже увидел привязку ✨`;
+}
 
 // ---------- проекты / сводки ----------
 async function myProjects(email: string) {
@@ -417,10 +428,15 @@ Deno.serve(async (req) => {
     if (!text) return new Response("ok");
 
     if (/^\/start/.test(text)) {
+      const payload = text.replace(/^\/start\s*/, "").trim();
+      if (/^bind_[A-Za-z0-9_-]{10,}$/.test(payload)) {
+        await say(chatId, await bindByCode(chatId, name, payload.slice(5)));
+        return new Response("ok");
+      }
       const link = await getLink(chatId);
       await say(chatId, link
         ? `С возвращением, <b>${esc(link.name ?? link.email)}</b>! Пиши задачу — текстом или голосом 🎙`
-        : `Привет! Я — вход в <b>WANDO</b> (что делать).\n\n1️⃣ Ключ: ${SITE} → ⋯ → «Подключить Claude» → «Сгенерировать ключ»\n2️⃣ Пришли мне: <code>/key cpk_…</code>\n3️⃣ Пиши задачи — текстом или голосом 🎙\n\n/help — подробнее`);
+        : `Привет! Я — вход в <b>WANDO</b> (что делать).\n\nСамый простой путь: открой <b>${SITE}</b>, войди — и нажми «Подключить Telegram» (1 тап).\n\nЛибо вручную: сайт → ⋯ → «Подключить Claude» → ключ → пришли мне <code>/key cpk_…</code>\n\n/help — подробнее`);
     } else if (/^\/help|^❓/.test(text)) {
       await say(chatId, HELP);
     } else if (/^\/key\b/.test(text)) {
