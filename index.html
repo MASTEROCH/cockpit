@@ -497,7 +497,11 @@ header{background:rgba(18,21,31,.62);backdrop-filter:var(--blur);-webkit-backdro
    ==================================================================== */
 @media (max-width:680px){
   body{font-size:15px}
-  header{gap:8px;padding:9px 11px 8px}
+  /* ВАЖНО: backdrop-filter на header делает его containing-block для
+     position:fixed детей (нижние .tabs липли к низу шапки, а не экрана).
+     На мобиле убираем blur и берём плотный фон. */
+  header{gap:8px;padding:9px 11px 8px;backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(15,18,27,.97)}
+  body.light header{background:rgba(250,251,254,.98)}
   .brand small{display:none}
   .logo{width:30px;height:30px;font-size:17px}
   .proj{display:inline-flex;max-width:42vw;font-size:14px;padding:7px 11px}
@@ -745,8 +749,8 @@ body.light .brand .logo{background:linear-gradient(157deg,#1b1d27,#08090d 72%)}
 .wcol.today{border-color:var(--acc2);box-shadow:0 0 0 1px rgba(167,139,250,.3)}
 .wcol.over{border-color:rgba(248,113,113,.4)}
 .wcol.drop{outline:2px dashed var(--acc2);outline-offset:-3px}
-.wcolh{padding:9px 11px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:6px;font-weight:700;font-size:12.5px}
-.wcolh .wsub{font-size:10px;color:var(--mut2);font-weight:500}
+.wcolh{padding:9px 11px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:6px;font-weight:700;font-size:12.5px;white-space:nowrap;overflow:hidden}
+.wcolh .wsub{font-size:10px;color:var(--mut2);font-weight:500;overflow:hidden;text-overflow:ellipsis}
 .wcolh .wcnt{margin-left:auto;font-size:11px;color:var(--mut2);background:var(--bg);padding:0 6px;border-radius:20px}
 .wcolb{padding:8px;display:flex;flex-direction:column;gap:7px;overflow:auto;flex:1;min-height:50px}
 .wempty{color:var(--mut2);font-size:12px;text-align:center;padding:8px 0;opacity:.45}
@@ -998,6 +1002,7 @@ body.light .cmdchips{background:rgba(255,255,255,.98);box-shadow:0 18px 50px rgb
 .nh-meta .ichip{background:rgba(0,0,0,.22);border-color:rgba(255,255,255,.14)}
 .nh-meta .ichip.bad{color:#fff;background:rgba(248,113,113,.3);border-color:var(--bad)}
 body.light .nh-meta .ichip{background:rgba(255,255,255,.6)}
+body.light .nh-meta .ichip.bad{color:#b91c1c;background:rgba(248,113,113,.16);border-color:#ef4444;font-weight:700}
 .nh-acts{display:flex;gap:10px;flex-wrap:wrap;position:relative;z-index:1}
 .now-hero{display:flex;gap:26px;align-items:stretch}
 .nh-main{flex:1;min-width:0}
@@ -1335,6 +1340,41 @@ body.light::before{background:
   .nh-acts .btn.big{flex:1;justify-content:center}
 }
 @media (max-width:680px){.pal-scrim{padding:0}.pal{width:100%;height:100%;max-width:none;border-radius:0;display:flex;flex-direction:column}.pal-list{max-height:none;flex:1}.pal-in input{font-size:16px}}
+/* ---- self-heal card (проактивный разбор просрочек) ---- */
+.healcard{display:flex;gap:13px;align-items:flex-start;background:var(--sheen),linear-gradient(120deg,rgba(251,191,36,.15),transparent 72%),var(--glass);border:1px solid rgba(251,191,36,.36);border-radius:16px;padding:14px 16px;margin-bottom:13px;box-shadow:var(--ghi)}
+.healcard .hi{font-size:23px;flex:0 0 auto;line-height:1.15}
+.healcard .hb{flex:1;min-width:0}
+.healcard .ht{font-size:14px;font-weight:700;color:var(--txt)}
+.healcard .hs{font-size:12.5px;color:var(--mut2);margin-top:3px;line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.healcard .ha{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.healcard .ha .btn{padding:7px 13px;font-size:12.5px}
+/* ---- «было без тебя» — что сделал партнёр с прошлого захода ---- */
+.whatsnew{display:flex;gap:12px;align-items:flex-start;background:var(--sheen),linear-gradient(120deg,rgba(56,189,248,.10),transparent 72%),var(--glass);border:1px solid rgba(56,189,248,.26);border-radius:16px;padding:13px 16px;margin-bottom:13px;box-shadow:var(--ghi)}
+.whatsnew .wi{font-size:20px;flex:0 0 auto;line-height:1.2}
+.whatsnew .wb{flex:1;min-width:0}
+.whatsnew .wt{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);margin-bottom:5px;display:flex;align-items:center;gap:8px}
+.whatsnew .wmore{margin-left:auto;font-size:11px;color:var(--acc2);cursor:pointer;white-space:nowrap;background:none;border:none;font-weight:700;text-transform:none;letter-spacing:0}
+.whatsnew .wl{font-size:12.5px;color:var(--mut2);line-height:1.65}
+.whatsnew .wl .wln{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.whatsnew .wl b{color:var(--txt);font-weight:600}
+/* ---- inline-действия по заявке прямо в инбоксе ---- */
+.inboxrow.intake{flex-direction:column;cursor:default}
+.inboxrow.intake .inhead{display:flex;gap:10px;align-items:flex-start;width:100%}
+.inboxrow.intake .inacts{display:flex;gap:7px;margin-top:9px;width:100%;flex-wrap:wrap}
+.inboxrow.intake .inacts .btn{padding:6px 12px;font-size:12px}
+.inboxrow.intake .inacts .spacer{flex:1}
+/* ---- setup wizard (первый запуск) ---- */
+.wiz-steps{display:flex;gap:7px;justify-content:center;margin:2px 0 4px}
+.wiz-steps span{width:26px;height:4px;border-radius:2px;background:var(--line);transition:background .2s}
+.wiz-steps span.on{background:var(--acc2)}
+.wiz-steps span.done{background:var(--ok)}
+.wiz-skip{background:none;border:none;color:var(--mut2);font-size:12.5px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.wiz-skip:hover{color:var(--mut)}
+.wiz-invite{display:flex;gap:8px;margin-top:14px}
+.wiz-invite .inp{flex:1}
+.wiz-added{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+.wiz-added .wa{display:flex;align-items:center;gap:9px;background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:8px 11px;font-size:13px}
+.wiz-added .wa .x{margin-left:auto;cursor:pointer;color:var(--mut2);font-size:16px;line-height:1}
 </style>
 </head>
 <body>
@@ -1510,14 +1550,17 @@ body.light::before{background:
 </footer>
 
 <div class="modal-scrim" id="obScrim"><div class="modal" id="obModal"></div></div>
+<div class="modal-scrim" id="wizScrim"><div class="modal" id="wizModal"></div></div>
 <div class="modal-scrim" id="npScrim"><div class="modal" id="npModal"></div></div>
 <div class="modal-scrim" id="authScrim"><div class="modal" id="authModal"></div></div>
 
 <div class="menu" id="menu">
   <button data-act="palette">🔎 Все команды и поиск <span style="margin-left:auto;color:var(--mut2)">⌘K</span></button>
+  <button data-act="connect">🔌 Подключить Claude</button>
   <button data-act="settings">⚙️ Настройки и профиль</button>
   <div class="sep"></div>
   <button data-act="section">📁 Добавить раздел</button>
+  <button data-act="export">💾 Бэкап всех проектов</button>
   <button data-act="print">🖨 Печать / PDF</button>
 </div>
 
@@ -1852,6 +1895,7 @@ function setView(v){view=v;if(v==='gantt')ganttNeedsScroll=true;$$('.tab').forEa
 
 /* ============================ СЕЙЧАС — MISSION CONTROL ============================ */
 let focus={tid:null,start:0,iv:null};
+let _nowSeenT=null;
 function fmtDur(s){const h=Math.floor(s/3600),m=Math.floor(s/60)%60,x=s%60;return (h?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(x).padStart(2,'0');}
 function updFocus(){const el=$('#focusClock');if(!el){clearInterval(focus.iv);focus.iv=null;return;}el.textContent=fmtDur(Math.floor((Date.now()-focus.start)/1000));}
 function startFocus(tid){if(focus.tid)stopFocus(true);const t=task(tid);if(!t)return;focus.tid=tid;focus.start=Date.now();
@@ -1913,6 +1957,10 @@ async function fetchBriefAdvice(btn){
   try{const r=await fetch(CFG.url+'/functions/v1/ai-review',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+token},body:JSON.stringify({project:aiPayload()})});
     const res=normalizeAI(await r.json());
     if(c)c.innerHTML=`<div class="airh">🤖 Совет от Claude</div>${res.summary?`<div class="aisummary" style="font-size:13px;padding:11px 13px">${esc(res.summary)}</div>`:''}${(res.suggestions||[]).slice(0,3).map(s=>`<div class="airow"><div class="aimain"><div class="aitt">${esc(s.taskTitle||({reestimate:'Переоценить',reprioritize:'Приоритет',reschedule:'Сдвинуть',reassign:'Переназначить'}[s.type]||''))}</div><div class="aire">${esc(s.reason||'')}</div></div></div>`).join('')}`;
+    // тот же разбор проактивно оседает на «Сейчас» — Claude как второй пилот
+    const sg=(res.suggestions&&res.suggestions[0])?res.suggestions[0]:null;
+    if(res.summary||sg)claudeNow[S.id]={summary:res.summary||'',risk:(res.risks&&res.risks[0])||'',sug:sg?((sg.taskTitle?('«'+sg.taskTitle+'»: '):'')+(sg.reason||'')):'',ts:Date.now()};
+    localStorage.setItem('cockpit_brief_ai_date',todayISO());
   }catch(e){if(c)c.innerHTML='<div class="emptymini">Claude недоступен сейчас</div>';}
   if(btn){btn.disabled=false;btn.textContent='🤖 Совет от Claude';}
 }
@@ -1977,6 +2025,7 @@ function renderNow(){
   }else hero=`<div class="now-hero done"><div class="nh-label">🎉 Чисто</div><div class="nh-title">Активных задач на тебе нет</div>
       <div class="nh-meta"><span class="ichip">создай задачу строкой сверху или ⌘K</span></div></div>`;
   el.innerHTML=`<div class="now-greet"><h1>${greet}, ${esc(meName())}</h1><span>${esc(S.projectName)} · пульс проекта</span></div>
+    ${whatsNewStrip()}
     ${hero}
     <div class="pulse-row">
       <div class="pulse-card"><div class="pv" style="color:var(--ok)">${pct}%</div><div class="pl">готово</div><div class="pbar2"><span style="width:${pct}%"></span></div></div>
@@ -1984,6 +2033,7 @@ function renderNow(){
       <div class="pulse-card"><div class="pv" style="color:${ov?'var(--bad)':'var(--mut)'}">${ov}</div><div class="pl">просрочено</div></div>
       <div class="pulse-card"><div class="pv">${vel}</div><div class="pl">закрыто за 7 дней</div></div>
     </div>
+    ${selfHealCard()}
     <details class="fold" id="nowFold" ${foldOpen?'open':''}><summary>📈 Темп и сроки проекта</summary>${momentumSpark()}${milestoneRadar()}</details>
     ${claudeNowCard()}
     <div class="now-sec">🧠 Что важно знать <span>проактивно — пока другие тулзы молчат</span>
@@ -2001,6 +2051,36 @@ function renderNow(){
   const ap=$('#aiPlanBtn');if(ap)ap.onclick=openAiPlan;
   const cb=$('#claudeBtn');if(cb)cb.onclick=()=>fetchClaudeInsight(cb);
   const nf=$('#nowFold');if(nf)nf.ontoggle=()=>localStorage.setItem('cockpit_now_fold',nf.open?'1':'0');
+  const ht=$('#healToday');if(ht)ht.onclick=()=>healOverdue('today');
+  const hw=$('#healWeek');if(hw)hw.onclick=()=>healOverdue('week');
+  const ho=$('#healOpen');if(ho)ho.onclick=()=>{filter={q:'',assignee:'',mine:false,overdue:true};setView('board');};
+  const wm=$('#wnMore');if(wm)wm.onclick=openInbox;
+  clearTimeout(_nowSeenT);_nowSeenT=setTimeout(()=>{try{localStorage.setItem('cockpit_seen_'+S.id,Date.now());}catch(e){}},4200);
+}
+// проактивная актуализация просрочек прямо с «Сейчас»
+function selfHealCard(){
+  const ov=S.tasks.filter(isOverdue);if(!ov.length)return '';
+  const names=ov.slice(0,3).map(t=>t.title).join(' · ');
+  return `<div class="healcard"><span class="hi">🩹</span><div class="hb">
+    <div class="ht">${ov.length} ${plural(ov.length,'задача просрочена','задачи просрочены','задач просрочено')} — актуализировать план?</div>
+    <div class="hs">${esc(names)}${ov.length>3?' · +'+(ov.length-3):''}</div>
+    <div class="ha">
+      <button class="btn primary" id="healToday">→ На сегодня</button>
+      <button class="btn" id="healWeek">→ Следующая неделя</button>
+      <button class="btn" id="healOpen">Показать список</button>
+    </div></div></div>`;
+}
+// «было без тебя» — что сделал партнёр в этом проекте с прошлого захода
+function whatsNewStrip(){
+  const lastSeen=+(localStorage.getItem('cockpit_seen_'+S.id)||0);if(!lastSeen)return '';
+  const myn=meName().toLowerCase();
+  const acts=(S.activity||[]).filter(a=>a.ts>lastSeen&&(a.who||'').toLowerCase()!==myn);
+  if(!acts.length)return '';
+  const top=acts.slice(0,3);
+  return `<div class="whatsnew"><span class="wi">👀</span><div class="wb">
+    <div class="wt">Было без тебя<button class="wmore" id="wnMore">всё в инбоксе →</button></div>
+    <div class="wl">${top.map(a=>`<span class="wln">${a.icon||'•'} <b>${esc(a.who||'партнёр')}</b> ${esc(a.text||'')} <span style="color:var(--mut2)">· ${relTime(a.ts)}</span></span>`).join('')}${acts.length>3?`<span class="wln" style="color:var(--mut2)">…и ещё ${acts.length-3}</span>`:''}</div>
+  </div></div>`;
 }
 
 /* ---- AI-План проекта (Claude разбивает цель на задачи → Приёмка) ---- */
@@ -2374,9 +2454,9 @@ function renderSettings(){
      <div class="set-item"><span>Подключить Claude (MCP)</span><button class="btn" id="setConnect">🔌 Открыть</button></div>
      <div class="set-sec">Аккаунт и данные</div>
      <div class="set-item"><span>${cloudOn?('☁️ '+esc(myEmail||'в облаке')):'☁️ Не в облаке'}</span><button class="btn" id="setCloud">${cloudOn?'Выйти':'Войти'}</button></div>
-     <div class="set-grid2"><button class="btn" id="setExport">💾 Экспорт</button><button class="btn" id="setImport">📥 Импорт</button></div>
+     <div class="set-grid2"><button class="btn" id="setExport">💾 Бэкап всех проектов</button><button class="btn" id="setImport">📥 Восстановить</button></div>
    </div>
-   <div class="ob-foot"><button class="btn danger" id="setReset">Сбросить к демо</button><div class="spacer"></div><button class="btn primary" id="setDone">Готово</button></div>`;
+   <div class="ob-foot"><button class="btn danger" id="setReset" title="Удалить все проекты и начать заново">🧨 Полный сброс</button><div class="spacer"></div><button class="btn primary" id="setDone">Готово</button></div>`;
   const upd=()=>{const n=$('#setName').value.trim();if(n)me.name=n;me.role=$('#setRole').value.trim();save();render();};
   $('#setName').onblur=upd;$('#setRole').onblur=upd;
   $('#setPhoto').onclick=()=>settingsPhoto(me);
@@ -2388,10 +2468,46 @@ function renderSettings(){
   $('#setWho').onchange=e=>{localStorage.setItem('cockpit_me',e.target.value);render();renderSettings();toast('Теперь вы — '+meName(),'👤');};
   $('#setConnect').onclick=()=>{closeSettings();openConnect();};
   $('#setCloud').onclick=()=>{if(cloudOn){if(confirm('Выйти из облака на этом устройстве?'))sb.auth.signOut().then(()=>location.reload());}else{closeSettings();const b=$('#btnCloud');if(b)b.click();}};
-  $('#setExport').onclick=()=>{const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='wando-'+todayISO()+'.json';a.click();toast('Экспортировано','💾');};
-  $('#setImport').onclick=()=>{const inp=document.createElement('input');inp.type='file';inp.accept='.json';inp.onchange=()=>{const f=inp.files[0];const r=new FileReader();r.onload=()=>{try{S=migrate(JSON.parse(r.result));resetUndo();save();render();closeSettings();toast('Импортировано','📥');}catch(e){toast('Ошибка файла','⚠');}};r.readAsText(f);};inp.click();};
-  $('#setReset').onclick=()=>{if(confirm('Сбросить к демо-данным? Текущее будет потеряно.')){S=seed();resetUndo();save();render();closeSettings();toast('Сброшено','♻');}};
+  $('#setExport').onclick=exportBackup;
+  $('#setImport').onclick=importBackup;
+  $('#setReset').onclick=resetWorkspace;
   $('#setDone').onclick=closeSettings;
+}
+/* ---- бэкап: все проекты одним файлом; восстановление — оба формата ---- */
+function exportBackup(){
+  save();
+  const dump={kind:'wando-backup',version:1,ts:Date.now(),reg:JSON.parse(JSON.stringify(reg)),projects:{}};
+  reg.list.forEach(p=>{const d=loadProj(p.id);if(d)dump.projects[p.id]=d;});
+  const blob=new Blob([JSON.stringify(dump)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='wando-backup-'+todayISO()+'.json';a.click();
+  toast('Бэкап всех проектов скачан 💾','💾');
+}
+function importBackup(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.json';
+  inp.onchange=()=>{const f=inp.files[0];if(!f)return;const r=new FileReader();
+    r.onload=()=>{try{
+      const data=JSON.parse(r.result);
+      if(data&&data.kind==='wando-backup'&&data.projects){
+        if(!confirm('Восстановить '+Object.keys(data.projects).length+' проект(а/ов) из бэкапа? Текущие проекты с теми же id будут перезаписаны.'))return;
+        Object.entries(data.projects).forEach(([id,p])=>{
+          migrate(p);localStorage.setItem(pkey(id),JSON.stringify(p));
+          if(!reg.list.find(x=>x.id===id))reg.list.push({id,name:p.projectName,emoji:p.emoji||'📄',parentId:p.parentId||null});
+          if(cloudOn)cloudPush(p,true);
+        });
+        // подчистить нетронутый плейсхолдер «Новый проект», если восстановили настоящие
+        reg.list=reg.list.filter(p=>{if(data.projects[p.id])return true;
+          const d=loadProj(p.id);const empty=d&&d.projectName==='Новый проект'&&!(d.tasks||[]).length&&!(d.ideas||[]).length;
+          if(empty){localStorage.removeItem(pkey(p.id));if(cloudOn)cloudDelete(p.id);return false;}return true;});
+        if(data.reg&&data.reg.active&&data.projects[data.reg.active])reg.active=data.reg.active;
+        if(!reg.list.find(p=>p.id===reg.active))reg.active=(reg.list[0]||{}).id;
+        saveReg();const act=loadProj(reg.active);if(act)S=migrate(act);resetUndo();render();closeSettings();
+        toast('Бэкап восстановлен ✅','📥');
+      }else{ // старый формат: один проект → заменяет текущий
+        S=migrate(data);resetUndo();save();render();closeSettings();toast('Проект импортирован','📥');
+      }
+    }catch(e){toast('Ошибка файла: '+(e.message||''),'⚠');}};
+    r.readAsText(f);};
+  inp.click();
 }
 
 /* ============================ DASHBOARD ============================ */
@@ -2625,18 +2741,21 @@ function inboxUnread(){try{return inboxItems().filter(i=>i.unread).length;}catch
 function updateInboxBadge(){const b=$('#inboxDot');if(!b)return;const n=inboxUnread()+intakePending();b.style.display=n>0?'':'none';b.textContent=n>9?'9+':n;}
 function renderInbox(){
   const items=inboxItems();const inq=intakeRows;
-  const intakeBlock=inq.length?`<div class="inbsec">📥 На приёмке от Claude <span class="c">${inq.length}</span> <button class="minibtn" id="inboxToIntake" style="margin-left:auto">Открыть очередь →</button></div>`
-    +inq.slice(0,6).map(r=>{const p=parseQuick(r.text);return `<div class="inboxrow intake" data-iid="${r.id}">
-      <span class="ii">📥</span><div class="ib"><div class="it"><b>${esc(r.by_name||r.by_email)}</b> предлагает: «${esc(p.title||r.text)}»</div>
-      <div class="is">через Claude · ${relTime(new Date(r.created_at).getTime())}</div></div></div>`;}).join(''):'';
+  const intakeBlock=inq.length?`<div class="inbsec">📥 На приёмке от Claude <span class="c">${inq.length}</span> <button class="minibtn" id="inboxToIntake" style="margin-left:auto">Вся очередь →</button></div>`
+    +inq.slice(0,6).map(r=>{const p=parseQuick(r.text);const m=p.assignee?member(p.assignee):null;return `<div class="inboxrow intake" data-iid="${r.id}">
+      <div class="inhead"><span class="ii">📥</span><div class="ib"><div class="it"><b>${esc(r.by_name||r.by_email)}</b> предлагает: «${esc(p.title||r.text)}»</div>
+      <div class="is">через Claude · ${relTime(new Date(r.created_at).getTime())}${m?' · '+esc(m.name):''}${p.est?' · '+p.est+'ч':''}${p.prio==='urgent'?' · ⚑срочно':p.prio==='high'?' · ⚑важно':''}</div></div></div>
+      <div class="inacts"><button class="btn primary" data-iacc="${r.id}">✓ Добавить</button><button class="btn" data-iedit="${r.id}">✎ Открыть</button><span class="spacer"></span><button class="btn danger" data-irej="${r.id}">✕ Отклонить</button></div></div>`;}).join(''):'';
   $('#inboxBody').innerHTML=(intakeBlock||'')+(items.length?items.map(i=>`
-    <div class="inboxrow ${i.unread?'unread':''}" data-pid="${i.pid}" data-tid="${i.tid}">
+    <div class="inboxrow item ${i.unread?'unread':''}" data-pid="${i.pid}" data-tid="${i.tid}">
       <span class="ii">${i.icon}</span>
       <div class="ib"><div class="it">${i.text}</div><div class="is">${i.sub} · ${relTime(i.ts)}</div></div>
     </div>`).join(''):(intakeBlock?'':emptyState('📭','Пока пусто','Сюда прилетят комментарии к твоим задачам, упоминания @тебя и заявки от Claude — ничего не потеряется')));
   const toIn=$('#inboxToIntake');if(toIn)toIn.onclick=()=>{closeInbox();setView('intake');};
-  $$('#inboxBody .inboxrow.intake').forEach(e=>e.onclick=()=>{closeInbox();setView('intake');});
-  $$('#inboxBody .inboxrow:not(.intake)').forEach(e=>e.onclick=()=>{const pid=e.dataset.pid,tid=e.dataset.tid;if(!pid)return;closeInbox();if(pid!==S.id)switchProject(pid);setTimeout(()=>openTask(tid),90);});
+  $$('#inboxBody [data-iacc]').forEach(b=>b.onclick=e=>{e.stopPropagation();acceptIntake(b.dataset.iacc,false);toast('Добавлено в «'+esc(S.projectName)+'» ✓','✓');});
+  $$('#inboxBody [data-irej]').forEach(b=>b.onclick=e=>{e.stopPropagation();decideIntake(b.dataset.irej,'rejected');toast('Отклонено','✕');});
+  $$('#inboxBody [data-iedit]').forEach(b=>b.onclick=e=>{e.stopPropagation();closeInbox();editIntake(b.dataset.iedit);});
+  $$('#inboxBody .inboxrow.item').forEach(e=>e.onclick=()=>{const pid=e.dataset.pid,tid=e.dataset.tid;if(!pid)return;closeInbox();if(pid!==S.id)switchProject(pid);setTimeout(()=>openTask(tid),90);});
 }
 function openInbox(){renderInbox();$('#inboxDrawer').classList.add('show');syncScrim();
   setTimeout(()=>{localStorage.setItem('cockpit_inbox_seen',Date.now());updateInboxBadge();if($('#inboxDrawer').classList.contains('show'))renderInbox();},1500);}
@@ -2668,6 +2787,7 @@ function addTaskToProject(pid,p,status){
 async function decideIntake(id,status,extra){
   try{await sb.from('intake').update(Object.assign({status,decided_by:myEmail,decided_at:new Date().toISOString()},extra||{})).eq('id',id);}catch(e){}
   intakeRows=intakeRows.filter(r=>r.id!==id);updateIntakeBadge();renderIntake();
+  if($('#inboxDrawer').classList.contains('show'))renderInbox();
 }
 function acceptIntake(id,backlog){
   const r=intakeRows.find(x=>x.id===id);if(!r)return;
@@ -2851,7 +2971,11 @@ function briefData(){
   out.partner.sort((a,b)=>b.ts-a.ts);out.today.sort((a,b)=>(b.ov-a.ov));
   return out;
 }
-function openBrief(){renderBrief();$('#briefScrim').classList.add('show');}
+function openBrief(){renderBrief();$('#briefScrim').classList.add('show');
+  // проактивный ритуал: раз в день Claude сам смотрит проект — без нажатия кнопки
+  if(cloudOn&&sb&&localStorage.getItem('cockpit_brief_ai_date')!==todayISO()){
+    setTimeout(()=>{if($('#briefScrim').classList.contains('show'))fetchBriefAdvice($('#briefAi'));},450);
+  }}
 function closeBrief(){$('#briefScrim').classList.remove('show');localStorage.setItem('cockpit_brief_ts',Date.now());localStorage.setItem('cockpit_brief_date',todayISO());}
 function renderBrief(){
   const b=briefData();const h=new Date().getHours();const greet=h<6?'Доброй ночи':h<12?'Доброе утро':h<18?'Добрый день':'Добрый вечер';
@@ -3552,13 +3676,11 @@ menuEl.onclick=e=>{const b=e.target.closest('button');if(!b)return;menuEl.classL
   else if(act==='analytics'){openAnalytics();}
   else if(act==='accent'){openAccent();}
   else if(act==='sound'){const on=localStorage.getItem('cockpit_sound')!=='0';localStorage.setItem('cockpit_sound',on?'0':'1');toast(on?'Звук выключен 🔇':'Звук включён 🔔',on?'🔇':'🔔');if(!on)playDing();}
-  else if(act==='export'){const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
-    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='wando-'+todayISO()+'.json';a.click();toast('Экспортировано','💾');}
-  else if(act==='import'){const inp=document.createElement('input');inp.type='file';inp.accept='.json';
-    inp.onchange=()=>{const f=inp.files[0];const r=new FileReader();r.onload=()=>{try{S=migrate(JSON.parse(r.result));resetUndo();save();render();toast('Импортировано','📥');}catch(e){toast('Ошибка файла','⚠');}};r.readAsText(f);};inp.click();}
+  else if(act==='export'){exportBackup();}
+  else if(act==='import'){importBackup();}
   else if(act==='section'){const n=prompt('Название раздела:');if(n){S.sections.push({id:uid('s'),name:n});save();render();toast('Раздел добавлен','📁');}}
   else if(act==='print'){window.print();}
-  else if(act==='reset'){if(confirm('Сбросить к демо-данным? Текущее будет потеряно.')){S=seed();save();render();toast('Сброшено','♻');}}
+  else if(act==='reset'){resetWorkspace();}
 };
 
 /* ============================ VOICE INPUT (Web Speech) ============================ */
@@ -3583,7 +3705,8 @@ micBtn.onclick=()=>{
 const HINT=`<b>🎙 Командная строка</b> — говори или печатай. Прототип Telegram-бота. Кликни пример:<br>
 <b style="color:#9aa0b3">Создать</b> <span class="ex">добавь задачу Лендинг @дима с 22 по 28 июня 12ч !срочно</span> · <span class="ex">добавь задачу Созвон завтра 2ч</span><br>
 <b style="color:#9aa0b3">Статус</b> <span class="ex">статус Вёрстка в работе</span> · <span class="ex">приоритет Тексты высокий</span><br>
-<b style="color:#9aa0b3">Люди/сроки</b> <span class="ex">назначь Тестирование на Дима</span> · <span class="ex">срок Релиз до 1 июля</span> · <span class="ex">эстимейт Геймдизайн 24ч</span><br>
+<b style="color:#9aa0b3">Люди/сроки</b> <span class="ex">назначь Тестирование на меня</span> · <span class="ex">срок Релиз до 1 июля</span> · <span class="ex">эстимейт Геймдизайн 24ч</span><br>
+<b style="color:#9aa0b3">Командуй планом</b> <span class="ex">перенеси все просрочки на следующую неделю</span> · <span class="ex">сделай Тексты срочным и назначь на меня</span> · <span class="ex">что горит</span><br>
 <b style="color:#9aa0b3">Ещё</b> <span class="ex">переименуй Тексты в Копирайтинг</span> · <span class="ex">коммент Тексты: нужен тон бренда</span> · <span class="ex">идея реферальная петля</span> · <span class="ex">удали задачу Саунддизайн</span><br>
 <span style="color:#838aa6">⌨ <b>⌘K</b> палитра · <b>/</b> команда · <b>N</b> новая · на доске <b>J/K</b> ходи · <b>X</b> готово · <b>E</b> открыть · <b>⌘Z</b> отмена · разделы O/B/G/W/I/T/A</span>`;
 cmdEl.onfocus=()=>{hintEl.innerHTML=HINT;hintEl.classList.add('show');bindEx();};
@@ -3702,11 +3825,76 @@ function nlpChips(p){const out=[];
   else if(p.prio==='high')out.push(`<span class="ichip" style="color:var(--warn);border-color:var(--warn)">⚑ важно</span>`);
   return out;}
 // это команда-управление (статус/назначь/…), а не создание задачи?
-function isManageCmd(s){return /^\s*(статус|status|назнач|assign|эстимейт|оцен|estimate|est|приоритет|priorit|приор|переимену|rename|срок|дедлайн|due|удали|удалить|delete|del|коммент|comment|идея|idea)\b/i.test(s);}
+function isManageCmd(s){return /^\s*(статус|status|назнач|assign|эстимейт|оцен|estimate|est|приоритет|priorit|приор|переимену|rename|срок|дедлайн|due|удали|удалить|delete|del|коммент|comment|идея|idea|перекин|перенес|перенос|сдвин|отлож|reschedule|разгруз|что\s+горит|покажи\s+горящ|горящ|аврал)/i.test(s);}
+
+/* ============================ ЯЗЫК КАК ИНТЕРФЕЙС — массовые операции ============================ */
+function nextMondayISO(){const d=parseD(todayISO());const dow=(new Date(d).getDay()+6)%7;return fmtD(d+(7-dow)*dayMs);}
+// «я/меня/мне/мной/self/me» → мой участник; иначе — поиск по имени
+function resolveMemberName(name){if(!name)return null;const n=String(name).toLowerCase().trim();
+  if(/^(я|меня|мне|мной|моё|мои|мой|self|me|myself)$/.test(n))return myId();
+  const m=findMember(n);return m?m.id:null;}
+// сдвиг задач на N дней (относительно) с сохранением длительности
+function shiftTasksBy(list,days){let n=0;list.forEach(t=>{if(!t)return;t.start=fmtD(parseD(t.start)+days*dayMs);t.end=fmtD(parseD(t.end)+days*dayMs);n++;});return n;}
+// перенос задач НА конкретную дату старта (сохраняя длительность) — актуализирует просрочки
+function moveTasksTo(list,startISO){let n=0;list.forEach(t=>{if(!t)return;const span=Math.max(0,parseD(t.end)-parseD(t.start));t.start=startISO;t.end=fmtD(parseD(startISO)+span);n++;});return n;}
+// пересобрать просрочки на актуальные даты; label — куда, для тоста; scope может фильтровать по исполнителю
+function healOverdue(target,scope){
+  let list=S.tasks.filter(isOverdue);
+  if(scope&&scope.assignee)list=list.filter(t=>t.assigneeId===scope.assignee);
+  if(!list.length){toast('Просрочек нет — чисто ✨','✨');return 0;}
+  let n,label;
+  if(target==='today'){n=moveTasksTo(list,todayISO());label='на сегодня';}
+  else if(target==='tomorrow'){n=moveTasksTo(list,fmtD(parseD(todayISO())+dayMs));label='на завтра';}
+  else if(typeof target==='number'){n=shiftTasksBy(list,target);label='на +'+target+'д';}
+  else{n=moveTasksTo(list,nextMondayISO());label='на следующую неделю';}
+  const undo=list.map(t=>({t,s:t.start,e:t.end}));
+  logAct('📅','перенёс '+n+' '+plural(n,'просрочку','просрочки','просрочек')+' '+label);save();render();
+  toast('Перенёс '+n+' '+plural(n,'задачу','задачи','задач')+' '+label,'📅','Отменить',()=>{undo.forEach(u=>{u.t.start=u.s;u.t.end=u.e;});save();render();});
+  return n;}
+// «что горит» — просрочено + сегодня + срочное; фокус на самом важном
+function fireFocus(){
+  const t0=todayISO();
+  const fire=S.tasks.filter(t=>!t.isMilestone&&t.status!=='done'&&(isOverdue(t)||t.end===t0||t.priority==='urgent'));
+  if(!fire.length){toast('🔥 Ничего не горит — можно строить','✨');setView('now');return;}
+  const ov=fire.filter(isOverdue).length;
+  filter={q:'',assignee:'',mine:false,overdue:ov>0};setView('board');
+  toast('🔥 Горит: '+fire.length+(ov?' · из них '+ov+' просрочено':'')+' — '+fire.slice(0,2).map(t=>t.title).join(', '),'🔥');
+}
 
 function runCmd(raw){
   const s=(raw||'').trim();if(!s)return;
   try{
+  // — язык как интерфейс: массовые операции (без \b — он не работает с кириллицей) —
+  // «что горит» / «покажи горящее» / «аврал» → фокус на самом важном
+  if(/^(что\s+горит|покажи\s+горящ|горящ|аврал|что\s+срочно|fire)/i.test(s)){fireFocus();return;}
+  // «перекинь/перенеси все просрочки на следующую неделю» (+ опц. фильтр по исполнителю)
+  if(/^(перекин|перенес|перенос|сдвин|отлож|разгруз|reschedule)/i.test(s)&&/(просроч|горящ|всё|все|задач)/i.test(s)){
+    let assignee=null,am=s.match(/@\s*([A-Za-zА-Яа-яЁё]+)/);if(am)assignee=resolveMemberName(am[1]);
+    if(!assignee){am=s.match(/(?:^|\s)у\s+([A-Za-zА-Яа-яЁё]+)/i);if(am)assignee=resolveMemberName(am[1]);}
+    if(!assignee&&/(?:^|\s)(мо[ийёе]|меня|мне)(?=\s|$)/i.test(s))assignee=myId();
+    let target='week';
+    if(/сегодня/i.test(s))target='today';
+    else if(/завтра/i.test(s))target='tomorrow';
+    else{const dm=s.match(/(?:на\s+|\+\s*)(\d{1,2})\s*(?:дн|день)/i);if(dm)target=+dm[1];}
+    healOverdue(target,assignee?{assignee}:null);return;
+  }
+  // «сделай <задачу> срочной [и назначь на меня]» — быстрый комбо-глагол
+  let mv=s.match(/^сделай\s+(.+)$/i);
+  if(mv){let rest=mv[1],assignee=null;
+    const amv=rest.match(/(?:назнач\S*\s+на\s+|@\s*)([A-Za-zА-Яа-яЁё]+)/i);
+    if(amv){assignee=resolveMemberName(amv[1]);if(assignee)rest=rest.replace(amv[0],' ');}
+    let act=null,val=null,strip=null;
+    if(/срочн|критич/i.test(rest)){act='prio';val='urgent';strip=/срочн[а-яё]*|критич[а-яё]*/ig;}
+    else if(/важн|высок[а-яё]*\s*приоритет|high/i.test(rest)){act='prio';val='high';strip=/важн[а-яё]*|высок[а-яё]*\s*приоритет[а-яё]*|high/ig;}
+    else if(/готов|заверш|сделан|done/i.test(rest)){act='status';val='done';strip=/готов[а-яё]*|заверш[а-яё]*|сделан[а-яё]*|done/ig;}
+    else if(/в\s*работ|в\s*процесс|progress/i.test(rest)){act='status';val='progress';strip=/в\s*работ[а-яё]*|в\s*процесс[а-яё]*|progress/ig;}
+    if(act){const tn=rest.replace(strip,'').replace(/(?:^|\s)и(?=\s|$)/ig,' ').replace(/\s{2,}/g,' ').trim();
+      const t=findTask(tn);if(!t){toast('Задача не найдена','⚠');return;}
+      if(assignee)t.assigneeId=assignee;
+      if(act==='prio'){t.priority=val;logAct('⚑','приоритет «'+t.title+'» → '+prMap[val].n);}
+      else{t.status=val;if(val==='done'&&t.estimate&&!t.spent)t.spent=t.estimate;}
+      save();render();toast('«'+t.title+'» → '+(act==='prio'?prMap[val].n:stMap[val].n)+(assignee?' · '+(member(assignee)||{}).name:''),act==='prio'?'⚑':'✓');return;}
+  }
   if(/^(идея|idea)\b/i.test(s)){
     const title=s.replace(/^(идея|idea)\s*/i,'').trim();if(!title)return;
     S.ideas.push({id:uid('i'),title,note:'',votes:1,createdTs:Date.now()});save();
@@ -3728,7 +3916,7 @@ function runCmd(raw){
     const t=findTask(tname);if(!t){toast('Задача не найдена','⚠');return;}if(!st){toast('Не понял статус','⚠');return;}
     t.status=st;if(st==='done'&&t.estimate&&!t.spent)t.spent=t.estimate;save();render();toast('«'+t.title+'» → '+stMap[st].n,'✓');return;}
   let ma=s.match(/^(назначь|assign)\s+(.+?)\s+(?:на|to)\s+(.+)$/i);
-  if(ma){const t=findTask(ma[2]);const m=findMember(ma[3]);
+  if(ma){const t=findTask(ma[2]);const mid=resolveMemberName(ma[3]);const m=mid?member(mid):null;
     if(!t){toast('Задача не найдена','⚠');return;}if(!m){toast('Участник не найден','⚠');return;}
     t.assigneeId=m.id;save();render();toast('«'+t.title+'» → '+m.name,'👤');return;}
   let me=s.match(/^(эстимейт|оцен\w*|estimate|est)\s+(.+?)\s+(\d+(?:[.,]\d+)?)\s*(?:часов|часа|час|ч|h)?\b/i);
@@ -3772,7 +3960,7 @@ function runCmd(raw){
 /* ============================ ONBOARDING + DEMO ============================ */
 let bannerDismissed=false;
 $('#bannerHide').onclick=()=>{bannerDismissed=true;$('#banner').classList.add('hide');};
-$('#bannerFresh').onclick=()=>startFresh(true);
+$('#bannerFresh').onclick=()=>{if(confirm('Удалить демо-проект и начать по-настоящему?'))exitDemo();};
 $('#btnHelp').onclick=()=>openOnboarding(0);
 function applyTheme(){const t=localStorage.getItem('cockpit_theme')||'dark';document.body.classList.toggle('light',t==='light');const b=$('#btnTheme');if(b)b.innerHTML=t==='light'?icon('moon'):icon('sun');}
 $('#btnTheme').onclick=()=>{const cur=localStorage.getItem('cockpit_theme')||'dark';localStorage.setItem('cockpit_theme',cur==='light'?'dark':'light');applyTheme();toast(cur==='light'?'Тёмная тема':'Светлая тема','🎨');};
@@ -3828,6 +4016,118 @@ function renderOb(){
 }
 $('#obScrim').onclick=e=>{if(e.target===$('#obScrim'))closeOb();};
 
+/* ============================ ЧИСТЫЙ ЛИСТ (сброс рабочего пространства) ============================ */
+let _wizReplace=null; // id проекта-плейсхолдера, который мастер заменит настоящим
+function freshPlaceholder(){
+  const p=migrate(buildTemplate('empty'));p.projectName='Новый проект';
+  reg={active:p.id,list:[{id:p.id,name:p.projectName,emoji:'📄'}]};saveReg();
+  localStorage.setItem(pkey(p.id),JSON.stringify(p));S=p;resetUndo();
+  collapsed={};filter={q:'',assignee:'',mine:false,overdue:false};bannerDismissed=false;
+  return p;}
+// полный сброс: удалить ВСЕ проекты (локально и в облаке) → мастер первого проекта
+function resetWorkspace(){
+  if(!confirm('Полный сброс: удалить ВСЕ проекты и задачи'+(cloudOn?' — локально и в облаке команды':'')+'? Это необратимо.'))return;
+  if(!confirm('Точно? Данные исчезнут'+(cloudOn?' у тебя и у партнёра':'')+'. Совет: сначала скачай 💾 Бэкап в настройках.'))return;
+  closeSettings();
+  reg.list.map(p=>p.id).forEach(id=>{localStorage.removeItem(pkey(id));localStorage.removeItem('cockpit_seen_'+id);if(cloudOn)cloudDelete(id);});
+  freshPlaceholder();
+  render();setView('now');
+  toast('Чистый лист ✨ Создаём первый настоящий проект','🧹');
+  _wizReplace=S.id;openSetupWizard();
+}
+// выход из демо: удалить демо-проект; если больше ничего нет — мастер
+function exitDemo(){
+  const id=S.id;const others=reg.list.filter(p=>p.id!==id);
+  localStorage.removeItem(pkey(id));localStorage.removeItem('cockpit_seen_'+id);if(cloudOn)cloudDelete(id);
+  if(others.length){reg.list=others;reg.active=others[0].id;S=migrate(loadProj(reg.active));saveReg();resetUndo();
+    collapsed={};filter={q:'',assignee:'',mine:false,overdue:false};render();toast('Демо удалено — работаем по-настоящему 🚀','🗑');}
+  else{freshPlaceholder();render();setView('now');_wizReplace=S.id;openSetupWizard();}
+}
+
+/* ============================ SETUP WIZARD (первый запуск: проект → партнёр → Claude) ============================ */
+let wizStep=0, wizData={projName:'',tpl:'mvp',invites:[]};
+function openSetupWizard(){wizStep=0;wizData={projName:'',tpl:'mvp',invites:[]};renderWiz();$('#wizScrim').classList.add('show');}
+function closeWiz(){$('#wizScrim').classList.remove('show');}
+function renderWiz(){
+  const dots=`<div class="wiz-steps">${[0,1,2].map(i=>`<span class="${i<wizStep?'done':i===wizStep?'on':''}"></span>`).join('')}</div>`;
+  let body='';
+  if(wizStep===0){
+    body=`<div class="ob-art" style="font-size:44px">🚀</div><div class="ob-body">
+      <h2>Создай первый проект</h2>
+      <p>Соберём рабочее пространство за минуту. Начнём с проекта — этапы и задачи создадутся по шаблону, потом всё правится.</p>
+      <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mut2);margin:16px 0 6px">Название проекта</label>
+      <input class="inp" id="wizName" placeholder="Например: AppHub — запуск" style="font-size:16px;padding:12px 14px" value="${esc(wizData.projName)}">
+      <div class="tpl-grid">${TEMPLATES.map(t=>`<button class="tpl ${t.k===wizData.tpl?'on':''}" data-tpl="${t.k}"><div class="tic">${t.emoji}</div><div class="tnm">${t.n}</div><div class="tds">${t.d}</div></button>`).join('')}</div>
+    </div>
+    <div class="ob-foot">${dots}<div class="spacer"></div><button class="btn primary" id="wizNext">Дальше →</button></div>`;
+  } else if(wizStep===1){
+    body=`<div class="ob-art" style="font-size:44px">🤝</div><div class="ob-body">
+      <h2>Пригласи со-фаундера</h2>
+      <p>Впиши email партнёра — он войдёт этой почтой и сразу увидит ваши проекты и задачи. Синхронизация в реальном времени. Можно пропустить и добавить позже.</p>
+      <div class="wiz-invite"><input class="inp" id="wizEmail" type="email" placeholder="partner@email.com" style="font-size:15px"><button class="btn" id="wizAdd">＋ Добавить</button></div>
+      ${wizData.invites.length?`<div class="wiz-added">${wizData.invites.map((em,i)=>`<div class="wa">👤 ${esc(em)}<span class="x" data-rmv="${i}">×</span></div>`).join('')}</div>`:''}
+      <div style="font-size:11.5px;color:var(--mut2);margin-top:12px;line-height:1.5">💡 Доступ открыт только участникам, чьи email добавлены. Приглашение сработает, когда партнёр войдёт своей почтой.</div>
+    </div>
+    <div class="ob-foot">${dots}<button class="wiz-skip" id="wizSkip">Пропустить</button><div class="spacer"></div><button class="btn primary" id="wizNext">Дальше →</button></div>`;
+  } else {
+    body=`<div class="ob-art" style="font-size:44px">🔌</div><div class="ob-body">
+      <h2>Подключи свой Claude</h2>
+      <p>Суперсила WANDO: ставь задачи прямо из чата с Claude — они попадают в «Приёмку», где ты подтверждаешь. Твой ИИ становится входом в проект.</p>
+      <ul class="ob-list">
+        <li><span class="k">🗣</span><span>«WANDO: созвон с Димой завтра 2ч срочно» — и задача прилетела</span></li>
+        <li><span class="k">✓</span><span>Ты подтверждаешь — только тогда она станет задачей</span></li>
+        <li><span class="k">👥</span><span>У тебя и партнёра каждый свой ключ и свой Claude</span></li>
+      </ul>
+      <div style="font-size:11.5px;color:var(--mut2);margin-top:4px">Настроить можно и позже: меню ⋯ → «Подключить Claude».</div>
+    </div>
+    <div class="ob-foot">${dots}<button class="wiz-skip" id="wizLater">Позже</button><div class="spacer"></div><button class="btn primary" id="wizConnect">🔌 Подключить и готово</button></div>`;
+  }
+  $('#wizModal').innerHTML=body;
+  if(wizStep===0){
+    const nm=$('#wizName');
+    if(!wizData.projName){nm.value=TPL_NAME[wizData.tpl]||'Мой проект';wizData.projName=nm.value;}
+    nm.oninput=()=>wizData.projName=nm.value;
+    $$('#wizModal .tpl').forEach(el=>el.onclick=()=>{const wasAuto=(wizData.projName===(TPL_NAME[wizData.tpl]||'Мой проект'));wizData.tpl=el.dataset.tpl;
+      $$('#wizModal .tpl').forEach(x=>x.classList.toggle('on',x===el));
+      if(wasAuto){wizData.projName=TPL_NAME[wizData.tpl]||'Мой проект';$('#wizName').value=wizData.projName;}});
+    $('#wizNext').onclick=()=>{wizData.projName=(nm.value||'').trim()||TPL_NAME[wizData.tpl]||'Мой проект';wizStep=1;renderWiz();};
+    setTimeout(()=>{nm.focus();nm.select();},60);
+  } else if(wizStep===1){
+    const em=$('#wizEmail');
+    const valid=v=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v);
+    const addEmail=()=>{const v=(em.value||'').trim().toLowerCase();if(!v)return;
+      if(!valid(v)){toast('Похоже, это не email','⚠');return;}
+      if(v===myEmail){toast('Это твой email 🙂','🙂');return;}
+      if(!wizData.invites.includes(v))wizData.invites.push(v);em.value='';renderWiz();};
+    $('#wizAdd').onclick=addEmail;em.onkeydown=e=>{if(e.key==='Enter')addEmail();};
+    $$('#wizModal [data-rmv]').forEach(x=>x.onclick=()=>{wizData.invites.splice(+x.dataset.rmv,1);renderWiz();});
+    $('#wizSkip').onclick=()=>{wizStep=2;renderWiz();};
+    $('#wizNext').onclick=()=>{const v=(em.value||'').trim().toLowerCase();if(v&&valid(v)&&v!==myEmail&&!wizData.invites.includes(v))wizData.invites.push(v);wizStep=2;renderWiz();};
+    setTimeout(()=>{if(em)em.focus();},60);
+  } else {
+    $('#wizLater').onclick=()=>finishWizard(false);
+    $('#wizConnect').onclick=()=>finishWizard(true);
+  }
+}
+function finishWizard(openConn){
+  closeWiz();
+  const nm=(wizData.projName||'').trim()||TPL_NAME[wizData.tpl]||'Мой проект';
+  const ph=_wizReplace;_wizReplace=null;
+  createProject(nm,wizData.tpl,null); // создаёт проект и делает его активным
+  // если пришли после сброса/выхода из демо — подчистить пустой плейсхолдер
+  if(ph&&ph!==S.id){reg.list=reg.list.filter(x=>x.id!==ph);localStorage.removeItem(pkey(ph));if(cloudOn)cloudDelete(ph);saveReg();}
+  if(wizData.invites&&wizData.invites.length){
+    wizData.invites.forEach(em=>{if(S.members.find(m=>(m.email||'').toLowerCase()===em))return;
+      S.members.push({id:uid('m'),name:em.split('@')[0],role:'—',color:COLORS[S.members.length%COLORS.length],capacity:30,email:em});});
+    logAct('👥','пригласил '+wizData.invites.length+' в проект');save();
+  }
+  localStorage.setItem('cockpit_onboarded','1');
+  setView('now');
+  if(openConn){setTimeout(()=>openConnect(),320);}
+  else{setTimeout(()=>{const c=$('#cmd');if(c)c.focus();},220);toast('Готово! Кидай первую задачу строкой сверху ⌘','🚀');}
+}
+$('#wizScrim').onclick=e=>{if(e.target===$('#wizScrim'))closeWiz();};
+
 /* ============================ PROJECTS + TEMPLATES ============================ */
 const TEMPLATES=[
  {k:'empty',emoji:'📄',n:'Пустой',d:'С чистого листа'},
@@ -3836,9 +4136,18 @@ const TEMPLATES=[
  {k:'content',emoji:'✍️',n:'Контент-план',d:'Неделя контента'},
 ];
 const TPL_NAME={mvp:'Запуск MVP',marketing:'Маркетинг-спринт',content:'Контент-план'};
+// мой сохранённый профиль (имя/роль/цвет/фото/email) — чтобы в новых проектах я оставался собой
+function myProfileMember(){
+  let p=null;try{p=JSON.parse(localStorage.getItem('cockpit_profile'));}catch(e){}
+  const cur=member(myId());
+  const m={id:'m1',name:(p&&p.name)||(cur&&cur.name)||meName(),role:(p&&p.role)||(cur&&cur.role)||'Founder',
+    color:(p&&p.color)||(cur&&cur.color)||COLORS[1],capacity:(cur&&cur.capacity)||30};
+  const photo=(p&&p.photo)||(cur&&cur.photo);if(photo)m.photo=photo;
+  const email=(p&&p.email)||(cur&&cur.email)||myEmail;if(email)m.email=email;
+  return m;}
 function buildTemplate(tpl){
   const base=()=>({projectName:'Новый проект',emoji:'📄',demo:false,ui:{zoom:38},
-    members:[{id:'m1',name:meName(),role:'Founder',color:COLORS[1],capacity:30}],
+    members:[myProfileMember()],
     sections:[{id:'s1',name:'Задачи'}],tasks:[],ideas:[]});
   const today=parseD(todayISO());const D=i=>fmtD(today+i*dayMs);
   const mk=(title,sec,s,e,st,est,extra={})=>Object.assign({id:uid('t'),title,sectionId:sec,assigneeId:'m1',start:D(s),end:D(e),status:st||'backlog',estimate:est||0,spent:0,priority:'med',description:'',comments:[],isMilestone:false,deps:[],createdTs:0},extra);
@@ -3987,7 +4296,7 @@ async function cloudInit(){
 }
 async function onLoggedIn(){cloudOn=true;closeAuth();hideGate();updateCloudBadge();await cloudSync();subscribeRealtime();loadIntake();
   if(!localStorage.getItem('cockpit_profile_done'))openProfileSetup();
-  else if(!localStorage.getItem('cockpit_onboarded'))openOnboarding(0);
+  else if(!localStorage.getItem('cockpit_onboarded'))openSetupWizard();
   else if(localStorage.getItem('cockpit_brief_date')!==todayISO())openBrief();}
 /* ---- профиль при первом входе ---- */
 let profileDraft=null;
@@ -4035,7 +4344,7 @@ function saveProfileSetup(){
   localStorage.setItem('cockpit_profile_done','1');
   logAct('🧑','настроил профиль');save();render();
   $('#profileScrim').classList.remove('show');toast('Профиль сохранён','✅');
-  if(!localStorage.getItem('cockpit_onboarded'))openOnboarding(0);
+  if(!localStorage.getItem('cockpit_onboarded'))openSetupWizard();
 }
 async function cloudSync(){
   let rows=[];try{const {data,error}=await sb.from('projects').select('*');if(error)throw error;rows=data||[];}
@@ -4138,6 +4447,8 @@ function buildPaletteIndex(){
     ['plus','Новая задача','создать пустую','Создать',()=>{$('#btnNew').click();}],
     ['idea','Добавить идею в бэклог','паркинг идей','Создать',()=>{setView('backlog');setTimeout(()=>{const i=$('#ideaIn');if(i)i.focus();},120);}],
     ['layers','Новый проект','создать проект','Создать',()=>openNewProject()],
+    ['cal','Перенести все просрочки','актуализировать сроки на неделю','Планирование',()=>healOverdue('week')],
+    ['zap','Что горит сейчас','просрочки, дедлайны, срочное','Планирование',()=>fireFocus()],
     ['cal','Авто-расписание','раскидать сроки по загрузке','Планирование',()=>autoSchedule()],
     ['board','Сбросить порядок задач','вернуть авто-сортировку','Планирование',()=>{S.tasks.forEach(t=>{delete t.rank;});save();render();toast('Авто-сортировка ↕','↕');}],
     ['users','Разгрузить команду','выровнять загрузку','Команда',()=>openRebalance()],

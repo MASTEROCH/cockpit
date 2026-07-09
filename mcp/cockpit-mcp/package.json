@@ -1,7 +1,7 @@
 {
   "name": "cockpit-tasks-mcp",
-  "version": "1.0.0",
-  "description": "MCP-сервер Cockpit — отправляет задачи из Claude в очередь «На приёмке» Cockpit (cock-pit.com).",
+  "version": "1.1.0",
+  "description": "MCP-сервер WANDO — отправляет задачи из Claude в очередь «На приёмке» и читает статус проектов (cock-pit.com).",
   "type": "module",
   "bin": { "cockpit-tasks-mcp": "index.js" },
   "main": "index.js",

@@ -60,6 +60,15 @@ const TOOLS = [
     description: "Показать проекты WANDO (id, имя, эмодзи), чтобы выбрать project для cockpit_propose_task.",
     inputSchema: { type: "object", properties: {} },
   },
+  {
+    name: "cockpit_status",
+    description:
+      "Прочитать текущий статус проектов в WANDO (cock-pit.com): по каждому проекту — сколько задач, " +
+      "сколько готово, сколько просрочено, что просрочено и что ближайшее в очереди. Только чтение, ничего не меняет. " +
+      "ВЫЗЫВАЙ, когда пользователь спрашивает «что по проекту / что горит / что просрочено / над чем работаем / статус в WANDO». " +
+      "Используй ответ, чтобы кратко и по делу рассказать о состоянии и предложить следующий шаг.",
+    inputSchema: { type: "object", properties: {} },
+  },
 ];
 
 const server = new Server({ name: "cockpit", version: "1.0.0" }, { capabilities: { tools: {} } });
@@ -85,6 +94,20 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
       const rows = await rpc("cockpit_projects", { p_token: TOKEN });
       const list = (rows || []).map((p) => `${p.emoji || "📄"} ${p.name} — ${p.id}`).join("\n") || "проектов пока нет";
       return { content: [{ type: "text", text: list }] };
+    }
+
+    if (name === "cockpit_status") {
+      const st = await rpc("cockpit_status", { p_token: TOKEN });
+      if (st && st.error) throw new Error(st.error);
+      const projects = (st && st.projects) || [];
+      if (!projects.length) return { content: [{ type: "text", text: "В WANDO пока нет активных проектов." }] };
+      const lines = projects.map((p) => {
+        const head = `${p.emoji || "📄"} ${p.project}: ${p.done}/${p.total} готово` + (p.overdue ? `, ⚠ ${p.overdue} просрочено` : "");
+        const over = (p.overdue_titles || []).length ? `\n   просрочено: ${(p.overdue_titles || []).join("; ")}` : "";
+        const next = (p.next_up || []).length ? `\n   ближайшее: ${(p.next_up || []).slice(0, 5).join("; ")}` : "";
+        return head + over + next;
+      });
+      return { content: [{ type: "text", text: `Статус WANDO на ${st.today}:\n\n` + lines.join("\n\n") }] };
     }
 
     throw new Error("Неизвестный инструмент: " + name);
