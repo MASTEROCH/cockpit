@@ -9,7 +9,8 @@
 //   TELEGRAM_BOT_TOKEN    — токен @BotFather
 //   TG_WEBHOOK_SECRET     — секрет вебхука Telegram (тот же, что в setWebhook)
 //   WANDO_INTERNAL_SECRET — секрет внутренних событий БД→бот (тот же, что в notify.sql)
-//   ELEVENLABS_API_KEY    — для распознавания голосовых (иначе голос вежливо откажет)
+//   GROQ_API_KEY          — голосовые, БЕСПЛАТНО (console.groq.com, Whisper large-v3)
+//   (альтернативы: OPENAI_API_KEY или ELEVENLABS_API_KEY — каскад сам выберет)
 // ВАЖНО: «Verify JWT» у функции — ВЫКЛ.
 // ============================================================================
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -17,7 +18,10 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const BOT = Deno.env.get("TELEGRAM_BOT_TOKEN") ?? "";
 const SECRET = Deno.env.get("TG_WEBHOOK_SECRET") ?? "";
 const INTERNAL = Deno.env.get("WANDO_INTERNAL_SECRET") ?? "";
-const ELEVEN = Deno.env.get("ELEVENLABS_API_KEY") ?? "";
+// STT-провайдеры (каскад: какой ключ задан — тот и работает)
+const GROQ = Deno.env.get("GROQ_API_KEY") ?? "";        // БЕСПЛАТНО: console.groq.com (Whisper large-v3)
+const OPENAI = Deno.env.get("OPENAI_API_KEY") ?? "";    // платный Whisper, если есть
+const ELEVEN = Deno.env.get("ELEVENLABS_API_KEY") ?? ""; // Scribe, если есть
 const SITE = "cock-pit.com";
 const TZ = 4; // Батуми UTC+4 — «сегодня/завтра» считаем по местному
 
@@ -285,21 +289,43 @@ async function morningBrief() {
   }
 }
 
-// ---------- голос → текст (ElevenLabs Scribe) ----------
-async function transcribe(fileId: string): Promise<{ text?: string; err?: string }> {
-  if (!ELEVEN) return { err: "Распознавание не настроено: добавь ELEVENLABS_API_KEY в Secrets функции." };
-  const fi = await TG("getFile", { file_id: fileId });
-  const path = fi?.result?.file_path;
-  if (!path) return { err: "Не смог скачать голосовое из Telegram." };
-  const audio = await fetch(`https://api.telegram.org/file/bot${BOT}/${path}`).then((r) => r.arrayBuffer());
+// ---------- голос → текст (каскад: Groq → OpenAI → ElevenLabs) ----------
+async function sttWhisper(base: string, key: string, model: string, audio: ArrayBuffer): Promise<string> {
+  const fd = new FormData();
+  fd.append("file", new Blob([audio], { type: "audio/ogg" }), "voice.ogg");
+  fd.append("model", model);
+  const r = await fetch(base + "/audio/transcriptions", { method: "POST", headers: { authorization: "Bearer " + key }, body: fd });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  const j = await r.json();
+  return String(j.text ?? "").trim();
+}
+async function sttEleven(audio: ArrayBuffer): Promise<string> {
   const fd = new FormData();
   fd.append("file", new Blob([audio], { type: "audio/ogg" }), "voice.ogg");
   fd.append("model_id", "scribe_v1");
   const r = await fetch("https://api.elevenlabs.io/v1/speech-to-text", { method: "POST", headers: { "xi-api-key": ELEVEN }, body: fd });
-  if (!r.ok) return { err: "Распознавание не удалось (" + r.status + ")." };
-  const j = await r.json().catch(() => null);
-  const text = (j?.text ?? "").trim();
-  return text ? { text } : { err: "Пустая расшифровка — попробуй ещё раз, чуть чётче." };
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  const j = await r.json();
+  return String(j.text ?? "").trim();
+}
+async function transcribe(fileId: string): Promise<{ text?: string; err?: string }> {
+  if (!GROQ && !OPENAI && !ELEVEN) {
+    return { err: "Распознавание не настроено. Бесплатно: ключ на console.groq.com → в Secrets функции как GROQ_API_KEY." };
+  }
+  const fi = await TG("getFile", { file_id: fileId });
+  const path = fi?.result?.file_path;
+  if (!path) return { err: "Не смог скачать голосовое из Telegram." };
+  const audio = await fetch(`https://api.telegram.org/file/bot${BOT}/${path}`).then((r) => r.arrayBuffer());
+  const tries: Array<() => Promise<string>> = [];
+  if (GROQ) tries.push(() => sttWhisper("https://api.groq.com/openai/v1", GROQ, "whisper-large-v3-turbo", audio));
+  if (OPENAI) tries.push(() => sttWhisper("https://api.openai.com/v1", OPENAI, "whisper-1", audio));
+  if (ELEVEN) tries.push(() => sttEleven(audio));
+  let lastErr = "";
+  for (const t of tries) {
+    try { const text = await t(); if (text) return { text }; lastErr = "пустая расшифровка"; }
+    catch (e) { lastErr = e instanceof Error ? e.message : String(e); }
+  }
+  return { err: "Распознавание не удалось (" + lastErr + ") — попробуй ещё раз, чуть чётче." };
 }
 
 // ---------- справка ----------

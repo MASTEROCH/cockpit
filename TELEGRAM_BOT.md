@@ -61,7 +61,9 @@ curl -s "https://api.telegram.org/bot<ТОКЕН>/setWebhook" \
 
 ## v2 — что докрутить после базового запуска
 1. Секреты функции: добавь `WANDO_INTERNAL_SECRET` (случайная строка) и
-   `ELEVENLABS_API_KEY` (ключ с elevenlabs.io — для голосовых)
+   `GROQ_API_KEY` — для голосовых, **бесплатно**: console.groq.com → войти
+   Google-аккаунтом → API Keys → Create (без карты). Альтернативы, если есть:
+   `OPENAI_API_KEY` или `ELEVENLABS_API_KEY` — бот сам выберет доступный
 2. SQL: выполни [`supabase/notify.sql`](supabase/notify.sql), заменив
    `INTERNAL_SECRET_HERE` (3 места) на значение `WANDO_INTERNAL_SECRET`
 3. Передеплой `tg-bot` свежим кодом из `supabase/functions/tg-bot/index.ts`
