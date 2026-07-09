@@ -1375,6 +1375,23 @@ body.light::before{background:
 .wiz-added{display:flex;flex-direction:column;gap:7px;margin-top:12px}
 .wiz-added .wa{display:flex;align-items:center;gap:9px;background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:8px 11px;font-size:13px}
 .wiz-added .wa .x{margin-left:auto;cursor:pointer;color:var(--mut2);font-size:16px;line-height:1}
+/* ---- Доступ и роли (Команда) ---- */
+.accpanel{margin-top:22px;background:var(--sheen),var(--glass);border:1px solid var(--gbrd);border-radius:18px;padding:17px 18px;box-shadow:var(--ghi)}
+.accpanel h3{margin:0 0 4px;font-size:14px;display:flex;align-items:center;gap:8px}
+.accpanel .accsub{font-size:12px;color:var(--mut2);margin-bottom:12px;line-height:1.5}
+.accsec{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--mut2);margin:14px 0 7px}
+.accrow{display:flex;align-items:center;gap:9px;background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:8px 11px;font-size:13px;margin-bottom:6px}
+.accrow .ae{font-weight:600;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.accrow .an{color:var(--mut2);font-size:12px;white-space:nowrap}
+.accrow .arole{margin-left:auto;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:2px 8px;border-radius:6px;white-space:nowrap}
+.accrow .arole.full{color:var(--ok);background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3)}
+.accrow .arole.member{color:var(--acc2);background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.3)}
+.accrow .arole.viewer{color:var(--mut);background:var(--bg);border:1px solid var(--line)}
+.accrow .ax{cursor:pointer;color:var(--mut2);font-size:15px;line-height:1;padding:2px 5px;border-radius:6px}
+.accrow .ax:hover{color:var(--bad);background:rgba(248,113,113,.1)}
+.accadd{display:flex;gap:7px;margin-top:8px;flex-wrap:wrap}
+.accadd .inp{flex:1;min-width:170px}
+.accadd .fsel{width:auto}
 </style>
 </head>
 <body>
@@ -1463,6 +1480,7 @@ body.light::before{background:
       <div style="font-size:12.5px;color:var(--mut2);margin:-6px 0 14px;line-height:1.5">👋 <b style="color:var(--mut)">Пригласить со-фаундера:</b> добавь участника → впиши его email → он войдёт этой почтой и сразу увидит ваши проекты и задачи. (Доступ открыт только участникам, прописанным в Supabase.)</div>
       <div id="leaderboard"></div>
       <div class="grid" id="team"></div>
+      <div id="accessPanel"></div>
     </div></div>
     <div class="view" id="v-intake"><div class="pad" id="intake"></div></div>
   </div>
@@ -1884,6 +1902,9 @@ function render(){
   $('#bSelect').classList.toggle('on',boardSelOn);
   if(view!=='board')renderBulkBar();
   $('#banner').classList.toggle('hide',!S.demo||bannerDismissed);
+  // гость (не в team): Приёмка и админ-действия скрыты — доступ режет и RLS
+  {const ti=document.querySelector('.tab[data-v="intake"]');if(ti)ti.style.display=isTeam?'':'none';
+   if(!isTeam&&view==='intake'){setView('now');return;}}
   const _T=S.tasks.filter(t=>!t.isMilestone);
   $('#sbStats').textContent=`${_T.length} задач · ${_T.filter(t=>t.status==='done').length} готово · ${S.tasks.filter(isOverdue).length} просроч.`;
   updateInboxBadge();
@@ -2465,7 +2486,7 @@ function renderSettings(){
      <div class="set-item"><span>${cloudOn?('☁️ '+esc(myEmail||'в облаке')):'☁️ Не в облаке'}</span><button class="btn" id="setCloud">${cloudOn?'Выйти':'Войти'}</button></div>
      <div class="set-grid2"><button class="btn" id="setExport">💾 Бэкап всех проектов</button><button class="btn" id="setImport">📥 Восстановить</button></div>
    </div>
-   <div class="ob-foot"><button class="btn danger" id="setReset" title="Удалить все проекты и начать заново">🧨 Полный сброс</button><div class="spacer"></div><button class="btn primary" id="setDone">Готово</button></div>`;
+   <div class="ob-foot">${isTeam?'<button class="btn danger" id="setReset" title="Удалить все проекты и начать заново">🧨 Полный сброс</button>':''}<div class="spacer"></div><button class="btn primary" id="setDone">Готово</button></div>`;
   const upd=()=>{const n=$('#setName').value.trim();if(n)me.name=n;me.role=$('#setRole').value.trim();save();render();};
   $('#setName').onblur=upd;$('#setRole').onblur=upd;
   $('#setPhoto').onclick=()=>settingsPhoto(me);
@@ -2479,7 +2500,7 @@ function renderSettings(){
   $('#setCloud').onclick=()=>{if(cloudOn){if(confirm('Выйти из облака на этом устройстве?'))sb.auth.signOut().then(()=>location.reload());}else{closeSettings();const b=$('#btnCloud');if(b)b.click();}};
   $('#setExport').onclick=exportBackup;
   $('#setImport').onclick=importBackup;
-  $('#setReset').onclick=resetWorkspace;
+  {const sr=$('#setReset');if(sr)sr.onclick=resetWorkspace;}
   $('#setDone').onclick=closeSettings;
 }
 /* ---- бэкап: все проекты одним файлом; восстановление — оба формата ---- */
@@ -3433,6 +3454,84 @@ $('#ideaAdd').onclick=addIdea;$('#ideaIn').onkeydown=e=>{if(e.key==='Enter')addI
 function addIdea(){const v=$('#ideaIn').value.trim();if(!v)return;S.ideas.push({id:uid('i'),title:v,note:'',votes:1,createdTs:Date.now()});$('#ideaIn').value='';save();renderBacklog();$('#cntIdeas').textContent=S.ideas.length;}
 
 /* ============================ TEAM ============================ */
+/* ============================ ДОСТУП И РОЛИ (team / project_access) ============================ */
+let isTeam=true, accessReady=false, teamRows=[], guestRows=[]; // guestRows — гости ТЕКУЩЕГО проекта
+async function loadAccess(){
+  if(!cloudOn||!sb){isTeam=true;accessReady=false;return;}
+  try{
+    const {data,error}=await sb.from('team').select('email,name,role').order('created_at');
+    if(error)throw error;
+    teamRows=data||[];accessReady=true;
+    isTeam=!!teamRows.find(t=>(t.email||'').toLowerCase()===myEmail);
+    // таблица есть, но команда меня не знает и список видим (RLS) → значит я гость
+    if(!teamRows.length)isTeam=false;
+  }catch(e){ // таблицы ещё нет (миграция team.sql не применена) — старое поведение
+    accessReady=false;isTeam=true;teamRows=[];
+  }
+  render();
+}
+async function loadGuests(){
+  if(!accessReady||!isTeam){guestRows=[];return;}
+  try{const {data}=await sb.from('project_access').select('email,role').eq('project_id',S.id).order('created_at');
+    guestRows=data||[];}catch(e){guestRows=[];}
+}
+async function addTeamMember(email,name){
+  email=(email||'').trim().toLowerCase();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){toast('Похоже, это не email','⚠');return;}
+  const {error}=await sb.from('team').insert({email,name:(name||'').trim()||email.split('@')[0]});
+  if(error){toast('Не удалось: '+(error.message||''),'⚠');return;}
+  toast(email+' — теперь в команде, видит всё ✅','👥');loadAccess();
+}
+async function removeTeamMember(email){
+  if(email===myEmail){toast('Себя убрать нельзя 🙂','⚠');return;}
+  if(!confirm('Убрать '+email+' из команды? Он потеряет доступ ко ВСЕМ проектам.'))return;
+  await sb.from('team').delete().eq('email',email);
+  toast('Убран из команды','🗑');loadAccess();
+}
+async function grantAccess(email,role){
+  email=(email||'').trim().toLowerCase();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){toast('Похоже, это не email','⚠');return;}
+  if(teamRows.find(t=>(t.email||'').toLowerCase()===email)){toast('Он уже в команде — видит всё','👥');return;}
+  const {error}=await sb.from('project_access').upsert({project_id:S.id,email,role:role||'member',granted_by:myEmail});
+  if(error){toast('Не удалось: '+(error.message||''),'⚠');return;}
+  toast(email+' → доступ к «'+S.projectName+'» ('+(role==='viewer'?'просмотр':'ведёт задачи')+')','🔐');
+  await loadGuests();renderAccessPanel();
+}
+async function revokeAccess(email){
+  await sb.from('project_access').delete().eq('project_id',S.id).eq('email',email);
+  toast('Доступ отозван','🔐');await loadGuests();renderAccessPanel();
+}
+function renderAccessPanel(){
+  const el=$('#accessPanel');if(!el)return;
+  if(!cloudOn){el.innerHTML='';return;}
+  if(!accessReady){el.innerHTML=`<div class="accpanel"><h3>🔐 Доступ и роли</h3>
+    <div class="accsub">Чтобы управлять командой и гостями с сайта, один раз прогони <b>supabase/team.sql</b> (SQL Editor). После этого здесь появятся списки.</div></div>`;return;}
+  if(!isTeam){el.innerHTML='';return;}
+  el.innerHTML=`<div class="accpanel">
+    <h3>🔐 Доступ и роли</h3>
+    <div class="accsub">Команда видит <b>все проекты</b> (включая личные друг друга) и решает Приёмку. Гость видит только выданные ему проекты.</div>
+    <div class="accsec">Команда · полный доступ</div>
+    ${teamRows.map(t=>`<div class="accrow"><span class="ae">${esc(t.email)}</span><span class="an">${esc(t.name||'')}</span>
+      <span class="arole full">full</span>
+      ${(t.email||'').toLowerCase()!==myEmail?`<span class="ax" data-rmteam="${esc(t.email)}" title="Убрать из команды">✕</span>`:'<span class="an">(вы)</span>'}</div>`).join('')}
+    <div class="accadd"><input class="inp" id="accTeamEmail" type="email" placeholder="email нового члена команды">
+      <input class="inp" id="accTeamName" placeholder="Имя" style="max-width:130px">
+      <button class="btn primary" id="accTeamAdd">＋ В команду</button></div>
+    <div class="accsec">Гости проекта «${esc(S.projectName)}»</div>
+    ${guestRows.length?guestRows.map(g=>`<div class="accrow"><span class="ae">${esc(g.email)}</span>
+      <span class="arole ${g.role==='viewer'?'viewer':'member'}">${g.role==='viewer'?'просмотр':'ведёт задачи'}</span>
+      <span class="ax" data-rmguest="${esc(g.email)}" title="Отозвать доступ">✕</span></div>`).join('')
+     :'<div class="accsub" style="margin:0 0 4px">Гостей нет. Выдай доступ — человек увидит ТОЛЬКО этот проект.</div>'}
+    <div class="accadd"><input class="inp" id="accGuestEmail" type="email" placeholder="email гостя (напр. Саша)">
+      <select class="fsel" id="accGuestRole"><option value="member">ведёт задачи</option><option value="viewer">только смотрит</option></select>
+      <button class="btn" id="accGuestAdd">🔐 Выдать доступ</button></div>
+  </div>`;
+  const ta=$('#accTeamAdd');if(ta)ta.onclick=()=>addTeamMember($('#accTeamEmail').value,$('#accTeamName').value);
+  const ga=$('#accGuestAdd');if(ga)ga.onclick=()=>grantAccess($('#accGuestEmail').value,$('#accGuestRole').value);
+  $$('#accessPanel [data-rmteam]').forEach(b=>b.onclick=()=>removeTeamMember(b.dataset.rmteam));
+  $$('#accessPanel [data-rmguest]').forEach(b=>b.onclick=()=>revokeAccess(b.dataset.rmguest));
+}
+
 function renderTeam(){
   $('#whoAmI').innerHTML=S.members.map(m=>`<option value="${m.id}" ${m.id===myId()?'selected':''}>${esc(m.name)}</option>`).join('');
   $('#whoAmI').onchange=e=>{localStorage.setItem('cockpit_me',e.target.value);render();toast('Теперь вы — '+meName(),'👤');};
@@ -3468,6 +3567,7 @@ function renderTeam(){
   $$('#team .mcard.click').forEach(el=>el.onclick=()=>openMember(el.dataset.m));
   $('#addMember2').onclick=addBlankMember;
   const cm=$('#closeMonthBtn');if(cm)cm.onclick=closeMonth;
+  loadGuests().then(renderAccessPanel);
 }
 function addBlankMember(){
   const m={id:uid('m'),name:'Новый участник',role:'—',email:'',color:COLORS[S.members.length%COLORS.length],capacity:30};
@@ -4206,13 +4306,13 @@ projBtn.onclick=e=>{e.stopPropagation();
   const tops=active.filter(p=>{const pr=p.parentId&&projMeta(p.parentId);return !pr||pr.archived;});
   projMenu.innerHTML=tops.map(p=>item(p,false)).join('')
     +`<div class="sep"></div>`
-    +`<button data-act="newp">＋ Новый проект</button>`
+    +(isTeam?`<button data-act="newp">＋ Новый проект</button>`
     +`<button data-act="makechild">📦 Вложить в проект…</button>`
-    +`${cur&&cur.parentId?'<button data-act="unparent">⬆️ Вынести наверх</button>':''}`
+    +`${cur&&cur.parentId?'<button data-act="unparent">⬆️ Вынести наверх</button>':''}`:'')
     +`<button data-act="report">📄 Отчёт для клиента</button>`
-    +`<button data-act="renp">✏️ Переименовать</button>`
+    +(isTeam?`<button data-act="renp">✏️ Переименовать</button>`
     +`<button data-act="archive">${cur&&cur.archived?'♻️ Вернуть из архива':'🗄 В архив'}</button>`
-    +`${active.length>1?'<button data-act="delp" class="dng">🗑 Удалить проект</button>':''}`
+    +`${active.length>1?'<button data-act="delp" class="dng">🗑 Удалить проект</button>':''}`:'')
     +`${arch.length?`<div class="sep"></div><div style="font-size:10px;color:var(--mut2);padding:5px 11px;text-transform:uppercase;letter-spacing:.5px">Архив · ${arch.length}</div>`+arch.map(p=>`<button data-switch="${p.id}" style="opacity:.6">🗄 ${esc(p.name)}</button>`).join(''):''}`;
   const r=projBtn.getBoundingClientRect();projMenu.style.left=r.left+'px';projMenu.style.right='auto';projMenu.style.top=(r.bottom+6)+'px';
   projMenu.classList.toggle('show');};
@@ -4303,7 +4403,7 @@ async function cloudInit(){
     else if(!cloudOn)showGate();
   }catch(e){if(!cloudOn)showGate();}
 }
-async function onLoggedIn(){cloudOn=true;closeAuth();hideGate();updateCloudBadge();await cloudSync();subscribeRealtime();loadIntake();
+async function onLoggedIn(){cloudOn=true;closeAuth();hideGate();updateCloudBadge();await cloudSync();subscribeRealtime();loadIntake();loadAccess();
   if(!localStorage.getItem('cockpit_profile_done'))openProfileSetup();
   else if(!localStorage.getItem('cockpit_onboarded'))openSetupWizard();
   else if(localStorage.getItem('cockpit_brief_date')!==todayISO())openBrief();}
@@ -4455,7 +4555,7 @@ function buildPaletteIndex(){
     ['cal','Бриф на сегодня','что важно прямо сейчас','AI',()=>openBrief()],
     ['plus','Новая задача','создать пустую','Создать',()=>{$('#btnNew').click();}],
     ['idea','Добавить идею в бэклог','паркинг идей','Создать',()=>{setView('backlog');setTimeout(()=>{const i=$('#ideaIn');if(i)i.focus();},120);}],
-    ['layers','Новый проект','создать проект','Создать',()=>openNewProject()],
+    ...(isTeam?[['layers','Новый проект','создать проект','Создать',()=>openNewProject()]]:[]),
     ['cal','Перенести все просрочки','актуализировать сроки на неделю','Планирование',()=>healOverdue('week')],
     ['zap','Что горит сейчас','просрочки, дедлайны, срочное','Планирование',()=>fireFocus()],
     ['cal','Авто-расписание','раскидать сроки по загрузке','Планирование',()=>autoSchedule()],
