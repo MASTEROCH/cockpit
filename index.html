@@ -3075,6 +3075,7 @@ function renderSettings(){
      <div class="set-item"><span>Вы в команде</span><select class="inp" id="setWho" style="width:auto;min-width:130px">${S.members.map(m=>`<option value="${m.id}" ${m.id===myId()?'selected':''}>${esc(m.name)}</option>`).join('')}</select></div>
      <div class="set-item"><span>Telegram-бот (голос, пуши, бриф)</span><button class="btn" id="setTg">🤖 Подключить</button></div>
      <div class="set-item"><span>Подключить Claude (MCP)</span><button class="btn" id="setConnect">🔌 Открыть</button></div>
+     <div class="set-item"><span>Архив всех проектов (JSON)</span><button class="btn" id="setExport">📦 Выгрузить</button></div>
      <div class="set-sec">Аккаунт и данные</div>
      <div class="set-item"><span>${cloudOn?('☁️ '+esc(myEmail||'в облаке')):'☁️ Не в облаке'}</span><button class="btn" id="setCloud">${cloudOn?'Выйти':'Войти'}</button></div>
      <div class="set-grid2"><button class="btn" id="setExport">💾 Бэкап всех проектов</button><button class="btn" id="setImport">📥 Восстановить</button></div>
@@ -3090,6 +3091,7 @@ function renderSettings(){
   $('#setAccent').onclick=()=>{closeSettings();openAccent();};
   $('#setWho').onchange=e=>{localStorage.setItem('cockpit_me',e.target.value);render();renderSettings();toast('Теперь вы — '+meName(),'👤');};
   $('#setConnect').onclick=()=>{closeSettings();openConnect();};
+  {const ex=$('#setExport');if(ex)ex.onclick=exportAll;}
   {const st=$('#setTg');if(st)st.onclick=()=>{closeSettings();openTgGate();};}
   $('#setCloud').onclick=()=>{if(cloudOn){if(confirm('Выйти из облака на этом устройстве?'))sb.auth.signOut().then(()=>location.reload());}else{closeSettings();const b=$('#btnCloud');if(b)b.click();}};
   $('#setExport').onclick=exportBackup;
@@ -5633,6 +5635,17 @@ $('#authScrim').onclick=e=>{if(e.target===$('#authScrim'))closeAuth();};
 
 /* ============================ ⌘K COMMAND PALETTE ============================ */
 let palItems=[], palFiltered=[], palSel=0;
+/* страховка данных: все проекты одним JSON-файлом — «мои данные не заперты» */
+function exportAll(){try{
+  const dump={app:'WANDO',exported:new Date().toISOString(),
+    projects:reg.list.map(p=>({meta:p,data:p.id===S.id?S:loadProj(p.id)})).filter(x=>x.data)};
+  const blob=new Blob([JSON.stringify(dump)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='wando-backup-'+todayISO()+'.json';document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  if(typeof track==='function')track('export');
+  toast('Архив выгружен — храни как страховку','📦');
+}catch(e){toast('Экспорт не удался: '+(e.message||e),'⚠');}}
 function buildPaletteIndex(){
   const items=[];
   const dot=c=>`<span class="pal-dot" style="background:${c}"></span>`;
@@ -5662,16 +5675,21 @@ function buildPaletteIndex(){
     ['help','Обучение','как пользоваться','Настройки',()=>openOnboarding(0)],
     ['board','Добавить раздел','новая колонка/группа','Создать',()=>{const n=prompt('Название раздела:');if(n){S.sections.push({id:uid('s'),name:n});save();render();toast('Раздел добавлен','📁');}}],
     ['layers','Печать / PDF','распечатать обзор','Настройки',()=>window.print()],
+    ['layers','Выгрузить архив (JSON)','страховка: все проекты одним файлом','Настройки',()=>exportAll()],
   ];
   ACT.forEach(([ic,name,sub,grp,run])=>items.push({type:'Команда',grp,icon:icon(ic,17),title:name,sub,kw:name+' '+sub,run}));
   reg.list.filter(p=>!p.archived).forEach(p=>items.push({type:'Проект',icon:`<span class="pal-emoji">${esc(p.emoji||'📄')}</span>`,title:p.name,sub:p.id===S.id?'текущий':'переключиться',kw:p.name+' проект',run:()=>{if(p.id!==S.id)switchProject(p.id);else setView('board');}}));
   S.members.forEach(m=>items.push({type:'Человек',icon:avatarOf(m,22),title:m.name,sub:m.role||'участник',kw:m.name+' '+(m.role||''),run:()=>openMember(m.id)}));
   reg.list.filter(p=>!p.archived).forEach(p=>{const data=p.id===S.id?S:loadProj(p.id);if(!data)return;
-    (data.tasks||[]).forEach(t=>items.push({type:'Задача',icon:dot((stMap[t.status]||{}).c||'#888'),title:t.title,sub:`${p.emoji||'📄'} ${p.name}`,kw:t.title+' '+p.name,
-      run:()=>{if(p.id!==S.id){switchProject(p.id);setTimeout(()=>openTask(t.id),140);}else openTask(t.id);}}));});
+    (data.tasks||[]).forEach(t=>items.push({type:'Задача',icon:dot((stMap[t.status]||{}).c||'#888'),title:t.title,sub:`${p.emoji||'📄'} ${p.name}`,
+      kw:(t.title+' '+p.name+' '+String(t.description||'').slice(0,120)+' '+(t.comments||[]).map(c=>c.text).join(' ').slice(0,240)),
+      run:()=>{if(p.id!==S.id){switchProject(p.id);setTimeout(()=>openTask(t.id),140);}else openTask(t.id);}}));
+    (data.ideas||[]).forEach(i2=>items.push({type:'Идея',icon:'<span class="pal-emoji">💡</span>',title:i2.title||String(i2.text||'').slice(0,60),sub:`${p.emoji||'📄'} ${p.name} · бэклог`,
+      kw:(i2.title||i2.text||'')+' '+p.name+' идея бэклог',
+      run:()=>{if(p.id!==S.id){switchProject(p.id);setTimeout(()=>setView('backlog'),140);}else setView('backlog');}}));});
   return items;
 }
-function typeW(t){return {'Команда':24,'Переход':22,'Проект':16,'Человек':12,'Задача':0,'Создать':-5}[t]||0;}
+function typeW(t){return {'Команда':24,'Переход':22,'Проект':16,'Человек':12,'Задача':0,'Идея':-2,'Создать':-5}[t]||0;}
 function palScore(q,it){
   const ql=q.toLowerCase(),tl=it.title.toLowerCase(),hay=(it.title+' '+it.kw).toLowerCase();
   if(tl.startsWith(ql))return 1200-tl.length;
