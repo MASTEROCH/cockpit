@@ -1425,7 +1425,9 @@ body.light .vando-panel{background:var(--sheen),rgba(255,255,255,.97)}
 .vando-hint span{font-size:11.5px;color:var(--acc2);border:1px solid rgba(167,139,250,.3);border-radius:9px;padding:3px 9px;cursor:pointer}
 .vando-hint span:hover{background:rgba(167,139,250,.12)}
 @media (max-width:680px){
-  #btnUndo,#btnRedo{display:none}
+  #btnUndo,#btnRedo,#btnSearch,#btnNew{display:none}
+  .cmdwrap{display:none} /* захват на мобиле = ➕ по центру нава */
+  header{padding-bottom:9px}
   .vando-fab{bottom:calc(132px + env(safe-area-inset-bottom));right:12px}
   .vando-panel{right:8px;left:8px;width:auto;bottom:calc(196px + env(safe-area-inset-bottom));height:min(480px,58vh)}
 }
@@ -1477,6 +1479,12 @@ body.light .vando-panel{background:var(--sheen),rgba(255,255,255,.97)}
   .capsheet{width:100vw;height:100dvh;max-width:none;border-radius:0;display:flex;flex-direction:column}
   .cap-b{flex:1;padding-top:30px}
   #capIn{font-size:26px}
+}
+@media (max-width:680px){
+  #fAssignee,#boardModeCtl,#bSelect,#fReset,#fOver{display:none!important}
+  .toolbar{padding:8px 12px;gap:7px}
+  .toolbar .search{order:0;flex:1;flex-basis:auto}
+  #fMine{order:1}
 }
 /* Сегмент-контрол внутри проекта (мобайл) */
 .mseg{position:sticky;top:0;z-index:30;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;
@@ -2293,6 +2301,10 @@ function renderNow(){
   clearTimeout(_nowSeenT);_nowSeenT=setTimeout(()=>{try{localStorage.setItem('cockpit_seen_'+S.id,Date.now());}catch(e){}},4200);
 }
 // ===== СВАЙПЫ: вправо = готово, влево = на завтра =====
+function haptic(kind){try{const T=window.Telegram&&window.Telegram.WebApp;if(!T||!T.HapticFeedback)return;
+  if(kind==='ok')T.HapticFeedback.notificationOccurred('success');
+  else if(kind==='warn')T.HapticFeedback.notificationOccurred('warning');
+  else T.HapticFeedback.impactOccurred('light');}catch(e){}}
 function attachSwipe(el,taskId){
   let sx=0,sy=0,dx=0,swiping=false;
   el.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;dx=0;swiping=false;},{passive:true});
@@ -2307,10 +2319,10 @@ function attachSwipe(el,taskId){
     el.style.transition='transform .22s var(--ease), background .22s';
     if(swiping&&dx>80){el.style.transform='translateX(110%)';
       setTimeout(()=>{const t=task(taskId);if(!t)return;t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;
-        logAct('✅','«'+t.title+'» → Готово (свайп)');awardForDone(S,t);celebrate();save();render();toast('Готово ✅','✅');},160);}
+        logAct('✅','«'+t.title+'» → Готово (свайп)');awardForDone(S,t);celebrate();haptic('ok');save();render();toast('Готово ✅','✅');},160);}
     else if(swiping&&dx<-80){el.style.transform='translateX(-110%)';
       setTimeout(()=>{const t=task(taskId);if(!t)return;const tm=fmtD(parseD(todayISO())+dayMs);
-        t.end=tm;if(parseD(t.start)>parseD(tm))t.start=tm;logAct('🌙','«'+t.title+'» → завтра (свайп)');save();render();toast('🌙 На завтра','🌙');},160);}
+        t.end=tm;if(parseD(t.start)>parseD(tm))t.start=tm;logAct('🌙','«'+t.title+'» → завтра (свайп)');haptic('light');save();render();toast('🌙 На завтра','🌙');},160);}
     else{el.style.transform='';el.style.background='';}
   },{passive:true});
 }
@@ -2328,6 +2340,8 @@ function renderNowMobile(ctx){
         <button class="mh-done" data-done="${next.id}">✓ Готово</button>
       </div></div>`
     :`<div class="mhero done"><div class="mh-label">🎉 Чисто</div><div class="mh-title">На тебе задач нет</div><div class="mh-meta">жми ➕ и создай первую</div></div>`;
+  if(upNext.length&&!localStorage.getItem('cockpit_swipe_tip')){localStorage.setItem('cockpit_swipe_tip','1');
+    setTimeout(()=>toast('Свайпни задачу: вправо — готово ✅, влево — на завтра 🌙','👆'),900);}
   const rows=upNext.map(t=>`<div class="mrow" data-open="${t.id}"><span class="dot" style="background:${stMap[t.status].c}"></span><span class="mr-t">${t.cash?'💰 ':''}${prGlyph(t)}${esc(t.title)}</span>${t.estimate?`<span class="mr-e">${t.estimate}ч</span>`:''}</div>`).join('');
   el.innerHTML=`
     <div class="mgreet"><h1>${greet.split(' ')[0]} ${greet.split(' ').slice(1).join(' ')}, ${esc(meName().split(' ')[0])}</h1>
@@ -4866,7 +4880,7 @@ function openCap(){
   inp.oninput=chips;
   inp.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('#capGo').click();}if(e.key==='Escape')closeCap();};
   $('#capMic').onclick=()=>dictateTo(inp,$('#capMic'));
-  $('#capGo').onclick=()=>{const v=inp.value.trim();if(!v){inp.focus();return;}closeCap();runCmd(v);};
+  $('#capGo').onclick=()=>{const v=inp.value.trim();if(!v){inp.focus();return;}closeCap();haptic('ok');runCmd(v);};
   setTimeout(()=>inp.focus(),80);
 }
 function closeCap(){$('#capScrim').classList.remove('show');}
@@ -4970,6 +4984,13 @@ async function cloudInit(){
   }catch(e){if(!cloudOn)showGate();}
 }
 async function onLoggedIn(){cloudOn=true;closeAuth();hideGate();updateCloudBadge();await cloudSync();subscribeRealtime();loadIntake();loadAccess();
+  // есть настоящие проекты в облаке → человек онбоожен ПО ОПРЕДЕЛЕНИЮ
+  // (флаги localStorage теряются на новом девайсе/в TMA — не мучаем мастером)
+  const hasReal=reg.list.filter(p=>!p.archived).some(p=>{const d=p.id===S.id?S:loadProj(p.id);
+    return d&&((d.tasks||[]).length||(d.ideas||[]).length||d.projectName!=='Новый проект');});
+  if(hasReal){localStorage.setItem('cockpit_onboarded','1');
+    const m=S.members.find(x=>(x.email||'').toLowerCase()===myEmail);
+    if(m&&m.name&&m.name!=='Я'&&m.name!=='Новый участник')localStorage.setItem('cockpit_profile_done','1');}
   if(!localStorage.getItem('cockpit_profile_done'))openProfileSetup();
   else if(!localStorage.getItem('cockpit_onboarded'))openSetupWizard();
   else if(localStorage.getItem('cockpit_brief_date')!==todayISO())openBrief();
