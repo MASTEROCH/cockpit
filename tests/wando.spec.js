@@ -53,7 +53,7 @@ test.describe('Персона A · новичок', () => {
 test.describe('Персона B · день PM', () => {
   test('отчёт империи открывается и закрывается по Esc', async ({ page }) => {
     await boot(page, `setView('all');openEmpireRep();`);
-    await expect(page.locator('#repModal')).toContainText('Отчёт империи');
+    await expect(page.locator('#repModal')).toContainText('Отчёт недели');
     await page.keyboard.press('Escape');
     await expect(page.locator('#repScrim')).not.toHaveClass(/show/);
   });
@@ -78,7 +78,7 @@ test.describe('Персона C · империя', () => {
         members:[{id:'m1',name:'Roch',email:'romi4rv23@gmail.com'}],sections:[{id:'s1',name:'x'}],ideas:[]}));
       reg.list.push({id:'p2',name:'ROCH Audit',emoji:'🎯'});
       S.tasks.forEach(t=>{t.assigneeId=null;});setView('now');`);
-    await expect(page.locator('.now-hero .nh-label')).toContainText('вся империя');
+    await expect(page.locator('.now-hero .nh-label')).toContainText('все проекты');
     await expect(page.locator('.now-hero .nh-title')).toContainText('Горящий оффер');
   });
 

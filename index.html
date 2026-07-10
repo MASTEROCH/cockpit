@@ -508,7 +508,7 @@ header{background:rgba(18,21,31,.62);backdrop-filter:var(--blur);-webkit-backdro
   body.light header{background:rgba(250,251,254,.98)}
   .brand small{display:none}
   .logo{width:30px;height:30px;font-size:17px}
-  .proj{display:inline-flex;max-width:42vw;font-size:14px;padding:7px 11px}
+  .proj{display:inline-flex;flex:1;max-width:none;justify-content:center;font-size:15px;font-weight:700;padding:9px 12px}
   .iconbtn{width:40px;height:40px;font-size:17px}
   .cmdwrap{order:5;flex-basis:100%;max-width:none}
   .cmd{padding:10px 13px}
@@ -1622,7 +1622,20 @@ body.light .mseg{background:rgba(250,251,254,.97)}
 .mentorcard .mt2{font-weight:800;font-size:13.5px;margin-bottom:4px}
 .mentorcard .ms2{font-size:12.5px;color:var(--mut);line-height:1.55;margin-bottom:10px}
 .mentorcard .ma2{display:flex;gap:8px;flex-wrap:wrap}
-/* ---- 📊 Отчёт империи (статус-репорт недели в один тап) ---- */
+/* ---- ⌨️ оверлей хоткеев ---- */
+.hksheet{width:min(560px,94vw);max-height:84vh;overflow:auto;padding:20px 22px}
+.hksheet h2{font-size:16px;margin:0 0 14px}
+.hk-g{margin-bottom:14px}
+.hk-g .hg{font-size:10px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:var(--mut2);margin-bottom:7px}
+.hk-r{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:13px;color:var(--mut)}
+.hk-r b{color:var(--txt);font-weight:600}
+.hk-r kbd{background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:2px 7px;font-size:11.5px;font-family:inherit;min-width:22px;text-align:center}
+/* ---- синк-индикатор в мобильном HUD ---- */
+.syncdot{display:none;width:7px;height:7px;border-radius:50%;background:#6b7280;flex:0 0 auto;margin-right:2px;transition:background .3s}
+.syncdot.on{background:var(--ok);box-shadow:0 0 6px rgba(52,211,153,.6)}
+@media (max-width:680px){.syncdot{display:inline-block}}
+.ctxnote{font-size:11px;color:var(--mut2);margin:-8px 0 8px 2px}
+/* ---- 📊 Отчёт недели (статус-репорт в один тап) ---- */
 .repsheet{width:min(680px,94vw);max-height:86vh;display:flex;flex-direction:column;padding:0}
 .rep-h{display:flex;align-items:center;gap:10px;padding:15px 20px;border-bottom:1px solid var(--line)}
 .rep-h b{font-size:15px}
@@ -1660,7 +1673,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
 
 <header>
   <div class="brand"><span class="logo" id="brandLogo"></span> WANDO <small>что делать</small></div>
-  <button class="proj" id="projBtn"><span id="projEmoji">🚀</span> <span id="projLabel">Проект</span> <span style="color:var(--mut2);font-size:10px">▾</span></button>
+  <button class="proj" id="projBtn"><span class="syncdot" id="syncDot" title="Синхронизация с командой"></span><span id="projEmoji">🚀</span> <span id="projLabel">Проект</span> <span style="color:var(--mut2);font-size:10px">▾</span></button>
   <div class="menu" id="projMenu"></div>
 
   <div class="cmdwrap">
@@ -1887,6 +1900,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
 <div class="modal-scrim" id="capScrim"><div class="modal capsheet" id="capModal"></div></div>
 <div class="modal-scrim" id="repScrim"><div class="modal repsheet" id="repModal"></div></div>
 <div class="modal-scrim" id="lpScrim"><div class="modal lpsheet" id="lpModal"></div></div>
+<div class="modal-scrim" id="hkScrim"><div class="modal hksheet" id="hkModal"></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -2016,7 +2030,7 @@ const todayISO=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.get
 const member=id=>S.members.find(m=>m.id===id);
 const task=id=>S.tasks.find(t=>t.id===id);
 const initials=n=>n.split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
-function avatar(id,cls=''){const m=member(id);if(!m)return `<span class="av none ${cls}">?</span>`;
+function avatar(id,cls=''){const m=member(id);if(!m)return '';
   if(m.photo)return `<span class="av ${cls}" style="background-image:url('${m.photo}');background-size:cover;background-position:center" title="${esc(m.name)}"></span>`;
   return `<span class="av ${cls}" style="background:${m.color}" title="${esc(m.name)}">${initials(m.name)}</span>`;}
 function avatarOf(m,sz){if(!m)return '';const s=sz?`width:${sz}px;height:${sz}px;`:'';
@@ -2339,7 +2353,7 @@ async function fetchClaudeInsight(btn){
     claudeNow[S.id]={summary:res.summary||'',risk:(res.risks&&res.risks[0])||'',sug:sg?((sg.taskTitle?('«'+sg.taskTitle+'»: '):'')+(sg.reason||'')):'',ts:Date.now()};
     if(view==='now')renderNow();else toast('Claude посмотрел проект 🤖','🤖','Открыть',()=>setView('now'));
   }catch(e){toast('Ошибка запроса к Claude','🤖');}
-  if(btn){btn.disabled=false;btn.textContent='🤖 Claude';}
+  if(btn){btn.disabled=false;btn.textContent='🤖 Разбор рисков';}
 }
 function renderNow(){
   const el=$('#now');if(!el)return;
@@ -2359,7 +2373,7 @@ function renderNow(){
   const h=new Date().getHours();const greet=h<6?'Доброй ночи':h<12?'Доброе утро':h<18?'Добрый день':'Добрый вечер';
   const ins=buildInsights(T);const running=!!(focus.tid&&task(focus.tid));
   const foldOpen=localStorage.getItem('cockpit_now_fold')!=='0';
-  // герой — по всей империи (как на мобиле): единая ментальная модель
+  // герой — по всем проектам (как на мобиле): единая ментальная модель
   let nextPid=S.id,heroX=null,upList=upNext.map(t=>({t,pid:S.id}));
   const multi=reg.list.filter(p=>!p.archived).length>1;
   if(multi){const all=myTasksAll();
@@ -2372,7 +2386,7 @@ function renderNow(){
   if(next){const ovn=isOverdue(next);const dl=daysLeft(next);const isFoc=focus.tid===next.id;const m=heroX?{name:heroX.aname}:(next.assigneeId?member(next.assigneeId):null);
     hero=`<div class="now-hero ${ovn?'over':''}">
      <div class="nh-main">
-      <div class="nh-label">${multi?'🎯 Твой следующий шаг · вся империя':(mine.length?'🎯 Твой следующий шаг':'🎯 Главное в проекте сейчас')}</div>
+      <div class="nh-label">${multi?'🎯 Твой следующий шаг · все проекты':(mine.length?'🎯 Твой следующий шаг':'🎯 Главное в проекте сейчас')}</div>
       <div class="nh-title" data-open="${next.id}">${next.cash?'💰 ':''}${prGlyph(next)}${esc(next.title)}</div>
       <div class="nh-meta">
         ${heroX?`<span class="ichip">${heroX.emoji} ${esc(heroX.pname)}</span>`:`<span class="ichip">${avatar(next.assigneeId)} ${m?esc(m.name):'без исполнителя'}</span>`}
@@ -2398,6 +2412,7 @@ function renderNow(){
       <span class="energyrow" title="Заряд сегодня: подстрою следующий шаг"><button data-en="hi" class="${energy==='hi'?'on':''}">🔋</button><button data-en="lo" class="${energy==='lo'?'on':''}">🪫</button></span></span></div>
     ${whatsNewStrip()}
     ${hero}
+    ${multi&&nextPid!==S.id?`<div class="ctxnote">цифры ниже — пульс этого проекта · ${esc(S.projectName)}</div>`:''}
     <div class="pulse-row">
       <div class="pulse-card"><div class="pv" style="color:var(--ok)">${pct}%</div><div class="pl">готово</div><div class="pbar2"><span style="width:${pct}%"></span></div></div>
       <div class="pulse-card"><div class="pv" style="color:var(--warn)">${prog}</div><div class="pl">в работе</div></div>
@@ -2408,8 +2423,8 @@ function renderNow(){
     <details class="fold" id="nowFold" ${foldOpen?'open':''}><summary>📈 Темп и сроки проекта</summary>${momentumSpark()}${milestoneRadar()}</details>
     ${claudeNowCard()}
     <div class="now-sec">🧠 Что важно знать <span>проактивно — пока другие тулзы молчат</span>
-      <button class="btn" id="claudeBtn" style="margin-left:auto;padding:8px 13px;font-size:12.5px">🤖 Claude</button>
-      <button class="btn" id="aiPlanBtn" style="padding:8px 13px;font-size:12.5px">🧠 AI-План</button></div>
+      <button class="btn" id="claudeBtn" style="margin-left:auto;padding:8px 13px;font-size:12.5px" title="ИИ посмотрит проект и подсветит риски">🤖 Разбор рисков</button>
+      <button class="btn" id="aiPlanBtn" style="padding:8px 13px;font-size:12.5px" title="Опиши цель — получишь готовый план задач">🧠 Спланируй цель</button></div>
     <div class="insights">${ins.map((x,i)=>`<div class="insight ${x.act?'click':''}" data-i="${i}"><span class="ii">${x.ic}</span><div class="ib"><div class="it">${esc(x.title)}</div>${x.sub?`<div class="is">${esc(x.sub)}</div>`:''}</div>${x.act?'<span class="ia">→</span>':''}</div>`).join('')}</div>`;
   const openX=(pid,tid)=>{if(pid&&pid!==S.id){switchProject(pid);setTimeout(()=>openTask(tid),120);}else openTask(tid);};
   const ns=el.querySelector('.nh-title[data-open]');if(ns)ns.onclick=()=>openX(nextPid,ns.dataset.open);
@@ -2463,6 +2478,19 @@ function openLP(taskId,pid){
     else openX(pid,taskId);});
 }
 function closeLP(){$('#lpScrim').classList.remove('show');}
+/* ⌨️ шпаргалка хоткеев — «?» как в Linear/Gmail */
+function openHotkeys(){
+  const K=(k,d)=>`<div class="hk-r"><kbd>${k}</kbd><b>${d}</b></div>`;
+  $('#hkModal').innerHTML=`<h2>⌨️ Клавиши</h2>
+   <div class="hk-g"><div class="hg">Везде</div>${K('⌘K','поиск и команды по всем проектам')+K('/','фокус в строку задач')+K('n','новая задача')+K('⌘Z · ⇧⌘Z','отменить · вернуть')+K('Esc','закрыть слой')}</div>
+   <div class="hk-g"><div class="hg">Разделы</div>${K('b','Доска')+K('g','Гант')+K('w','Неделя')+K('i','Бэклог')+K('t','Команда')+K('a','Все проекты')+K('o','Обзор')}</div>
+   <div class="hk-g"><div class="hg">На доске / Ганте / Неделе</div>${K('j · k','ходить по задачам')+K('x','готово')+K('e','открыть карточку')+K('c','коммент')+K('a','назначить следующему')}</div>
+   <div style="display:flex;gap:9px;margin-top:6px"><button class="btn primary" id="hkTour">🎓 Пройти обучение</button><button class="btn" id="hkX">Закрыть</button></div>`;
+  $('#hkScrim').classList.add('show');
+  $('#hkX').onclick=closeHotkeys;$('#hkTour').onclick=()=>{closeHotkeys();openOnboarding(0);};
+}
+function closeHotkeys(){$('#hkScrim').classList.remove('show');}
+$('#hkScrim').onclick=e=>{if(e.target===$('#hkScrim'))closeHotkeys();};
 $('#lpScrim').onclick=e=>{if(e.target===$('#lpScrim'))closeLP();};
 function attachSwipe(el,taskId,pid){
   let sx=0,sy=0,dx=0,swiping=false,lpT=null,lpFired=false;
@@ -2549,7 +2577,7 @@ function myTasksAll(){
 function renderNowMobile(ctx){
   const {el,greet,ins,running}=ctx;
   const energy=ctx.energy;
-  // империя: герой и очередь — со всех проектов (мультипроект), иначе как есть
+  // герой и очередь — со всех проектов (мультипроект), иначе как есть
   let next=ctx.next,upNext=ctx.upNext,nextPid=S.id,poolAll=null;
   const multi=reg.list.filter(p=>!p.archived).length>1;
   if(multi){
@@ -2564,7 +2592,7 @@ function renderNowMobile(ctx){
   const badge=x=>multi?`<span class="mr-p">${x.emoji} ${esc(x.pname)}</span>`:'';
   const heroX=multi&&poolAll&&poolAll.length?poolAll[0]:null;
   const hero=next?`<div class="mhero ${isOverdue(next)?'over':''}" data-open="${next.id}">
-      <div class="mh-label">${multi?'Твой следующий шаг · вся империя':(ctx.mine.length?'Твой следующий шаг':'Главное сейчас')}</div>
+      <div class="mh-label">${multi?'Твой следующий шаг · все проекты':(ctx.mine.length?'Твой следующий шаг':'Главное сейчас')}</div>
       <div class="mh-title">${next.cash?'💰 ':''}${prGlyph(next)}${esc(next.title)}</div>
       <div class="mh-meta">${heroX?`${heroX.emoji} ${esc(heroX.pname)} · `:''}${next.estimate?`${next.spent||0}/${next.estimate}ч · `:''}${(d=>d<0?`<b style="color:var(--bad)">просрочено ${-d}д</b>`:d===0?'сегодня':d===1?'завтра':'в плане')(daysLeft(next))}</div>
       <div class="mh-acts">
@@ -3334,7 +3362,7 @@ function renderPortfolio(){
      <div class="kpi"><div class="v" style="color:var(--ok)">${pct}%</div><div class="l">${gDone}/${gTasks} готово</div><div class="kpibar"><span style="width:${pct}%;background:linear-gradient(90deg,var(--ok),#10b981)"></span></div></div>
      <div class="kpi"><div class="v" style="color:${gOver?'var(--bad)':'var(--mut)'}">${gOver}</div><div class="l">Просрочено везде</div></div>
    </div>
-   <button class="cmdex" id="btnRep" style="margin-bottom:16px"><span>📊</span> Отчёт империи за неделю — собрать и скопировать для команды</button>
+   <button class="cmdex" id="btnRep" style="margin-bottom:16px"><span>📊</span> Отчёт недели по всем проектам — собрать и скопировать для команды</button>
    ${mine.length?`<div class="panel-c" style="margin-bottom:16px"><h3>🔥 Мои задачи по всем проектам <span class="c">${mine.length}</span></h3>
      ${mine.slice(0,14).map(x=>{const ov=over(x.t);const dl=Math.round((parseD(x.t.end)-parseD(tISO))/dayMs);
        return `<div class="trow" data-pid="${x.pid}" data-tid="${x.t.id}"><span class="dot" style="background:${stMap[x.t.status].c}"></span>
@@ -4594,7 +4622,8 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
     if($('#present').classList.contains('show'))return closePresent();
     if($('#palScrim').classList.contains('show'))return closePalette();
-    if($('#lpScrim').classList.contains('show'))closeLP();
+    if($('#hkScrim').classList.contains('show'))closeHotkeys();
+    else if($('#lpScrim').classList.contains('show'))closeLP();
     else if($('#repScrim').classList.contains('show'))closeEmpireRep();
     else if($('#obScrim').classList.contains('show'))closeOb();
     else if($('#npScrim').classList.contains('show'))$('#npScrim').classList.remove('show');
@@ -4629,7 +4658,7 @@ document.addEventListener('keydown',e=>{
   else if(e.key==='w')setView('week');
   else if(e.key==='t')setView('team');
   else if(e.key==='a')setView('all');
-  else if(e.key==='?')openOnboarding(0);
+  else if(e.key==='?')openHotkeys();
 });
 
 function monIdx(s){s=s.toLowerCase();for(let i=0;i<MONTHS.length;i++)if(s.startsWith(MONTHS[i]))return i;return -1;}
@@ -4733,7 +4762,7 @@ function runCmd(raw){
        addTaskToProject(hit.id,p,'todo');
        toast('Задача → '+(hit.emoji||'📄')+' '+hit.name+' ✓','🚀');render();return;}
      toast('Проект «'+pm[1].trim()+'» не нашёл','⚠');return;}}
-  // «отчёт» — статус-репорт империи одним словом
+  // «отчёт» — статус-репорт по всем проектам одним словом
   if(/^отч[её]т(\s+(недели|империи))?$/i.test(s)){openEmpireRep();return;}
   // — язык как интерфейс: массовые операции (без \b — он не работает с кириллицей) —
   // «что горит» / «покажи горящее» / «аврал» → фокус на самом важном
@@ -4861,7 +4890,7 @@ const OB=[
   p:'Кнопка в правом нижнем углу. Вандо видит все проекты, загрузку и даже то, как вы пользуетесь инструментом:',
   list:[['🔥','«Что горит по всем проектам?» — ответ по данным, не по воде'],['⚖️','«Кто перегружен и что перекинуть?» — с именами и часами'],['📊','Раз в неделю сам подсветит, что оптимизировать в WANDO'],['🤝','Пн/ср/пт сам выйдет на связь в TG — только если есть что сказать']]},
  {art:'🏢',h:'Компании, проекты, роли',
-  p:'Порядок в империи: наверху «🏢 Компания», внутри — проекты.',
+  p:'Наведи порядок: наверху «🏢 Компания», внутри — её проекты.',
   list:[['👑','<b>Команда</b> видит всё, включая личные проекты друг друга'],['🔐','<b>Гость</b> (фрилансер) — только выданный проект: «ведёт» или «смотрит»'],['➕','Команда → «Доступ и роли» — люди добавляются в 1 клик']]},
  {art:'🎨',h:'Цвета и клавиши',
   p:'Один цвет = один смысл, везде одинаково:',
@@ -5046,8 +5075,9 @@ function buildTemplate(tpl){
     p.tasks=[mk('Reels / видео','s1',0,1,'todo',3),mk('Пост-карусель','s1',1,2,'backlog',2),mk('Сторис-серия','s1',2,3,'backlog',2),mk('Email / рассылка','s1',3,4,'backlog',2),mk('Аналитика недели','s1',5,6,'backlog',1)];return p;}
   return base();
 }
-function createProject(name,tpl,parentId){
+function createProject(name,tpl,parentId,emoji){
   save();const p=migrate(buildTemplate(tpl));if(name)p.projectName=name;p.parentId=parentId||null;
+  if(emoji)p.emoji=emoji;
   reg.list.push({id:p.id,name:p.projectName,emoji:p.emoji||'📄',parentId:parentId||null});reg.active=p.id;saveReg();
   localStorage.setItem(pkey(p.id),JSON.stringify(p));S=p;resetUndo();if(cloudOn)cloudPush(p,true);
   collapsed={};filter={q:'',assignee:'',mine:false,overdue:false};ganttNeedsScroll=true;setView('board');toast('Проект создан: «'+p.projectName+'»','🚀');
@@ -5090,7 +5120,8 @@ projBtn.onclick=e=>{e.stopPropagation();
       +(isTeam?`<button data-act="makechild">📦 Вложить в проект…</button>`
       +`${cur&&cur.parentId?'<button data-act="unparent">⬆️ Вынести наверх</button>':''}`:'')
       +`<button data-act="report">📄 Отчёт для клиента</button>`
-      +(isTeam?`<button data-act="renp">✏️ Переименовать</button>`
+      +(isTeam?`<button data-act="pemoji">😀 Сменить эмодзи</button>`
+      +`<button data-act="renp">✏️ Переименовать</button>`
       +`<button data-act="archive">${cur&&cur.archived?'♻️ Вернуть из архива':'🗄 В архив'}</button>`
       +`${active.length>1?'<button data-act="delp" class="dng">🗑 Удалить проект</button>':''}`:'')
     +`</div>`
@@ -5109,6 +5140,8 @@ projMenu.onclick=e=>{const b=e.target.closest('button');if(!b)return;
   else if(b.dataset.act==='newp')openNewProject();
   else if(b.dataset.act==='report')openReport();
   else if(b.dataset.act==='renp'){const n=prompt('Название проекта:',S.projectName);if(n){S.projectName=n.trim();save();render();}}
+  else if(b.dataset.act==='pemoji'){const cur=(projMeta(S.id)||{}).emoji||'📄';let em=(prompt('Эмодзи проекта:',cur)||'').trim();
+    if(em){em=[...em][0];const e2=projMeta(S.id);if(e2)e2.emoji=em;S.emoji=em;saveReg();save();render();toast('Эмодзи обновлён: '+em,em);}}
   else if(b.dataset.act==='archive')archiveProject(S.id,!(reg.list.find(p=>p.id===S.id)||{}).archived);
   else if(b.dataset.act==='delp')deleteProject(S.id);};
 
@@ -5119,7 +5152,10 @@ function loadDemo(){
   collapsed={};filter={q:'',assignee:'',mine:false,overdue:false};ganttNeedsScroll=true;setView('board');toast('Демо-проект загружен','🎬');
 }
 let npTpl='mvp';
-function openNewProject(){npTpl='mvp';renderNP();$('#npScrim').classList.add('show');}
+const EMOJI_POOL=['🚀','🌐','🎯','💰','📱','🛠','🎨','📣','🏪','🤝','📦','🔥','🧪','📚','🎬','⚡'];
+let npEmoji='';
+function freeEmoji(){const used=new Set(reg.list.map(p=>p.emoji));return EMOJI_POOL.find(e=>!used.has(e))||EMOJI_POOL[Math.floor(Math.random()*EMOJI_POOL.length)];}
+function openNewProject(){npTpl='mvp';npEmoji=freeEmoji();renderNP();$('#npScrim').classList.add('show');}
 function renderNP(){
   $('#npModal').innerHTML=`
     <div class="ob-body" style="padding-top:24px">
@@ -5128,9 +5164,11 @@ function renderNP(){
       <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mut2);margin:16px 0 6px">Название проекта</label>
       <input class="inp" id="npName" placeholder="Например: AppHub — лендинг" style="font-size:16px;padding:12px 14px">
       <div class="tpl-grid">${TEMPLATES.map(t=>`<button class="tpl ${t.k===npTpl?'on':''}" data-tpl="${t.k}"><div class="tic">${t.emoji}</div><div class="tnm">${t.n}</div><div class="tds">${t.d}</div></button>`).join('')}</div>
+      <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mut2);margin:16px 0 6px">Эмодзи проекта</label>
+      <div id="npEmojis" style="display:flex;gap:6px;flex-wrap:wrap">${EMOJI_POOL.map(e=>`<button class="chip ${e===npEmoji?'on':''}" data-em="${e}" style="font-size:16px;padding:6px 9px">${e}</button>`).join('')}<button class="chip" data-em="+" title="Свой эмодзи" style="font-size:14px;padding:6px 9px">＋ свой</button></div>
       <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mut2);margin:16px 0 6px">Компания / родительский проект</label>
       <select class="inp" id="npParent"><option value="">— верхний уровень (сам контейнер) —</option>${reg.list.filter(p=>!p.archived).map(p=>`<option value="${p.id}">${esc(p.emoji||'📄')} ${esc(p.name)}</option>`).join('')}</select>
-      <div style="font-size:11.5px;color:var(--mut2);margin-top:6px">💡 Порядок в империи: создай «🏢 Компанию», а проекты клади внутрь — Приёмка и бот будут показывать их деревом.</div>
+      <div style="font-size:11.5px;color:var(--mut2);margin-top:6px">💡 Совет: создай «🏢 Компанию», а проекты клади внутрь — Приёмка и бот будут показывать их деревом.</div>
     </div>
     <div class="ob-foot"><div class="spacer"></div><button class="btn" id="npCancel">Отмена</button><button class="btn primary" id="npCreate">Создать проект</button></div>`;
   const nameEl=$('#npName');nameEl.value=TPL_NAME[npTpl]||'Мой проект';
@@ -5138,8 +5176,12 @@ function renderNP(){
   $$('#npModal .tpl').forEach(el=>el.onclick=()=>{npTpl=el.dataset.tpl;
     $$('#npModal .tpl').forEach(x=>x.classList.toggle('on',x===el));
     if(!edited)nameEl.value=TPL_NAME[npTpl]||'Мой проект';});
+  $$('#npEmojis .chip').forEach(c=>c.onclick=()=>{let em=c.dataset.em;
+    if(em==='+'){em=(prompt('Вставь эмодзи:')||'').trim();if(!em)return;em=[...em][0];}
+    npEmoji=em;$$('#npEmojis .chip').forEach(x=>x.classList.toggle('on',x.dataset.em===npEmoji));
+    if(!$$('#npEmojis .chip').some(x=>x.dataset.em===npEmoji))c.classList.add('on');});
   $('#npCancel').onclick=()=>$('#npScrim').classList.remove('show');
-  $('#npCreate').onclick=()=>{const nm=(nameEl.value||'').trim()||TPL_NAME[npTpl]||'Мой проект';const par=($('#npParent')||{}).value||'';$('#npScrim').classList.remove('show');createProject(nm,npTpl,par||null);};
+  $('#npCreate').onclick=()=>{const nm=(nameEl.value||'').trim()||TPL_NAME[npTpl]||'Мой проект';const par=($('#npParent')||{}).value||'';$('#npScrim').classList.remove('show');createProject(nm,npTpl,par||null,npEmoji);};
   setTimeout(()=>{nameEl.focus();nameEl.select();},60);
 }
 $('#npScrim').onclick=e=>{if(e.target===$('#npScrim'))$('#npScrim').classList.remove('show');};
@@ -5220,6 +5262,7 @@ async function vandoSend(){
   clearInterval(_stTimer);
   _vandoBusy=false;vandoRender();
 }
+{const bl=$('#brandLogo');if(bl){bl.style.cursor='pointer';bl.title='Сегодня';bl.onclick=()=>{setView('now');haptic('sel');};}}
 {const f=$('#vandoFab');if(f){f.innerHTML=logoMarkSVG(22);f.onclick=()=>vandoToggle();}
  const x=$('#vandoX');if(x)x.onclick=()=>vandoToggle(false);
  const a=$('#vandoAva');if(a)a.innerHTML=logoMarkSVG(16);
@@ -5261,10 +5304,10 @@ function openCap(){
 }
 function closeCap(){$('#capScrim').classList.remove('show');}
 $('#capScrim').onclick=e=>{if(e.target===$('#capScrim'))closeCap();};
-/* === 📊 Отчёт империи: статус-репорт недели одним тапом ==============
+/* === 📊 Отчёт недели: статус-репорт одним тапом =====================
    Боль PM/фаундера: часы на «что у нас происходит» для команды/партнёров.
    WANDO собирает сам: закрыто за неделю (из activity), в работе, огонь,
-   деньги, фокус след. недели (top relScore по всей империи). */
+   деньги, фокус след. недели (top relScore по всем проектам). */
 function empireReport(){
   const weekAgo=Date.now()-7*dayMs,tISO=todayISO();
   const projs=reg.list.filter(p=>!p.archived).map(p=>({meta:p,data:p.id===S.id?S:loadProj(p.id)})).filter(x=>x.data&&(x.data.tasks||[]).some(t=>!t.isMilestone));
@@ -5290,7 +5333,7 @@ function empireReport(){
   return {period,done7,act,over,cash,rows,focus:focus.slice(0,3),tISO};
 }
 function reportText(R){
-  const L=['📊 WANDO · Отчёт империи — '+R.period,'',
+  const L=['📊 WANDO · Отчёт недели — '+R.period,'',
     'Итог недели: ✅ '+R.done7+' закрыто · 🔄 '+R.act+' в работе · 🔥 '+R.over+' просрочено'+(R.cash?' · 💰 '+R.cash+' денежных':'')];
   R.rows.forEach(r=>{L.push('');L.push((r.meta.emoji||'📄')+' '+r.meta.name+' — '+r.pct+'% готово');
     if(r.closedN)L.push('  ✅ Закрыто: '+(r.closed.length?r.closed.slice(0,4).join(' · ')+(r.closedN>4?' +'+(r.closedN-4):''):r.closedN+' задач'));
@@ -5305,7 +5348,7 @@ function reportText(R){
 function openEmpireRep(){
   const R=empireReport(),txt=reportText(R);
   if(typeof track==='function')track('report:open');
-  $('#repModal').innerHTML=`<div class="rep-h"><b>📊 Отчёт империи</b><span class="sub">${R.period} · собран автоматически</span><button class="iconbtn" style="margin-left:auto" id="repX" aria-label="Закрыть отчёт" title="Закрыть">✕</button></div>
+  $('#repModal').innerHTML=`<div class="rep-h"><b>📊 Отчёт недели</b><span class="sub">${R.period} · собран автоматически</span><button class="iconbtn" style="margin-left:auto" id="repX" aria-label="Закрыть отчёт" title="Закрыть">✕</button></div>
    <div class="rep-b">
     <div class="rep-stats"><span>✅ ${R.done7} закрыто</span><span>🔄 ${R.act} в работе</span><span${R.over?' style="color:var(--bad)"':''}>🔥 ${R.over} просрочено</span>${R.cash?`<span style="color:var(--ok)">💰 ${R.cash} денежных</span>`:''}</div>
     ${R.rows.map(r=>`<div class="rep-p"><div class="rp-t">${r.meta.emoji||'📄'} ${esc(r.meta.name)}<span class="pct">${r.pct}%</span></div>
@@ -5344,7 +5387,7 @@ function renderMProjects(){
   el.innerHTML=`<div class="secttl">📁 Проекты <span style="margin-left:auto;text-transform:none;letter-spacing:0;font-weight:500;color:var(--mut2)">${projs.length}</span></div>
     <div class="mplist">${html}</div>
     <button class="btn" style="width:100%;margin-top:14px;justify-content:center" id="mpAll">🌐 Пульс всей компании</button>
-    <button class="btn" style="width:100%;margin-top:8px;justify-content:center" id="mpRep">📊 Отчёт империи за неделю</button>
+    <button class="btn" style="width:100%;margin-top:8px;justify-content:center" id="mpRep">📊 Отчёт недели</button>
     ${isTeam?'<button class="btn" style="width:100%;margin-top:8px;justify-content:center" id="mpNew">＋ Новый проект</button>':''}`;
   $$('#mprojects .mprow').forEach(r=>r.onclick=()=>{const id=r.dataset.p;if(id!==S.id)switchProject(id);else setView('board');});
   const a=$('#mpAll');if(a)a.onclick=()=>setView('all');
@@ -5357,7 +5400,8 @@ function renderMProjects(){
 
 /* ============================ CLOUD SYNC (Supabase) ============================ */
 function loadSb(){return new Promise((res,rej)=>{if(window.supabase)return res();const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';s.onload=()=>res();s.onerror=rej;document.head.appendChild(s);});}
-function updateCloudBadge(){const b=$('#btnCloud');if(!b)return;b.classList.toggle('on',cloudOn);b.classList.toggle('off',!cloudOn);
+function updateCloudBadge(){const sd=$('#syncDot');if(sd)sd.classList.toggle('on',!!cloudOn);
+  const b=$('#btnCloud');if(!b)return;b.classList.toggle('on',cloudOn);b.classList.toggle('off',!cloudOn);
   b.innerHTML=cloudOn?icon('check'):icon('sync');
   b.title=cloudOn?'Синхронизировано с командой · нажми, чтобы выйти':'Войти и синхронизировать с командой';}
 /* ---- login gate (обязательный вход) ---- */
