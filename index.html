@@ -5458,6 +5458,54 @@ function saveProfileSetup(){
   $('#profileScrim').classList.remove('show');toast('Профиль сохранён','✅');
   if(!localStorage.getItem('cockpit_onboarded'))openSetupWizard();
 }
+/* ==== MERGE-СИНК: трёхстороннее слияние вместо last-write-wins ==========
+   base = последнее согласованное состояние (cockpit_b_<id>, пишется при
+   каждом успешном push/pull). При конфликте правки обеих сторон сливаются
+   на уровне задач/секций/людей/идей; правка бьёт удаление; комменты и
+   activity — объединение без потерь. Обе стороны сходятся к одному итогу. */
+const bkey=id=>'cockpit_b_'+id;
+function loadBase(id){try{return JSON.parse(localStorage.getItem(bkey(id)));}catch(e){return null;}}
+function saveBase(id,data){try{localStorage.setItem(bkey(id),typeof data==='string'?data:JSON.stringify(data));}catch(e){}}
+function _mById(a){const m={};(a||[]).forEach(x=>{if(x&&x.id)m[x.id]=x;});return m;}
+function mergeList(bA,lA,cA,lNewer){
+  const b=_mById(bA),l=_mById(lA),c=_mById(cA);
+  const ids=[...new Set([...Object.keys(l),...Object.keys(c)])];
+  const js=x=>JSON.stringify(x);const out=[];
+  ids.forEach(id=>{
+    const bx=b[id],lx=l[id],cx=c[id];
+    if(lx&&cx){
+      if(js(lx)===js(cx)){out.push(lx);return;}
+      if(bx&&js(lx)===js(bx)){out.push(cx);return;}   // менялось только в облаке
+      if(bx&&js(cx)===js(bx)){out.push(lx);return;}   // менялось только у нас
+      const win=lNewer?lx:cx;                          // обе стороны правили — новее побеждает…
+      if(lx.comments||cx.comments){                    // …но комменты объединяем всегда
+        const seen={},cm=[];[...(lx.comments||[]),...(cx.comments||[])].forEach(x=>{
+          const k=(x.ts||0)+'|'+(x.author||'')+'|'+(x.text||'');if(!seen[k]){seen[k]=1;cm.push(x);}});
+        cm.sort((a,b)=>(a.ts||0)-(b.ts||0));win.comments=cm;}
+      out.push(win);return;}
+    const x=lx||cx;
+    if(!bx){out.push(x);return;}                       // новое с одной стороны
+    if(js(x)!==js(bx))out.push(x);                     // правка бьёт удаление
+  });
+  const order=((lNewer?lA:cA)||[]).map(x=>x.id);
+  out.sort((a,b)=>{const ia=order.indexOf(a.id),ib=order.indexOf(b.id);return (ia<0?1e9:ia)-(ib<0?1e9:ib);});
+  return out;
+}
+function mergeProj(base,local,cloud){
+  base=base||{};
+  const lNewer=(local.updatedAt||0)>=(cloud.updatedAt||0);
+  const M=JSON.parse(JSON.stringify(lNewer?local:cloud));
+  M.tasks=mergeList(base.tasks,local.tasks,cloud.tasks,lNewer);
+  M.sections=mergeList(base.sections,local.sections,cloud.sections,lNewer);
+  M.members=mergeList(base.members,local.members,cloud.members,lNewer);
+  M.ideas=mergeList(base.ideas,local.ideas,cloud.ideas,lNewer);
+  const uni=(a,b,key,cap)=>{const seen={},o=[];[...(a||[]),...(b||[])].forEach(x=>{const k=key(x);if(!seen[k]){seen[k]=1;o.push(x);}});
+    o.sort((x,y)=>(y.ts||0)-(x.ts||0));return cap?o.slice(0,cap):o;};
+  M.activity=uni(local.activity,cloud.activity,x=>(x.ts||0)+'|'+(x.text||''),150);
+  M.notes=uni(local.notes,cloud.notes,x=>(x.ts||0)+'|'+(x.text||''));
+  M.updatedAt=Math.max(local.updatedAt||0,cloud.updatedAt||0);
+  return M;
+}
 async function cloudSync(){
   let rows=[];try{const {data,error}=await sb.from('projects').select('*');if(error)throw error;rows=data||[];}
   catch(e){toast('Ошибка чтения облака: '+(e.message||e),'⚠');return;}
@@ -5469,16 +5517,28 @@ async function cloudSync(){
     const rts=(wm&&wm.v&&wm.v.ts)||0;
     if(rts>+(localStorage.getItem('cockpit_reset_seen')||0)){purge=true;localStorage.setItem('cockpit_reset_seen',String(rts));}
   }catch(e){/* таблицы может не быть — старое поведение */}
-  // merge cloud↔local per project — newer wins, ничего не теряем
+  // merge cloud↔local per project — трёхстороннее слияние, ничего не теряем
   rows.forEach(r=>{
-    const local=loadProj(r.id);
+    const local=loadProj(r.id),base=loadBase(r.id);
+    if(!local){localStorage.setItem(pkey(r.id),JSON.stringify(r.data));saveBase(r.id,r.data);return;}
+    const js=x=>JSON.stringify(x);
+    const lch=base?js(local)!==js(base):null, cch=base?js(r.data)!==js(base):null;
+    if(base&&!lch&&!cch)return;                                    // все согласны
+    if(base&&lch&&cch){                                            // правили оба → сливаем
+      const merged=mergeProj(base,local,r.data);
+      localStorage.setItem(pkey(r.id),js(merged));cloudPush(merged,true);saveBase(r.id,merged);
+      if(r.id===reg.active)toast('Слил твои правки с правками партнёра — ничего не потеряно','🤝');
+      return;}
+    if(base&&lch){cloudPush(local,true);saveBase(r.id,local);return;}      // менялись только мы
+    if(base&&!lch&&cch){localStorage.setItem(pkey(r.id),js(r.data));saveBase(r.id,r.data);return;} // только облако
+    // базы нет (первый запуск на девайсе) — прежнее поведение newer-wins + заводим базу
     const cloudT=(r.data&&r.data.updatedAt)||0, localT=(local&&local.updatedAt)||0;
-    if(local&&localT>cloudT) cloudPush(local,true);                  // локальное новее → оставляем и пушим
-    else localStorage.setItem(pkey(r.id),JSON.stringify(r.data));    // облачное новее → принимаем
+    if(localT>cloudT){cloudPush(local,true);saveBase(r.id,local);}
+    else{localStorage.setItem(pkey(r.id),js(r.data));saveBase(r.id,r.data);}
   });
   // локальные проекты, которых нет в облаке → отправляем (не теряем) ИЛИ чистим (после сброса)
   reg.list.forEach(p=>{if(!cloudById[p.id]){
-    if(purge){localStorage.removeItem(pkey(p.id));localStorage.removeItem('cockpit_seen_'+p.id);}
+    if(purge){localStorage.removeItem(pkey(p.id));localStorage.removeItem(bkey(p.id));localStorage.removeItem('cockpit_seen_'+p.id);}
     else{const local=loadProj(p.id);if(local)cloudPush(local,true);}
   }});
   if(purge){reg.list=reg.list.filter(p=>cloudById[p.id]);
@@ -5501,19 +5561,24 @@ function cloudPush(p,now){
   if(!cloudOn||!sb||!p)return;
   p.updatedAt=Date.now();
   const row={id:p.id,name:p.projectName,emoji:(reg.list.find(x=>x.id===p.id)||{}).emoji||'📄',data:p,updated_by:me,updated_at:new Date().toISOString()};
-  const doit=async()=>{try{await sb.from('projects').upsert(row);}catch(e){console.warn('cloud push',e);}};
+  const doit=async()=>{try{const snap=JSON.stringify(row.data);await sb.from('projects').upsert(row);saveBase(p.id,snap);}catch(e){console.warn('cloud push',e);}};
   if(now){doit();return;}clearTimeout(_pt[p.id]);_pt[p.id]=setTimeout(doit,700);
 }
 async function cloudDelete(id){if(!cloudOn||!sb)return;try{await sb.from('projects').delete().eq('id',id);}catch(e){}}
 function subscribeRealtime(){
   if(rtSubbed)return;rtSubbed=true;
   try{sb.channel('cockpit-rt').on('postgres_changes',{event:'*',schema:'public',table:'projects'},payload=>{
-    if(payload.eventType==='DELETE'){const id=payload.old&&payload.old.id;if(!id)return;reg.list=reg.list.filter(p=>p.id!==id);localStorage.removeItem(pkey(id));
+    if(payload.eventType==='DELETE'){const id=payload.old&&payload.old.id;if(!id)return;reg.list=reg.list.filter(p=>p.id!==id);localStorage.removeItem(pkey(id));localStorage.removeItem(bkey(id));
       if(S.id===id&&reg.list[0]){reg.active=reg.list[0].id;S=migrate(loadProj(reg.active));}saveReg();render();return;}
     const row=payload.new;if(!row||row.updated_by===me)return;applyRemote(row);
   }).on('postgres_changes',{event:'*',schema:'public',table:'intake'},onIntakeRealtime).subscribe();}catch(e){console.warn('realtime',e);rtSubbed=false;}
 }
 function applyRemote(row){
+  {const local=loadProj(row.id),base=loadBase(row.id);
+   if(local&&base&&JSON.stringify(local)!==JSON.stringify(base)){
+     const merged=mergeProj(base,local,row.data);
+     row=Object.assign({},row,{data:merged});cloudPush(merged,true);}
+   else saveBase(row.id,row.data);}
   localStorage.setItem(pkey(row.id),JSON.stringify(row.data));
   let e=reg.list.find(p=>p.id===row.id);
   if(e){e.name=row.name;e.emoji=row.emoji||'📄';}else reg.list.push({id:row.id,name:row.name,emoji:row.emoji||'📄'});
