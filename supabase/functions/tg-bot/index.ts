@@ -459,6 +459,18 @@ async function pingWaiting(asker: Link, projectId: string, taskId: string): Prom
   await say(wl.chat_id, `🔔 <b>${esc(asker.name ?? asker.email)}</b> ждёт от тебя шага:\n«<a href="https://${SITE}/?t=${p.id}:${t.id}">${esc(t.title)}</a>» <i>(${p.emoji ?? "📄"} ${esc(p.name)})</i>\n\nСделай ход — или просто ответь на это сообщение, текст станет комментом 🙌`);
   return `🔔 Пингнул ${esc(who.name ?? "")} — теперь мяч на его стороне ✅`;
 }
+// 🧍 стендап по требованию: вопрос команде, ответы reply'ем летят инициатору.
+// Хранилища нет — маркер su=<chatId инициатора> зашит в text_link якорь вопроса.
+async function askStandup(init: Link, initChat: number): Promise<string> {
+  const ws = await wsByEmail(init.email);
+  const links = (await teamLinks(init.email, ws)).filter((l) => l.chat_id !== initChat);
+  if (!links.length) return "🧍 Пока некому: никто из команды не привязал Telegram.";
+  const q = `🧍 <b>${esc(init.name ?? init.email)}</b> собирает <a href="https://${SITE}/?su=${initChat}">стендап</a>:\n\n1️⃣ что сделал вчера\n2️⃣ что делаешь сегодня\n3️⃣ что мешает\n\n<i>↩︎ ответь на ЭТО сообщение одним сообщением — я перешлю</i>`;
+  let n = 0;
+  for (const l of links) { await TG("sendMessage", { chat_id: l.chat_id, text: q, parse_mode: "HTML", disable_web_page_preview: true }); n++; }
+  return `🧍 Спросил ${n} ${n === 1 ? "человека" : "человек"} — ответы прилетят сюда по мере готовности.`;
+}
+
 // вечерний разбор: закрыто сегодня + незакрытое с переносом одним тапом
 function nextMondayISO(): string {
   const now = new Date(Date.now() + TZ * 3600_000);
@@ -614,7 +626,7 @@ const HELP = `<b>WANDO-бот — пульт в кармане</b>
 • 🌇 18:00 — вечерний разбор: что закрыто, незакрытое — на завтра одним тапом
 • Новая заявка → команде пуш с ✓/✕; решение → автору пуш
 • 💬 Ответь (reply) на сообщение бота о задаче — текст станет комментом в её карточке
-• ⭐ /plan — тариф Founder (оплата Stars прямо здесь)
+• ⭐ /plan — тариф Founder (оплата Stars прямо здесь)\n• 🧍 «стендап» — соберу у команды «вчера/сегодня/мешает», ответы пришлю тебе
 
 Понимаю: @имя · сегодня/завтра/послезавтра · «с 22 по 28 июля» · «до 15 июля» · «на 3 дня» · 2ч · !срочно/важно`;
 
@@ -772,6 +784,20 @@ Deno.serve(async (req) => {
           if (m) { ref = { pid: m[1], tid: m[2] }; break; }
         }
       }
+      // стендап-ответ: маркер su=<chatId инициатора> в якоре вопроса
+      for (const e of ents) {
+        if (e.type === "text_link" && e.url) {
+          const ms = String(e.url).match(/[?&]su=(\d+)/);
+          if (ms) {
+            const link = await getLink(chatId);
+            const who = link ? (link.name ?? link.email) : name;
+            await TG("sendMessage", { chat_id: +ms[1], parse_mode: "HTML", disable_web_page_preview: true,
+              text: `🧍 <b>${esc(who)}</b>:\n${esc(text.slice(0, 1500))}` });
+            await say(chatId, "🧍 Передал ✓");
+            return new Response("ok");
+          }
+        }
+      }
       if (ref) {
         const link = await getLink(chatId);
         if (!link) { await say(chatId, "Сначала привяжи ключ: <code>/key cpk_…</code> (см. /help)"); return new Response("ok"); }
@@ -831,7 +857,8 @@ Deno.serve(async (req) => {
         await say(chatId, "Пришли свой <b>email</b> — создам тебе личное пространство 🚀\nИли привяжись к команде: " + SITE + " → «Подключить Telegram», либо <code>/key cpk_…</code>");
         return new Response("ok");
       }
-      if (/^\/brief|^☀️/.test(text)) { await sendBrief(link); }
+      if (/^\/standup|^стендап|^🧍/i.test(text)) { await say(chatId, await askStandup(link, chatId)); }
+      else if (/^\/brief|^☀️/.test(text)) { await sendBrief(link); }
       else if (/^🔥|^\/fire|что горит|^аврал/i.test(text)) { await say(chatId, await statusSummary(link.email, true)); }
       else if (/^📊|^\/status|^стат/i.test(text)) { await say(chatId, await statusSummary(link.email, false)); }
       else if (/^📥|^\/intake|^приёмка|^приемка/i.test(text)) { await listIntake(chatId, link); }
