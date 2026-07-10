@@ -1635,6 +1635,9 @@ body.light .mseg{background:rgba(250,251,254,.97)}
 .syncdot.on{background:var(--ok);box-shadow:0 0 6px rgba(52,211,153,.6)}
 @media (max-width:680px){.syncdot{display:inline-block}}
 .ctxnote{font-size:11px;color:var(--mut2);margin:-8px 0 8px 2px}
+.nh-why{font-size:12px;color:var(--mut2);margin-top:9px}
+.nh-why b{color:var(--mut);font-weight:600}
+.mh-why{font-size:11.5px;color:var(--mut2);margin-top:7px;opacity:.9}
 /* ---- 📊 Отчёт недели (статус-репорт в один тап) ---- */
 .repsheet{width:min(680px,94vw);max-height:86vh;display:flex;flex-direction:column;padding:0}
 .rep-h{display:flex;align-items:center;gap:10px;padding:15px 20px;border-bottom:1px solid var(--line)}
@@ -2148,6 +2151,22 @@ function filterActive(){return filter.q||filter.assignee||filter.mine||filter.ov
 let view='now';
 function relScore(t){const prW={urgent:4,high:3,med:2,low:1}[t.priority]||2;const dl=daysLeft(t);const cashW=t.cash?2.5:0;
   const due=dl<0?(2000-dl):Math.max(0,400-dl*8);return cashW+due+prW*60;}
+/* «почему этот шаг» — разложение той же формулы человеческим языком.
+   Показываем только то, что реально повлияло на выбор — никакой мистики. */
+function whyNext(t,energy){
+  const r=[];const dl=daysLeft(t);
+  if(dl<0)r.push('🔥 просрочено '+(-dl)+' '+plural(-dl,'день','дня','дней'));
+  else if(dl===0)r.push('📅 дедлайн сегодня');
+  else if(dl===1)r.push('📅 дедлайн завтра');
+  else if(dl<=3)r.push('📅 срок через '+dl+' '+plural(dl,'день','дня','дней'));
+  if(t.cash)r.push('💰 двигает деньги');
+  if(t.priority==='urgent')r.push('🚩 срочный приоритет');
+  else if(t.priority==='high')r.push('⚑ высокий приоритет');
+  if(energy==='lo'&&t.estimate&&t.estimate<=2)r.push('🪫 лёгкая — под сегодняшний заряд');
+  else if(energy==='hi'&&(t.estimate>=4||t.priority==='high'||t.priority==='urgent'))r.push('🔋 большая — заряд позволяет');
+  if(!r.length)r.push('ближайшая по сроку и приоритету');
+  return r.slice(0,3);
+}
 /* геймификация: баллы за выполненные задачи */
 function taskValue(t){const pm={urgent:1.5,high:1.25,med:1,low:1}[t.priority]||1;return Math.max(3,Math.round((t.estimate||5)*pm));}
 function shiftDate(iso,repeat){if(!iso)return iso;const d=parseD(iso);
@@ -2394,6 +2413,7 @@ function renderNow(){
         ${next.estimate?`<span class="ichip">⏱ ${next.spent||0}/${next.estimate}ч</span>`:''}
         <span class="ichip ${ovn?'bad':''}">📅 ${ovn?'просрочено '+(-dl)+'д':dl===0?'сегодня':dl===1?'завтра':'через '+dl+'д'}</span>
       </div>
+      <div class="nh-why"><b>почему этот шаг:</b> ${whyNext(next,_energy).join(' · ')}</div>
       <div class="nh-acts">
         ${isFoc?`<div class="focusrun"><span class="fdot"></span><span id="focusClock" class="fclock">00:00</span><button class="btn" id="focusStop">■ Стоп</button></div>`
                :`<button class="btn primary big" id="focusStart">${icon('play',15)} Фокус — поехали${next.spent?` <span style="opacity:.75;font-weight:600">· уже ${next.spent}ч</span>`:''}</button>`}
@@ -2595,6 +2615,7 @@ function renderNowMobile(ctx){
       <div class="mh-label">${multi?'Твой следующий шаг · все проекты':(ctx.mine.length?'Твой следующий шаг':'Главное сейчас')}</div>
       <div class="mh-title">${next.cash?'💰 ':''}${prGlyph(next)}${esc(next.title)}</div>
       <div class="mh-meta">${heroX?`${heroX.emoji} ${esc(heroX.pname)} · `:''}${next.estimate?`${next.spent||0}/${next.estimate}ч · `:''}${(d=>d<0?`<b style="color:var(--bad)">просрочено ${-d}д</b>`:d===0?'сегодня':d===1?'завтра':'в плане')(daysLeft(next))}</div>
+      <div class="mh-why">почему: ${whyNext(next,energy).join(' · ')}</div>
       <div class="mh-acts">
         ${running&&focus.tid===next.id?`<div class="focusrun"><span class="fdot"></span><span id="focusClock" class="fclock">00:00</span><button class="btn" id="focusStop">■</button></div>`
           :`<button class="mh-go" id="focusStart">▶ Фокус${next.spent?` · ${next.spent}ч`:''}</button>`}
