@@ -2348,8 +2348,9 @@ function renderNow(){
      </div>
      ${upList.length?`<div class="nh-side"><div class="nh-side-t">На очереди · ${upList.length}</div>${upList.map(x=>`<div class="nh-up" data-open="${x.t.id}" data-pid="${x.pid}"><button class="nh-qd" data-qd="${x.t.id}" data-pid="${x.pid}" title="Готово" aria-label="Готово" style="--c:${stMap[x.t.status].c}">✓</button><span class="nh-up-t">${x.t.cash?'💰 ':''}${prGlyph(x.t)}${esc(x.t.title)}</span>${multi?`<span class="nh-up-e">${x.emoji||''}</span>`:(x.t.estimate?`<span class="nh-up-e">${x.t.estimate}ч</span>`:'')}</div>`).join('')}</div>`:''}
     </div>`;
-  }else hero=`<div class="now-hero done"><div class="nh-label">🎉 Чисто</div><div class="nh-title">Активных задач на тебе нет</div>
-      <div class="nh-meta"><span class="ichip">создай задачу строкой сверху или ⌘K</span></div></div>`;
+  }else{const bare=!S.tasks.some(t=>!t.isMilestone&&t.status!=='done');
+    hero=`<div class="now-hero done"><div class="nh-label">${bare?'🧠 Начнём?':'🎉 Чисто'}</div><div class="nh-title">${bare?'Не знаешь, с чего начать — норм':'Активных задач на тебе нет'}</div>
+      <div class="nh-meta">${bare?'<button class="btn primary" id="npPlan" style="margin-top:4px">🧠 Вандо, спланируй за меня</button>':'<span class="ichip">создай задачу строкой сверху или ⌘K</span>'}</div></div>`;}
   const energy=localStorage.getItem('cockpit_energy_'+todayISO())||'';
   if(window.innerWidth<=680){renderNowMobile({el,greet,next,upNext,mine,pct,prog,ov,vel,ins,running,energy:localStorage.getItem('cockpit_energy_'+todayISO())||''});return;}
   el.innerHTML=`<div class="now-greet"><h1>${greet}, ${esc(meName())}</h1><span>${esc(S.projectName)} · пульс проекта
@@ -2382,6 +2383,7 @@ function renderNow(){
     celebrateAt(ev);render();toast('Готово','✅','Отменить',un);};
   ins.forEach((x,i)=>{const c=el.querySelector(`.insight[data-i="${i}"]`);if(c&&x.act)c.onclick=x.act;});
   const ap=$('#aiPlanBtn');if(ap)ap.onclick=openAiPlan;
+  {const np=$('#npPlan');if(np)np.onclick=openAiPlan;}
   const cb=$('#claudeBtn');if(cb)cb.onclick=()=>fetchClaudeInsight(cb);
   const nf=$('#nowFold');if(nf)nf.ontoggle=()=>localStorage.setItem('cockpit_now_fold',nf.open?'1':'0');
   $$('#now .energyrow button').forEach(b=>b.onclick=()=>{const k='cockpit_energy_'+todayISO();const cur=localStorage.getItem(k);
@@ -2503,7 +2505,9 @@ function renderNowMobile(ctx){
           :`<button class="mh-go" id="focusStart">▶ Фокус</button>`}
         <button class="mh-done" data-done="${next.id}">✓ Готово</button>
       </div></div>`
-    :`<div class="mhero done"><div class="mh-label">🎉 Чисто</div><div class="mh-title">На тебе задач нет</div><div class="mh-meta">жми ➕ и создай первую</div></div>`;
+    :(!S.tasks.some(t=>!t.isMilestone&&t.status!=='done')
+      ?`<div class="mhero done"><div class="mh-label">🧠 Начнём?</div><div class="mh-title">Вандо спланирует за тебя</div><div class="mh-meta">опиши цель голосом — получи готовый план</div><button class="mh-done" id="npPlan" style="margin-top:10px">🧠 Спланируй за меня</button></div>`
+      :`<div class="mhero done"><div class="mh-label">🎉 Чисто</div><div class="mh-title">На тебе задач нет</div><div class="mh-meta">жми ➕ и создай первую</div></div>`);
   if(upNext.length&&!localStorage.getItem('cockpit_swipe_tip')){localStorage.setItem('cockpit_swipe_tip','1');
     setTimeout(()=>toast('Свайпни задачу: вправо — готово ✅, влево — на завтра 🌙','👆'),900);}
   const rows=upNext.map(x=>{const t=x.t||x;const pid=x.pid||S.id;
@@ -2533,6 +2537,7 @@ function renderNowMobile(ctx){
   const dn=el.querySelector('[data-done]');if(dn)dn.onclick=(ev)=>{if(focus.tid===dn.dataset.done)stopFocus(true);
     const un=markDone(nextPid,dn.dataset.done);
     celebrateAt(ev);haptic('ok');render();toast('Готово','✅','Отменить',un);};
+  {const np=$('#npPlan');if(np)np.onclick=openAiPlan;}
   ins.forEach((x,i)=>{const c=el.querySelector(`.insight[data-i="${i}"]`);if(c&&x.act)c.onclick=x.act;});
   const ht=$('#healToday');if(ht)ht.onclick=()=>healOverdue('today');
   const hw=$('#healWeek');if(hw)hw.onclick=()=>healOverdue('week');
@@ -2613,8 +2618,11 @@ function showPlanPrompt(goal,note){
     <div class="codebox"><button class="btn copycfg" id="planCopy">Копировать</button><pre>${esc(p)}</pre></div>`;
   $('#planCopy').onclick=()=>{navigator.clipboard.writeText(p);toast('Промпт скопирован — вставь в Claude','📋');};
 }
+let planDl='';
 async function runAiPlan(btn){
-  const g=($('#planGoal').value||'').trim();if(!g){toast('Опиши цель проекта','🧠');return;}
+  let g=($('#planGoal').value||'').trim();if(!g){toast('Опиши, чего хочешь добиться','🧠');return;}
+  if(planDl)g+='. Срок: '+planDl;
+  const ctx=($('#planCtx')&&$('#planCtx').value||'').trim();if(ctx)g+='. Что уже есть и ограничения: '+ctx;
   if(!cloudOn||!sb){showPlanPrompt(g,'<b>Нет облака.</b> Скопируй промпт и вставь своему Claude — он создаст задачи в «Приёмке».');return;}
   const token=await aiToken();if(!token){showPlanPrompt(g);return;}
   if(btn){btn.disabled=true;btn.textContent='🧠 Claude планирует…';}
@@ -2636,15 +2644,23 @@ function renderPlan(){
   const m=$('#planModal');
   m.innerHTML=`<div class="ob-art" style="font-size:46px">🧠</div>
    <div class="ob-body">
-     <h2>AI-План проекта</h2>
-     <p>Опиши цель — Claude разложит её на задачи и сразу создаст их в проекте. Лишнее уберёшь, чего не хватает — допишешь.</p>
-     <textarea class="inp" id="planGoal" style="min-height:84px;line-height:1.5" placeholder="Напр.: запустить лендинг AppHub с оплатой и аналитикой за 2 недели"></textarea>
+     <h2>Вандо спланирует за тебя</h2>
+     <p>Не нужно уметь планировать — просто ответь, чего хочешь. Вандо разложит на задачи со сроками, а ты подправишь.</p>
+     <textarea class="inp" id="planGoal" style="min-height:84px;line-height:1.5" placeholder="Чего хочешь добиться? Напр.: запустить лендинг с оплатой и получить первых клиентов"></textarea>
+     <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:9px" id="planDl">
+       <button class="chip" data-dl="за 2 недели">⚡ 2 недели</button>
+       <button class="chip" data-dl="за месяц">🗓 месяц</button>
+       <button class="chip" data-dl="за квартал">🏔 квартал</button>
+     </div>
+     <textarea class="inp" id="planCtx" style="min-height:52px;line-height:1.5;margin-top:9px" placeholder="Что уже есть / ограничения? (необязательно) Напр.: дизайн готов, бюджета нет, работаю один"></textarea>
      <button class="btn" id="planMic" style="margin-top:8px;padding:8px 13px;font-size:12.5px">🎙 Надиктовать цель</button>
      <div id="planOut"></div>
    </div>
    <div class="ob-foot"><button class="btn" id="planClose">Закрыть</button><div class="spacer"></div><button class="btn primary" id="planGen">🧠 Создать план</button></div>`;
   $('#planClose').onclick=closePlan;
   $('#planMic').onclick=()=>dictateTo($('#planGoal'),$('#planMic'));
+  $$('#planDl .chip').forEach(c=>c.onclick=()=>{planDl=c.dataset.dl===planDl?'':c.dataset.dl;
+    $$('#planDl .chip').forEach(x=>x.classList.toggle('on',x.dataset.dl===planDl));});
   $('#planGen').onclick=()=>runAiPlan($('#planGen'));
   setTimeout(()=>{const g=$('#planGoal');if(g)g.focus();},40);
 }
