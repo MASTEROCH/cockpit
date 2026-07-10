@@ -1644,6 +1644,17 @@ body.light .mseg{background:rgba(250,251,254,.97)}
 .nh-why{font-size:12px;color:var(--mut2);margin-top:9px}
 .nh-why b{color:var(--mut);font-weight:600}
 .mh-why{font-size:11.5px;color:var(--mut2);margin-top:7px;opacity:.9}
+.ghint{margin-left:auto;font-size:10px;color:var(--mut2);opacity:.7;white-space:nowrap}
+.wnav{margin-left:auto;display:flex;gap:6px}
+@media (max-width:680px){
+  .ghint{display:none}                                /* на узком — только «＋ задача» */
+  .grow.addrow{font-size:13px}
+  .whead{flex-wrap:wrap;row-gap:10px}
+  .whead .wt{display:block;width:100%;order:4;margin-top:-2px}
+  .wnav{margin-left:0;width:100%;order:5}
+  .wnav .btn{justify-content:center}
+  .wnav #wToday{flex:1}                               /* ← [ Сегодня ] → во всю ширину */
+}
 /* ---- 📊 Отчёт недели (статус-репорт в один тап) ---- */
 .repsheet{width:min(680px,94vw);max-height:86vh;display:flex;flex-direction:column;padding:0}
 .rep-h{display:flex;align-items:center;gap:10px;padding:15px 20px;border-bottom:1px solid var(--line)}
@@ -2204,6 +2215,13 @@ function personScores(){
   reg.list.filter(p=>!p.archived).forEach(p=>{const d=loadProj(p.id);if(!d)return;
     (d.members||[]).forEach(m=>{const k=pKey(m);if(!map[k])map[k]={name:m.name,email:m.email||'',color:m.color,photo:m.photo||'',points:0,streak:0};
       map[k].points+=(m.points||0);map[k].streak=Math.max(map[k].streak,effStreak(m));if(m.photo&&!map[k].photo){map[k].photo=m.photo;}if(m.name&&map[k].name==='—')map[k].name=m.name;});});
+  // склейка дублей-тёзок: в одном проекте участник с email, в другом — без (разные заполнения)
+  {const byName={};Object.entries(map).forEach(([k,v])=>{const n=(v.name||'').toLowerCase().trim();if(n)(byName[n]=byName[n]||[]).push(k);});
+   Object.values(byName).forEach(keys=>{if(keys.length<2)return;
+     const main=keys.find(k=>map[k]&&map[k].email)||keys[0];
+     keys.forEach(k=>{if(k===main||!map[k])return;const v=map[k];
+       map[main].points+=v.points;map[main].streak=Math.max(map[main].streak,v.streak);
+       if(!map[main].photo&&v.photo)map[main].photo=v.photo;delete map[k];});});}
   return Object.values(map).sort((a,b)=>b.points-a.points);
 }
 function closeMonth(){
@@ -3864,7 +3882,7 @@ function renderWeek(){
   days.forEach((d,i)=>cols+=col(d,WD[i],md(d),d===tISO?'today':''));
   if(by.later.length)cols+=col('later','Позже','за неделей','');
   el.innerHTML=`<div class="whead"><h2 style="margin:0;font-size:18px">🗓 Моя неделя</h2><span class="wt">${wt} · ${md(wstart)}–${md(wend)}</span>
-      <div style="margin-left:auto;display:flex;gap:6px"><button class="btn" id="wPrev">←</button><button class="btn" id="wToday">Сегодня</button><button class="btn" id="wNext">→</button></div></div>
+      <div class="wnav"><button class="btn" id="wPrev">←</button><button class="btn" id="wToday">Сегодня</button><button class="btn" id="wNext">→</button></div></div>
     <div class="wgrid">${cols}</div>
     <div style="font-size:12px;color:var(--mut2);margin-top:10px">Это твои задачи по всем проектам на неделю. Перетаскивай между днями — меняешь срок. Клик — открыть.</div>`;
   $('#wPrev').onclick=()=>{weekOffset--;renderWeek();};
@@ -4022,7 +4040,7 @@ function renderGantt(){
       }
       rowIdx++;
     });
-    left+=`<div class="grow addrow" data-addsec="${sec.id}"><span class="dot" style="background:transparent;box-shadow:inset 0 0 0 1.5px var(--line2)"></span>＋ задача <span style="margin-left:auto;font-size:10px;color:var(--mut2);opacity:.7">или потяни на полотне →</span></div>`;
+    left+=`<div class="grow addrow" data-addsec="${sec.id}"><span class="dot" style="background:transparent;box-shadow:inset 0 0 0 1.5px var(--line2)"></span><span style="white-space:nowrap">＋ задача</span> <span class="ghint">или потяни на полотне →</span></div>`;
     body+=`<div class="growbg" data-sec="${sec.id}"></div>`;
     rowIdx++;
   });
