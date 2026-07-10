@@ -4806,6 +4806,18 @@ function fireFocus(){
   toast('🔥 Горит: '+fire.length+(ov?' · из них '+ov+' просрочено':'')+' — '+fire.slice(0,2).map(t=>t.title).join(', '),'🔥');
 }
 
+/* цель vs задача: широкий глагол запуска + без конкретики времени = вероятно цель.
+   Никакой магии молча — только предложение одним тапом (канон no-silent-defaults). */
+function isGoalLike(t){
+  if(!t||t.length<16)return false;
+  if(/\d{1,2}[:.]\d{2}|звонок|созвон|позвонить|написать|отправить|оплатить|купить/i.test(t))return false;
+  return /^(запустить|подготовить|организовать|открыть|выйти|собрать|провести|разработать|переделать|обновить)\s/i.test(t)&&t.split(/\s+/).length>=3;
+}
+function offerDecompose(title){
+  if(!isGoalLike(title))return;
+  setTimeout(()=>{toast('«'+title.slice(0,40)+(title.length>40?'…':'')+'» звучит как цель','🧠','Разложить на план',
+    ()=>{openAiPlan();setTimeout(()=>{const g=$('#planGoal');if(g){g.value=title;g.focus();}},80);});},900);
+}
 function runCmd(raw){
   const s=(raw||'').trim();if(!s)return;
   track(isManageCmd(s)?'cmd:manage':'cmd:create');
@@ -4909,12 +4921,12 @@ function runCmd(raw){
     const p=parseQuick(s);
     if(!p.title){toast('Не понял название задачи','⚠');return;}
     const t=applyQuick(newTask(p.title),p);if(p.start)t.status='todo';
-    save();render();toast('Задача создана: «'+p.title+'»','🚀');return;
+    save();render();toast('Задача создана: «'+p.title+'»','🚀');offerDecompose(p.title);return;
   }
   // фолбэк: любой свободный текст → задача (с умным разбором)
   {const p=parseQuick(s);if(!p.title){toast('Не понял — жми / для подсказок','🤔');return;}
    const t=applyQuick(newTask(p.title),p);if(p.start)t.status='todo';
-   save();render();toast('Задача создана: «'+p.title+'»','🚀');return;}
+   save();render();toast('Задача создана: «'+p.title+'»','🚀');offerDecompose(p.title);return;}
   }catch(err){console.error(err);toast('Ошибка: '+err.message,'⚠');}
 }
 
