@@ -132,10 +132,44 @@ async function bindByCode(chatId: number, name: string, code: string): Promise<s
   return `✅ <b>Telegram подключён: ${esc(bc.email)}</b>\n\nТеперь просто пиши задачи — текстом или голосом 🎙\nКнопки снизу: 🔥 Что горит · 📊 Статус · 📥 Приёмка\n\nВернись на сайт — он уже увидел привязку ✨`;
 }
 
+// ---------- Ф3: self-serve — новое пространство по email ----------
+async function selfServe(chatId: number, name: string, email: string): Promise<string> {
+  const em = email.toLowerCase();
+  const { data: existing } = await sb.from("team").select("email,workspace_id").ilike("email", em).maybeSingle();
+  if (existing) return `Этот email уже в пространстве WANDO. Если это ты — привяжись с сайта ${SITE} («Подключить Telegram») или ключом <code>/key cpk_…</code> 🔐`;
+  try { await sb.auth.admin.createUser({ email: em, email_confirm: true }); } catch { /* уже существует — ок */ }
+  const ws = "ws_" + Math.random().toString(36).slice(2, 10);
+  const { error: e1 } = await sb.from("workspaces").insert({ id: ws, name: (name || "Founder") + " HQ", plan: "solo", created_by: em });
+  if (e1) return "⚠ Не получилось создать пространство: " + esc(e1.message);
+  await sb.from("team").insert({ email: em, name: name || "Founder", workspace_id: ws });
+  await sb.from("tg_links").upsert({ chat_id: chatId, email: em, name, token_hash: "selfserve", revoked: false, workspace_id: ws });
+  const today = todayISO(0);
+  const proj = { id: "p" + Math.random().toString(36).slice(2, 9), projectName: "Мой первый проект", emoji: "🚀", demo: false, parentId: null, updatedAt: Date.now(),
+    members: [{ id: "m1", name: name || "Founder", email: em, role: "Founder", color: "#a78bfa", capacity: 30 }],
+    sections: [{ id: "s1", name: "Задачи" }], ideas: [], activity: [],
+    tasks: [
+      { id: "t1", title: "Написать сюда первую задачу — текстом или голосом 🎙", sectionId: "s1", assigneeId: "m1", start: today, end: today, status: "todo", estimate: 1, spent: 0, priority: "med", description: "", comments: [], isMilestone: false, deps: [] },
+      { id: "t2", title: "Открыть WANDO кнопкой меню и осмотреться", sectionId: "s1", assigneeId: "m1", start: today, end: todayISO(1), status: "todo", estimate: 1, spent: 0, priority: "med", description: "", comments: [], isMilestone: false, deps: [] },
+    ] };
+  await sb.from("projects").insert({ id: proj.id, name: proj.projectName, emoji: proj.emoji, data: proj, workspace_id: ws, updated_at: new Date().toISOString() });
+  _wsCache[em] = ws;
+  return `🚀 <b>Твоё пространство создано!</b>\n\nЖми кнопку <b>WANDO</b> в меню бота — ты уже залогинен (вход по этому Telegram).\nПиши задачи прямо сюда — текстом или голосом 🎙\n\nПлан: <b>Solo</b> (бесплатно). /plan — что даёт Founder ⭐`;
+}
+
+// ---------- воркспейсы (multi-tenant Ф3) ----------
+const _wsCache: Record<string, string> = {};
+async function wsByEmail(email: string): Promise<string> {
+  const k = (email || "").toLowerCase();
+  if (_wsCache[k]) return _wsCache[k];
+  const { data } = await sb.from("team").select("workspace_id").ilike("email", email).maybeSingle();
+  return _wsCache[k] = (data?.workspace_id) ?? "main";
+}
+
 // ---------- проекты / сводки ----------
 async function myProjects(email: string) {
   const team = await isTeam(email);
-  let q = sb.from("projects").select("id,name,emoji,data,updated_at").order("updated_at", { ascending: false });
+  const ws = await wsByEmail(email);
+  let q = sb.from("projects").select("id,name,emoji,data,updated_at").eq("workspace_id", ws).order("updated_at", { ascending: false });
   if (!team) {
     const { data: acc } = await sb.from("project_access").select("project_id").ilike("email", email);
     const ids = (acc ?? []).map((a: Record<string, string>) => a.project_id);
@@ -201,7 +235,7 @@ async function captureReply(chatId: number, link: Link, intakeId: string, text: 
   const p = parseTask(text);
   // если проект назван голосом/текстом («проект X: …») — вопросов нет
   if (p.project) {
-    const proj = await pickProjectStrict(p.project);
+    const proj = await pickProjectStrict(p.project, await wsByEmail(link.email));
     if (proj) {
       await sb.from("intake").update({ target_project: proj.id }).eq("id", intakeId);
       await rememberChoice(chatId, proj.id);
@@ -215,7 +249,8 @@ async function captureReply(chatId: number, link: Link, intakeId: string, text: 
   await sayInline(chatId, `${prefix}: «${esc(p.title || text)}»${chips(p)}\n\n📁 <b>Куда?</b> <i>(один тап — и я запомню)</i>`, kb);
 }
 async function createIntake(link: Link, text: string, source: string): Promise<{ id: string | null; err?: string }> {
-  const { data, error } = await sb.from("intake").insert({
+  const _ws = await wsByEmail(link.email);
+  const { data, error } = await sb.from("intake").insert({ workspace_id: _ws,
     by_email: link.email, by_name: link.name ?? link.email.split("@")[0],
     source, workspace: link.workspace, text: text.slice(0, 2000), status: "pending",
     target_project: parseTask(text).project,
@@ -226,10 +261,10 @@ async function createIntake(link: Link, text: string, source: string): Promise<{
 
 // СТРОГИЙ выбор проекта: никакого «возьмём последний» — либо нашли, либо null.
 // Тихие догадки = каша; система знает или спрашивает.
-async function pickProjectStrict(target: string | null) {
+async function pickProjectStrict(target: string | null, ws?: string) {
   if (!target) return null;
-  const { data } = await sb.from("projects").select("id,name,emoji,data").order("updated_at", { ascending: false });
-  const rows = (data ?? []).filter((p: Record<string, any>) => !(p.data?.demo === true) && !(p.data?.archived === true));
+  const { data } = await sb.from("projects").select("id,name,emoji,data,workspace_id").order("updated_at", { ascending: false });
+  const rows = (data ?? []).filter((p: Record<string, any>) => !(p.data?.demo === true) && !(p.data?.archived === true) && (!ws || p.workspace_id === ws));
   const t = target.toLowerCase();
   return rows.find((p) => p.id === target) || rows.find((p) => (p.name ?? "").toLowerCase() === t) || rows.find((p) => (p.name ?? "").toLowerCase().includes(t)) || null;
 }
@@ -254,7 +289,7 @@ async function acceptIntake(intakeId: string, by: Link, projectId?: string): Pro
   if (!row) return "⚠ Заявка не найдена";
   if (row.status !== "pending") return "Уже решено (" + row.status + ")";
   const p = parseTask(row.text); if (!p.title) p.title = row.text.slice(0, 140);
-  const proj = await pickProjectStrict(projectId || row.target_project || p.project);
+  const proj = await pickProjectStrict(projectId || row.target_project || p.project, await wsByEmail(by.email));
   if (!proj) return ""; // не угадываем — спросим кнопками
   const d = proj.data ?? {};
   d.tasks = d.tasks ?? []; d.sections = d.sections?.length ? d.sections : [{ id: "s1", name: "Задачи" }]; d.members = d.members ?? [];
@@ -296,7 +331,7 @@ async function targetLabel(target: string | null): Promise<string> {
 }
 async function listIntake(chatId: number, link: Link) {
   if (!(await isTeam(link.email))) { await say(chatId, "Приёмку решает команда. Твои заявки появятся у них с кнопками ✓/✕."); return; }
-  const { data } = await sb.from("intake").select("*").eq("status", "pending").order("created_at", { ascending: false }).limit(6);
+  const { data } = await sb.from("intake").select("*").eq("status", "pending").eq("workspace_id", await wsByEmail(link.email)).order("created_at", { ascending: false }).limit(6);
   if (!data?.length) { await say(chatId, "📭 Приёмка пуста — всё разобрано."); return; }
   await say(chatId, `📥 <b>На приёмке · ${data.length}</b>`);
   for (const r of data) {
@@ -355,8 +390,10 @@ async function projectDigest(link: Link, name: string): Promise<string> {
 }
 
 // ---------- уведомления (вызываются триггерами БД через notify.sql) ----------
-async function teamLinks(exceptEmail?: string): Promise<Link[]> {
-  const { data: team } = await sb.from("team").select("email");
+async function teamLinks(exceptEmail?: string, ws?: string): Promise<Link[]> {
+  let tq = sb.from("team").select("email,workspace_id");
+  if (ws) tq = tq.eq("workspace_id", ws);
+  const { data: team } = await tq;
   const emails = (team ?? []).map((t: Record<string, string>) => t.email.toLowerCase()).filter((e) => e !== (exceptEmail ?? "").toLowerCase());
   if (!emails.length) return [];
   const { data: links } = await sb.from("tg_links").select("*").eq("revoked", false);
@@ -366,7 +403,7 @@ async function notifyNewIntake(rec: Record<string, any>) {
   if (rec.source === "telegram-idea") return; // идеи маршрутизирует сам автор — не шумим
   const p = parseTask(rec.text ?? "");
   const tl = await targetLabel(rec.target_project);
-  for (const l of await teamLinks(rec.by_email)) {
+  for (const l of await teamLinks(rec.by_email, rec.workspace_id ?? "main")) {
     await sayInline(l.chat_id, `📥 <b>Новая заявка</b> от <b>${esc(rec.by_name ?? rec.by_email)}</b>${rec.source ? " · " + esc(rec.source) : ""}\n«${esc(p.title || rec.text)}»${chips(p)}${tl}`,
       [[{ text: "✓ Добавить", callback_data: "acc:" + rec.id }, { text: "✕ Отклонить", callback_data: "rej:" + rec.id }]]);
   }
@@ -577,6 +614,7 @@ const HELP = `<b>WANDO-бот — пульт в кармане</b>
 • 🌇 18:00 — вечерний разбор: что закрыто, незакрытое — на завтра одним тапом
 • Новая заявка → команде пуш с ✓/✕; решение → автору пуш
 • 💬 Ответь (reply) на сообщение бота о задаче — текст станет комментом в её карточке
+• ⭐ /plan — тариф Founder (оплата Stars прямо здесь)
 
 Понимаю: @имя · сегодня/завтра/послезавтра · «с 22 по 28 июля» · «до 15 июля» · «на 3 дня» · 2ч · !срочно/важно`;
 
@@ -602,6 +640,24 @@ Deno.serve(async (req) => {
   }
   let update: Record<string, any>;
   try { update = await req.json(); } catch { return new Response("ok"); }
+
+  // --- Stars: подтверждение и зачисление оплаты (Ф4) ---
+  if (update.pre_checkout_query) {
+    await TG("answerPreCheckoutQuery", { pre_checkout_query_id: update.pre_checkout_query.id, ok: true });
+    return new Response("ok");
+  }
+  {
+    const sp = update.message?.successful_payment;
+    if (sp?.invoice_payload?.startsWith?.("founder:")) {
+      const ws = sp.invoice_payload.slice(8);
+      const { data: w } = await sb.from("workspaces").select("stars_until").eq("id", ws).maybeSingle();
+      const base = Math.max(Date.now(), w?.stars_until ? new Date(w.stars_until).getTime() : 0);
+      const until = new Date(base + 31 * 86400_000).toISOString();
+      await sb.from("workspaces").update({ plan: "founder", stars_until: until }).eq("id", ws);
+      await say(update.message.chat.id, `⭐ <b>Founder активен!</b> До ${until.slice(0, 10)}.\nВандо-ИИ, наставник и отчёты — открыты. Погнали 🚀`);
+      return new Response("ok");
+    }
+  }
 
   // --- кнопки: ✓/✕, «Куда?», отозвать, перенос, пинг ---
   const cb = update.callback_query;
@@ -638,7 +694,7 @@ Deno.serve(async (req) => {
           await TG("editMessageText", { chat_id: chatId, message_id: cb.message.message_id, text: result, parse_mode: "HTML", reply_markup: { inline_keyboard: [[{ text: "✕ Отозвать", callback_data: "undo:" + id }]] } });
           handled = true;
         } else {
-          const proj = await pickProjectStrict(arg);
+          const proj = await pickProjectStrict(arg, await wsByEmail(link.email));
           if (!proj) result = "⚠ Проект не найден";
           else {
             await sb.from("intake").update({ target_project: proj.id }).eq("id", id);
@@ -653,7 +709,7 @@ Deno.serve(async (req) => {
         const { data: row } = await sb.from("intake").select("*").eq("id", id).maybeSingle();
         if (!row || row.status !== "pending") result = "Уже решено";
         else {
-          const proj = await pickProjectStrict(arg);
+          const proj = await pickProjectStrict(arg, await wsByEmail(link.email));
           if (!proj) result = "⚠ Проект не найден";
           else {
             const d = proj.data ?? {}; d.ideas = d.ideas ?? [];
@@ -742,9 +798,26 @@ Deno.serve(async (req) => {
       const link = await getLink(chatId);
       await say(chatId, link
         ? `С возвращением, <b>${esc(link.name ?? link.email)}</b>! Пиши задачу — текстом или голосом 🎙`
-        : `Привет! Я — вход в <b>WANDO</b> (что делать).\n\nСамый простой путь: открой <b>${SITE}</b>, войди — и нажми «Подключить Telegram» (1 тап).\n\nЛибо вручную: сайт → ⋯ → «Подключить Claude» → ключ → пришли мне <code>/key cpk_…</code>\n\n/help — подробнее`);
+        : `Привет! Я — вход в <b>WANDO</b> (что делать).\n\n<b>Новый здесь?</b> Просто пришли свой email — создам тебе личное пространство за 5 секунд 🚀\n\nУже в команде? Открой <b>${SITE}</b> → «Подключить Telegram» (1 тап), либо ключом: <code>/key cpk_…</code>\n\n/help — подробнее`);
     } else if (/^\/help|^❓/.test(text)) {
       await say(chatId, HELP);
+    } else if (/^\/plan|^⭐/.test(text)) {
+      const link = await getLink(chatId);
+      if (!link) { await say(chatId, "Сначала создай пространство: пришли свой email 🚀"); return new Response("ok"); }
+      const ws = await wsByEmail(link.email);
+      const { data: w } = await sb.from("workspaces").select("plan,stars_until").eq("id", ws).maybeSingle();
+      const plan = w?.plan ?? "solo";
+      if (plan === "founder_forever") { await say(chatId, "💜 У тебя вечный <b>Founder</b> — всё включено, навсегда."); return new Response("ok"); }
+      const until = w?.stars_until ? new Date(w.stars_until) : null;
+      const active = until && until.getTime() > Date.now();
+      const head = active
+        ? `⭐ <b>Founder активен</b> до ${until!.toISOString().slice(0, 10)}.\nПродлить ещё на 30 дней:`
+        : `План: <b>${plan === "solo" ? "Solo (бесплатно)" : plan}</b>.\n\n<b>Founder ⭐</b> — Вандо-ИИ и пульс, наставник-планирование, 📊 отчёты империи, проекты без лимита.`;
+      await say(chatId, head);
+      await TG("sendInvoice", { chat_id: chatId, title: "WANDO Founder · 30 дней",
+        description: "Вандо-ИИ, наставник, отчёты, безлимит проектов",
+        payload: "founder:" + ws, currency: "XTR", prices: [{ label: "Founder / 30 дней", amount: 1900 }] });
+      return new Response("ok");
     } else if (/^\/key\b/.test(text)) {
       const raw = text.replace(/^\/key\s*/, "").trim();
       const reply = await bindKey(chatId, name, raw);
@@ -752,7 +825,12 @@ Deno.serve(async (req) => {
       await say(chatId, reply);
     } else {
       const link = await getLink(chatId);
-      if (!link) { await say(chatId, "Сначала привяжи ключ: <code>/key cpk_…</code>\nКлюч: " + SITE + " → ⋯ → «Подключить Claude». /help — подробнее"); return new Response("ok"); }
+      if (!link) {
+        const em = text.match(/^[\w.+-]+@[\w-]+\.[\w.]{2,}$/);
+        if (em) { await say(chatId, await selfServe(chatId, name, em[0])); return new Response("ok"); }
+        await say(chatId, "Пришли свой <b>email</b> — создам тебе личное пространство 🚀\nИли привяжись к команде: " + SITE + " → «Подключить Telegram», либо <code>/key cpk_…</code>");
+        return new Response("ok");
+      }
       if (/^\/brief|^☀️/.test(text)) { await sendBrief(link); }
       else if (/^🔥|^\/fire|что горит|^аврал/i.test(text)) { await say(chatId, await statusSummary(link.email, true)); }
       else if (/^📊|^\/status|^стат/i.test(text)) { await say(chatId, await statusSummary(link.email, false)); }

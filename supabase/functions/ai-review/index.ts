@@ -13,6 +13,18 @@ async function allowed(email: string): Promise<boolean> {
     return !!data;
   } catch { return ALLOW.includes(email); }
 }
+// Ф5: ИИ — только оплаченным планам (main/founder_forever всегда ок)
+async function planOk(email: string): Promise<boolean> {
+  try {
+    const { data: t } = await sbs.from("team").select("workspace_id").ilike("email", email).maybeSingle();
+    const ws = t?.workspace_id ?? "main";
+    const { data: w } = await sbs.from("workspaces").select("plan,stars_until").eq("id", ws).maybeSingle();
+    if (!w) return true; // таблицы нет (до Ф1) — не ломаем
+    if (w.plan === "founder_forever" || w.plan === "team") return true;
+    if (w.plan === "founder") return !w.stars_until || new Date(w.stars_until).getTime() > Date.now();
+    return false; // solo: ИИ в тарифе Founder
+  } catch { return true; }
+}
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, content-type, apikey, x-client-info",
@@ -78,6 +90,9 @@ serve(async (req) => {
 
     const body = await req.json();
     const { project, mode, goal, messages, context } = body;
+    if (mode !== "notify" && !(await planOk(email))) {
+      return json({ error: "Вандо-ИИ доступен в тарифе Founder ⭐ — открой /plan у @wando_tasks_bot" }, 402);
+    }
 
     // --- notify: пуш члену команды в TG о назначении/комменте (без Anthropic) ---
     if (mode === "notify") {
