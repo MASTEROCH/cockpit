@@ -1598,6 +1598,11 @@ body.light .mseg{background:rgba(250,251,254,.97)}
 @media (max-width:680px){
   .toast{bottom:calc(96px + env(safe-area-inset-bottom))} /* над мобильным навом, не поверх */
 }
+/* ---- 📱 long-press лист быстрых действий ---- */
+.lpsheet{width:min(420px,94vw);padding:14px;display:flex;flex-direction:column;gap:8px}
+.lpsheet .lp-t{font-weight:800;font-size:14px;padding:2px 4px 8px;border-bottom:1px solid var(--line);margin-bottom:2px}
+.lpsheet .btn{justify-content:flex-start;padding:13px 14px;font-size:14px}
+@media (max-width:680px){.lpsheet{width:100vw;border-radius:22px 22px 0 0;padding-bottom:calc(14px + env(safe-area-inset-bottom))}}
 /* ---- 🧠 Вандо-наставник ---- */
 .mentorcard{display:flex;gap:12px;border:1px solid rgba(167,139,250,.35);border-radius:16px;padding:14px 16px;margin:14px 0;
   background:linear-gradient(135deg,rgba(167,139,250,.10),transparent 70%),var(--bg2)}
@@ -1870,6 +1875,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
 </nav>
 <div class="modal-scrim" id="capScrim"><div class="modal capsheet" id="capModal"></div></div>
 <div class="modal-scrim" id="repScrim"><div class="modal repsheet" id="repModal"></div></div>
+<div class="modal-scrim" id="lpScrim"><div class="modal lpsheet" id="lpModal"></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -2409,17 +2415,39 @@ function haptic(kind){try{const T=window.Telegram&&window.Telegram.WebApp;if(!T|
   else if(kind==='warn')T.HapticFeedback.notificationOccurred('warning');
   else if(kind==='sel')T.HapticFeedback.selectionChanged();
   else T.HapticFeedback.impactOccurred('light');}catch(e){}}
+/* long-press на задаче → лист быстрых действий (моб) */
+function openLP(taskId,pid){
+  const d=pid===S.id?S:loadProj(pid);const t=d&&(d.tasks||[]).find(x=>x.id===taskId);if(!t)return;
+  $('#lpModal').innerHTML=`<div class="lp-t">${t.cash?'💰 ':''}${esc(t.title)}</div>
+   <button class="btn" data-lp="done">✅ Готово</button>
+   <button class="btn" data-lp="tomorrow">🌙 На завтра</button>
+   <button class="btn" data-lp="progress">▶ В работу</button>
+   <button class="btn" data-lp="open">✏️ Открыть карточку</button>`;
+  $('#lpScrim').classList.add('show');haptic('light');
+  $$('#lpModal [data-lp]').forEach(b=>b.onclick=()=>{const k=b.dataset.lp;closeLP();
+    if(k==='done'){const un=markDone(pid,taskId);render();toast('Готово','✅','Отменить',un);haptic('ok');}
+    else if(k==='tomorrow'){const tm=fmtD(parseD(todayISO())+dayMs);
+      editTaskInProject(pid,taskId,x=>{x.end=tm;if(parseD(x.start)>parseD(tm))x.start=tm;});render();toast('На завтра','🌙');}
+    else if(k==='progress'){editTaskInProject(pid,taskId,x=>{x.status='progress';});render();toast('В работе — фокус на ней','▶');}
+    else openX(pid,taskId);});
+}
+function closeLP(){$('#lpScrim').classList.remove('show');}
+$('#lpScrim').onclick=e=>{if(e.target===$('#lpScrim'))closeLP();};
 function attachSwipe(el,taskId,pid){
-  let sx=0,sy=0,dx=0,swiping=false;
-  el.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;dx=0;swiping=false;},{passive:true});
+  let sx=0,sy=0,dx=0,swiping=false,lpT=null,lpFired=false;
+  el.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;dx=0;swiping=false;lpFired=false;
+    clearTimeout(lpT);lpT=setTimeout(()=>{if(!swiping){lpFired=true;openLP(taskId,pid||S.id);}},450);},{passive:true});
   el.addEventListener('touchmove',e=>{
     const mx=e.touches[0].clientX-sx,my=e.touches[0].clientY-sy;
+    if(Math.abs(mx)>10||Math.abs(my)>10)clearTimeout(lpT);
     if(!swiping&&Math.abs(mx)>14&&Math.abs(mx)>Math.abs(my)*1.4)swiping=true;
     if(!swiping)return;dx=mx;
     el.style.transform='translateX('+dx+'px)';el.style.transition='none';
     el.style.background=dx>50?'rgba(52,211,153,.18)':dx<-50?'rgba(167,139,250,.15)':'';
   },{passive:true});
   el.addEventListener('touchend',()=>{
+    clearTimeout(lpT);
+    if(lpFired){el.addEventListener('click',ev=>{ev.stopPropagation();ev.preventDefault();},{capture:true,once:true});}
     el.style.transition='transform .22s var(--ease), background .22s';
     if(swiping&&dx>80){el.style.transform='translateX(110%)';
       setTimeout(()=>{const un=markDone(pid||S.id,taskId);
@@ -4510,7 +4538,8 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
     if($('#present').classList.contains('show'))return closePresent();
     if($('#palScrim').classList.contains('show'))return closePalette();
-    if($('#repScrim').classList.contains('show'))closeEmpireRep();
+    if($('#lpScrim').classList.contains('show'))closeLP();
+    else if($('#repScrim').classList.contains('show'))closeEmpireRep();
     else if($('#obScrim').classList.contains('show'))closeOb();
     else if($('#npScrim').classList.contains('show'))$('#npScrim').classList.remove('show');
     else if($('#authScrim').classList.contains('show'))$('#authScrim').classList.remove('show');
@@ -5294,7 +5323,7 @@ function tmaBoot(){
     T.ready();T.expand();
     try{T.setHeaderColor('#0f121b');T.setBackgroundColor('#0d0f17');}catch(e){}
     T.BackButton.onClick(()=>{ // системный «назад» закрывает верхний слой
-      const layers=[['#repScrim',closeEmpireRep],['#capScrim',closeCap],['#vandoPanel',()=>vandoToggle(false)],['#drawer',()=>closeDrawer&&closeDrawer()]];
+      const layers=[['#lpScrim',closeLP],['#repScrim',closeEmpireRep],['#capScrim',closeCap],['#vandoPanel',()=>vandoToggle(false)],['#drawer',()=>closeDrawer&&closeDrawer()]];
       for(const [sel,fn] of layers){const el=$(sel);if(el&&el.classList.contains('show')){fn();return;}}
       if(view!=='now')setView('now');});
     setInterval(()=>{try{
