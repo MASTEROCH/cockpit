@@ -278,7 +278,7 @@ async function acceptIntake(intakeId: string, by: Link, projectId?: string): Pro
   const { error } = await sb.from("projects").update({ data: d, updated_at: new Date().toISOString(), updated_by: null }).eq("id", proj.id);
   if (error) return "⚠ Не удалось создать задачу: " + esc(error.message);
   await sb.from("intake").update({ status: "accepted", decided_by: by.email, decided_at: new Date().toISOString(), target_project: proj.id, result_task_id: task.id }).eq("id", intakeId);
-  return `✅ Добавлено в ${proj.emoji ?? "📄"} <b>${esc(proj.name)}</b>: «${esc(task.title)}»${chips(p)}`;
+  return `✅ Добавлено в ${proj.emoji ?? "📄"} <b>${esc(proj.name)}</b>: «<a href="https://${SITE}/?t=${proj.id}:${task.id}">${esc(task.title)}</a>»${chips(p)}\n<i>↩︎ ответь на это сообщение — текст станет комментом к задаче</i>`;
 }
 
 async function rejectIntake(intakeId: string, by: Link, own: boolean): Promise<string> {
@@ -419,7 +419,7 @@ async function pingWaiting(asker: Link, projectId: string, taskId: string): Prom
   if (!who?.email) return "⚠ У того, кого ждём, не указан email";
   const { data: wl } = await sb.from("tg_links").select("chat_id").ilike("email", who.email).eq("revoked", false).maybeSingle();
   if (!wl) return `⚠ ${esc(who.name ?? "Он")} ещё не подключил Telegram — пингани лично`;
-  await say(wl.chat_id, `🔔 <b>${esc(asker.name ?? asker.email)}</b> ждёт от тебя шага:\n«${esc(t.title)}» <i>(${p.emoji ?? "📄"} ${esc(p.name)})</i>\n\nСделай ход — и напиши в задаче или здесь 🙌`);
+  await say(wl.chat_id, `🔔 <b>${esc(asker.name ?? asker.email)}</b> ждёт от тебя шага:\n«<a href="https://${SITE}/?t=${p.id}:${t.id}">${esc(t.title)}</a>» <i>(${p.emoji ?? "📄"} ${esc(p.name)})</i>\n\nСделай ход — или просто ответь на это сообщение, текст станет комментом 🙌`);
   return `🔔 Пингнул ${esc(who.name ?? "")} — теперь мяч на его стороне ✅`;
 }
 // вечерний разбор: закрыто сегодня + незакрытое с переносом одним тапом
@@ -576,6 +576,7 @@ const HELP = `<b>WANDO-бот — пульт в кармане</b>
 • ☀️ 9:00 — утренний бриф: твой день + «ждёшь от…» с кнопкой 🔔 Пингануть
 • 🌇 18:00 — вечерний разбор: что закрыто, незакрытое — на завтра одним тапом
 • Новая заявка → команде пуш с ✓/✕; решение → автору пуш
+• 💬 Ответь (reply) на сообщение бота о задаче — текст станет комментом в её карточке
 
 Понимаю: @имя · сегодня/завтра/послезавтра · «с 22 по 28 июля» · «до 15 июля» · «на 3 дня» · 2ч · !срочно/важно`;
 
@@ -703,6 +704,34 @@ Deno.serve(async (req) => {
 
     const text: string = (msg.text ?? "").trim();
     if (!text) return new Response("ok");
+
+    // --- ответ на сообщение бота о задаче → комментарий в задачу ---
+    const rp = msg.reply_to_message;
+    if (rp && !text.startsWith("/")) {
+      const ents = [...(rp.entities ?? []), ...(rp.caption_entities ?? [])] as Record<string, any>[];
+      let ref: { pid: string; tid: string } | null = null;
+      for (const e of ents) {
+        if (e.type === "text_link" && e.url) {
+          const m = String(e.url).match(/[?#]t=([\w-]+):([\w-]+)/);
+          if (m) { ref = { pid: m[1], tid: m[2] }; break; }
+        }
+      }
+      if (ref) {
+        const link = await getLink(chatId);
+        if (!link) { await say(chatId, "Сначала привяжи ключ: <code>/key cpk_…</code> (см. /help)"); return new Response("ok"); }
+        const { data: p } = await sb.from("projects").select("id,name,emoji,data").eq("id", ref.pid).maybeSingle();
+        const t = p && ((p.data?.tasks ?? []) as Record<string, any>[]).find((x) => x.id === ref.tid);
+        if (!t) { await say(chatId, "⚠ Задача не нашлась — возможно, удалена"); return new Response("ok"); }
+        t.comments = t.comments ?? [];
+        t.comments.push({ text: text.slice(0, 1000), author: (link.name ?? link.email) + " · TG", authorId: null, when: "сейчас", ts: Date.now() });
+        p.data.activity = p.data.activity ?? [];
+        p.data.activity.unshift({ ts: Date.now(), who: (link.name ?? link.email) + " · TG", icon: "💬", text: "коммент к «" + t.title + "»" });
+        p.data.updatedAt = Date.now();
+        const { error } = await sb.from("projects").update({ data: p.data, updated_at: new Date().toISOString(), updated_by: null }).eq("id", p.id);
+        await say(chatId, error ? "⚠ Не сохранилось: " + esc(error.message) : `💬 Коммент к «${esc(t.title)}» сохранён — команда увидит его в карточке задачи`);
+        return new Response("ok");
+      }
+    }
 
     if (/^\/start/.test(text)) {
       const payload = text.replace(/^\/start\s*/, "").trim();

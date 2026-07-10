@@ -3463,7 +3463,7 @@ function renderIntake(){
       <div style="flex:1;min-width:220px"><h1>📥 Приёмка${intakeRows.length?` <span class="c" style="font-size:14px;vertical-align:3px">${intakeRows.length}</span>`:''}</h1>
         <div class="sub" style="margin-top:4px;line-height:1.5">задачи из бота и Claude ждут решения: выбери проект и подтверди — станут задачами</div></div>
       ${connectBtn}</div>
-    <details class="cheat" ${intakeRows.length?'':'open'}><summary>📋 Шпаргалка: быстрые команды для Claude</summary>${cheatsheetHTML()}</details>`
+    <details class="cheat"><summary>📋 Шпаргалка: быстрые команды для Claude и бота</summary>${cheatsheetHTML()}</details>`
     +(intakeRows.length?`<div class="inolist">${intakeRows.map(r=>{
       const p=parseQuick(r.text);const m=p.assignee?member(p.assignee):null;
       const noTarget=!projectMatch(r.target_project);
@@ -5030,18 +5030,24 @@ projBtn.onclick=e=>{e.stopPropagation();
   const tops=active.filter(p=>{const pr=p.parentId&&projMeta(p.parentId);return !pr||pr.archived;});
   projMenu.innerHTML=tops.map(p=>item(p,false)).join('')
     +`<div class="sep"></div>`
-    +(isTeam?`<button data-act="newp">＋ Новый проект</button>`
-    +`<button data-act="makechild">📦 Вложить в проект…</button>`
-    +`${cur&&cur.parentId?'<button data-act="unparent">⬆️ Вынести наверх</button>':''}`:'')
-    +`<button data-act="report">📄 Отчёт для клиента</button>`
-    +(isTeam?`<button data-act="renp">✏️ Переименовать</button>`
-    +`<button data-act="archive">${cur&&cur.archived?'♻️ Вернуть из архива':'🗄 В архив'}</button>`
-    +`${active.length>1?'<button data-act="delp" class="dng">🗑 Удалить проект</button>':''}`:'')
+    +(isTeam?`<button data-act="newp">＋ Новый проект</button>`:'')
+    +`<button data-act="mgmt" style="color:var(--mut)">⚙️ Управление проектом <span id="projChev" style="color:var(--mut2)">▸</span></button>`
+    +`<div id="projMgmt" style="display:none;border-left:2px solid var(--line);margin:2px 0 4px 14px">`
+      +(isTeam?`<button data-act="makechild">📦 Вложить в проект…</button>`
+      +`${cur&&cur.parentId?'<button data-act="unparent">⬆️ Вынести наверх</button>':''}`:'')
+      +`<button data-act="report">📄 Отчёт для клиента</button>`
+      +(isTeam?`<button data-act="renp">✏️ Переименовать</button>`
+      +`<button data-act="archive">${cur&&cur.archived?'♻️ Вернуть из архива':'🗄 В архив'}</button>`
+      +`${active.length>1?'<button data-act="delp" class="dng">🗑 Удалить проект</button>':''}`:'')
+    +`</div>`
     +`${arch.length?`<div class="sep"></div><div style="font-size:10px;color:var(--mut2);padding:5px 11px;text-transform:uppercase;letter-spacing:.5px">Архив · ${arch.length}</div>`+arch.map(p=>`<button data-switch="${p.id}" style="opacity:.6">🗄 ${esc(p.name)}</button>`).join(''):''}`;
   const r=projBtn.getBoundingClientRect();projMenu.style.left=r.left+'px';projMenu.style.right='auto';projMenu.style.top=(r.bottom+6)+'px';
   projMenu.classList.toggle('show');};
 document.addEventListener('click',e=>{if(!projMenu.contains(e.target)&&!projBtn.contains(e.target))projMenu.classList.remove('show');});
-projMenu.onclick=e=>{const b=e.target.closest('button');if(!b)return;projMenu.classList.remove('show');
+projMenu.onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.act==='mgmt'){e.stopPropagation();const g=document.getElementById('projMgmt');const open=g.style.display==='none';
+    g.style.display=open?'':'none';const ch=document.getElementById('projChev');if(ch)ch.textContent=open?'▾':'▸';return;}
+  projMenu.classList.remove('show');
   if(b.dataset.switch)switchProject(b.dataset.switch);
   else if(b.hasAttribute('data-parent'))setParent(S.id,b.dataset.parent||null);
   else if(b.dataset.act==='makechild')openParentChooser();
@@ -5372,7 +5378,13 @@ async function onLoggedIn(){cloudOn=true;closeAuth();hideGate();updateCloudBadge
   if(!localStorage.getItem('cockpit_profile_done'))openProfileSetup();
   else if(!localStorage.getItem('cockpit_onboarded'))openSetupWizard();
   else if(localStorage.getItem('cockpit_brief_date')!==todayISO())openBrief();
-  setTimeout(maybeTgGate,2200);} // Telegram — обязательный шаг: гейт сам дождётся очереди
+  setTimeout(maybeTgGate,2200);
+  // deep-link из TG: ?t=PID:TID → открыть задачу (якоря в сообщениях бота)
+  {const m=location.search.match(/[?&]t=([\w-]+):([\w-]+)/);
+   if(m){history.replaceState(null,'',location.pathname);
+     setTimeout(()=>{try{if(m[1]!==S.id&&reg.list.find(p=>p.id===m[1]))switchProject(m[1]);
+       setTimeout(()=>openTask(m[2]),m[1]!==S.id?250:0);}catch(e){}},400);}}
+} // Telegram — обязательный шаг: гейт сам дождётся очереди
 /* ---- профиль при первом входе ---- */
 let profileDraft=null;
 function cropPhoto(f,cb){const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const s=160,c=document.createElement('canvas');c.width=s;c.height=s;const ctx=c.getContext('2d');const mn=Math.min(img.width,img.height),sx=(img.width-mn)/2,sy=(img.height-mn)/2;ctx.drawImage(img,sx,sy,mn,mn,0,0,s,s);cb(c.toDataURL('image/jpeg',0.82));};img.src=r.result;};r.readAsDataURL(f);}
