@@ -3165,6 +3165,7 @@ function renderSettings(){
      <div class="set-item"><span>Telegram-бот (голос, пуши, бриф)</span><button class="btn" id="setTg">🤖 Подключить</button></div>
      <div class="set-item"><span>Подключить Claude (MCP)</span><button class="btn" id="setConnect">🔌 Открыть</button></div>
      <div class="set-item"><span>Архив всех проектов (JSON)</span><button class="btn" id="setExport">📦 Выгрузить</button></div>
+     <div class="set-item"><span>Фид для Google/Apple Calendar</span><button class="btn" id="setIcs">📅 Ссылка</button></div>
      <div class="set-sec">Аккаунт и данные</div>
      <div class="set-item"><span>${cloudOn?('☁️ '+esc(myEmail||'в облаке')):'☁️ Не в облаке'}</span><button class="btn" id="setCloud">${cloudOn?'Выйти':'Войти'}</button></div>
      <div class="set-grid2"><button class="btn" id="setExport">💾 Бэкап всех проектов</button><button class="btn" id="setImport">📥 Восстановить</button></div>
@@ -3181,6 +3182,7 @@ function renderSettings(){
   $('#setWho').onchange=e=>{localStorage.setItem('cockpit_me',e.target.value);render();renderSettings();toast('Теперь вы — '+meName(),'👤');};
   $('#setConnect').onclick=()=>{closeSettings();openConnect();};
   {const ex=$('#setExport');if(ex)ex.onclick=exportAll;}
+  {const ic=$('#setIcs');if(ic)ic.onclick=icsFeedLink;}
   {const st=$('#setTg');if(st)st.onclick=()=>{closeSettings();openTgGate();};}
   $('#setCloud').onclick=()=>{if(cloudOn){if(confirm('Выйти из облака на этом устройстве?'))sb.auth.signOut().then(()=>location.reload());}else{closeSettings();const b=$('#btnCloud');if(b)b.click();}};
   $('#setExport').onclick=exportBackup;
@@ -5786,6 +5788,20 @@ $('#authScrim').onclick=e=>{if(e.target===$('#authScrim'))closeAuth();};
 
 /* ============================ ⌘K COMMAND PALETTE ============================ */
 let palItems=[], palFiltered=[], palSel=0;
+/* 📅 ICS-фид: подписка календаря на мои задачи и вехи (ключ = cpk_ от «Подключить Claude») */
+function icsFeedLink(){
+  let key=localStorage.getItem('cockpit_ics_key')||'';
+  if(!/^cpk_/.test(key)){
+    key=(prompt('Вставь свой ключ cpk_… (⌘K → «Подключить Claude» → создать ключ):')||'').trim();
+    if(!/^cpk_[A-Za-z0-9_-]{10,}$/.test(key)){if(key)toast('Не похоже на ключ cpk_…','⚠');return;}
+    localStorage.setItem('cockpit_ics_key',key);
+  }
+  const url=CFG.url+'/functions/v1/ics?k='+key;
+  const done=()=>toast('Ссылка фида скопирована — вставь в календарь: «Добавить по URL»','📅');
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(url).then(done).catch(()=>prompt('Скопируй ссылку фида:',url));
+  else prompt('Скопируй ссылку фида:',url);
+  if(typeof track==='function')track('ics:link');
+}
 /* страховка данных: все проекты одним JSON-файлом — «мои данные не заперты» */
 function exportAll(){try{
   const dump={app:'WANDO',exported:new Date().toISOString(),
