@@ -1598,6 +1598,14 @@ body.light .mseg{background:rgba(250,251,254,.97)}
 @media (max-width:680px){
   .toast{bottom:calc(96px + env(safe-area-inset-bottom))} /* над мобильным навом, не поверх */
 }
+/* ---- 🧠 Вандо-наставник ---- */
+.mentorcard{display:flex;gap:12px;border:1px solid rgba(167,139,250,.35);border-radius:16px;padding:14px 16px;margin:14px 0;
+  background:linear-gradient(135deg,rgba(167,139,250,.10),transparent 70%),var(--bg2)}
+.mentorcard .mi{font-size:22px;flex:0 0 auto;filter:drop-shadow(0 4px 10px rgba(167,139,250,.4))}
+.mentorcard .ml{font-size:10px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--acc2);margin-bottom:3px}
+.mentorcard .mt2{font-weight:800;font-size:13.5px;margin-bottom:4px}
+.mentorcard .ms2{font-size:12.5px;color:var(--mut);line-height:1.55;margin-bottom:10px}
+.mentorcard .ma2{display:flex;gap:8px;flex-wrap:wrap}
 /* ---- 📊 Отчёт империи (статус-репорт недели в один тап) ---- */
 .repsheet{width:min(680px,94vw);max-height:86vh;display:flex;flex-direction:column;padding:0}
 .rep-h{display:flex;align-items:center;gap:10px;padding:15px 20px;border-bottom:1px solid var(--line)}
@@ -2363,7 +2371,7 @@ function renderNow(){
       <div class="pulse-card"><div class="pv" style="color:${ov?'var(--bad)':'var(--mut)'}">${ov}</div><div class="pl">просрочено</div></div>
       <div class="pulse-card"><div class="pv">${vel}</div><div class="pl">закрыто за 7 дней</div></div>
     </div>
-    ${selfHealCard()}
+    ${selfHealCard()}${mentorCard()}
     <details class="fold" id="nowFold" ${foldOpen?'open':''}><summary>📈 Темп и сроки проекта</summary>${momentumSpark()}${milestoneRadar()}</details>
     ${claudeNowCard()}
     <div class="now-sec">🧠 Что важно знать <span>проактивно — пока другие тулзы молчат</span>
@@ -2518,7 +2526,7 @@ function renderNowMobile(ctx){
     ${whatsNewStrip()}
     ${hero}
     ${rows?`<div class="msec">Ещё сегодня · ${upNext.length}</div>${rows}`:''}
-    ${selfHealCard()}
+    ${selfHealCard()}${mentorCard()}
     <details class="fold" style="margin-top:14px"><summary>📊 Подробности дня</summary>
       <div class="pulse-row" style="margin-top:12px">
         <div class="pulse-card"><div class="pv" style="color:var(--ok)">${ctx.pct}%</div><div class="pl">готово</div></div>
@@ -2560,6 +2568,58 @@ function selfHealCard(){
       <button class="btn" id="healOpen">Показать список</button>
     </div></div></div>`;
 }
+/* === Вандо-наставник: обучение тайм-менеджменту без навязывания ======
+   Правила: максимум ОДНА подсказка, максимум раз в день; после действия
+   или «Сам разберусь» — кулдаун 5 дней на это правило. Каждая подсказка
+   учит навык (срок/фокус/приоритет/делегирование) и даёт действие в 1 тап. */
+const mentorRuns={
+  overload(){const t=todayISO(),tm=fmtD(parseD(t)+dayMs);
+    const day=S.tasks.filter(x=>!x.isMilestone&&x.status!=='done'&&x.end<=t).sort((a,b)=>relScore(a)-relScore(b));
+    let sum=day.reduce((s,x)=>s+(+x.estimate||0),0),n=0;
+    for(const x of day){if(sum<=8)break;x.end=tm;if(parseD(x.start)>parseD(tm))x.start=tm;sum-=(+x.estimate||0);n++;}
+    save();render();toast(n+' '+plural(n,'задача перенесена','задачи перенесены','задач перенесено')+' на завтра — день стал реальным','🌤');},
+  focus(){const prog=S.tasks.filter(x=>!x.isMilestone&&x.status==='progress').sort((a,b)=>relScore(b)-relScore(a));
+    let n=0;prog.slice(2).forEach(x=>{x.status='todo';n++;});
+    save();render();toast('Оставили 2 в фокусе, '+n+' вернулись в очередь — так закрывается быстрее','🎯');},
+  allurgent(){const act=S.tasks.filter(x=>!x.isMilestone&&x.status!=='done'&&(x.priority==='urgent'||x.priority==='high')).sort((a,b)=>relScore(b)-relScore(a));
+    let n=0;act.slice(3).forEach(x=>{x.priority='med';n++;});
+    save();render();toast('Осталось 3 по-настоящему важных, '+n+' стали обычными','⚖️');},
+  delegate(){setView('team');toast('Смотри колонку загрузки: перекинь часть задач тем, у кого свободно','🤝');}
+};
+function mentorCard(){try{
+  const now=Date.now();
+  if(+(localStorage.getItem('cockpit_mentor_day')||0)>now-86400000)return '';
+  const cool=k=>+(localStorage.getItem('cockpit_mentor_'+k)||0)>now-5*86400000;
+  const T=S.tasks.filter(t=>!t.isMilestone&&t.status!=='done');if(T.length<4)return '';
+  const t=todayISO();let tip=null;
+  const daySum=T.filter(x=>x.end<=t).reduce((s,x)=>s+(+x.estimate||0),0);
+  const prog=T.filter(x=>x.status==='progress').length;
+  const urg=T.filter(x=>x.priority==='urgent'||x.priority==='high').length;
+  if(!tip&&daySum>10&&!cool('overload'))tip={k:'overload',t:'На сегодня набралось '+daySum+'ч — это не день, а завал',
+    s:'Навык №1: реальный день — 6–8 часов. Всё, что сверху, честнее перенести сразу, чем сорвать.',a:'🌤 Разгрузить до 8ч'};
+  if(!tip&&prog>=5&&!cool('focus'))tip={k:'focus',t:prog+' задач «в работе» одновременно — фокус размазан',
+    s:'Навык фокуса: реально двигаются 1–2 задачи. Остальные пусть ждут в очереди — ничего не потеряется.',a:'🎯 Оставить 2 в фокусе'};
+  if(!tip&&urg>=4&&urg/T.length>=.6&&!cool('allurgent'))tip={k:'allurgent',t:'Почти всё помечено срочным — значит, срочного нет',
+    s:'Навык приоритета: важных задач одновременно — не больше трёх. Остальные — обычные, и это нормально.',a:'⚖️ Оставить 3 важных'};
+  if(!tip&&S.members.length>1&&!cool('delegate')){const cnt={};T.forEach(x=>{if(x.assigneeId)cnt[x.assigneeId]=(cnt[x.assigneeId]||0)+1;});
+    const vals=Object.values(cnt),mx=Math.max(0,...vals);
+    if(T.length>=6&&mx/T.length>=.7)tip={k:'delegate',t:'Один человек тянет '+Math.round(mx/T.length*100)+'% задач',
+      s:'Навык делегирования: перекос выжигает одного и расслабляет остальных. Перераспредели заранее, не в дедлайн.',a:'🤝 Посмотреть загрузку'};}
+  if(!tip)return '';
+  return `<div class="mentorcard"><span class="mi">🧠</span><div class="mb2">
+    <div class="ml">Вандо · наставник</div>
+    <div class="mt2">${tip.t}</div><div class="ms2">${tip.s}</div>
+    <div class="ma2"><button class="btn primary" data-ma="${tip.k}">${tip.a}</button>
+    <button class="btn" data-ms="${tip.k}">Сам разберусь</button></div></div></div>`;
+}catch(e){return '';}}
+document.addEventListener('click',e=>{
+  const a=e.target&&e.target.closest&&e.target.closest('[data-ma]');
+  if(a){const k=a.dataset.ma;localStorage.setItem('cockpit_mentor_'+k,Date.now());localStorage.setItem('cockpit_mentor_day',Date.now());
+    if(typeof track==='function')track('mentor:'+k);(mentorRuns[k]||(()=>{}))();return;}
+  const sk=e.target&&e.target.closest&&e.target.closest('[data-ms]');
+  if(sk){localStorage.setItem('cockpit_mentor_'+sk.dataset.ms,Date.now());localStorage.setItem('cockpit_mentor_day',Date.now());
+    if(typeof track==='function')track('mentor:skip');render();}
+});
 // «было без тебя» — что сделал партнёр в этом проекте с прошлого захода
 function whatsNewStrip(){
   const lastSeen=+(localStorage.getItem('cockpit_seen_'+S.id)||0);if(!lastSeen)return '';
