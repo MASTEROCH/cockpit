@@ -5317,12 +5317,14 @@ $('#repScrim').onclick=e=>{if(e.target===$('#repScrim'))closeEmpireRep();};
 function renderMProjects(){
   const el=$('#mprojects');if(!el)return;
   const projs=reg.list.filter(p=>!p.archived).map(p=>({meta:p,data:p.id===S.id?S:loadProj(p.id)})).filter(x=>x.data);
-  const row=({meta,data},child)=>{const ts=(data.tasks||[]).filter(t=>!t.isMilestone);
+  const row=({meta,data},child)=>{let ts=(data.tasks||[]).filter(t=>!t.isMilestone),kidsN=0;
+    if(!child){const kids=projs.filter(k=>k.meta.parentId===meta.id);kidsN=kids.length;
+      if(kidsN)ts=ts.concat(kids.flatMap(k=>(k.data.tasks||[]).filter(t=>!t.isMilestone)));} // компания = агрегат детей
     const done=ts.filter(t=>t.status==='done').length;const ov=ts.filter(t=>t.status!=='done'&&parseD(t.end)<parseD(todayISO())).length;
     const pct=ts.length?Math.round(done/ts.length*100):0;
     return `<div class="mprow ${child?'child':''}" data-p="${meta.id}"><span class="pe">${child?'↳ ':''}${meta.emoji||'📄'}</span>
       <div class="pm"><div class="pn2">${esc(meta.name)}</div>
-        <div class="ps2">${ts.length} задач · ${done} готово${ov?` · <b style="color:var(--bad)">${ov} горит</b>`:''}</div>
+        <div class="ps2">${kidsN?`${kidsN} ${plural(kidsN,'проект','проекта','проектов')} · `:''}${ts.length} задач · ${done} готово${ov?` · <b style="color:var(--bad)">${ov} горит</b>`:''}</div>
         <div class="pbar"><span style="width:${pct}%"></span></div></div><span class="arr">›</span></div>`;};
   const tops=projs.filter(x=>{const pr=x.meta.parentId&&projMeta(x.meta.parentId);return !pr||pr.archived;});
   let html='';tops.forEach(t=>{html+=row(t,false);projs.filter(k=>k.meta.parentId===t.meta.id).forEach(k=>html+=row(k,true));});
