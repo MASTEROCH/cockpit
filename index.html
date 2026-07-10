@@ -1260,7 +1260,10 @@ body.light::before{background:
   .now-sec .btn{flex:1 1 auto;justify-content:center}
   .toolbar{gap:7px}
   .seg2{flex:1 1 100%;justify-content:center}
-  .inofoot{flex-direction:column;align-items:stretch}
+  .inofoot{flex-direction:column;align-items:stretch;gap:8px}
+  .inoproj{width:100%;flex:1 1 auto}
+  .inoacts{margin-left:0;display:grid;grid-template-columns:1fr 1fr;gap:7px}
+  .inoacts .btn{justify-content:center;padding:11px 8px}
   .inoproj{flex:1 1 100%}
   .inoacts{width:100%}.inoacts .btn{flex:1}
 
@@ -1429,7 +1432,7 @@ body.light .vando-panel{background:var(--sheen),rgba(255,255,255,.97)}
   .cmdwrap{display:none} /* захват на мобиле = ➕ по центру нава */
   header{padding-bottom:9px}
   .vando-fab{bottom:calc(132px + env(safe-area-inset-bottom));right:12px}
-  .vando-panel{right:8px;left:8px;width:auto;bottom:calc(196px + env(safe-area-inset-bottom));height:min(480px,58vh)}
+  .vando-panel{left:0;right:0;top:0;bottom:0;width:auto;height:100dvh;max-width:none;border-radius:0}
 }
 /* ---- деньги и энергия ---- */
 .cashbtn{margin-left:auto;border:1px solid var(--line);background:var(--bg2);border-radius:9px;padding:5px 10px;font-size:15px;cursor:pointer;filter:grayscale(1);opacity:.55;transition:.15s}
@@ -1459,7 +1462,10 @@ body.light .vando-panel{background:var(--sheen),rgba(255,255,255,.97)}
     background:linear-gradient(135deg,#5472F0,#a78bfa 55%,#FE5C97);color:#fff;font-size:30px;font-weight:400;line-height:1;
     box-shadow:0 12px 28px rgba(84,114,240,.5),inset 0 1px 0 rgba(255,255,255,.35);display:grid;place-items:center;padding:0}
   .mnav .mplus:active{transform:translateY(-14px) scale(.93)}
-  .vando-panel{bottom:calc(96px + env(safe-area-inset-bottom));height:min(560px,70vh)}
+  .mnav i{position:relative}
+  .mbadge{position:absolute;top:-5px;right:-9px;background:var(--bad);color:#fff;font-size:9px;font-weight:800;
+    border-radius:8px;padding:1px 4px;min-width:14px;text-align:center;font-style:normal}
+  .vando-panel{left:0;right:0;top:0;bottom:0;height:100dvh;border-radius:0}
 }
 .capsheet{width:min(640px,94vw);border-radius:24px;padding:0;overflow:hidden}
 .cap-b{padding:22px 20px 14px;display:flex;flex-direction:column;gap:14px}
@@ -1468,6 +1474,9 @@ body.light .vando-panel{background:var(--sheen),rgba(255,255,255,.97)}
   font-size:22px;font-weight:600;line-height:1.4;font-family:inherit}
 #capIn::placeholder{color:var(--mut2);font-weight:500}
 .cap-chips{display:flex;gap:6px;flex-wrap:wrap;min-height:26px}
+.cap-projs{display:flex;gap:7px;flex-wrap:wrap}
+.cap-projs button{border:1px solid var(--line);background:var(--bg2);color:var(--mut);border-radius:11px;padding:8px 12px;font-size:13px;font-weight:700;cursor:pointer}
+.cap-projs button.on{background:linear-gradient(135deg,rgba(167,139,250,.25),rgba(84,114,240,.2));border-color:rgba(167,139,250,.45);color:var(--txt)}
 .cap-f{display:flex;gap:10px;padding:14px 20px calc(16px + env(safe-area-inset-bottom));border-top:1px solid var(--line);align-items:center}
 .cap-mic{width:52px;height:52px;border-radius:16px;border:1px solid var(--line);background:var(--bg2);color:var(--acc);
   font-size:22px;display:grid;place-items:center;cursor:pointer;flex:0 0 auto}
@@ -2099,7 +2108,9 @@ function render(){
   $('#banner').classList.toggle('hide',!S.demo||bannerDismissed);
   // гость (не в team): Приёмка и админ-действия скрыты — доступ режет и RLS
   {const ti=document.querySelector('.tab[data-v="intake"]');if(ti)ti.style.display=isTeam?'':'none';
-   const mi=$('#mnavIntake');if(mi){if(isTeam){mi.dataset.mv='intake';mi.innerHTML='<i>📥</i><span>Приёмка</span>';}
+   const mi=$('#mnavIntake');if(mi){if(isTeam){mi.dataset.mv='intake';
+       const n=(typeof intakeRows!=='undefined'&&intakeRows)?intakeRows.length:0;
+       mi.innerHTML='<i>📥'+(n?'<b class="mbadge">'+(n>9?'9+':n)+'</b>':'')+'</i><span>Приёмка</span>';}
      else{mi.dataset.mv='backlog';mi.innerHTML='<i>💡</i><span>Бэклог</span>';}}
    if(!isTeam&&view==='intake'){setView('now');return;}}
   const _T=S.tasks.filter(t=>!t.isMilestone);
@@ -3119,7 +3130,10 @@ $('#btnInbox').onclick=openInbox;$('#inboxClose').onclick=closeInbox;
 /* ============================ ПРИЁМКА (Claude → очередь → подтверждение) ============================ */
 let intakeRows=[], intakeReady=true, intakeWorkspace='default';
 function intakePending(){return intakeRows.length;}
-function updateIntakeBadge(){const c=$('#cntIntake');if(c){c.textContent=intakeRows.length;c.style.display=intakeRows.length?'':'none';}updateInboxBadge();}
+function updateIntakeBadge(){const c=$('#cntIntake');if(c){c.textContent=intakeRows.length;c.style.display=intakeRows.length?'':'none';}
+  const mi=$('#mnavIntake');if(mi&&mi.dataset.mv==='intake'){const n=intakeRows.length;
+    mi.innerHTML='<i>📥'+(n?'<b class="mbadge">'+(n>9?'9+':n)+'</b>':'')+'</i><span>Приёмка</span>';}
+  updateInboxBadge();}
 async function loadIntake(){
   if(!cloudOn||!sb){intakeRows=[];updateIntakeBadge();return;}
   try{const {data,error}=await sb.from('intake').select('*').eq('status','pending').order('created_at',{ascending:false});
@@ -4895,11 +4909,18 @@ async function vandoSend(){
  const sb2=$('#vandoSend');if(sb2)sb2.onclick=vandoSend;}
 
 /* ============================ MOBILE: лист захвата и Проекты ============================ */
+let capPid=null;
 function openCap(){
+  const projs=reg.list.filter(p=>!p.archived);
+  const last=localStorage.getItem('cockpit_cap_last');
+  capPid=projs.find(p=>p.id===last)?last:S.id;
+  const ordered=[...projs].sort((a,b)=>(a.id===capPid?-1:0)-(b.id===capPid?-1:0));
   $('#capModal').innerHTML=`<div class="cap-b">
     <div class="cap-t">Новая задача · говори или пиши</div>
     <textarea id="capIn" placeholder="созвон с Димой завтра 2ч срочно…"></textarea>
-    <div class="cap-chips" id="capChips"></div></div>
+    <div class="cap-chips" id="capChips"></div>
+    <div class="cap-t" style="margin-top:4px">В проект</div>
+    <div class="cap-projs" id="capProjs">${ordered.slice(0,8).map(p=>`<button data-p="${p.id}" class="${p.id===capPid?'on':''}">${p.emoji||'📄'} ${esc(String(p.name).slice(0,16))}</button>`).join('')}</div></div>
    <div class="cap-f"><button class="cap-mic" id="capMic">🎙</button>
     <button class="cap-go" id="capGo">⚡ Создать задачу</button></div>`;
   $('#capScrim').classList.add('show');
@@ -4907,8 +4928,17 @@ function openCap(){
   const chips=()=>{const p=parseQuick(inp.value);$('#capChips').innerHTML=nlpChips(p).join('');};
   inp.oninput=chips;
   inp.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('#capGo').click();}if(e.key==='Escape')closeCap();};
+  $$('#capProjs button').forEach(b=>b.onclick=()=>{capPid=b.dataset.p;
+    $$('#capProjs button').forEach(x=>x.classList.toggle('on',x===b));haptic('light');});
   $('#capMic').onclick=()=>dictateTo(inp,$('#capMic'));
-  $('#capGo').onclick=()=>{const v=inp.value.trim();if(!v){inp.focus();return;}closeCap();haptic('ok');runCmd(v);};
+  $('#capGo').onclick=()=>{const v=inp.value.trim();if(!v){inp.focus();return;}
+    closeCap();haptic('ok');
+    localStorage.setItem('cockpit_cap_last',capPid||S.id);
+    if(capPid&&capPid!==S.id&&!isManageCmd(v)){ // задача уходит В выбранный проект, ты остаёшься тут
+      const p=parseQuick(v);if(!p.title)p.title=v;
+      addTaskToProject(capPid,p,'todo');
+      const pm=projMeta(capPid);toast('Задача → '+((pm&&pm.emoji)||'📄')+' '+((pm&&pm.name)||'проект')+' ✓','🚀');render();
+    }else runCmd(v);};
   setTimeout(()=>inp.focus(),80);
 }
 function closeCap(){$('#capScrim').classList.remove('show');}
