@@ -1516,6 +1516,7 @@ body.light .mseg{background:rgba(250,251,254,.97)}
 .mrow{display:flex;align-items:center;gap:11px;background:var(--sheen),var(--glass);border:1px solid var(--gbrd);border-radius:15px;padding:14px;margin-bottom:8px}
 .mrow .mr-t{flex:1;font-size:14.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mrow .mr-e{font-size:11px;color:var(--mut2)}
+.mr-p{flex:0 0 auto;font-size:10px;font-weight:700;color:var(--mut2);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:2px 7px;max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* Проекты (мобильный корень) */
 .mplist{display:flex;flex-direction:column;gap:10px}
 .mprow{display:flex;align-items:center;gap:13px;background:var(--sheen),var(--glass);border:1px solid var(--gbrd);
@@ -2305,7 +2306,7 @@ function haptic(kind){try{const T=window.Telegram&&window.Telegram.WebApp;if(!T|
   if(kind==='ok')T.HapticFeedback.notificationOccurred('success');
   else if(kind==='warn')T.HapticFeedback.notificationOccurred('warning');
   else T.HapticFeedback.impactOccurred('light');}catch(e){}}
-function attachSwipe(el,taskId){
+function attachSwipe(el,taskId,pid){
   let sx=0,sy=0,dx=0,swiping=false;
   el.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;dx=0;swiping=false;},{passive:true});
   el.addEventListener('touchmove',e=>{
@@ -2318,22 +2319,46 @@ function attachSwipe(el,taskId){
   el.addEventListener('touchend',()=>{
     el.style.transition='transform .22s var(--ease), background .22s';
     if(swiping&&dx>80){el.style.transform='translateX(110%)';
-      setTimeout(()=>{const t=task(taskId);if(!t)return;t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;
-        logAct('✅','«'+t.title+'» → Готово (свайп)');awardForDone(S,t);celebrate();haptic('ok');save();render();toast('Готово ✅','✅');},160);}
+      setTimeout(()=>{editTaskInProject(pid||S.id,taskId,t=>{t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;});
+        celebrate();haptic('ok');render();toast('Готово ✅','✅');},160);}
     else if(swiping&&dx<-80){el.style.transform='translateX(-110%)';
-      setTimeout(()=>{const t=task(taskId);if(!t)return;const tm=fmtD(parseD(todayISO())+dayMs);
-        t.end=tm;if(parseD(t.start)>parseD(tm))t.start=tm;logAct('🌙','«'+t.title+'» → завтра (свайп)');haptic('light');save();render();toast('🌙 На завтра','🌙');},160);}
+      setTimeout(()=>{const tm=fmtD(parseD(todayISO())+dayMs);
+        editTaskInProject(pid||S.id,taskId,t=>{t.end=tm;if(parseD(t.start)>parseD(tm))t.start=tm;});
+        haptic('light');render();toast('🌙 На завтра','🌙');},160);}
     else{el.style.transform='';el.style.background='';}
   },{passive:true});
 }
 // ===== МОБИЛЬНЫЙ «Сегодня»: один вопрос на экран =====
+// мои открытые задачи по ВСЕМ доступным проектам
+function myTasksAll(){
+  const out=[];
+  reg.list.filter(p=>!p.archived).forEach(p=>{
+    const data=p.id===S.id?S:loadProj(p.id);if(!data)return;
+    const me2=myMemberIn(data);if(!me2)return;
+    (data.tasks||[]).forEach(t=>{if(!t.isMilestone&&t.status!=='done'&&t.assigneeId===me2.id)out.push({t,pid:p.id,pname:p.name,emoji:p.emoji||'📄'});});
+  });
+  return out;}
 function renderNowMobile(ctx){
-  const {el,greet,next,upNext,ins,running}=ctx;
+  const {el,greet,ins,running}=ctx;
   const energy=ctx.energy;
+  // империя: герой и очередь — со всех проектов (мультипроект), иначе как есть
+  let next=ctx.next,upNext=ctx.upNext,nextPid=S.id,poolAll=null;
+  const multi=reg.list.filter(p=>!p.archived).length>1;
+  if(multi){
+    poolAll=myTasksAll();
+    if(poolAll.length){
+      const enW=x=>energy==='lo'?((x.t.estimate&&x.t.estimate<=2)?1.6:0):energy==='hi'?((x.t.estimate>=4||x.t.priority==='high'||x.t.priority==='urgent')?1.2:0):0;
+      poolAll.sort((a,b)=>(relScore(b.t)+enW(b))-(relScore(a.t)+enW(a)));
+      next=poolAll[0].t;nextPid=poolAll[0].pid;
+      upNext=poolAll.slice(1,4);
+    }else{next=null;upNext=[];}
+  }
+  const badge=x=>multi?`<span class="mr-p">${x.emoji} ${esc(x.pname)}</span>`:'';
+  const heroX=multi&&poolAll&&poolAll.length?poolAll[0]:null;
   const hero=next?`<div class="mhero ${isOverdue(next)?'over':''}" data-open="${next.id}">
-      <div class="mh-label">${ctx.mine.length?'Твой следующий шаг':'Главное сейчас'}</div>
+      <div class="mh-label">${multi?'Твой следующий шаг · вся империя':(ctx.mine.length?'Твой следующий шаг':'Главное сейчас')}</div>
       <div class="mh-title">${next.cash?'💰 ':''}${prGlyph(next)}${esc(next.title)}</div>
-      <div class="mh-meta">${(m=>m?esc(m.name):'без исполнителя')(next.assigneeId?member(next.assigneeId):null)}${next.estimate?` · ${next.spent||0}/${next.estimate}ч`:''}${(d=>d<0?` · <b style="color:var(--bad)">просрочено ${-d}д</b>`:d===0?' · сегодня':d===1?' · завтра':'')(daysLeft(next))}</div>
+      <div class="mh-meta">${heroX?`${heroX.emoji} ${esc(heroX.pname)} · `:''}${next.estimate?`${next.spent||0}/${next.estimate}ч · `:''}${(d=>d<0?`<b style="color:var(--bad)">просрочено ${-d}д</b>`:d===0?'сегодня':d===1?'завтра':'в плане')(daysLeft(next))}</div>
       <div class="mh-acts">
         ${running&&focus.tid===next.id?`<div class="focusrun"><span class="fdot"></span><span id="focusClock" class="fclock">00:00</span><button class="btn" id="focusStop">■</button></div>`
           :`<button class="mh-go" id="focusStart">▶ Фокус</button>`}
@@ -2342,7 +2367,8 @@ function renderNowMobile(ctx){
     :`<div class="mhero done"><div class="mh-label">🎉 Чисто</div><div class="mh-title">На тебе задач нет</div><div class="mh-meta">жми ➕ и создай первую</div></div>`;
   if(upNext.length&&!localStorage.getItem('cockpit_swipe_tip')){localStorage.setItem('cockpit_swipe_tip','1');
     setTimeout(()=>toast('Свайпни задачу: вправо — готово ✅, влево — на завтра 🌙','👆'),900);}
-  const rows=upNext.map(t=>`<div class="mrow" data-open="${t.id}"><span class="dot" style="background:${stMap[t.status].c}"></span><span class="mr-t">${t.cash?'💰 ':''}${prGlyph(t)}${esc(t.title)}</span>${t.estimate?`<span class="mr-e">${t.estimate}ч</span>`:''}</div>`).join('');
+  const rows=upNext.map(x=>{const t=x.t||x;const pid=x.pid||S.id;
+    return `<div class="mrow" data-open="${t.id}" data-pid="${pid}"><span class="dot" style="background:${stMap[t.status].c}"></span><span class="mr-t">${t.cash?'💰 ':''}${prGlyph(t)}${esc(t.title)}</span>${x.pid?badge(x):''}${t.estimate?`<span class="mr-e">${t.estimate}ч</span>`:''}</div>`;}).join('');
   el.innerHTML=`
     <div class="mgreet"><h1>${greet.split(' ')[0]} ${greet.split(' ').slice(1).join(' ')}, ${esc(meName().split(' ')[0])}</h1>
       <span class="energyrow"><button data-en="hi" class="${energy==='hi'?'on':''}">🔋</button><button data-en="lo" class="${energy==='lo'?'on':''}">🪫</button></span></div>
@@ -2359,13 +2385,15 @@ function renderNowMobile(ctx){
       ${claudeNowCard()}
       <div class="insights" style="margin-top:12px">${ins.map((x,i)=>`<div class="insight ${x.act?'click':''}" data-i="${i}"><span class="ii">${x.ic}</span><div class="ib"><div class="it">${esc(x.title)}</div>${x.sub?`<div class="is">${esc(x.sub)}</div>`:''}</div></div>`).join('')}</div>
       ${momentumSpark()}</details>`;
-  const mh=el.querySelector('.mhero[data-open] .mh-title');if(mh)mh.onclick=()=>openTask(el.querySelector('.mhero').dataset.open);
-  $$('#now .mrow[data-open]').forEach(e=>{e.onclick=()=>openTask(e.dataset.open);attachSwipe(e,e.dataset.open);});
-  const fs=$('#focusStart');if(fs&&ctx.next)fs.onclick=()=>startFocus(ctx.next.id);
+  const openX=(pid,tid)=>{if(pid&&pid!==S.id){switchProject(pid);setTimeout(()=>openTask(tid),120);}else openTask(tid);};
+  const mh=el.querySelector('.mhero[data-open] .mh-title');if(mh)mh.onclick=()=>openX(nextPid,el.querySelector('.mhero').dataset.open);
+  $$('#now .mrow[data-open]').forEach(e=>{e.onclick=()=>openX(e.dataset.pid,e.dataset.open);attachSwipe(e,e.dataset.open,e.dataset.pid);});
+  const fs=$('#focusStart');if(fs&&next)fs.onclick=()=>{if(nextPid!==S.id){switchProject(nextPid);setTimeout(()=>{startFocus(next.id);setView('now');},150);}else startFocus(next.id);};
   const fst=$('#focusStop');if(fst)fst.onclick=()=>stopFocus(false);
   if(ctx.running){if(!focus.iv)focus.iv=setInterval(updFocus,1000);updFocus();}
-  const dn=el.querySelector('[data-done]');if(dn)dn.onclick=(ev)=>{const t=task(dn.dataset.done);if(!t)return;if(focus.tid===t.id)stopFocus(true);
-    t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;logAct('✅','«'+t.title+'» → Готово');const v=awardForDone(S,t);celebrateAt(ev);save();render();toast(v?('+'+v+' 🪙'):'Готово ✅',v?'🪙':'✅');};
+  const dn=el.querySelector('[data-done]');if(dn)dn.onclick=(ev)=>{if(focus.tid===dn.dataset.done)stopFocus(true);
+    editTaskInProject(nextPid,dn.dataset.done,t=>{t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;});
+    celebrateAt(ev);haptic('ok');render();toast('Готово ✅','✅');};
   ins.forEach((x,i)=>{const c=el.querySelector(`.insight[data-i="${i}"]`);if(c&&x.act)c.onclick=x.act;});
   const ht=$('#healToday');if(ht)ht.onclick=()=>healOverdue('today');
   const hw=$('#healWeek');if(hw)hw.onclick=()=>healOverdue('week');
