@@ -2182,7 +2182,7 @@ function render(){
   {const ms=$('#mseg');if(ms){const pv=['board','gantt','week','backlog','team'];
     const show=pv.includes(view)&&window.innerWidth<=680;
     ms.style.display=show?'':'none';
-    if(show){ms.innerHTML=[['board','▦ Доска'],['gantt','📊 Гант'],['week','🗓 Неделя'],['backlog','💡 Бэклог'],['team','👥 Команда']]
+    if(show){ms.innerHTML=[['mprojects','‹ Проекты'],['board','▦ Доска'],['gantt','📊 Гант'],['week','🗓 Неделя'],['backlog','💡 Бэклог'],['team','👥 Команда']]
       .map(([v,n])=>`<button class="${view===v?'on':''}" data-v="${v}">${n}</button>`).join('');
       $$('#mseg button').forEach(b=>b.onclick=()=>setView(b.dataset.v));}}}
   updateInboxBadge();
@@ -2373,8 +2373,8 @@ function renderNow(){
   const fst=$('#focusStop');if(fst)fst.onclick=()=>stopFocus(false);
   if(running){if(!focus.iv)focus.iv=setInterval(updFocus,1000);updFocus();}
   const dn=el.querySelector('[data-done]');if(dn)dn.onclick=(ev)=>{if(focus.tid===dn.dataset.done)stopFocus(true);
-    editTaskInProject(nextPid,dn.dataset.done,t=>{t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;});
-    celebrateAt(ev);render();toast('Готово ✅','✅');};
+    const un=markDone(nextPid,dn.dataset.done);
+    celebrateAt(ev);render();toast('Готово','✅','Отменить',un);};
   ins.forEach((x,i)=>{const c=el.querySelector(`.insight[data-i="${i}"]`);if(c&&x.act)c.onclick=x.act;});
   const ap=$('#aiPlanBtn');if(ap)ap.onclick=openAiPlan;
   const cb=$('#claudeBtn');if(cb)cb.onclick=()=>fetchClaudeInsight(cb);
@@ -2407,8 +2407,8 @@ function attachSwipe(el,taskId,pid){
   el.addEventListener('touchend',()=>{
     el.style.transition='transform .22s var(--ease), background .22s';
     if(swiping&&dx>80){el.style.transform='translateX(110%)';
-      setTimeout(()=>{editTaskInProject(pid||S.id,taskId,t=>{t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;});
-        celebrate();haptic('ok');render();toast('Готово ✅','✅');},160);}
+      setTimeout(()=>{const un=markDone(pid||S.id,taskId);
+        celebrate();haptic('ok');render();toast('Готово','✅','Отменить',un);},160);}
     else if(swiping&&dx<-80){el.style.transform='translateX(-110%)';
       setTimeout(()=>{const tm=fmtD(parseD(todayISO())+dayMs);
         editTaskInProject(pid||S.id,taskId,t=>{t.end=tm;if(parseD(t.start)>parseD(tm))t.start=tm;});
@@ -2526,8 +2526,8 @@ function renderNowMobile(ctx){
   const fst=$('#focusStop');if(fst)fst.onclick=()=>stopFocus(false);
   if(ctx.running){if(!focus.iv)focus.iv=setInterval(updFocus,1000);updFocus();}
   const dn=el.querySelector('[data-done]');if(dn)dn.onclick=(ev)=>{if(focus.tid===dn.dataset.done)stopFocus(true);
-    editTaskInProject(nextPid,dn.dataset.done,t=>{t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;});
-    celebrateAt(ev);haptic('ok');render();toast('Готово ✅','✅');};
+    const un=markDone(nextPid,dn.dataset.done);
+    celebrateAt(ev);haptic('ok');render();toast('Готово','✅','Отменить',un);};
   ins.forEach((x,i)=>{const c=el.querySelector(`.insight[data-i="${i}"]`);if(c&&x.act)c.onclick=x.act;});
   const ht=$('#healToday');if(ht)ht.onclick=()=>healOverdue('today');
   const hw=$('#healWeek');if(hw)hw.onclick=()=>healOverdue('week');
@@ -2661,7 +2661,7 @@ function kbComment(){const it=kbCur();if(!it)return;const foc=()=>setTimeout(()=
 function kbDone(){const it=kbCur();if(!it)return;const r=it.el.getBoundingClientRect();const cx=r.left+r.width/2,cy=r.top+r.height/2;
   if(it.pid===S.id){const t=task(it.tid);if(!t||t.status==='done')return;t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;
     logAct('✅','«'+t.title+'» → Готово');const v=awardForDone(S,t);celebrate(cx,cy);save();render();toast(v?('+'+v+' 🪙'):'Готово ✅',v?'🪙':'✅');}
-  else{editTaskInProject(it.pid,it.tid,t=>{if(t.status!=='done'){t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;}});celebrate(cx,cy);render();toast('Готово ✅','✅');}}
+  else{const un=markDone(it.pid,it.tid);celebrate(cx,cy);render();toast('Готово','✅','Отменить',un);}}
 function kbAssign(){const it=kbCur();if(!it||it.pid!==S.id){toast('Назначение — на доске или ганте','👤');return;}
   const t=task(it.tid);if(!t)return;const ms=S.members;if(!ms.length)return;
   const cur=ms.findIndex(m=>m.id===t.assigneeId);const nx=ms[(cur+1)%ms.length];
@@ -3599,6 +3599,10 @@ function weekDays(offset){const now=new Date();const d=new Date(now.getFullYear(
   const out=[];for(let i=0;i<7;i++){const x=new Date(mon);x.setDate(mon.getDate()+i);out.push(`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`);}return out;}
 function myWeekTasks(){const out=[];reg.list.filter(p=>!p.archived).forEach(p=>{const data=loadProj(p.id);if(!data)return;const me=myMemberIn(data);if(!me)return;
   (data.tasks||[]).forEach(t=>{if(t.isMilestone)return;if(t.assigneeId===me.id&&t.status!=='done')out.push({t,pid:p.id,pname:p.name,emoji:p.emoji});});});return out;}
+/* done с правом передумать: возвращает undo-замыкание для тоста «Отменить» */
+function markDone(pid,tid){let prev='todo',prevSpent;
+  editTaskInProject(pid,tid,t=>{prev=t.status;prevSpent=t.spent;t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;});
+  return ()=>{editTaskInProject(pid,tid,t=>{t.status=prev==='done'?'todo':prev;t.spent=prevSpent;});render();toast('Возвращена в работу','↩');};}
 function editTaskInProject(pid,tid,fn){
   if(pid===S.id){const t=task(tid);if(t){fn(t);awardForDone(S,t);save();}return;}
   const data=loadProj(pid);if(!data)return;const t=(data.tasks||[]).find(x=>x.id===tid);if(!t)return;fn(t);awardForDone(data,t);data.updatedAt=Date.now();localStorage.setItem(pkey(pid),JSON.stringify(data));if(cloudOn)cloudPush(data,true);}
@@ -3628,7 +3632,7 @@ function renderWeek(){
     c.onclick=e=>{if(e.target.closest('.qdone'))return;const pid=c.dataset.pid,tid=c.dataset.tid;if(pid!==S.id)switchProject(pid);setTimeout(()=>openTask(tid),80);};
     c.ondragstart=()=>{weekDrag={pid:c.dataset.pid,tid:c.dataset.tid};c.classList.add('dragging');};
     c.ondragend=()=>c.classList.remove('dragging');});
-  $$('#week .qdone').forEach(b=>b.onclick=e=>{e.stopPropagation();const a=b.dataset.wd.split('|');editTaskInProject(a[0],a[1],t=>{t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;});toast('Готово ✅','✅');renderWeek();});
+  $$('#week .qdone').forEach(b=>b.onclick=e=>{e.stopPropagation();const a=b.dataset.wd.split('|');const un=markDone(a[0],a[1]);toast('Готово','✅','Отменить',()=>{un();renderWeek();});renderWeek();});
   $$('#week .wcol').forEach(colEl=>{
     colEl.ondragover=e=>{e.preventDefault();colEl.classList.add('drop');};
     colEl.ondragleave=()=>colEl.classList.remove('drop');
