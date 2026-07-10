@@ -1635,6 +1635,12 @@ body.light .mseg{background:rgba(250,251,254,.97)}
 .syncdot.on{background:var(--ok);box-shadow:0 0 6px rgba(52,211,153,.6)}
 @media (max-width:680px){.syncdot{display:inline-block}}
 .ctxnote{font-size:11px;color:var(--mut2);margin:-8px 0 8px 2px}
+.cashout{display:flex;align-items:center;gap:9px;flex-wrap:wrap;border:1px solid rgba(52,211,153,.35);border-radius:13px;padding:11px 14px;background:linear-gradient(120deg,rgba(52,211,153,.08),transparent 70%),var(--bg2);font-size:13px}
+.cashout .cq{font-weight:700}
+.cashout .cok{font-size:11.5px;color:var(--ok)}
+.mm-fc{margin-top:10px;font-size:12.5px;line-height:1.5;border-radius:11px;padding:9px 12px}
+.mm-fc.warn{color:#fbbf24;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25)}
+.mm-fc.ok{color:var(--ok);background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.2)}
 .nh-why{font-size:12px;color:var(--mut2);margin-top:9px}
 .nh-why b{color:var(--mut);font-weight:600}
 .mh-why{font-size:11.5px;color:var(--mut2);margin-top:7px;opacity:.9}
@@ -1790,6 +1796,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
       <div id="dSubs"></div>
       <div class="cmtadd"><input class="inp" id="dSubIn" placeholder="Добавить пункт… (Enter)"><button class="btn" id="dSubBtn">＋</button></div>
     </div>
+    <div id="dCashOut" style="display:none"></div>
     <details class="dmore" id="dMore"><summary>⚙️ Ещё: описание, оценка, зависимости, повтор</summary>
       <div class="dmb">
         <div class="field"><label>Описание / план</label>
@@ -2298,6 +2305,19 @@ function buildInsights(T){
   if(!out.length)out.push({ic:'✨',title:'Всё под контролем',sub:'просрочек и перегруза нет — можно строить',act:null});
   return out;
 }
+/* прогноз вехи: тот же велосити, экстраполированный вперёд. Молчит, если сказать нечего. */
+function milestoneForecast(){
+  const ms=S.tasks.filter(t=>t.isMilestone&&t.status!=='done'&&parseD(t.end)>=parseD(todayISO())).sort((a,b)=>parseD(a.end)-parseD(b.end))[0];
+  if(!ms)return '';
+  const open=S.tasks.filter(t=>!t.isMilestone&&t.status!=='done').length;if(!open)return '';
+  let closed=0;(S.activity||[]).forEach(a=>{if(/Готово|✅/.test((a.text||'')+(a.icon||''))&&(Date.now()-a.ts)<14*dayMs)closed++;});
+  const perDay=closed/14;
+  const msIn=Math.round((parseD(ms.end)-parseD(todayISO()))/dayMs);
+  if(!perDay)return msIn<=30?`<div class="mm-fc warn">⚠ Веха «${esc(ms.title)}» через ${msIn} ${plural(msIn,'день','дня','дней')}, а темп нулевой — начни с одной задачи сегодня</div>`:'';
+  const need=Math.ceil(open/perDay);const slip=need-msIn;
+  if(slip>2)return `<div class="mm-fc warn">📉 Этим темпом ${open} открытых разберутся за ~${need}д — веха «${esc(ms.title)}» уедет на ~${slip} ${plural(slip,'день','дня','дней')}. Режь скоуп или двигай дату</div>`;
+  return `<div class="mm-fc ok">📈 Темпа хватает: веха «${esc(ms.title)}» через ${msIn} ${plural(msIn,'день','дня','дней')} — успеваешь</div>`;
+}
 function momentumSpark(){
   const days=14;const counts=new Array(days).fill(0);
   (S.activity||[]).forEach(a=>{if(!/Готово|✅/.test((a.text||'')+(a.icon||'')))return;const d=Math.floor((Date.now()-a.ts)/dayMs);if(d>=0&&d<days)counts[days-1-d]++;});
@@ -2319,6 +2339,7 @@ function momentumSpark(){
       <polyline points="${line}" fill="none" stroke="#a78bfa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="mm-line"/>
     </svg>
     <div class="mm-foot">${total} ${plural(total,'задача закрыта','задачи закрыто','задач закрыто')} за 2 недели · цель — держать линию вверх</div>
+    ${milestoneForecast()}
   </div>`;
 }
 function aiPayload(){const nameOf=id=>{const m=member(id);return m?m.name:null;};
@@ -2695,6 +2716,7 @@ const mentorRuns={
     let n=0;act.slice(3).forEach(x=>{x.priority='med';n++;});
     save();render();toast('Осталось 3 по-настоящему важных, '+n+' стали обычными','⚖️');},
   delegate(){setView('team');toast('Смотри колонку загрузки: перекинь часть задач тем, у кого свободно','🤝');},
+  cashout(){const id=mentorCard._arg;if(id)openTask(id);},
   silent(){const id=mentorCard._arg;if(id&&reg.list.find(p=>p.id===id))switchProject(id);},
   milestone(){const id=mentorCard._arg;if(id)openTask(id);}
 };
@@ -2717,6 +2739,10 @@ function mentorCard(){try{
     const vals=Object.values(cnt),mx=Math.max(0,...vals);
     if(T.length>=6&&mx/T.length>=.7)tip={k:'delegate',t:'Один человек тянет '+Math.round(mx/T.length*100)+'% задач',
       s:'Навык делегирования: перекос выжигает одного и расслабляет остальных. Перераспредели заранее, не в дедлайн.',a:'🤝 Посмотреть загрузку'};}
+  if(!tip&&!cool('cashout')){const noOut=S.tasks.filter(x=>x.cash&&x.status==='done'&&!x.cashOutcome);
+    if(noOut.length>=2){mentorCard._arg=noOut[0].id;
+      tip={k:'cashout',t:noOut.length+' денежные задачи закрыты, а итог не отмечен',
+        s:'Навык обратной связи: отметь, дошли ли деньги — WANDO начнёт учиться, какие задачи реально двигают кассу именно у тебя.',a:'💰 Отметить итоги'};}}
   if(!tip&&!cool('milestone')){const ms=S.tasks.find(x=>x.isMilestone&&x.status!=='done'&&parseD(x.end)<parseD(t));
     if(ms){const days=Math.round((parseD(t)-parseD(ms.end))/dayMs);mentorCard._arg=ms.id;
       tip={k:'milestone',t:'Веха «'+ms.title.slice(0,40)+'» прошла '+days+' '+plural(days,'день','дня','дней')+' назад',
@@ -4429,6 +4455,15 @@ function openTask(id){
   const t=task(id);if(!t)return;curTask=t;
   $('#dId').textContent='#'+t.id.slice(1,6).toUpperCase();
   $('#dDot').style.background=stMap[t.status].c;
+  {const co=$('#dCashOut');if(co){const show=!!(t.cash&&t.status==='done');co.style.display=show?'':'none';
+    if(show){const v=t.cashOutcome;
+      co.innerHTML=`<div class="cashout"><span class="cq">💰 Деньги по задаче дошли?</span>
+        <button class="chip ${v==='yes'?'on':''}" data-co="yes">Да</button>
+        <button class="chip ${v==='no'?'on':''}" data-co="no">Ещё нет</button>
+        ${v?'<span class="cok">✓ учтено — Вандо учится на исходах</span>':''}</div>`;
+      $$('#dCashOut [data-co]').forEach(b=>b.onclick=()=>{t.cashOutcome=b.dataset.co;t.cashOutcomeTs=Date.now();
+        logAct('💰','итог «'+t.title+'»: '+(b.dataset.co==='yes'?'деньги пришли':'денег пока нет'));save();openTask(t.id);});}
+  }}
   $('#dTitle').value=t.title;autoGrow($('#dTitle'));
   $('#dDesc').value=t.description;
   $('#dStart').value=t.start;$('#dEnd').value=t.end;
@@ -5217,7 +5252,7 @@ function vandoContext(){
   const projs=reg.list.filter(p=>!p.archived).map(p=>{const d=p.id===S.id?S:loadProj(p.id);if(!d)return null;
     const ts=(d.tasks||[]).filter(t=>!t.isMilestone);
     return {name:p.name,emoji:p.emoji,parent:(projMeta(p.parentId)||{}).name||null,
-      tasks:ts.map(t=>({title:t.title,cash:!!t.cash,status:t.status,assignee:(d.members.find(m=>m.id===t.assigneeId)||{}).name||null,end:t.end,estimate:t.estimate||0,priority:t.priority,overdue:t.status!=='done'&&parseD(t.end)<parseD(todayISO())})),
+      tasks:ts.map(t=>({title:t.title,cash:!!t.cash,cashOutcome:t.cashOutcome||null,status:t.status,assignee:(d.members.find(m=>m.id===t.assigneeId)||{}).name||null,end:t.end,estimate:t.estimate||0,priority:t.priority,overdue:t.status!=='done'&&parseD(t.end)<parseD(todayISO())})),
       members:(d.members||[]).map(m=>({name:m.name,role:m.role,capacity:m.capacity})),
       ideas:(d.ideas||[]).slice(0,20).map(i=>i.title),
       memory:(d.notes||[]).slice(-30).map(n=>({when:new Date(n.ts).toISOString().slice(0,10),who:n.who,note:n.text})),
