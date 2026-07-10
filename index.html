@@ -2278,6 +2278,17 @@ function aiPayload(){const nameOf=id=>{const m=member(id);return m?m.name:null;}
     members:S.members.map(m=>({name:m.name,capacity:m.capacity,load:S.tasks.filter(t=>t.assigneeId===m.id&&t.status!=='done').reduce((a,t)=>a+(t.estimate||0),0)})),
     tasks:S.tasks.map(t=>({title:t.title,status:stMap[t.status].n,assignee:nameOf(t.assigneeId),start:t.start,end:t.end,estimate:t.estimate||0,spent:t.spent||0,priority:prMap[t.priority].n,deps:(t.deps||[]).map(d=>{const x=task(d);return x?x.title:null;}).filter(Boolean),blocked:isBlocked(t),overdue:isOverdue(t),milestone:!!t.isMilestone}))};}
 async function aiToken(){try{const {data}=await sb.auth.getSession();return data&&data.session&&data.session.access_token;}catch(e){return null;}}
+/* пуш члену команды в TG (назначение/коммент) — fire-and-forget, молча */
+async function tgNotify(kind,t,extra){try{
+  if(!cloudOn||!sb||!t)return;
+  const m=member(t.assigneeId);if(!m||!m.email)return;
+  if((m.email||'').toLowerCase()===(myEmail||'').toLowerCase())return;
+  const token=await aiToken();if(!token)return;
+  fetch(CFG.url+'/functions/v1/ai-review',{method:'POST',
+    headers:{'content-type':'application/json',authorization:'Bearer '+token},
+    body:JSON.stringify({mode:'notify',kind,toEmail:m.email,byName:meName(),
+      taskTitle:t.title,projectName:S.projectName,projectId:S.id,taskId:t.id,text:(extra||'').slice(0,300)})}).catch(()=>{});
+}catch(e){}}
 async function fetchBriefAdvice(btn){
   if(!cloudOn||!sb){toast('Войди в облако — совет от Claude для команды','🤖');return;}
   const token=await aiToken();if(!token){toast('Нужен вход','🤖');return;}
@@ -2612,7 +2623,9 @@ const mentorRuns={
   allurgent(){const act=S.tasks.filter(x=>!x.isMilestone&&x.status!=='done'&&(x.priority==='urgent'||x.priority==='high')).sort((a,b)=>relScore(b)-relScore(a));
     let n=0;act.slice(3).forEach(x=>{x.priority='med';n++;});
     save();render();toast('Осталось 3 по-настоящему важных, '+n+' стали обычными','⚖️');},
-  delegate(){setView('team');toast('Смотри колонку загрузки: перекинь часть задач тем, у кого свободно','🤝');}
+  delegate(){setView('team');toast('Смотри колонку загрузки: перекинь часть задач тем, у кого свободно','🤝');},
+  silent(){const id=mentorCard._arg;if(id&&reg.list.find(p=>p.id===id))switchProject(id);},
+  milestone(){const id=mentorCard._arg;if(id)openTask(id);}
 };
 function mentorCard(){try{
   const now=Date.now();
@@ -2633,6 +2646,18 @@ function mentorCard(){try{
     const vals=Object.values(cnt),mx=Math.max(0,...vals);
     if(T.length>=6&&mx/T.length>=.7)tip={k:'delegate',t:'Один человек тянет '+Math.round(mx/T.length*100)+'% задач',
       s:'Навык делегирования: перекос выжигает одного и расслабляет остальных. Перераспредели заранее, не в дедлайн.',a:'🤝 Посмотреть загрузку'};}
+  if(!tip&&!cool('milestone')){const ms=S.tasks.find(x=>x.isMilestone&&x.status!=='done'&&parseD(x.end)<parseD(t));
+    if(ms){const days=Math.round((parseD(t)-parseD(ms.end))/dayMs);mentorCard._arg=ms.id;
+      tip={k:'milestone',t:'Веха «'+ms.title.slice(0,40)+'» прошла '+days+' '+plural(days,'день','дня','дней')+' назад',
+        s:'Навык ведения: веха либо закрывается с праздником, либо осознанно сдвигается. Висящая веха обесценивает все остальные сроки.',a:'🚩 Открыть веху'};}}
+  if(!tip&&!cool('silent')){
+    for(const p of reg.list.filter(x=>!x.archived&&x.id!==S.id)){
+      const d=loadProj(p.id);if(!d)continue;
+      if(!(d.tasks||[]).some(x=>!x.isMilestone&&x.status!=='done'))continue;
+      const last=Math.max(+d.updatedAt||0,((d.activity||[])[0]||{}).ts||0);
+      if(last&&now-last>14*86400000){const days=Math.round((now-last)/86400000);mentorCard._arg=p.id;
+        tip={k:'silent',t:(p.emoji||'📄')+' '+p.name+' молчит уже '+days+' '+plural(days,'день','дня','дней'),
+          s:'Навык ведения: проект без движения гниёт незаметно. Один маленький шаг сегодня — или честная заморозка в архив.',a:'👀 Открыть проект'};break;}}}
   if(!tip)return '';
   return `<div class="mentorcard"><span class="mi">🧠</span><div class="mb2">
     <div class="ml">Вандо · наставник</div>
@@ -2774,7 +2799,7 @@ function kbDone(){const it=kbCur();if(!it)return;const r=it.el.getBoundingClient
 function kbAssign(){const it=kbCur();if(!it||it.pid!==S.id){toast('Назначение — на доске или ганте','👤');return;}
   const t=task(it.tid);if(!t)return;const ms=S.members;if(!ms.length)return;
   const cur=ms.findIndex(m=>m.id===t.assigneeId);const nx=ms[(cur+1)%ms.length];
-  t.assigneeId=nx.id;logAct('👤','«'+t.title+'» → '+nx.name);save();render();toast('Назначено: '+nx.name+' (a — следующий)','👤');}
+  t.assigneeId=nx.id;logAct('👤','«'+t.title+'» → '+nx.name);save();if(nx.id!==myId())tgNotify('assign',t);render();toast('Назначено: '+nx.name+' (a — следующий)','👤');}
 
 /* ---- авто-расписание: раскидать активные задачи по загрузке и зависимостям ---- */
 function autoSchedule(){
@@ -4345,7 +4370,7 @@ function openTask(id){
       me.points-=cost;logAct('🪙',meName()+' −'+cost+' · перекинул «'+t.title+'» на '+((member(newAs)||{}).name||'?'));
       toast('−'+cost+' 🪙 · «'+t.title+'» теперь у '+((member(newAs)||{}).name||''),'🪙');
     }else{logAct('👤','«'+t.title+'» → '+(member(newAs)?member(newAs).name:'без исполнителя'));}
-    t.assigneeId=newAs;save();openTask(id);render();});
+    t.assigneeId=newAs;save();if(newAs&&newAs!==myId())tgNotify('assign',t);openTask(id);render();});
   $('#dPrio').innerHTML=PRIOS.map(p=>`<button class="chip ${t.priority===p.k?'on':''}" data-pr="${p.k}" style="${t.priority===p.k?`background:${p.c}`:''}">${p.n}</button>`).join('');
   $$('#dPrio .chip').forEach(c=>c.onclick=()=>{t.priority=c.dataset.pr;save();openTask(id);render();});
   // deps
@@ -4428,7 +4453,7 @@ $$('#dQDates button').forEach(b=>b.onclick=()=>{if(!curTask)return;
   toast('Срок → '+d.slice(8)+'.'+d.slice(5,7),'📅');});
 $('#dSubIn').onkeydown=e=>{if(e.key==='Enter')addSub();};
 function addComment(){const v=$('#dCmtIn').value.trim();if(!v||!curTask)return;
-  curTask.comments.push({text:v,author:meName(),authorId:myId(),when:'сейчас',ts:Date.now()});logAct('💬','коммент к «'+curTask.title+'»');$('#dCmtIn').value='';save();renderComments(curTask);}
+  curTask.comments.push({text:v,author:meName(),authorId:myId(),when:'сейчас',ts:Date.now()});logAct('💬','коммент к «'+curTask.title+'»');$('#dCmtIn').value='';save();tgNotify('comment',curTask,v);renderComments(curTask);}
 $('#dDelete').onclick=()=>{if(!curTask)return;const t=curTask;const idx=S.tasks.indexOf(t);
   S.tasks=S.tasks.filter(x=>x.id!==t.id);S.tasks.forEach(x=>x.deps=x.deps.filter(d=>d!==t.id));logAct('🗑','удалил «'+t.title+'»');closeDrawer();
   toast('Удалено: «'+t.title+'»','🗑','Отменить',()=>{S.tasks.splice(idx,0,t);logAct('↩️','вернул «'+t.title+'»');save();render();});};

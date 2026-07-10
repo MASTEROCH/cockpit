@@ -79,6 +79,25 @@ serve(async (req) => {
     const body = await req.json();
     const { project, mode, goal, messages, context } = body;
 
+    // --- notify: пуш члену команды в TG о назначении/комменте (без Anthropic) ---
+    if (mode === "notify") {
+      const esc2 = (x: unknown) => String(x ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const { kind, toEmail, byName, taskTitle, projectName, projectId, taskId, text } = body;
+      if (!toEmail || !taskTitle) return json({ ok: false });
+      if (String(toEmail).toLowerCase() === email) return json({ ok: true, skip: "self" });
+      if (!(await allowed(String(toEmail).toLowerCase()))) return json({ ok: false, reason: "not_team" });
+      const { data: wl } = await sbs.from("tg_links").select("chat_id").ilike("email", toEmail).eq("revoked", false).maybeSingle();
+      if (!wl) return json({ ok: false, reason: "no_tg" });
+      const BOT = Deno.env.get("TELEGRAM_BOT_TOKEN") ?? "";
+      if (!BOT) return json({ ok: false, reason: "no_bot" });
+      const a = `<a href="https://cock-pit.com/?t=${esc2(projectId)}:${esc2(taskId)}">${esc2(taskTitle)}</a>`;
+      const msg = kind === "comment"
+        ? `💬 <b>${esc2(byName)}</b> — коммент в «${a}» <i>(${esc2(projectName)})</i>:\n${esc2(String(text ?? "").slice(0, 300))}\n\n<i>↩︎ ответь на это сообщение — текст попадёт в комменты задачи</i>`
+        : `👤 <b>${esc2(byName)}</b> назначил(а) на тебя: «${a}» <i>(${esc2(projectName)})</i>\n\n<i>↩︎ ответь — текст станет комментом</i>`;
+      await fetch(`https://api.telegram.org/bot${BOT}/sendMessage`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ chat_id: wl.chat_id, text: msg, parse_mode: "HTML", disable_web_page_preview: true }) });
+      return json({ ok: true });
+    }
+
     // ----- режим ЧАТА с Вандо (маскот на сайте) -----
     if (mode === "chat") {
       const hist = (Array.isArray(messages) ? messages : []).slice(-14)
