@@ -2230,7 +2230,11 @@ function setView(v){view=v;if(typeof track==='function')track('view:'+v);
 let focus={tid:null,start:0,iv:null};
 let _nowSeenT=null;
 function fmtDur(s){const h=Math.floor(s/3600),m=Math.floor(s/60)%60,x=s%60;return (h?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(x).padStart(2,'0');}
-function updFocus(){const el=$('#focusClock');if(!el){clearInterval(focus.iv);focus.iv=null;return;}el.textContent=fmtDur(Math.floor((Date.now()-focus.start)/1000));}
+function updFocus(){const el=$('#focusClock');if(!el){clearInterval(focus.iv);focus.iv=null;return;}
+  const sec=Math.floor((Date.now()-focus.start)/1000);
+  const t=focus.tid&&task(focus.tid);
+  const tot=t?Math.round(((t.spent||0)+sec/3600)*10)/10:0;
+  el.textContent=fmtDur(sec)+(tot?' · всего '+tot+'ч':'');}
 function startFocus(tid){if(focus.tid)stopFocus(true);const t=task(tid);if(!t)return;focus.tid=tid;focus.start=Date.now();
   if(t.status==='backlog'||t.status==='todo'){t.status='progress';logAct('▶️','начал «'+t.title+'»');}save();
   clearInterval(focus.iv);focus.iv=setInterval(updFocus,1000);if(view==='now')renderNow();}
@@ -2371,7 +2375,7 @@ function renderNow(){
       </div>
       <div class="nh-acts">
         ${isFoc?`<div class="focusrun"><span class="fdot"></span><span id="focusClock" class="fclock">00:00</span><button class="btn" id="focusStop">■ Стоп</button></div>`
-               :`<button class="btn primary big" id="focusStart">${icon('play',15)} Фокус — поехали</button>`}
+               :`<button class="btn primary big" id="focusStart">${icon('play',15)} Фокус — поехали${next.spent?` <span style="opacity:.75;font-weight:600">· уже ${next.spent}ч</span>`:''}</button>`}
         <button class="btn big" data-done="${next.id}">✓ Готово</button>
       </div>
      </div>
@@ -2557,7 +2561,7 @@ function renderNowMobile(ctx){
       <div class="mh-meta">${heroX?`${heroX.emoji} ${esc(heroX.pname)} · `:''}${next.estimate?`${next.spent||0}/${next.estimate}ч · `:''}${(d=>d<0?`<b style="color:var(--bad)">просрочено ${-d}д</b>`:d===0?'сегодня':d===1?'завтра':'в плане')(daysLeft(next))}</div>
       <div class="mh-acts">
         ${running&&focus.tid===next.id?`<div class="focusrun"><span class="fdot"></span><span id="focusClock" class="fclock">00:00</span><button class="btn" id="focusStop">■</button></div>`
-          :`<button class="mh-go" id="focusStart">▶ Фокус</button>`}
+          :`<button class="mh-go" id="focusStart">▶ Фокус${next.spent?` · ${next.spent}ч`:''}</button>`}
         <button class="mh-done" data-done="${next.id}">✓ Готово</button>
       </div></div>`
     :(!S.tasks.some(t=>!t.isMilestone&&t.status!=='done')
