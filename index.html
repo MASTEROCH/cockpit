@@ -1012,6 +1012,9 @@ body.light .nh-meta .ichip.bad{color:#b91c1c;background:rgba(248,113,113,.16);bo
 .nh-up:last-child{border-bottom:none}
 .nh-up:hover{color:var(--acc2)}
 .nh-up .dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+.nh-up .nh-qd{width:17px;height:17px;border-radius:50%;flex:0 0 auto;border:1.5px solid var(--c,#777);background:transparent;cursor:pointer;padding:0;display:grid;place-items:center;font-size:10px;line-height:1;color:transparent;transition:.15s}
+.nh-up:hover .nh-qd{border-color:var(--ok)}
+.nh-up .nh-qd:hover{background:var(--ok);border-color:var(--ok);color:#08110c;transform:scale(1.15)}
 .nh-up-t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .nh-up-e{font-size:11.5px;color:var(--mut2);flex:0 0 auto;font-variant-numeric:tabular-nums}
 .mm-empty{font-size:13px;color:var(--mut2);padding:14px 2px 6px;line-height:1.5}
@@ -2343,7 +2346,7 @@ function renderNow(){
         <button class="btn big" data-done="${next.id}">✓ Готово</button>
       </div>
      </div>
-     ${upList.length?`<div class="nh-side"><div class="nh-side-t">На очереди · ${upList.length}</div>${upList.map(x=>`<div class="nh-up" data-open="${x.t.id}" data-pid="${x.pid}"><span class="dot" style="background:${stMap[x.t.status].c}"></span><span class="nh-up-t">${x.t.cash?'💰 ':''}${prGlyph(x.t)}${esc(x.t.title)}</span>${multi?`<span class="nh-up-e">${x.emoji||''}</span>`:(x.t.estimate?`<span class="nh-up-e">${x.t.estimate}ч</span>`:'')}</div>`).join('')}</div>`:''}
+     ${upList.length?`<div class="nh-side"><div class="nh-side-t">На очереди · ${upList.length}</div>${upList.map(x=>`<div class="nh-up" data-open="${x.t.id}" data-pid="${x.pid}"><button class="nh-qd" data-qd="${x.t.id}" data-pid="${x.pid}" title="Готово" aria-label="Готово" style="--c:${stMap[x.t.status].c}">✓</button><span class="nh-up-t">${x.t.cash?'💰 ':''}${prGlyph(x.t)}${esc(x.t.title)}</span>${multi?`<span class="nh-up-e">${x.emoji||''}</span>`:(x.t.estimate?`<span class="nh-up-e">${x.t.estimate}ч</span>`:'')}</div>`).join('')}</div>`:''}
     </div>`;
   }else hero=`<div class="now-hero done"><div class="nh-label">🎉 Чисто</div><div class="nh-title">Активных задач на тебе нет</div>
       <div class="nh-meta"><span class="ichip">создай задачу строкой сверху или ⌘K</span></div></div>`;
@@ -2369,6 +2372,8 @@ function renderNow(){
   const openX=(pid,tid)=>{if(pid&&pid!==S.id){switchProject(pid);setTimeout(()=>openTask(tid),120);}else openTask(tid);};
   const ns=el.querySelector('.nh-title[data-open]');if(ns)ns.onclick=()=>openX(nextPid,ns.dataset.open);
   $$('#now .nh-up[data-open]').forEach(e=>e.onclick=()=>openX(e.dataset.pid,e.dataset.open));
+  $$('#now .nh-qd').forEach(b=>b.onclick=e=>{e.stopPropagation();const un=markDone(b.dataset.pid||S.id,b.dataset.qd);
+    celebrateAt(e);render();toast('Готово','✅','Отменить',un);});
   const fs=$('#focusStart');if(fs&&next)fs.onclick=()=>{if(nextPid!==S.id){switchProject(nextPid);setTimeout(()=>{startFocus(next.id);setView('now');},150);}else startFocus(next.id);};
   const fst=$('#focusStop');if(fst)fst.onclick=()=>stopFocus(false);
   if(running){if(!focus.iv)focus.iv=setInterval(updFocus,1000);updFocus();}
