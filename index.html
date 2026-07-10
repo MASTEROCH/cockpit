@@ -2247,18 +2247,27 @@ function renderNow(){
   const _energy=localStorage.getItem('cockpit_energy_'+todayISO())||'';
   const enW=t=>_energy==='lo'?((t.estimate&&t.estimate<=2)?1.6:0):_energy==='hi'?((t.estimate>=4||t.priority==='high'||t.priority==='urgent')?1.2:0):0;
   const sortedPool=[...pool].sort((a,b)=>(relScore(b)+enW(b))-(relScore(a)+enW(a)));
-  const next=sortedPool[0];const upNext=sortedPool.slice(1,4);
+  let next=sortedPool[0];let upNext=sortedPool.slice(1,4);
   const h=new Date().getHours();const greet=h<6?'Доброй ночи':h<12?'Доброе утро':h<18?'Добрый день':'Добрый вечер';
   const ins=buildInsights(T);const running=!!(focus.tid&&task(focus.tid));
   const foldOpen=localStorage.getItem('cockpit_now_fold')!=='0';
+  // герой — по всей империи (как на мобиле): единая ментальная модель
+  let nextPid=S.id,heroX=null,upList=upNext.map(t=>({t,pid:S.id}));
+  const multi=reg.list.filter(p=>!p.archived).length>1;
+  if(multi){const all=myTasksAll();
+    if(all.length){const _en=localStorage.getItem('cockpit_energy_'+todayISO())||'';
+      const enW=x=>_en==='lo'?((x.t.estimate&&x.t.estimate<=2)?1.6:0):_en==='hi'?((x.t.estimate>=4||x.t.priority==='high'||x.t.priority==='urgent')?1.2:0):0;
+      all.sort((a,b)=>(relScore(b.t)+enW(b))-(relScore(a.t)+enW(a)));
+      heroX=all[0];next=heroX.t;nextPid=heroX.pid;upList=all.slice(1,4);}
+    else{next=null;upList=[];}}
   let hero;
-  if(next){const ovn=isOverdue(next);const dl=daysLeft(next);const isFoc=focus.tid===next.id;const m=next.assigneeId?member(next.assigneeId):null;
+  if(next){const ovn=isOverdue(next);const dl=daysLeft(next);const isFoc=focus.tid===next.id;const m=heroX?{name:heroX.aname}:(next.assigneeId?member(next.assigneeId):null);
     hero=`<div class="now-hero ${ovn?'over':''}">
      <div class="nh-main">
-      <div class="nh-label">${mine.length?'🎯 Твой следующий шаг':'🎯 Главное в проекте сейчас'}</div>
+      <div class="nh-label">${multi?'🎯 Твой следующий шаг · вся империя':(mine.length?'🎯 Твой следующий шаг':'🎯 Главное в проекте сейчас')}</div>
       <div class="nh-title" data-open="${next.id}">${next.cash?'💰 ':''}${prGlyph(next)}${esc(next.title)}</div>
       <div class="nh-meta">
-        <span class="ichip">${avatar(next.assigneeId)} ${m?esc(m.name):'без исполнителя'}</span>
+        ${heroX?`<span class="ichip">${heroX.emoji} ${esc(heroX.pname)}</span>`:`<span class="ichip">${avatar(next.assigneeId)} ${m?esc(m.name):'без исполнителя'}</span>`}
         <span class="ichip" style="border-color:${stMap[next.status].c}"><span class="pal-dot" style="background:${stMap[next.status].c}"></span> ${stMap[next.status].n}</span>
         ${next.estimate?`<span class="ichip">⏱ ${next.spent||0}/${next.estimate}ч</span>`:''}
         <span class="ichip ${ovn?'bad':''}">📅 ${ovn?'просрочено '+(-dl)+'д':dl===0?'сегодня':dl===1?'завтра':'через '+dl+'д'}</span>
@@ -2269,7 +2278,7 @@ function renderNow(){
         <button class="btn big" data-done="${next.id}">✓ Готово</button>
       </div>
      </div>
-     ${upNext.length?`<div class="nh-side"><div class="nh-side-t">На очереди · ${upNext.length}</div>${upNext.map(t=>`<div class="nh-up" data-open="${t.id}"><span class="dot" style="background:${stMap[t.status].c}"></span><span class="nh-up-t">${prGlyph(t)}${esc(t.title)}</span>${t.estimate?`<span class="nh-up-e">${t.estimate}ч</span>`:''}</div>`).join('')}</div>`:''}
+     ${upList.length?`<div class="nh-side"><div class="nh-side-t">На очереди · ${upList.length}</div>${upList.map(x=>`<div class="nh-up" data-open="${x.t.id}" data-pid="${x.pid}"><span class="dot" style="background:${stMap[x.t.status].c}"></span><span class="nh-up-t">${x.t.cash?'💰 ':''}${prGlyph(x.t)}${esc(x.t.title)}</span>${multi?`<span class="nh-up-e">${x.emoji||''}</span>`:(x.t.estimate?`<span class="nh-up-e">${x.t.estimate}ч</span>`:'')}</div>`).join('')}</div>`:''}
     </div>`;
   }else hero=`<div class="now-hero done"><div class="nh-label">🎉 Чисто</div><div class="nh-title">Активных задач на тебе нет</div>
       <div class="nh-meta"><span class="ichip">создай задачу строкой сверху или ⌘K</span></div></div>`;
@@ -2292,13 +2301,15 @@ function renderNow(){
       <button class="btn" id="claudeBtn" style="margin-left:auto;padding:8px 13px;font-size:12.5px">🤖 Claude</button>
       <button class="btn" id="aiPlanBtn" style="padding:8px 13px;font-size:12.5px">🧠 AI-План</button></div>
     <div class="insights">${ins.map((x,i)=>`<div class="insight ${x.act?'click':''}" data-i="${i}"><span class="ii">${x.ic}</span><div class="ib"><div class="it">${esc(x.title)}</div>${x.sub?`<div class="is">${esc(x.sub)}</div>`:''}</div>${x.act?'<span class="ia">→</span>':''}</div>`).join('')}</div>`;
-  const ns=el.querySelector('.nh-title[data-open]');if(ns)ns.onclick=()=>openTask(ns.dataset.open);
-  $$('#now .nh-up[data-open]').forEach(e=>e.onclick=()=>openTask(e.dataset.open));
-  const fs=$('#focusStart');if(fs&&next)fs.onclick=()=>startFocus(next.id);
+  const openX=(pid,tid)=>{if(pid&&pid!==S.id){switchProject(pid);setTimeout(()=>openTask(tid),120);}else openTask(tid);};
+  const ns=el.querySelector('.nh-title[data-open]');if(ns)ns.onclick=()=>openX(nextPid,ns.dataset.open);
+  $$('#now .nh-up[data-open]').forEach(e=>e.onclick=()=>openX(e.dataset.pid,e.dataset.open));
+  const fs=$('#focusStart');if(fs&&next)fs.onclick=()=>{if(nextPid!==S.id){switchProject(nextPid);setTimeout(()=>{startFocus(next.id);setView('now');},150);}else startFocus(next.id);};
   const fst=$('#focusStop');if(fst)fst.onclick=()=>stopFocus(false);
   if(running){if(!focus.iv)focus.iv=setInterval(updFocus,1000);updFocus();}
-  const dn=el.querySelector('[data-done]');if(dn)dn.onclick=(ev)=>{const t=task(dn.dataset.done);if(!t)return;if(focus.tid===t.id)stopFocus(true);
-    t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;logAct('✅','«'+t.title+'» → Готово');const v=awardForDone(S,t);celebrateAt(ev);save();render();toast(v?('+'+v+' 🪙 за «'+t.title+'»'):'Готово ✅',v?'🪙':'✅');};
+  const dn=el.querySelector('[data-done]');if(dn)dn.onclick=(ev)=>{if(focus.tid===dn.dataset.done)stopFocus(true);
+    editTaskInProject(nextPid,dn.dataset.done,t=>{t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;});
+    celebrateAt(ev);render();toast('Готово ✅','✅');};
   ins.forEach((x,i)=>{const c=el.querySelector(`.insight[data-i="${i}"]`);if(c&&x.act)c.onclick=x.act;});
   const ap=$('#aiPlanBtn');if(ap)ap.onclick=openAiPlan;
   const cb=$('#claudeBtn');if(cb)cb.onclick=()=>fetchClaudeInsight(cb);
@@ -2346,7 +2357,7 @@ function myTasksAll(){
   reg.list.filter(p=>!p.archived).forEach(p=>{
     const data=p.id===S.id?S:loadProj(p.id);if(!data)return;
     const me2=myMemberIn(data);if(!me2)return;
-    (data.tasks||[]).forEach(t=>{if(!t.isMilestone&&t.status!=='done'&&t.assigneeId===me2.id)out.push({t,pid:p.id,pname:p.name,emoji:p.emoji||'📄'});});
+    (data.tasks||[]).forEach(t=>{if(!t.isMilestone&&t.status!=='done'&&t.assigneeId===me2.id)out.push({t,pid:p.id,pname:p.name,emoji:p.emoji||'📄',aname:me2.name});});
   });
   return out;}
 function renderNowMobile(ctx){
@@ -4269,7 +4280,7 @@ const HINT=`<b>🎙 Командная строка</b> — говори или 
 <b style="color:#9aa0b3">Создать</b> <span class="ex">добавь задачу Лендинг @дима с 22 по 28 июня 12ч !срочно</span> · <span class="ex">добавь задачу Созвон завтра 2ч</span><br>
 <b style="color:#9aa0b3">Статус</b> <span class="ex">статус Вёрстка в работе</span> · <span class="ex">приоритет Тексты высокий</span><br>
 <b style="color:#9aa0b3">Люди/сроки</b> <span class="ex">назначь Тестирование на меня</span> · <span class="ex">срок Релиз до 1 июля</span> · <span class="ex">эстимейт Геймдизайн 24ч</span><br>
-<b style="color:#9aa0b3">Командуй планом</b> <span class="ex">перенеси все просрочки на следующую неделю</span> · <span class="ex">сделай Тексты срочным и назначь на меня</span> · <span class="ex">что горит</span><br>
+<b style="color:#9aa0b3">Командуй планом</b> <span class="ex">проект Датум: созвон завтра 2ч</span> · <span class="ex">перенеси все просрочки на следующую неделю</span> · <span class="ex">сделай Тексты срочным и назначь на меня</span> · <span class="ex">что горит</span><br>
 <b style="color:#9aa0b3">Ещё</b> <span class="ex">переименуй Тексты в Копирайтинг</span> · <span class="ex">коммент Тексты: нужен тон бренда</span> · <span class="ex">идея реферальная петля</span> · <span class="ex">запомни с клиентом Х работаем по предоплате</span> · <span class="ex">удали задачу Саунддизайн</span><br>
 <span style="color:#838aa6">⌨ <b>⌘K</b> палитра · <b>/</b> команда · <b>N</b> новая · на доске <b>J/K</b> ходи · <b>X</b> готово · <b>E</b> открыть · <b>⌘Z</b> отмена · разделы O/B/G/W/I/T/A</span>`;
 cmdEl.onfocus=()=>{hintEl.innerHTML=HINT;hintEl.classList.add('show');bindEx();};
@@ -4429,6 +4440,14 @@ function runCmd(raw){
   const s=(raw||'').trim();if(!s)return;
   track(isManageCmd(s)?'cmd:manage':'cmd:create');
   try{
+  // «проект X: задача…» — прицельно в нужный проект, не переключаясь
+  {const pm=s.match(/^(?:в\s+)?проект[еа]?\s+(.+?)\s*[:—-]\s+(.+)$/i);
+   if(pm){const name=pm[1].trim().toLowerCase();
+     const hit=reg.list.find(p=>!p.archived&&(p.name||'').toLowerCase()===name)||reg.list.find(p=>!p.archived&&(p.name||'').toLowerCase().includes(name));
+     if(hit){const p=parseQuick(pm[2]);if(!p.title)p.title=pm[2];
+       addTaskToProject(hit.id,p,'todo');
+       toast('Задача → '+(hit.emoji||'📄')+' '+hit.name+' ✓','🚀');render();return;}
+     toast('Проект «'+pm[1].trim()+'» не нашёл','⚠');return;}}
   // — язык как интерфейс: массовые операции (без \b — он не работает с кириллицей) —
   // «что горит» / «покажи горящее» / «аврал» → фокус на самом важном
   if(/^(что\s+горит|покажи\s+горящ|горящ|аврал|что\s+срочно|fire)/i.test(s)){fireFocus();return;}
