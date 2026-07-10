@@ -2381,12 +2381,13 @@ function renderNow(){
      </div>
      ${upList.length?`<div class="nh-side"><div class="nh-side-t">На очереди · ${upList.length}</div>${upList.map(x=>`<div class="nh-up" data-open="${x.t.id}" data-pid="${x.pid}"><button class="nh-qd" data-qd="${x.t.id}" data-pid="${x.pid}" title="Готово" aria-label="Готово" style="--c:${stMap[x.t.status].c}">✓</button><span class="nh-up-t">${x.t.cash?'💰 ':''}${prGlyph(x.t)}${esc(x.t.title)}</span>${multi?`<span class="nh-up-e">${x.emoji||''}</span>`:(x.t.estimate?`<span class="nh-up-e">${x.t.estimate}ч</span>`:'')}</div>`).join('')}</div>`:''}
     </div>`;
-  }else{const bare=!S.tasks.some(t=>!t.isMilestone&&t.status!=='done');
-    hero=`<div class="now-hero done"><div class="nh-label">${bare?'🧠 Начнём?':'🎉 Чисто'}</div><div class="nh-title">${bare?'Не знаешь, с чего начать — норм':'Активных задач на тебе нет'}</div>
-      <div class="nh-meta">${bare?'<button class="btn primary" id="npPlan" style="margin-top:4px">🧠 Вандо, спланируй за меня</button>':'<span class="ichip">создай задачу строкой сверху или ⌘K</span>'}</div></div>`;}
+  }else{const bare=!S.tasks.some(t=>!t.isMilestone);
+    const allDone=!bare&&!S.tasks.some(t=>!t.isMilestone&&t.status!=='done');
+    hero=`<div class="now-hero done"><div class="nh-label">${bare?'🧠 Начнём?':'🎉 Чисто'}</div><div class="nh-title">${bare?'Не знаешь, с чего начать — норм':allDone?'Всё закрыто — красавчик':'Активных задач на тебе нет'}</div>
+      <div class="nh-meta">${bare?'<button class="btn primary" id="npPlan" style="margin-top:4px">🧠 Вандо, спланируй за меня</button>':allDone?'<span class="ichip">создай следующую задачу или запланируй новую цель</span>':'<span class="ichip">создай задачу строкой сверху или ⌘K</span>'}</div></div>`;}
   const energy=localStorage.getItem('cockpit_energy_'+todayISO())||'';
   if(window.innerWidth<=680){renderNowMobile({el,greet,next,upNext,mine,pct,prog,ov,vel,ins,running,energy:localStorage.getItem('cockpit_energy_'+todayISO())||''});return;}
-  el.innerHTML=`<div class="now-greet"><h1>${greet}, ${esc(meName())}</h1><span>${esc(S.projectName)} · пульс проекта
+  el.innerHTML=`<div class="now-greet"><h1>${greet}${(n=>n&&n!=='Я'&&n!=='Новый участник'?', '+esc(n):'!')(meName())}</h1><span>${esc(S.projectName)} · пульс проекта
       <span class="energyrow" title="Заряд сегодня: подстрою следующий шаг"><button data-en="hi" class="${energy==='hi'?'on':''}">🔋</button><button data-en="lo" class="${energy==='lo'?'on':''}">🪫</button></span></span></div>
     ${whatsNewStrip()}
     ${hero}
@@ -2564,9 +2565,11 @@ function renderNowMobile(ctx){
           :`<button class="mh-go" id="focusStart">▶ Фокус${next.spent?` · ${next.spent}ч`:''}</button>`}
         <button class="mh-done" data-done="${next.id}">✓ Готово</button>
       </div></div>`
-    :(!S.tasks.some(t=>!t.isMilestone&&t.status!=='done')
+    :(!S.tasks.some(t=>!t.isMilestone)
       ?`<div class="mhero done"><div class="mh-label">🧠 Начнём?</div><div class="mh-title">Вандо спланирует за тебя</div><div class="mh-meta">опиши цель голосом — получи готовый план</div><button class="mh-done" id="npPlan" style="margin-top:10px">🧠 Спланируй за меня</button></div>`
-      :`<div class="mhero done"><div class="mh-label">🎉 Чисто</div><div class="mh-title">На тебе задач нет</div><div class="mh-meta">жми ➕ и создай первую</div></div>`);
+      :(S.tasks.some(t=>!t.isMilestone&&t.status!=='done')
+        ?`<div class="mhero done"><div class="mh-label">🎉 Чисто</div><div class="mh-title">На тебе задач нет</div><div class="mh-meta">жми ➕ и создай первую</div></div>`
+        :`<div class="mhero done"><div class="mh-label">🎉 Чисто</div><div class="mh-title">Всё закрыто — красавчик</div><div class="mh-meta">жми ➕ и создай следующую</div></div>`));
   if(upNext.length&&!localStorage.getItem('cockpit_swipe_tip')){localStorage.setItem('cockpit_swipe_tip','1');
     setTimeout(()=>toast('Свайпни задачу: вправо — готово ✅, влево — на завтра 🌙','👆'),900);}
   const rows=upNext.map(x=>{const t=x.t||x;const pid=x.pid||S.id;
@@ -3750,8 +3753,13 @@ function weekDays(offset){const now=new Date();const d=new Date(now.getFullYear(
 function myWeekTasks(){const out=[];reg.list.filter(p=>!p.archived).forEach(p=>{const data=loadProj(p.id);if(!data)return;const me=myMemberIn(data);if(!me)return;
   (data.tasks||[]).forEach(t=>{if(t.isMilestone)return;if(t.assigneeId===me.id&&t.status!=='done')out.push({t,pid:p.id,pname:p.name,emoji:p.emoji});});});return out;}
 /* done с правом передумать: возвращает undo-замыкание для тоста «Отменить» */
-function markDone(pid,tid){let prev='todo',prevSpent;
-  editTaskInProject(pid,tid,t=>{prev=t.status;prevSpent=t.spent;t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;});
+function markDone(pid,tid){let prev='todo',prevSpent,ttl='';
+  editTaskInProject(pid,tid,t=>{prev=t.status;prevSpent=t.spent;ttl=t.title;t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;});
+  if(pid===S.id){logAct('✅','«'+ttl+'» → Готово');save();}
+  else{const d=loadProj(pid);if(d){d.activity=d.activity||[];
+    d.activity.unshift({ts:Date.now(),who:meName(),icon:'✅',text:'«'+ttl+'» → Готово'});
+    if(d.activity.length>150)d.activity.length=150;
+    localStorage.setItem(pkey(pid),JSON.stringify(d));if(cloudOn)cloudPush(d,true);}}
   return ()=>{editTaskInProject(pid,tid,t=>{t.status=prev==='done'?'todo':prev;t.spent=prevSpent;});render();toast('Возвращена в работу','↩');};}
 function editTaskInProject(pid,tid,fn){
   if(pid===S.id){const t=task(tid);if(t){fn(t);awardForDone(S,t);save();}return;}
