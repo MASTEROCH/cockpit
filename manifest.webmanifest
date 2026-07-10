@@ -1,10 +1,15 @@
 {
   "name": "WANDO — что делать",
   "short_name": "WANDO",
-  "description": "Командный центр фаундера: вся империя проектов, следующий шаг — всегда ясен",
+  "description": "Командный центр фаундера: все проекты в одном экране, следующий шаг — всегда ясен",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "share_target": {
+    "action": "/",
+    "method": "GET",
+    "params": { "title": "title", "text": "text", "url": "url" }
+  },
   "orientation": "portrait",
   "background_color": "#0f121b",
   "theme_color": "#0f121b",
