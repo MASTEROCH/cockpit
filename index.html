@@ -3184,6 +3184,7 @@ function renderSettings(){
      <div class="set-item"><span>Подключить Claude (MCP)</span><button class="btn" id="setConnect">🔌 Открыть</button></div>
      <div class="set-item"><span>Архив всех проектов (JSON)</span><button class="btn" id="setExport">📦 Выгрузить</button></div>
      <div class="set-item"><span>Фид для Google/Apple Calendar</span><button class="btn" id="setIcs">📅 Ссылка</button></div>
+     <div class="set-item"><span>Выгрузка в Markdown</span><button class="btn" id="setMd">📝 Скачать</button></div>
      <div class="set-sec">Аккаунт и данные</div>
      <div class="set-item"><span>${cloudOn?('☁️ '+esc(myEmail||'в облаке')):'☁️ Не в облаке'}</span><button class="btn" id="setCloud">${cloudOn?'Выйти':'Войти'}</button></div>
      <div class="set-grid2"><button class="btn" id="setExport">💾 Бэкап всех проектов</button><button class="btn" id="setImport">📥 Восстановить</button></div>
@@ -3201,6 +3202,7 @@ function renderSettings(){
   $('#setConnect').onclick=()=>{closeSettings();openConnect();};
   {const ex=$('#setExport');if(ex)ex.onclick=exportAll;}
   {const ic=$('#setIcs');if(ic)ic.onclick=icsFeedLink;}
+  {const md=$('#setMd');if(md)md.onclick=exportMd;}
   {const st=$('#setTg');if(st)st.onclick=()=>{closeSettings();openTgGate();};}
   $('#setCloud').onclick=()=>{if(cloudOn){if(confirm('Выйти из облака на этом устройстве?'))sb.auth.signOut().then(()=>location.reload());}else{closeSettings();const b=$('#btnCloud');if(b)b.click();}};
   $('#setExport').onclick=exportBackup;
@@ -5820,6 +5822,26 @@ function icsFeedLink(){
   else prompt('Скопируй ссылку фида:',url);
   if(typeof track==='function')track('ics:link');
 }
+/* 📝 Markdown-выгрузка: человекочитаемый снимок всех проектов */
+function exportMd(){try{
+  const L=['# WANDO — выгрузка '+todayISO(),''];
+  reg.list.filter(p=>!p.archived).forEach(p=>{const d=p.id===S.id?S:loadProj(p.id);if(!d)return;
+    L.push('## '+(p.emoji||'📄')+' '+p.name,'');
+    (d.tasks||[]).filter(t=>t.isMilestone).forEach(t=>L.push('- 🚩 **ВЕХА: '+t.title+'**'+(t.end?' · '+t.end:'')));
+    (d.tasks||[]).filter(t=>!t.isMilestone).forEach(t=>{
+      const who=(d.members||[]).find(m=>m.id===t.assigneeId);
+      L.push('- ['+(t.status==='done'?'x':' ')+'] '+(t.cash?'💰 ':'')+t.title+(t.end?' · до '+t.end:'')+(who?' · @'+who.name:''));
+      (t.comments||[]).forEach(c=>L.push('    - 💬 '+(c.author||'')+': '+String(c.text||'').replace(/\n/g,' ')));});
+    if((d.ideas||[]).length){L.push('','**💡 Идеи:**');(d.ideas||[]).forEach(i2=>L.push('- '+(i2.title||i2.text||'')));}
+    if((d.notes||[]).length){L.push('','**📌 Память:**');(d.notes||[]).slice(-15).forEach(n2=>L.push('- '+n2.text));}
+    L.push('');});
+  const blob=new Blob([L.join('\n')],{type:'text/markdown'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='wando-'+todayISO()+'.md';document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  if(typeof track==='function')track('export:md');
+  toast('Markdown выгружен — читается везде','📝');
+}catch(e){toast('Экспорт не удался: '+(e.message||e),'⚠');}}
 /* страховка данных: все проекты одним JSON-файлом — «мои данные не заперты» */
 function exportAll(){try{
   const dump={app:'WANDO',exported:new Date().toISOString(),
@@ -5861,6 +5883,7 @@ function buildPaletteIndex(){
     ['board','Добавить раздел','новая колонка/группа','Создать',()=>{const n=prompt('Название раздела:');if(n){S.sections.push({id:uid('s'),name:n});save();render();toast('Раздел добавлен','📁');}}],
     ['layers','Печать / PDF','распечатать обзор','Настройки',()=>window.print()],
     ['layers','Выгрузить архив (JSON)','страховка: все проекты одним файлом','Настройки',()=>exportAll()],
+    ['layers','Выгрузить в Markdown','человекочитаемый снимок всех проектов','Настройки',()=>exportMd()],
   ];
   ACT.forEach(([ic,name,sub,grp,run])=>items.push({type:'Команда',grp,icon:icon(ic,17),title:name,sub,kw:name+' '+sub,run}));
   reg.list.filter(p=>!p.archived).forEach(p=>items.push({type:'Проект',icon:`<span class="pal-emoji">${esc(p.emoji||'📄')}</span>`,title:p.name,sub:p.id===S.id?'текущий':'переключиться',kw:p.name+' проект',run:()=>{if(p.id!==S.id)switchProject(p.id);else setView('board');}}));
