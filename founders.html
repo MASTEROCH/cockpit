@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WANDO — что делать. Командный центр фаундера</title>
+<meta name="description" content="Не таск-трекер, а система решений: WANDO говорит, что делать прямо сейчас — по всем твоим проектам. Задачи голосом из Telegram, ИИ-наставник, отчёт недели в один тап." />
+<meta property="og:title" content="WANDO — что делать" />
+<meta property="og:description" content="Командный центр фаундера: следующий шаг по всем проектам, задачи голосом из Telegram, ИИ-наставник. Начни за 5 секунд — просто пришли боту email." />
+<meta property="og:image" content="https://cock-pit.com/wando-og.png" />
+<link rel="icon" href="wando-icon-180.png" />
+<link rel="apple-touch-icon" href="wando-icon-180.png" />
+<meta name="theme-color" content="#0f121b" />
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f121b;--bg2:#161a26;--txt:#eef0f6;--mut:#9aa1b5;--mut2:#6b7280;--acc:#a78bfa;--acc2:#5472F0;--pink:#FE5C97;--ok:#34d399;--line:rgba(255,255,255,.09);--glass:rgba(255,255,255,.045);--sheen:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,0) 46%)}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--txt);font:15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:-20%;z-index:-1;pointer-events:none;
+  background:radial-gradient(46% 34% at 22% 12%,rgba(167,139,250,.16),transparent 62%),radial-gradient(40% 30% at 82% 20%,rgba(254,92,151,.10),transparent 60%),radial-gradient(50% 40% at 55% 90%,rgba(84,114,240,.12),transparent 65%)}
+.wrap{max-width:1020px;margin:0 auto;padding:0 22px}
+header{display:flex;align-items:center;gap:12px;padding:22px 0}
+header img{width:40px;height:40px;border-radius:12px}
+header b{font-size:18px;letter-spacing:.3px}
+header small{color:var(--mut2);font-size:12px;margin-top:3px}
+header .spacer{flex:1}
+.btn{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:14px;padding:12px 20px;font-size:14.5px;font-weight:700;color:var(--txt);text-decoration:none;background:var(--sheen),var(--glass);transition:transform .3s cubic-bezier(.34,1.56,.64,1),box-shadow .25s;cursor:pointer}
+.btn:hover{transform:translateY(-2px)}
+.btn:active{transform:scale(.96)}
+.btn.primary{background:var(--sheen),linear-gradient(135deg,#5472F0,#a78bfa 55%,#FE5C97);border:none;box-shadow:0 12px 32px rgba(84,114,240,.4)}
+.hero{padding:64px 0 30px;text-align:center}
+.hero .pill{display:inline-block;border:1px solid rgba(167,139,250,.4);border-radius:30px;padding:6px 15px;font-size:12.5px;font-weight:700;color:#c7b8ff;background:rgba(167,139,250,.09);margin-bottom:22px}
+h1{font-size:clamp(32px,6vw,54px);line-height:1.12;letter-spacing:-1.2px;font-weight:800;margin-bottom:18px}
+h1 .g{background:linear-gradient(90deg,#5472F0,#a78bfa 50%,#FE5C97);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{font-size:clamp(15px,2.4vw,18px);color:var(--mut);max-width:640px;margin:0 auto 30px}
+.cta-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:14px}
+.cta-note{font-size:12.5px;color:var(--mut2)}
+.vs{margin:56px auto;max-width:760px;border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.vs .row{display:grid;grid-template-columns:1fr 1fr}
+.vs .cell{padding:20px 24px;font-size:14.5px}
+.vs .cell.h{font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.7px;color:var(--mut2);border-bottom:1px solid var(--line)}
+.vs .cell:first-child{background:rgba(255,255,255,.02);border-right:1px solid var(--line);color:var(--mut)}
+.vs .cell:last-child{background:linear-gradient(135deg,rgba(167,139,250,.08),transparent 70%)}
+.vs .cell b{color:var(--txt)}
+h2{font-size:clamp(24px,4vw,34px);letter-spacing:-.6px;text-align:center;margin:70px 0 12px}
+.sub2{text-align:center;color:var(--mut);margin-bottom:36px;font-size:15.5px}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:20px}
+.step{border:1px solid var(--line);border-radius:18px;padding:22px;background:var(--sheen),var(--glass);position:relative}
+.step .n{position:absolute;top:16px;right:18px;font-size:34px;font-weight:800;color:rgba(167,139,250,.18)}
+.step .ico{font-size:26px;margin-bottom:10px}
+.step b{display:block;font-size:15.5px;margin-bottom:6px}
+.step span{color:var(--mut);font-size:13.5px}
+.feats{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.feat{border:1px solid var(--line);border-radius:18px;padding:20px 22px;background:var(--sheen),var(--glass);transition:transform .25s cubic-bezier(.16,1,.3,1),border-color .25s}
+.feat:hover{transform:translateY(-3px);border-color:rgba(167,139,250,.4)}
+.feat .ico{font-size:24px;margin-bottom:9px}
+.feat b{display:block;font-size:15px;margin-bottom:5px}
+.feat span{color:var(--mut);font-size:13.5px}
+.plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;max-width:840px;margin:0 auto}
+.plan{border:1px solid var(--line);border-radius:22px;padding:28px 26px;background:var(--sheen),var(--glass);display:flex;flex-direction:column}
+.plan.hot{border-color:rgba(167,139,250,.55);background:var(--sheen),linear-gradient(150deg,rgba(167,139,250,.12),transparent 65%),var(--glass);box-shadow:0 22px 60px rgba(84,114,240,.18)}
+.plan .tag{font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:#c7b8ff;margin-bottom:8px}
+.plan .price{font-size:34px;font-weight:800;letter-spacing:-1px;margin-bottom:2px}
+.plan .per{color:var(--mut2);font-size:12.5px;margin-bottom:18px}
+.plan ul{list-style:none;margin-bottom:22px;flex:1}
+.plan li{padding:5px 0;font-size:13.5px;color:var(--mut)}
+.plan li::before{content:'✓  ';color:var(--ok);font-weight:700}
+.plan li.no{opacity:.45}
+.plan li.no::before{content:'—  ';color:var(--mut2)}
+.plan .btn{justify-content:center}
+footer{margin:80px 0 34px;padding-top:26px;border-top:1px solid var(--line);display:flex;gap:14px;align-items:center;flex-wrap:wrap;color:var(--mut2);font-size:13px}
+footer a{color:var(--mut);text-decoration:none}
+footer .spacer{flex:1}
+@media (max-width:560px){.vs .row{grid-template-columns:1fr}.vs .cell:first-child{border-right:none;border-bottom:1px solid var(--line)}.vs .row:first-child .cell:last-child{display:none}}
+@media (prefers-reduced-motion:reduce){.btn,.feat{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="wando-icon-180.png" alt="WANDO" />
+    <div><b>WANDO</b><br /><small>что делать</small></div>
+    <div class="spacer"></div>
+    <a class="btn" href="https://cock-pit.com">Войти</a>
+  </header>
+
+  <section class="hero">
+    <div class="pill">для фаундеров, у которых больше одного проекта</div>
+    <h1>Трекеры хранят задачи.<br /><span class="g">WANDO говорит, что делать.</span></h1>
+    <p>Один экран — твой следующий шаг по всем проектам сразу. Задачи голосом из Telegram за 3 секунды. ИИ-наставник, который планирует за тебя и мягко учит вести дела.</p>
+    <div class="cta-row">
+      <a class="btn primary" href="https://t.me/wando_tasks_bot">🚀 Начать в Telegram — 5 секунд</a>
+      <a class="btn" href="#plans">Тарифы</a>
+    </div>
+    <div class="cta-note">без регистраций и карт: пришли боту email — пространство готово</div>
+  </section>
+
+  <div class="vs">
+    <div class="row"><div class="cell h">Обычный трекер</div><div class="cell h">WANDO</div></div>
+    <div class="row"><div class="cell">Доска одного продукта</div><div class="cell"><b>Следующий шаг по всем проектам</b> — приоритет × сроки × деньги</div></div>
+    <div class="row"><div class="cell">Ты приходишь смотреть на дашборд</div><div class="cell"><b>ИИ сам пингует в Telegram</b> — и не задалбывает</div></div>
+    <div class="row"><div class="cell">Создать задачу = открыть сайт и заполнить форму</div><div class="cell"><b>Голосовое боту</b> — задача с датой и приоритетом сама</div></div>
+    <div class="row"><div class="cell">Статус для партнёров = час работы</div><div class="cell"><b>Отчёт недели одной кнопкой</b> — скопировал и отправил</div></div>
+    <div class="row"><div class="cell">Предполагает, что ты умеешь планировать</div><div class="cell"><b>Планирует за тебя</b> — опиши цель, получи план</div></div>
+  </div>
+
+  <h2>Начало — быстрее, чем налить кофе</h2>
+  <div class="sub2">никаких «пригласите команду и настройте воркфлоу»</div>
+  <div class="steps">
+    <div class="step"><span class="n">1</span><div class="ico">💬</div><b>Напиши боту</b><span>@wando_tasks_bot и пришли свой email — личное пространство создастся мгновенно</span></div>
+    <div class="step"><span class="n">2</span><div class="ico">🎙</div><b>Скажи задачу голосом</b><span>«позвонить поставщику завтра в два» — бот сам разберёт дату и важность</span></div>
+    <div class="step"><span class="n">3</span><div class="ico">⚡</div><b>Открой WANDO</b><span>кнопкой в меню бота — ты уже залогинен, и экран «Сейчас» показывает твой следующий шаг</span></div>
+  </div>
+
+  <h2>Что внутри</h2>
+  <div class="sub2">всё, что нужно фаундеру — ничего, что нужно только менеджерам</div>
+  <div class="feats">
+    <div class="feat"><div class="ico">🎯</div><b>«Сейчас» — один следующий шаг</b><span>по всем проектам сразу: приоритет, сроки, 💰 деньги и твоя энергия учтены</span></div>
+    <div class="feat"><div class="ico">🧠</div><b>Вандо — ИИ-наставник</b><span>спланирует цель в задачи, разгрузит перегруженный день, заметит молчащий проект</span></div>
+    <div class="feat"><div class="ico">📊</div><b>Отчёт недели в один тап</b><span>что закрыто, что в работе, что горит — готовый текст для партнёров и команды</span></div>
+    <div class="feat"><div class="ico">💬</div><b>Telegram — это пульт</b><span>задачи голосом, пуши о назначениях, ответ на пуш = комментарий в задаче</span></div>
+    <div class="feat"><div class="ico">🤝</div><b>Команда без потерь</b><span>одновременные правки сливаются — ничья работа не затирается. Приёмка задач с одним тапом «куда»</span></div>
+    <div class="feat"><div class="ico">📱</div><b>Работает как приложение</b><span>PWA: на домашний экран, открытие мгновенно, офлайн в самолёте</span></div>
+  </div>
+
+  <h2 id="plans">Тарифы</h2>
+  <div class="sub2">оплата — Telegram Stars прямо в боте, карта не нужна</div>
+  <div class="plans">
+    <div class="plan">
+      <div class="tag">Solo</div>
+      <div class="price">Бесплатно</div>
+      <div class="per">навсегда</div>
+      <ul>
+        <li>1 компания, до 3 проектов</li>
+        <li>Задачи голосом из Telegram</li>
+        <li>Экран «Сейчас», доска, Гант, неделя</li>
+        <li>PWA и офлайн</li>
+        <li class="no">Вандо-ИИ и наставник</li>
+        <li class="no">Отчёты недели</li>
+      </ul>
+      <a class="btn" href="https://t.me/wando_tasks_bot">Начать бесплатно</a>
+    </div>
+    <div class="plan hot">
+      <div class="tag">⭐ Founder</div>
+      <div class="price">1900 ⭐</div>
+      <div class="per">≈ $19 / 30 дней · оплата в боте: /plan</div>
+      <ul>
+        <li>Проекты и компании без лимита</li>
+        <li>Вандо-ИИ: чат, планирование целей, пульс</li>
+        <li>Наставник тайм-менеджмента</li>
+        <li>📊 Отчёты недели для команды</li>
+        <li>Утренний бриф и вечерний разбор</li>
+        <li>Всё из Solo</li>
+      </ul>
+      <a class="btn primary" href="https://t.me/wando_tasks_bot">🚀 Попробовать</a>
+    </div>
+  </div>
+
+  <footer>
+    <span>WANDO · «что делать»</span>
+    <div class="spacer"></div>
+    <a href="https://t.me/wando_tasks_bot">@wando_tasks_bot</a>
+    <a href="https://cock-pit.com">Войти в WANDO</a>
+  </footer>
+</div>
+</body>
+</html>
