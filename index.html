@@ -1563,6 +1563,69 @@ body.light .mseg{background:rgba(250,251,254,.97)}
     transform:translateY(100%);opacity:1}
   #drawer.show{transform:none}
 }
+/* ====================================================================
+   ROCH TACTILE ENGINE — живой отклик: пресс-физика, спекуляр, пружины
+   ==================================================================== */
+@media (prefers-reduced-motion:no-preference){
+  /* пресс-физика: мгновенный вжим (60ms) → пружинный отпуск */
+  .btn,.iconbtn,.chip,.tab,.fchip,.minibtn,.vote,.cashbtn,.energyrow button,.cmdex,.qdates button,#mseg button{
+    transition:transform .34s var(--spring),box-shadow .22s var(--ease),border-color .2s var(--ease),background .2s var(--ease),color .2s var(--ease),filter .2s var(--ease),opacity .2s var(--ease)}
+  .btn:active,.iconbtn:active,.chip:active,.tab:active,.fchip:active,.minibtn:active,.vote:active,.cashbtn:active,
+  .energyrow button:active,.cmdex:active,.qdates button:active,#mseg button:active{transform:scale(.94);transition-duration:.06s}
+  .mnav button:not(.mplus):active i{transform:scale(.82);transition:transform .06s}
+  .prow:active,.mprow:active,.mrow:active,.nh-up:active,.insight.click:active{transform:scale(.988);transition:transform .09s ease}
+  /* тост приземляется пружиной */
+  .toast{transform:translateX(-50%) translateY(26px) scale(.92);transition:transform .55s var(--spring),opacity .22s ease}
+  .toast.show{transform:translateX(-50%) translateY(0) scale(1)}
+  /* карточка задачи выпрыгивает мягко */
+  #drawer{transition:transform .48s var(--spring),opacity .25s var(--ease)}
+  /* Вандо дышит, пока его не трогают (hover-logopop перекрывает по специфичности) */
+  .vando-fab svg{animation:vbreathe 5.2s ease-in-out infinite}
+  @keyframes vbreathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-2.5px)}}
+  /* прогресс-бары: разовый блик при входе на экран */
+  .kpibar span{position:relative;overflow:hidden}
+  .view.active .kpibar span::after{content:'';position:absolute;inset:0;transform:translateX(-110%) skewX(-16deg);
+    background:linear-gradient(105deg,transparent 25%,rgba(255,255,255,.5) 50%,transparent 75%);
+    animation:barsheen 1.1s .35s var(--ease) 1 both}
+  @keyframes barsheen{to{transform:translateX(110%) skewX(-16deg)}}
+  /* активный пункт мобильного нава — микро-бонс */
+  .mnav button.on i{animation:navpop .42s var(--spring)}
+  @keyframes navpop{0%{transform:scale(.72)}100%{transform:scale(1.08)}}
+}
+@media (max-width:680px){
+  .toast{bottom:calc(96px + env(safe-area-inset-bottom))} /* над мобильным навом, не поверх */
+}
+/* ---- 📊 Отчёт империи (статус-репорт недели в один тап) ---- */
+.repsheet{width:min(680px,94vw);max-height:86vh;display:flex;flex-direction:column;padding:0}
+.rep-h{display:flex;align-items:center;gap:10px;padding:15px 20px;border-bottom:1px solid var(--line)}
+.rep-h b{font-size:15px}
+.rep-h .sub{color:var(--mut2);font-size:12px}
+.rep-b{overflow:auto;padding:14px 20px;display:flex;flex-direction:column;gap:12px}
+.rep-stats{display:flex;gap:8px;flex-wrap:wrap}
+.rep-stats span{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:6px 11px;font-size:12.5px;font-weight:700}
+.rep-p{border:1px solid var(--line);border-radius:14px;padding:11px 14px;background:var(--bg2)}
+.rep-p .rp-t{font-weight:800;font-size:13.5px;margin-bottom:6px;display:flex;gap:8px;align-items:center}
+.rep-p .rp-t .pct{margin-left:auto;color:var(--mut);font-weight:700;font-size:12px}
+.rep-line{font-size:12.5px;color:var(--mut);line-height:1.75}
+.rep-line b{color:var(--txt);font-weight:600}
+.rep-f{display:flex;gap:9px;padding:13px 20px;border-top:1px solid var(--line)}
+.rep-f .btn{flex:1;justify-content:center}
+@media (max-width:680px){.repsheet{width:100vw;max-height:92dvh}}
+/* спекуляр-свет за курсором (только мышь; --gx/--gy ставит Tactile Engine JS) */
+@media (hover:hover) and (pointer:fine){
+  .panel-c,.prow,.cmdex{position:relative}
+  .card::after,.kpi::after,.mcard::after,.tpl::after,.idea::after,.panel-c::after,.prow::after,.cmdex::after{
+    content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;z-index:1;
+    transition:opacity .35s ease;
+    background:radial-gradient(230px circle at var(--gx,50%) var(--gy,50%),rgba(190,168,255,.13),rgba(255,255,255,.05) 42%,transparent 68%)}
+  .card:hover::after,.kpi:hover::after,.mcard:hover::after,.tpl:hover::after,.idea:hover::after,.panel-c:hover::after,.prow:hover::after,.cmdex:hover::after{opacity:1}
+  body.light .card::after,body.light .kpi::after,body.light .mcard::after,body.light .tpl::after,body.light .idea::after,body.light .panel-c::after,body.light .prow::after,body.light .cmdex::after{
+    background:radial-gradient(230px circle at var(--gx,50%) var(--gy,50%),rgba(124,88,246,.09),transparent 65%)}
+}
+/* фокус на вводе — мягкое свечение вместо жёсткого outline */
+input:focus-visible,textarea:focus-visible,select:focus-visible{
+  outline:none;border-color:rgba(167,139,250,.55);
+  box-shadow:0 0 0 3px rgba(167,139,250,.16),0 8px 30px rgba(167,139,250,.10)}
 </style>
 </head>
 <body>
@@ -1795,6 +1858,7 @@ body.light .mseg{background:rgba(250,251,254,.97)}
   <button id="mnavVando"><i>🤖</i><span>Вандо</span></button>
 </nav>
 <div class="modal-scrim" id="capScrim"><div class="modal capsheet" id="capModal"></div></div>
+<div class="modal-scrim" id="repScrim"><div class="modal repsheet" id="repModal"></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -2133,6 +2197,7 @@ function render(){
   else if(view==='team')renderTeam();
   else if(view==='intake')renderIntake();
   else if(view==='mprojects')renderMProjects();
+  if(typeof tickKpis==='function')tickKpis();
   save();
 }
 function setView(v){view=v;if(typeof track==='function')track('view:'+v);
@@ -2327,6 +2392,7 @@ function renderNow(){
 function haptic(kind){try{const T=window.Telegram&&window.Telegram.WebApp;if(!T||!T.HapticFeedback)return;
   if(kind==='ok')T.HapticFeedback.notificationOccurred('success');
   else if(kind==='warn')T.HapticFeedback.notificationOccurred('warning');
+  else if(kind==='sel')T.HapticFeedback.selectionChanged();
   else T.HapticFeedback.impactOccurred('light');}catch(e){}}
 function attachSwipe(el,taskId,pid){
   let sx=0,sy=0,dx=0,swiping=false;
@@ -2349,6 +2415,52 @@ function attachSwipe(el,taskId,pid){
         haptic('light');render();toast('🌙 На завтра','🌙');},160);}
     else{el.style.transform='';el.style.background='';}
   },{passive:true});
+}
+/* === ROCH Tactile Engine ============================================
+   1) глобальная хаптика в TMA: каждый тап по интерактиву = selection tick
+   2) спекуляр-свет за курсором на стекле (desktop, --gx/--gy для ::after)
+   3) 3D-tilt героя «Сейчас» (desktop, ≤2.4°)
+   4) тик-счётчики KPI: числа доезжают до значения, а не телепортируются */
+document.addEventListener('click',e=>{
+  if(e.target&&e.target.closest&&e.target.closest('button,.chip,.tab,.prow,.mprow,.mrow,.card,.nh-up'))haptic('sel');
+},{passive:true});
+(function(){
+  if(!window.matchMedia)return;
+  if(!matchMedia('(hover:hover) and (pointer:fine)').matches)return;
+  if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  let raf=0,pe=null,tilted=null;
+  const unTilt=()=>{if(!tilted)return;tilted.style.transition='transform .6s var(--spring)';tilted.style.transform='';tilted=null;};
+  document.addEventListener('pointermove',e=>{pe=e;if(raf)return;
+    raf=requestAnimationFrame(()=>{raf=0;
+      const t=pe.target,g=t&&t.closest?t.closest('.card,.kpi,.mcard,.tpl,.idea,.panel-c,.prow,.cmdex,.now-hero'):null;
+      if(g){const r=g.getBoundingClientRect();
+        g.style.setProperty('--gx',Math.round(pe.clientX-r.left)+'px');
+        g.style.setProperty('--gy',Math.round(pe.clientY-r.top)+'px');
+        if(g.classList.contains('now-hero')&&!g.classList.contains('done')){
+          const rx=((pe.clientY-r.top)/r.height-.5)*-2.4,ry=((pe.clientX-r.left)/r.width-.5)*2.4;
+          if(tilted&&tilted!==g)unTilt();
+          g.style.transition='transform .12s ease';
+          g.style.transform='perspective(1200px) rotateX('+rx.toFixed(2)+'deg) rotateY('+ry.toFixed(2)+'deg)';
+          tilted=g;return;}
+      }
+      if(tilted&&(!g||g!==tilted))unTilt();
+    });},{passive:true});
+  document.documentElement.addEventListener('pointerleave',unTilt);
+})();
+function tickKpis(){
+  if(window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  const prev=tickKpis._p||(tickKpis._p={});
+  $$('.kpi').forEach(k=>{
+    const v=k.querySelector('.v'),l=k.querySelector('.l');if(!v||!l)return;
+    const m=v.textContent.trim().match(/^(\d+)(%?)$/);if(!m)return;
+    const key=view+'|'+l.textContent.trim().replace(/\d+/g,'#');
+    const to=+m[1],from=prev[key];prev[key]=to;
+    if(from===undefined||from===to)return;
+    const t0=performance.now(),dur=560;
+    (function step(now){const p=Math.min(1,(now-t0)/dur),e=1-Math.pow(1-p,3);
+      v.textContent=Math.round(from+(to-from)*e)+m[2];
+      if(p<1)requestAnimationFrame(step);})(t0);
+  });
 }
 // ===== МОБИЛЬНЫЙ «Сегодня»: один вопрос на экран =====
 // мои открытые задачи по ВСЕМ доступным проектам
@@ -3064,6 +3176,7 @@ function renderPortfolio(){
      <div class="kpi"><div class="v" style="color:var(--ok)">${pct}%</div><div class="l">${gDone}/${gTasks} готово</div><div class="kpibar"><span style="width:${pct}%;background:linear-gradient(90deg,var(--ok),#10b981)"></span></div></div>
      <div class="kpi"><div class="v" style="color:${gOver?'var(--bad)':'var(--mut)'}">${gOver}</div><div class="l">Просрочено везде</div></div>
    </div>
+   <button class="cmdex" id="btnRep" style="margin-bottom:16px"><span>📊</span> Отчёт империи за неделю — собрать и скопировать для команды</button>
    ${mine.length?`<div class="panel-c" style="margin-bottom:16px"><h3>🔥 Мои задачи по всем проектам <span class="c">${mine.length}</span></h3>
      ${mine.slice(0,14).map(x=>{const ov=over(x.t);const dl=Math.round((parseD(x.t.end)-parseD(tISO))/dayMs);
        return `<div class="trow" data-pid="${x.pid}" data-tid="${x.t.id}"><span class="dot" style="background:${stMap[x.t.status].c}"></span>
@@ -3091,6 +3204,7 @@ function renderPortfolio(){
    </div>
    <div class="panel-c" style="margin-top:16px"><h3>🕑 История компании <span class="c">${allAct.length}</span></h3>
      <div class="actfeed">${allAct.length?allAct.slice(0,50).map(a=>`<div class="actrow"><span class="ai">${a.icon}</span><span class="atx"><b>${esc(a.who)}</b> ${esc(a.text)} <span class="pbadge" style="margin-left:5px;vertical-align:middle">${a.emoji||'📄'} ${esc(a.pname)}</span></span><span class="att">${relTime(a.ts)}</span></div>`).join(''):'<div class="emptymini">История появится по мере работы команды</div>'}</div></div>`;
+  {const br=$('#btnRep');if(br)br.onclick=openReport;}
   $$('#portfolio .prow').forEach(e=>e.onclick=()=>{const id=e.dataset.open;if(id===S.id)setView('board');else switchProject(id);});
   $$('#portfolio .trow').forEach(e=>e.onclick=()=>{const pid=e.dataset.pid,tid=e.dataset.tid;if(pid!==S.id)switchProject(pid);setTimeout(()=>openTask(tid),80);});
 }
@@ -4448,6 +4562,8 @@ function runCmd(raw){
        addTaskToProject(hit.id,p,'todo');
        toast('Задача → '+(hit.emoji||'📄')+' '+hit.name+' ✓','🚀');render();return;}
      toast('Проект «'+pm[1].trim()+'» не нашёл','⚠');return;}}
+  // «отчёт» — статус-репорт империи одним словом
+  if(/^отч[её]т(\s+(недели|империи))?$/i.test(s)){openReport();return;}
   // — язык как интерфейс: массовые операции (без \b — он не работает с кириллицей) —
   // «что горит» / «покажи горящее» / «аврал» → фокус на самом важном
   if(/^(что\s+горит|покажи\s+горящ|горящ|аврал|что\s+срочно|fire)/i.test(s)){fireFocus();return;}
@@ -4962,6 +5078,71 @@ function openCap(){
 }
 function closeCap(){$('#capScrim').classList.remove('show');}
 $('#capScrim').onclick=e=>{if(e.target===$('#capScrim'))closeCap();};
+/* === 📊 Отчёт империи: статус-репорт недели одним тапом ==============
+   Боль PM/фаундера: часы на «что у нас происходит» для команды/партнёров.
+   WANDO собирает сам: закрыто за неделю (из activity), в работе, огонь,
+   деньги, фокус след. недели (top relScore по всей империи). */
+function empireReport(){
+  const weekAgo=Date.now()-7*dayMs,tISO=todayISO();
+  const projs=reg.list.filter(p=>!p.archived).map(p=>({meta:p,data:p.id===S.id?S:loadProj(p.id)})).filter(x=>x.data&&(x.data.tasks||[]).some(t=>!t.isMilestone));
+  const md=d=>d.slice(8)+'.'+d.slice(5,7);
+  const period=md(fmtD(Date.now()-6*dayMs))+'–'+md(tISO);
+  let done7=0,act=0,over=0,cash=0;const rows=[],focus=[];
+  projs.forEach(({meta,data})=>{
+    const T=(data.tasks||[]).filter(t=>!t.isMilestone);
+    const dn=T.filter(t=>t.status==='done').length;
+    const pct=T.length?Math.round(dn/T.length*100):0;
+    const closed=[];let closedN=0;
+    (data.activity||[]).forEach(a=>{if(a.ts>weekAgo&&/Готово|✅/.test((a.text||'')+(a.icon||''))){closedN++;
+      const m=(a.text||'').match(/«(.+?)»/);if(m&&!closed.includes(m[1]))closed.push(m[1]);}});
+    const prog=T.filter(t=>t.status==='progress');
+    const ovr=T.filter(t=>t.status!=='done'&&parseD(t.end)<parseD(tISO));
+    const csh=T.filter(t=>t.cash&&t.status!=='done');
+    done7+=closedN;act+=T.length-dn;over+=ovr.length;cash+=csh.length;
+    T.forEach(t=>{if(t.status!=='done')focus.push({t,pname:meta.name,emoji:meta.emoji||'📄'});});
+    const who=id=>{const m=(data.members||[]).find(x=>x.id===id);return m?String(m.name).split(/\s+/)[0]:'';};
+    rows.push({meta,pct,closed,closedN,prog,ovr,csh,who});
+  });
+  focus.sort((a,b)=>relScore(b.t)-relScore(a.t));
+  return {period,done7,act,over,cash,rows,focus:focus.slice(0,3),tISO};
+}
+function reportText(R){
+  const L=['📊 WANDO · Отчёт империи — '+R.period,'',
+    'Итог недели: ✅ '+R.done7+' закрыто · 🔄 '+R.act+' в работе · 🔥 '+R.over+' просрочено'+(R.cash?' · 💰 '+R.cash+' денежных':'')];
+  R.rows.forEach(r=>{L.push('');L.push((r.meta.emoji||'📄')+' '+r.meta.name+' — '+r.pct+'% готово');
+    if(r.closedN)L.push('  ✅ Закрыто: '+(r.closed.length?r.closed.slice(0,4).join(' · ')+(r.closedN>4?' +'+(r.closedN-4):''):r.closedN+' задач'));
+    if(r.prog.length)L.push('  🔄 В работе: '+r.prog.slice(0,4).map(t=>t.title+(r.who(t.assigneeId)?' ('+r.who(t.assigneeId)+')':'')).join(' · ')+(r.prog.length>4?' +'+(r.prog.length-4):''));
+    if(r.ovr.length)L.push('  🔥 Просрочено: '+r.ovr.slice(0,3).map(t=>t.title+' ('+Math.round((parseD(R.tISO)-parseD(t.end))/dayMs)+'д)').join(' · ')+(r.ovr.length>3?' +'+(r.ovr.length-3):''));
+    if(r.csh.length)L.push('  💰 Деньги: '+r.csh.slice(0,3).map(t=>t.title).join(' · '));});
+  if(R.focus.length){L.push('');L.push('🎯 Фокус следующей недели:');
+    R.focus.forEach((x,i)=>L.push('  '+(i+1)+'. '+(x.t.cash?'💰 ':'')+x.t.title+' — '+x.emoji+' '+x.pname));}
+  L.push('');L.push('— собрано WANDO за 1 секунду · cock-pit.com');
+  return L.join('\n');
+}
+function openReport(){
+  const R=empireReport(),txt=reportText(R);
+  if(typeof track==='function')track('report:open');
+  $('#repModal').innerHTML=`<div class="rep-h"><b>📊 Отчёт империи</b><span class="sub">${R.period} · собран автоматически</span><button class="iconbtn" style="margin-left:auto" id="repX">✕</button></div>
+   <div class="rep-b">
+    <div class="rep-stats"><span>✅ ${R.done7} закрыто</span><span>🔄 ${R.act} в работе</span><span${R.over?' style="color:var(--bad)"':''}>🔥 ${R.over} просрочено</span>${R.cash?`<span style="color:var(--ok)">💰 ${R.cash} денежных</span>`:''}</div>
+    ${R.rows.map(r=>`<div class="rep-p"><div class="rp-t">${r.meta.emoji||'📄'} ${esc(r.meta.name)}<span class="pct">${r.pct}%</span></div>
+      ${r.closedN?`<div class="rep-line">✅ <b>${r.closed.length?esc(r.closed.slice(0,4).join(' · ')):r.closedN+' задач'}</b>${r.closedN>4?' +'+(r.closedN-4):''}</div>`:''}
+      ${r.prog.length?`<div class="rep-line">🔄 ${r.prog.slice(0,4).map(t=>esc(t.title)+(r.who(t.assigneeId)?' <b>('+esc(r.who(t.assigneeId))+')</b>':'')).join(' · ')}${r.prog.length>4?' +'+(r.prog.length-4):''}</div>`:''}
+      ${r.ovr.length?`<div class="rep-line" style="color:var(--bad)">🔥 ${r.ovr.slice(0,3).map(t=>esc(t.title)+' ('+Math.round((parseD(R.tISO)-parseD(t.end))/dayMs)+'д)').join(' · ')}${r.ovr.length>3?' +'+(r.ovr.length-3):''}</div>`:''}
+      ${r.csh.length?`<div class="rep-line" style="color:var(--ok)">💰 ${r.csh.slice(0,3).map(t=>esc(t.title)).join(' · ')}</div>`:''}
+    </div>`).join('')||'<div class="empty"><span class="eico">📭</span><div class="etitle">Пока нечего рассказать</div><div class="esub">Создай проекты и задачи — отчёт соберётся сам.</div></div>'}
+    ${R.focus.length?`<div class="rep-p" style="border-color:rgba(167,139,250,.4)"><div class="rp-t">🎯 Фокус следующей недели</div>
+      ${R.focus.map((x,i)=>`<div class="rep-line">${i+1}. ${x.t.cash?'💰 ':''}<b>${esc(x.t.title)}</b> — ${x.emoji} ${esc(x.pname)}</div>`).join('')}</div>`:''}
+   </div>
+   <div class="rep-f"><button class="btn primary" id="repCopy">📋 Скопировать для команды</button><button class="btn" id="repX2">Закрыть</button></div>`;
+  $('#repScrim').classList.add('show');
+  $('#repCopy').onclick=()=>{const done=()=>{toast('Отчёт скопирован — вставь в чат команды','📋');haptic('ok');};
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(done).catch(()=>{});
+    else{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');done();}catch(e){}ta.remove();}};
+  $('#repX').onclick=$('#repX2').onclick=closeReport;
+}
+function closeReport(){$('#repScrim').classList.remove('show');}
+$('#repScrim').onclick=e=>{if(e.target===$('#repScrim'))closeReport();};
 function renderMProjects(){
   const el=$('#mprojects');if(!el)return;
   const projs=reg.list.filter(p=>!p.archived).map(p=>({meta:p,data:p.id===S.id?S:loadProj(p.id)})).filter(x=>x.data);
@@ -4977,9 +5158,11 @@ function renderMProjects(){
   el.innerHTML=`<div class="secttl">📁 Проекты <span style="margin-left:auto;text-transform:none;letter-spacing:0;font-weight:500;color:var(--mut2)">${projs.length}</span></div>
     <div class="mplist">${html}</div>
     <button class="btn" style="width:100%;margin-top:14px;justify-content:center" id="mpAll">🌐 Пульс всей компании</button>
+    <button class="btn" style="width:100%;margin-top:8px;justify-content:center" id="mpRep">📊 Отчёт империи за неделю</button>
     ${isTeam?'<button class="btn" style="width:100%;margin-top:8px;justify-content:center" id="mpNew">＋ Новый проект</button>':''}`;
   $$('#mprojects .mprow').forEach(r=>r.onclick=()=>{const id=r.dataset.p;if(id!==S.id)switchProject(id);else setView('board');});
   const a=$('#mpAll');if(a)a.onclick=()=>setView('all');
+  const rp=$('#mpRep');if(rp)rp.onclick=openReport;
   const n=$('#mpNew');if(n)n.onclick=openNewProject;
 }
 {const mp=$('#mPlus');if(mp)mp.onclick=openCap;
@@ -5024,7 +5207,7 @@ function tmaBoot(){
     T.ready();T.expand();
     try{T.setHeaderColor('#0f121b');T.setBackgroundColor('#0d0f17');}catch(e){}
     T.BackButton.onClick(()=>{ // системный «назад» закрывает верхний слой
-      const layers=[['#capScrim',closeCap],['#vandoPanel',()=>vandoToggle(false)],['#drawer',()=>closeDrawer&&closeDrawer()]];
+      const layers=[['#repScrim',closeReport],['#capScrim',closeCap],['#vandoPanel',()=>vandoToggle(false)],['#drawer',()=>closeDrawer&&closeDrawer()]];
       for(const [sel,fn] of layers){const el=$(sel);if(el&&el.classList.contains('show')){fn();return;}}
       if(view!=='now')setView('now');});
     setInterval(()=>{try{
