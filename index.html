@@ -754,7 +754,7 @@ body.light .brand .logo{background:linear-gradient(157deg,#1b1d27,#08090d 72%)}
 .wcol.over{border-color:rgba(248,113,113,.4)}
 .wcol.drop{outline:2px dashed var(--acc2);outline-offset:-3px}
 .wcolh{padding:9px 11px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:6px;font-weight:700;font-size:12.5px;white-space:nowrap;overflow:hidden}
-.wcolh .wsub{font-size:10px;color:var(--mut2);font-weight:500;overflow:hidden;text-overflow:ellipsis}
+.wcolh .wsub{font-size:10px;color:var(--mut2);font-weight:500;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
 .wcolh .wcnt{margin-left:auto;font-size:11px;color:var(--mut2);background:var(--bg);padding:0 6px;border-radius:20px}
 .wcolb{padding:8px;display:flex;flex-direction:column;gap:7px;overflow:auto;flex:1;min-height:50px}
 .wempty{color:var(--mut2);font-size:12px;text-align:center;padding:8px 0;opacity:.45}
@@ -3774,9 +3774,9 @@ function renderWeek(){
     <button class="qdone" data-wd="${x.pid}|${x.t.id}" title="Готово" style="--c:${stMap[x.t.status].c}"></button>
     <div class="wcb"><div class="wct">${x.t.waitingOn?'⏳ ':''}${esc(x.t.title)}</div>
       <div class="wcm"><span class="pbadge">${x.emoji||'📄'} ${esc(x.pname)}</span>${x.t.estimate?`<span style="font-size:10px;color:var(--mut2)">${x.t.estimate}ч</span>`:''}${subTag(x.t)}</div></div></div>`;
-  const col=(key,label,sub,cls)=>`<div class="wcol ${cls||''}" data-day="${key}"><div class="wcolh"><span>${label}</span>${sub?`<span class="wsub">${sub}</span>`:''}<span class="wcnt">${by[key].length||''}</span></div><div class="wcolb">${by[key].map(card).join('')||'<div class="wempty">—</div>'}</div></div>`;
+  const col=(key,label,sub,cls)=>`<div class="wcol ${cls||''}" data-day="${key}"><div class="wcolh" title="${key==='over'?'перетащи задачу в день — изменится срок':sub||''}"><span>${label}</span>${sub?`<span class="wsub">${sub}</span>`:''}<span class="wcnt">${by[key].length||''}</span></div><div class="wcolb">${by[key].map(card).join('')||'<div class="wempty">—</div>'}</div></div>`;
   const wt=weekOffset===0?'Эта неделя':weekOffset===1?'Следующая неделя':weekOffset===-1?'Прошлая неделя':md(wstart)+'–'+md(wend);
-  let cols='';if(by.over.length)cols+=col('over','⚠️ Просрочено','перетащи в день',' over');
+  let cols='';if(by.over.length)cols+=col('over','⚠️ Просрочено','',' over');
   days.forEach((d,i)=>cols+=col(d,WD[i],md(d),d===tISO?'today':''));
   if(by.later.length)cols+=col('later','Позже','за неделей','');
   el.innerHTML=`<div class="whead"><h2 style="margin:0;font-size:18px">🗓 Моя неделя</h2><span class="wt">${wt} · ${md(wstart)}–${md(wend)}</span>
