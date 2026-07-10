@@ -3454,13 +3454,15 @@ function cheatsheetHTML(){return `<div class="cheatbody">
 function bindCheat(scope){$$(scope+' .cmdex').forEach(b=>b.onclick=()=>{navigator.clipboard.writeText(b.dataset.copy);toast('Скопировано — вставь в Claude','📋');});}
 function renderIntake(){
   const el=$('#intake');if(!el)return;
-  if(!cloudOn){el.innerHTML=`<div class="secttl">📥 На приёмке</div>`+emptyState('🔌','Нужен вход в облако','Приёмка работает для команды. Нажми 🔄 в шапке и войди — задачи из Claude будут прилетать сюда.');return;}
+  if(!cloudOn){el.innerHTML=`<div class="dhead"><h1>📥 Приёмка</h1></div>`+emptyState('🔌','Нужен вход в облако','Приёмка работает для команды. Нажми 🔄 в шапке и войди — задачи из бота и Claude будут прилетать сюда.');return;}
   const connectBtn=`<button class="btn" id="intakeConnect">${icon('plug',15)} Подключить Claude</button>`;
-  if(!intakeReady){el.innerHTML=`<div class="secttl">📥 На приёмке <span style="margin-left:auto">${connectBtn}</span></div>`
+  if(!intakeReady){el.innerHTML=`<div class="dhead"><h1>📥 Приёмка</h1><span class="spacer"></span>${connectBtn}</div>`
     +emptyState('🛠','Приёмник не активирован','Нужно один раз прогнать SQL в Supabase (supabase/intake.sql). Деплоить ничего не надо. После этого задачи из Claude появятся здесь.');
     const cb=$('#intakeConnect');if(cb)cb.onclick=openConnect;return;}
-  el.innerHTML=`<div class="secttl">📥 На приёмке <span style="color:var(--mut2);font-weight:500;text-transform:none;letter-spacing:0">заявки от Claude — подтверди, чтобы стали задачами</span>
-    <span style="margin-left:auto">${connectBtn}</span></div>
+  el.innerHTML=`<div class="dhead" style="align-items:flex-start">
+      <div style="flex:1;min-width:220px"><h1>📥 Приёмка${intakeRows.length?` <span class="c" style="font-size:14px;vertical-align:3px">${intakeRows.length}</span>`:''}</h1>
+        <div class="sub" style="margin-top:4px;line-height:1.5">задачи из бота и Claude ждут решения: выбери проект и подтверди — станут задачами</div></div>
+      ${connectBtn}</div>
     <details class="cheat" ${intakeRows.length?'':'open'}><summary>📋 Шпаргалка: быстрые команды для Claude</summary>${cheatsheetHTML()}</details>`
     +(intakeRows.length?`<div class="inolist">${intakeRows.map(r=>{
       const p=parseQuick(r.text);const m=p.assignee?member(p.assignee):null;
