@@ -270,7 +270,7 @@
   .danger{color:var(--bad);border-color:rgba(248,113,113,.3)}
   .danger:hover{background:rgba(248,113,113,.12);border-color:var(--bad)}
 
-  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:11px 18px;font-size:13px;font-weight:600;box-shadow:var(--shadow);z-index:80;opacity:0;pointer-events:none;transition:.25s;display:flex;align-items:center;gap:9px;max-width:90vw}
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:11px 18px;font-size:13px;font-weight:600;box-shadow:var(--shadow);z-index:95;opacity:0;pointer-events:none;transition:.25s;display:flex;align-items:center;gap:9px;max-width:90vw}
   .toast.show{opacity:1;transform:translateX(-50%)}
   .toast .ic{font-size:15px}
   .empty{padding:50px;text-align:center;color:var(--mut2)}
@@ -1610,7 +1610,7 @@ body.light .mseg{background:rgba(250,251,254,.97)}
 .rep-line b{color:var(--txt);font-weight:600}
 .rep-f{display:flex;gap:9px;padding:13px 20px;border-top:1px solid var(--line)}
 .rep-f .btn{flex:1;justify-content:center}
-@media (max-width:680px){.repsheet{width:100vw;max-height:92dvh}}
+@media (max-width:680px){.repsheet{width:100vw;max-height:92dvh;border-radius:22px 22px 0 0}}
 /* спекуляр-свет за курсором (только мышь; --gx/--gy ставит Tactile Engine JS) */
 @media (hover:hover) and (pointer:fine){
   .panel-c,.prow,.cmdex{position:relative}
@@ -3204,7 +3204,7 @@ function renderPortfolio(){
    </div>
    <div class="panel-c" style="margin-top:16px"><h3>🕑 История компании <span class="c">${allAct.length}</span></h3>
      <div class="actfeed">${allAct.length?allAct.slice(0,50).map(a=>`<div class="actrow"><span class="ai">${a.icon}</span><span class="atx"><b>${esc(a.who)}</b> ${esc(a.text)} <span class="pbadge" style="margin-left:5px;vertical-align:middle">${a.emoji||'📄'} ${esc(a.pname)}</span></span><span class="att">${relTime(a.ts)}</span></div>`).join(''):'<div class="emptymini">История появится по мере работы команды</div>'}</div></div>`;
-  {const br=$('#btnRep');if(br)br.onclick=openReport;}
+  {const br=$('#btnRep');if(br)br.onclick=openEmpireRep;}
   $$('#portfolio .prow').forEach(e=>e.onclick=()=>{const id=e.dataset.open;if(id===S.id)setView('board');else switchProject(id);});
   $$('#portfolio .trow').forEach(e=>e.onclick=()=>{const pid=e.dataset.pid,tid=e.dataset.tid;if(pid!==S.id)switchProject(pid);setTimeout(()=>openTask(tid),80);});
 }
@@ -4425,7 +4425,8 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
     if($('#present').classList.contains('show'))return closePresent();
     if($('#palScrim').classList.contains('show'))return closePalette();
-    if($('#obScrim').classList.contains('show'))closeOb();
+    if($('#repScrim').classList.contains('show'))closeEmpireRep();
+    else if($('#obScrim').classList.contains('show'))closeOb();
     else if($('#npScrim').classList.contains('show'))$('#npScrim').classList.remove('show');
     else if($('#authScrim').classList.contains('show'))$('#authScrim').classList.remove('show');
     else if($('#reportScrim').classList.contains('show'))$('#reportScrim').classList.remove('show');
@@ -4563,7 +4564,7 @@ function runCmd(raw){
        toast('Задача → '+(hit.emoji||'📄')+' '+hit.name+' ✓','🚀');render();return;}
      toast('Проект «'+pm[1].trim()+'» не нашёл','⚠');return;}}
   // «отчёт» — статус-репорт империи одним словом
-  if(/^отч[её]т(\s+(недели|империи))?$/i.test(s)){openReport();return;}
+  if(/^отч[её]т(\s+(недели|империи))?$/i.test(s)){openEmpireRep();return;}
   // — язык как интерфейс: массовые операции (без \b — он не работает с кириллицей) —
   // «что горит» / «покажи горящее» / «аврал» → фокус на самом важном
   if(/^(что\s+горит|покажи\s+горящ|горящ|аврал|что\s+срочно|fire)/i.test(s)){fireFocus();return;}
@@ -5119,10 +5120,10 @@ function reportText(R){
   L.push('');L.push('— собрано WANDO за 1 секунду · cock-pit.com');
   return L.join('\n');
 }
-function openReport(){
+function openEmpireRep(){
   const R=empireReport(),txt=reportText(R);
   if(typeof track==='function')track('report:open');
-  $('#repModal').innerHTML=`<div class="rep-h"><b>📊 Отчёт империи</b><span class="sub">${R.period} · собран автоматически</span><button class="iconbtn" style="margin-left:auto" id="repX">✕</button></div>
+  $('#repModal').innerHTML=`<div class="rep-h"><b>📊 Отчёт империи</b><span class="sub">${R.period} · собран автоматически</span><button class="iconbtn" style="margin-left:auto" id="repX" aria-label="Закрыть отчёт" title="Закрыть">✕</button></div>
    <div class="rep-b">
     <div class="rep-stats"><span>✅ ${R.done7} закрыто</span><span>🔄 ${R.act} в работе</span><span${R.over?' style="color:var(--bad)"':''}>🔥 ${R.over} просрочено</span>${R.cash?`<span style="color:var(--ok)">💰 ${R.cash} денежных</span>`:''}</div>
     ${R.rows.map(r=>`<div class="rep-p"><div class="rp-t">${r.meta.emoji||'📄'} ${esc(r.meta.name)}<span class="pct">${r.pct}%</span></div>
@@ -5136,13 +5137,14 @@ function openReport(){
    </div>
    <div class="rep-f"><button class="btn primary" id="repCopy">📋 Скопировать для команды</button><button class="btn" id="repX2">Закрыть</button></div>`;
   $('#repScrim').classList.add('show');
-  $('#repCopy').onclick=()=>{const done=()=>{toast('Отчёт скопирован — вставь в чат команды','📋');haptic('ok');};
-    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(done).catch(()=>{});
-    else{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');done();}catch(e){}ta.remove();}};
-  $('#repX').onclick=$('#repX2').onclick=closeReport;
+  $('#repCopy').onclick=()=>{const done=()=>{closeEmpireRep();toast('Отчёт скопирован — вставь в чат команды','📋');haptic('ok');};
+    const fb=()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{if(document.execCommand('copy'))done();}catch(e){}ta.remove();};
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(done).catch(fb);
+    else fb();};
+  $('#repX').onclick=$('#repX2').onclick=closeEmpireRep;
 }
-function closeReport(){$('#repScrim').classList.remove('show');}
-$('#repScrim').onclick=e=>{if(e.target===$('#repScrim'))closeReport();};
+function closeEmpireRep(){$('#repScrim').classList.remove('show');}
+$('#repScrim').onclick=e=>{if(e.target===$('#repScrim'))closeEmpireRep();};
 function renderMProjects(){
   const el=$('#mprojects');if(!el)return;
   const projs=reg.list.filter(p=>!p.archived).map(p=>({meta:p,data:p.id===S.id?S:loadProj(p.id)})).filter(x=>x.data);
@@ -5162,7 +5164,7 @@ function renderMProjects(){
     ${isTeam?'<button class="btn" style="width:100%;margin-top:8px;justify-content:center" id="mpNew">＋ Новый проект</button>':''}`;
   $$('#mprojects .mprow').forEach(r=>r.onclick=()=>{const id=r.dataset.p;if(id!==S.id)switchProject(id);else setView('board');});
   const a=$('#mpAll');if(a)a.onclick=()=>setView('all');
-  const rp=$('#mpRep');if(rp)rp.onclick=openReport;
+  const rp=$('#mpRep');if(rp)rp.onclick=openEmpireRep;
   const n=$('#mpNew');if(n)n.onclick=openNewProject;
 }
 {const mp=$('#mPlus');if(mp)mp.onclick=openCap;
@@ -5207,7 +5209,7 @@ function tmaBoot(){
     T.ready();T.expand();
     try{T.setHeaderColor('#0f121b');T.setBackgroundColor('#0d0f17');}catch(e){}
     T.BackButton.onClick(()=>{ // системный «назад» закрывает верхний слой
-      const layers=[['#repScrim',closeReport],['#capScrim',closeCap],['#vandoPanel',()=>vandoToggle(false)],['#drawer',()=>closeDrawer&&closeDrawer()]];
+      const layers=[['#repScrim',closeEmpireRep],['#capScrim',closeCap],['#vandoPanel',()=>vandoToggle(false)],['#drawer',()=>closeDrawer&&closeDrawer()]];
       for(const [sel,fn] of layers){const el=$(sel);if(el&&el.classList.contains('show')){fn();return;}}
       if(view!=='now')setView('now');});
     setInterval(()=>{try{
