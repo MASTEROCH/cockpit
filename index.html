@@ -1641,6 +1641,11 @@ body.light .mseg{background:rgba(250,251,254,.97)}
 .mm-fc{margin-top:10px;font-size:12.5px;line-height:1.5;border-radius:11px;padding:9px 12px}
 .mm-fc.warn{color:#fbbf24;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25)}
 .mm-fc.ok{color:var(--ok);background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.2)}
+.cashpulse{display:flex;align-items:center;gap:7px;margin:14px 0;padding:12px 15px;border-radius:14px;cursor:pointer;font-size:13px;color:var(--mut);
+  border:1px solid rgba(52,211,153,.3);background:linear-gradient(120deg,rgba(52,211,153,.09),transparent 70%),var(--bg2);transition:border-color .2s,transform .3s var(--spring)}
+.cashpulse:hover{border-color:rgba(52,211,153,.55)}
+.cashpulse:active{transform:scale(.985)}
+.cashpulse b{color:var(--txt)}
 .nh-why{font-size:12px;color:var(--mut2);margin-top:9px}
 .nh-why b{color:var(--mut);font-weight:600}
 .mh-why{font-size:11.5px;color:var(--mut2);margin-top:7px;opacity:.9}
@@ -2177,7 +2182,7 @@ function whyNext(t,energy){
   else if(dl===0)r.push('📅 дедлайн сегодня');
   else if(dl===1)r.push('📅 дедлайн завтра');
   else if(dl<=3)r.push('📅 срок через '+dl+' '+plural(dl,'день','дня','дней'));
-  if(t.cash)r.push('💰 двигает деньги');
+  if(t.cash)r.push('💰 двигает деньги'+(t.amount?' ~'+fmtMoney(t.amount):''));
   if(t.priority==='urgent')r.push('🚩 срочный приоритет');
   else if(t.priority==='high')r.push('⚑ высокий приоритет');
   if(energy==='lo'&&t.estimate&&t.estimate<=2)r.push('🪫 лёгкая — под сегодняшний заряд');
@@ -2324,6 +2329,17 @@ function buildInsights(T){
   return out;
 }
 /* прогноз вехи: тот же велосити, экстраполированный вперёд. Молчит, если сказать нечего. */
+/* 💰 денежный пульс: деньги как число (урок ParaTravel-админки — выручка всегда на глазах) */
+function fmtMoney(n){return n>=1000?('$'+(n/1000).toFixed(1).replace('.0','')+'k'):('$'+Math.round(n));}
+function cashPulse(){
+  const now=Date.now();let open=0,openN=0,got=0;
+  reg.list.filter(p=>!p.archived).forEach(p=>{const d=p.id===S.id?S:loadProj(p.id);if(!d)return;
+    (d.tasks||[]).forEach(t=>{if(!t.cash||t.isMilestone)return;
+      if(t.status!=='done'){open+=t.amount||0;openN++;}
+      else if(t.cashOutcome==='yes'&&t.cashOutcomeTs&&now-t.cashOutcomeTs<30*dayMs)got+=t.amount||0;});});
+  if(!openN&&!got)return '';
+  return `<div class="cashpulse" data-goall="1">💰 <b>Деньги:</b> в работе ${openN} ${plural(openN,'задача','задачи','задач')}${open?` на ~${fmtMoney(open)}`:''}${got?` · пришло за 30д ~${fmtMoney(got)}`:''}<span style="margin-left:auto;color:var(--mut2)">›</span></div>`;
+}
 function milestoneForecast(){
   const ms=S.tasks.filter(t=>t.isMilestone&&t.status!=='done'&&parseD(t.end)>=parseD(todayISO())).sort((a,b)=>parseD(a.end)-parseD(b.end))[0];
   if(!ms)return '';
@@ -2478,7 +2494,7 @@ function renderNow(){
       <div class="pulse-card"><div class="pv" style="color:${ov?'var(--bad)':'var(--mut)'}">${ov}</div><div class="pl">просрочено</div></div>
       <div class="pulse-card"><div class="pv">${vel}</div><div class="pl">закрыто за 7 дней</div></div>
     </div>
-    ${selfHealCard()}${mentorCard()}
+    ${selfHealCard()}${mentorCard()}${cashPulse()}
     <details class="fold" id="nowFold" ${foldOpen?'open':''}><summary>📈 Темп и сроки проекта</summary>${momentumSpark()}${milestoneRadar()}</details>
     ${claudeNowCard()}
     <div class="now-sec">🧠 Что важно знать <span>проактивно — пока другие тулзы молчат</span>
@@ -2675,7 +2691,7 @@ function renderNowMobile(ctx){
     ${whatsNewStrip()}
     ${hero}
     ${rows?`<div class="msec">Ещё сегодня · ${upNext.length}</div>${rows}`:''}
-    ${selfHealCard()}${mentorCard()}
+    ${selfHealCard()}${mentorCard()}${cashPulse()}
     <details class="fold" style="margin-top:14px"><summary>📊 Подробности дня</summary>
       <div class="pulse-row" style="margin-top:12px">
         <div class="pulse-card"><div class="pv" style="color:var(--ok)">${ctx.pct}%</div><div class="pl">готово</div></div>
@@ -2784,6 +2800,8 @@ document.addEventListener('click',e=>{
   const a=e.target&&e.target.closest&&e.target.closest('[data-ma]');
   if(a){const k=a.dataset.ma;localStorage.setItem('cockpit_mentor_'+k,Date.now());localStorage.setItem('cockpit_mentor_day',Date.now());
     if(typeof track==='function')track('mentor:'+k);(mentorRuns[k]||(()=>{}))();return;}
+  const cp=e.target&&e.target.closest&&e.target.closest('.cashpulse');
+  if(cp){setView('all');return;}
   const sk=e.target&&e.target.closest&&e.target.closest('[data-ms]');
   if(sk){localStorage.setItem('cockpit_mentor_'+sk.dataset.ms,Date.now());localStorage.setItem('cockpit_mentor_day',Date.now());
     if(typeof track==='function')track('mentor:skip');render();}
@@ -4477,14 +4495,17 @@ function openTask(id){
   const t=task(id);if(!t)return;curTask=t;
   $('#dId').textContent='#'+t.id.slice(1,6).toUpperCase();
   $('#dDot').style.background=stMap[t.status].c;
-  {const co=$('#dCashOut');if(co){const show=!!(t.cash&&t.status==='done');co.style.display=show?'':'none';
+  {const co=$('#dCashOut');if(co){const show=!!t.cash;co.style.display=show?'':'none';
     if(show){const v=t.cashOutcome;
-      co.innerHTML=`<div class="cashout"><span class="cq">💰 Деньги по задаче дошли?</span>
-        <button class="chip ${v==='yes'?'on':''}" data-co="yes">Да</button>
-        <button class="chip ${v==='no'?'on':''}" data-co="no">Ещё нет</button>
-        ${v?'<span class="cok">✓ учтено — Вандо учится на исходах</span>':''}</div>`;
+      co.innerHTML=`<div class="cashout"><span class="cq">💰 ${t.status==='done'?'Деньги дошли?':'Сколько двигает?'}</span>
+        ${t.status==='done'?`<button class="chip ${v==='yes'?'on':''}" data-co="yes">Да</button>
+        <button class="chip ${v==='no'?'on':''}" data-co="no">Ещё нет</button>`:''}
+        <input class="inp" id="dAmt" placeholder="~сумма, $" value="${t.amount||''}" style="width:110px;padding:7px 10px;font-size:13px" inputmode="numeric">
+        ${v?'<span class="cok">✓ учтено — Вандо учится</span>':''}</div>`;
       $$('#dCashOut [data-co]').forEach(b=>b.onclick=()=>{t.cashOutcome=b.dataset.co;t.cashOutcomeTs=Date.now();
-        logAct('💰','итог «'+t.title+'»: '+(b.dataset.co==='yes'?'деньги пришли':'денег пока нет'));save();openTask(t.id);});}
+        logAct('💰','итог «'+t.title+'»: '+(b.dataset.co==='yes'?'деньги пришли':'денег пока нет'));save();openTask(t.id);});
+      const ai=$('#dAmt');if(ai)ai.onchange=e=>{const n=parseFloat(String(e.target.value).replace(/[^\d.]/g,''))||0;
+        t.amount=n||undefined;save();toast(n?'💰 ставка задачи ~$'+n:'Сумма снята','💰');};}
   }}
   $('#dTitle').value=t.title;autoGrow($('#dTitle'));
   $('#dDesc').value=t.description;
@@ -5286,7 +5307,7 @@ function vandoContext(){
   const projs=reg.list.filter(p=>!p.archived).map(p=>{const d=p.id===S.id?S:loadProj(p.id);if(!d)return null;
     const ts=(d.tasks||[]).filter(t=>!t.isMilestone);
     return {name:p.name,emoji:p.emoji,parent:(projMeta(p.parentId)||{}).name||null,
-      tasks:ts.map(t=>({title:t.title,cash:!!t.cash,cashOutcome:t.cashOutcome||null,status:t.status,assignee:(d.members.find(m=>m.id===t.assigneeId)||{}).name||null,end:t.end,estimate:t.estimate||0,priority:t.priority,overdue:t.status!=='done'&&parseD(t.end)<parseD(todayISO())})),
+      tasks:ts.map(t=>({title:t.title,cash:!!t.cash,amount:t.amount||0,cashOutcome:t.cashOutcome||null,status:t.status,assignee:(d.members.find(m=>m.id===t.assigneeId)||{}).name||null,end:t.end,estimate:t.estimate||0,priority:t.priority,overdue:t.status!=='done'&&parseD(t.end)<parseD(todayISO())})),
       members:(d.members||[]).map(m=>({name:m.name,role:m.role,capacity:m.capacity})),
       ideas:(d.ideas||[]).slice(0,20).map(i=>i.title),
       memory:(d.notes||[]).slice(-30).map(n=>({when:new Date(n.ts).toISOString().slice(0,10),who:n.who,note:n.text})),
@@ -5425,10 +5446,11 @@ function empireReport(){
     const prog=T.filter(t=>t.status==='progress');
     const ovr=T.filter(t=>t.status!=='done'&&parseD(t.end)<parseD(tISO));
     const csh=T.filter(t=>t.cash&&t.status!=='done');
+    const cshSum=csh.reduce((a,t)=>a+(t.amount||0),0);
     done7+=closedN;act+=T.length-dn;over+=ovr.length;cash+=csh.length;
     T.forEach(t=>{if(t.status!=='done')focus.push({t,pname:meta.name,emoji:meta.emoji||'📄'});});
     const who=id=>{const m=(data.members||[]).find(x=>x.id===id);return m?String(m.name).split(/\s+/)[0]:'';};
-    rows.push({meta,pct,closed,closedN,prog,ovr,csh,who});
+    rows.push({meta,pct,closed,closedN,prog,ovr,csh,cshSum,who});
   });
   focus.sort((a,b)=>relScore(b.t)-relScore(a.t));
   return {period,done7,act,over,cash,rows,focus:focus.slice(0,3),tISO};
@@ -5440,7 +5462,7 @@ function reportText(R){
     if(r.closedN)L.push('  ✅ Закрыто: '+(r.closed.length?r.closed.slice(0,4).join(' · ')+(r.closedN>4?' +'+(r.closedN-4):''):r.closedN+' задач'));
     if(r.prog.length)L.push('  🔄 В работе: '+r.prog.slice(0,4).map(t=>t.title+(r.who(t.assigneeId)?' ('+r.who(t.assigneeId)+')':'')).join(' · ')+(r.prog.length>4?' +'+(r.prog.length-4):''));
     if(r.ovr.length)L.push('  🔥 Просрочено: '+r.ovr.slice(0,3).map(t=>t.title+' ('+Math.round((parseD(R.tISO)-parseD(t.end))/dayMs)+'д)').join(' · ')+(r.ovr.length>3?' +'+(r.ovr.length-3):''));
-    if(r.csh.length)L.push('  💰 Деньги: '+r.csh.slice(0,3).map(t=>t.title).join(' · '));});
+    if(r.csh.length)L.push('  💰 Деньги: '+r.csh.slice(0,3).map(t=>t.title).join(' · ')+(r.cshSum?' · всего ~'+fmtMoney(r.cshSum):''));});
   if(R.focus.length){L.push('');L.push('🎯 Фокус следующей недели:');
     R.focus.forEach((x,i)=>L.push('  '+(i+1)+'. '+(x.t.cash?'💰 ':'')+x.t.title+' — '+x.emoji+' '+x.pname));}
   L.push('');L.push('— собрано WANDO за 1 секунду · cock-pit.com');
