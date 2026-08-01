@@ -275,7 +275,7 @@
   .danger:hover{background:rgba(248,113,113,.12);border-color:var(--bad)}
 
   .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:11px 18px;font-size:13px;font-weight:600;box-shadow:var(--shadow);z-index:95;opacity:0;pointer-events:none;transition:.25s;display:flex;align-items:center;gap:9px;max-width:90vw}
-  .toast.show{opacity:1;transform:translateX(-50%)}
+  .toast.show{opacity:1;transform:translateX(-50%);pointer-events:auto}
   .toast .ic{font-size:15px}
   .empty{padding:50px;text-align:center;color:var(--mut2)}
 
@@ -1590,7 +1590,7 @@ body.light .mseg{background:rgba(250,251,254,.97)}
   .prow:active,.mprow:active,.mrow:active,.nh-up:active,.insight.click:active{transform:scale(.988);transition:transform .09s ease}
   /* тост приземляется пружиной */
   .toast{transform:translateX(-50%) translateY(26px) scale(.92);transition:transform .55s var(--spring),opacity .22s ease}
-  .toast.show{transform:translateX(-50%) translateY(0) scale(1)}
+  .toast.show{transform:translateX(-50%) translateY(0) scale(1);pointer-events:auto}
   /* карточка задачи выпрыгивает мягко */
   #drawer{transition:transform .48s var(--spring),opacity .25s var(--ease)}
   /* Вандо дышит, пока его не трогают (hover-logopop перекрывает по специфичности) */
@@ -5384,11 +5384,11 @@ async function vandoSend(){
 let capPid=null;
 /* PWA share-target: ?title/&text/&url → лист захвата с предзаполнением.
    Ничего не создаём молча — человек сам жмёт «Создать» и выбирает проект. */
-function shareCapture(){
-  const q=new URLSearchParams(location.search);
+function shareCapture(qs){
+  const q=new URLSearchParams(qs!=null?qs:location.search);
   if(!(q.has('title')||q.has('text')||q.has('url')))return false;
   const txt=[q.get('title'),q.get('text'),q.get('url')].filter(Boolean).join(' — ').trim();
-  history.replaceState(null,'',location.pathname);
+  if(qs==null)try{history.replaceState(null,'',location.pathname);}catch(e){}
   if(!txt)return false;
   setTimeout(()=>{openCap();const i=$('#capIn');if(i){i.value=txt.slice(0,300);i.dispatchEvent(new Event('input'));}},600);
   return true;
