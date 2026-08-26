@@ -2300,15 +2300,20 @@ function setView(v){view=v;if(typeof track==='function')track('view:'+v);
 let focus={tid:null,start:0,iv:null};
 let _nowSeenT=null;
 function fmtDur(s){const h=Math.floor(s/3600),m=Math.floor(s/60)%60,x=s%60;return (h?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(x).padStart(2,'0');}
-function updFocus(){const el=$('#focusClock');if(!el){clearInterval(focus.iv);focus.iv=null;return;}
+function updFocus(){
   const sec=Math.floor((Date.now()-focus.start)/1000);
+  if(focus.tid)document.title='⏱ '+fmtDur(sec)+' — WANDO';   /* время фокуса видно прямо на вкладке */
+  const el=$('#focusClock');if(!el)return;                    /* интервал живёт и вне вкладки «Сейчас» — ради заголовка */
   const t=focus.tid&&task(focus.tid);
   const tot=t?Math.round(((t.spent||0)+sec/3600)*10)/10:0;
   el.textContent=fmtDur(sec)+(tot?' · всего '+tot+'ч':'');}
 function startFocus(tid){if(focus.tid)stopFocus(true);const t=task(tid);if(!t)return;focus.tid=tid;focus.start=Date.now();
+  try{localStorage.setItem('cockpit_focus',JSON.stringify({tid,start:focus.start,pid:S.id}));}catch(e){}
   if(t.status==='backlog'||t.status==='todo'){t.status='progress';logAct('▶️','начал «'+t.title+'»');}save();
   clearInterval(focus.iv);focus.iv=setInterval(updFocus,1000);if(view==='now')renderNow();}
 function stopFocus(silent){if(!focus.tid)return;clearInterval(focus.iv);focus.iv=null;
+  try{localStorage.removeItem('cockpit_focus');}catch(e){}
+  document.title='WANDO — Founder Mission Control';
   const mins=(Date.now()-focus.start)/60000;const t=task(focus.tid);
   if(t&&mins>=0.5){t.spent=Math.round(((t.spent||0)+mins/60)*10)/10;logAct('⏱','фокус '+Math.round(mins)+'м · «'+t.title+'»');save();}
   focus.tid=null;if(!silent&&view==='now')renderNow();}
@@ -6000,6 +6005,25 @@ if(!_shareSnap)setTimeout(()=>{
   localStorage.setItem('cockpit_tip_menu','1');
   toast(window.innerWidth<=680?'Поиск, команды и переходы — под 🔍 наверху':'Поиск, команды и переходы — кнопка «Меню ⌘K» наверху','💡');
 },3600);
+// восстановление фокус-сессии после перезагрузки — таймер больше не теряется
+try{const _fs=JSON.parse(localStorage.getItem('cockpit_focus'));
+  if(_fs&&_fs.tid&&_fs.pid===S.id&&task(_fs.tid)&&task(_fs.tid).status!=='done'){
+    focus.tid=_fs.tid;focus.start=_fs.start;clearInterval(focus.iv);focus.iv=setInterval(updFocus,1000);if(view==='now')renderNow();}
+  else if(_fs)localStorage.removeItem('cockpit_focus');
+}catch(e){}
+// PWA: разовая подсказка «на домашний экран» (мобила, не standalone, с 3-го визита)
+let _bip=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();_bip=e;});
+try{localStorage.setItem('cockpit_visits',String(+(localStorage.getItem('cockpit_visits')||0)+1));}catch(e){}
+if(!_shareSnap)setTimeout(()=>{
+  if(localStorage.getItem('cockpit_tip_pwa'))return;
+  if(window.matchMedia('(display-mode: standalone)').matches||navigator.standalone)return;
+  if(window.innerWidth>680)return;
+  if(+(localStorage.getItem('cockpit_visits')||0)<3)return;
+  localStorage.setItem('cockpit_tip_pwa','1');
+  const _ios=/iPhone|iPad|iPod/.test(navigator.userAgent);
+  if(_bip)toast('С домашнего экрана WANDO открывается мгновенно','📲','Установить',()=>{_bip.prompt();_bip=null;});
+  else toast(_ios?'Добавь на экран: Поделиться → «На экран „Домой"»':'Добавь WANDO на домашний экран через меню браузера','📲');
+},6000);
 </script>
 </body>
 </html>
