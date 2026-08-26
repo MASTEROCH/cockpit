@@ -2719,7 +2719,7 @@ function renderNowMobile(ctx){
   const rows=upNext.map(x=>{const t=x.t||x;const pid=x.pid||S.id;
     return `<div class="mrow" data-open="${t.id}" data-pid="${pid}"><span class="dot" style="background:${stMap[t.status].c}"></span><span class="mr-t">${t.cash?'💰 ':''}${prGlyph(t)}${esc(t.title)}</span>${x.pid?badge(x):''}${t.estimate?`<span class="mr-e">${t.estimate}ч</span>`:''}</div>`;}).join('');
   el.innerHTML=`
-    <div class="mgreet"><h1>${greet.split(' ')[0]} ${greet.split(' ').slice(1).join(' ')}, ${esc(meName().split(' ')[0])}</h1>
+    <div class="mgreet"><h1>${greet.split(' ')[0]} ${greet.split(' ').slice(1).join(' ')}${(n=>n&&n!=='Я'&&n!=='Новый участник'?', '+esc(n.split(' ')[0]):'!')(meName())}</h1>
       <span class="energyrow"><button data-en="hi" class="${energy==='hi'?'on':''}" title="Полон сил — дай крупную задачу" aria-label="Полон сил">🔋</button><button data-en="lo" class="${energy==='lo'?'on':''}" title="Мало сил — подкинь лёгкие" aria-label="Мало сил">🪫</button></span></div>
     ${whatsNewStrip()}
     ${hero}
@@ -3600,6 +3600,42 @@ function intakePid(id){
     return null;}
   return pid;
 }
+/* AI-first: заявка → задача с готовым AI-планом подзадач. PM только правит и подтверждает. */
+async function aiSplitIntake(id,btn){
+  const r=intakeRows.find(x=>x.id===id);if(!r)return;
+  const pid=intakePid(id);if(!pid)return;
+  if(!cloudOn||!sb){toast('Вандо-ИИ работает в облаке — войди и повтори','🧠');return;}
+  const token=await aiToken();if(!token){toast('Вандо-ИИ недоступен — добавь задачу вручную','🧠');return;}
+  if(pid!==S.id)switchProject(pid);           /* разбивка в контексте целевого проекта: команда, имена, занятость */
+  if(btn){btn.disabled=true;btn.textContent='🧠 Вандо раскладывает…';}
+  try{
+    const resp=await fetch(CFG.url+'/functions/v1/ai-review',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+token},
+      body:JSON.stringify({mode:'plan',goal:r.text,project:aiPayload()})});
+    const res=await resp.json();
+    if(!resp.ok||!Array.isArray(res.tasks)||!res.tasks.length)throw new Error(res.error||'план пуст');
+    const p=parseQuick(r.text);if(!p.title)p.title=r.text;
+    const parent=applyQuick(newTask(String(p.title).slice(0,140)),p);parent.status='todo';
+    const byName=n=>{if(!n)return null;n=String(n).toLowerCase();const m=S.members.find(x=>x.name.toLowerCase()===n)||S.members.find(x=>x.name.toLowerCase().startsWith(n)||n.startsWith(x.name.toLowerCase()));return m?m.id:null;};
+    const pm2={low:'low',med:'med',medium:'med',high:'high',urgent:'urgent'};let n=0;
+    res.tasks.slice(0,16).forEach(t=>{if(!t||!t.title)return;
+      const nt=newTask(String(t.title).slice(0,140),parent.id);
+      nt.sectionId=parent.sectionId;nt.status='todo';
+      if(t.estimate)nt.estimate=+t.estimate||0;nt.priority=pm2[(t.priority||'med')]||'med';
+      const aid=byName(t.assignee);if(aid)nt.assigneeId=aid;
+      if(t.start&&/^\d{4}-\d\d-\d\d$/.test(t.start))nt.start=t.start;
+      if(t.end&&/^\d{4}-\d\d-\d\d$/.test(t.end))nt.end=t.end;else nt.end=nt.start;
+      if(t.note)nt.description=String(t.note).slice(0,500);n++;});
+    const ks=kids(parent.id);   /* срок родителя обнимает план */
+    if(ks.length){parent.start=ks.map(k=>k.start).sort()[0];parent.end=ks.map(k=>k.end).sort().slice(-1)[0];}
+    logAct('🧠','Вандо разложил заявку «'+parent.title+'» на '+n+' шагов');save();
+    decideIntake(id,'accepted',{target_project:pid,result_task_id:parent.id});
+    toast('Вандо разложил на '+n+' шагов — проверь и правь','🧠');
+    render();openTask(parent.id);
+  }catch(e){
+    if(btn){btn.disabled=false;btn.textContent='🧠 Разбить';}
+    toast('Вандо не справился ('+((e&&e.message)||e)+') — добавь вручную','⚠');
+  }
+}
 function acceptIntake(id,backlog){
   const r=intakeRows.find(x=>x.id===id);if(!r)return;
   const pid=intakePid(id);if(!pid)return;
@@ -3680,6 +3716,7 @@ function renderIntake(){
           ${projectSelectHTML(r.id,r.target_project)}
           <div class="inoacts">
             <button class="btn primary" data-acc="${r.id}">✓ Добавить</button>
+            <button class="btn" data-aisplit="${r.id}" title="Вандо превратит заявку в задачу с готовым планом-подзадачами">🧠 Разбить</button>
             <button class="btn" data-edit="${r.id}">✎ Править</button>
             <button class="btn" data-bl="${r.id}">📥 В бэклог</button>
             <button class="btn danger" data-rej="${r.id}">✕</button>
@@ -3690,6 +3727,7 @@ function renderIntake(){
   const cb=$('#intakeConnect');if(cb)cb.onclick=openConnect;
   bindCheat('#intake');
   $$('#intake [data-acc]').forEach(b=>b.onclick=()=>acceptIntake(b.dataset.acc,false));
+  $$('#intake [data-aisplit]').forEach(b=>b.onclick=()=>aiSplitIntake(b.dataset.aisplit,b));
   $$('#intake [data-bl]').forEach(b=>b.onclick=()=>acceptIntake(b.dataset.bl,true));
   $$('#intake [data-edit]').forEach(b=>b.onclick=()=>editIntake(b.dataset.edit));
   $$('#intake [data-rej]').forEach(b=>b.onclick=()=>{decideIntake(b.dataset.rej,'rejected');toast('Отклонено','✕');});
@@ -5858,10 +5896,17 @@ async function cloudSync(){
     else{localStorage.setItem(pkey(r.id),js(r.data));saveBase(r.id,r.data);}
   });
   // локальные проекты, которых нет в облаке → отправляем (не теряем) ИЛИ чистим (после сброса)
+  // ЗАЩИТА ОТ МУСОРА НОВИЧКА: пустой дефолтный «Мой проект» первого запуска НЕ публикуем
+  // команде, если в воркспейсе уже есть жизнь (источник «Новый проект»-мусора при онбординге)
+  const junkIds=[];
   reg.list.forEach(p=>{if(!cloudById[p.id]){
     if(purge){localStorage.removeItem(pkey(p.id));localStorage.removeItem(bkey(p.id));localStorage.removeItem('cockpit_seen_'+p.id);}
-    else{const local=loadProj(p.id);if(local)cloudPush(local,true);}
+    else{const local=loadProj(p.id);if(!local)return;
+      const emptyDefault=!(local.tasks||[]).length&&!(local.ideas||[]).length&&/^(Мой проект|Новый проект)$/.test(local.projectName||'');
+      if(emptyDefault&&rows.length){junkIds.push(p.id);localStorage.removeItem(pkey(p.id));localStorage.removeItem(bkey(p.id));}
+      else cloudPush(local,true);}
   }});
+  if(junkIds.length)reg.list=reg.list.filter(p=>!junkIds.includes(p.id));
   if(purge){reg.list=reg.list.filter(p=>cloudById[p.id]);
     if(!reg.list.length){const np=migrate(buildTemplate('empty'));np.projectName='Новый проект';
       reg.list=[{id:np.id,name:np.projectName,emoji:'📄'}];localStorage.setItem(pkey(np.id),JSON.stringify(np));}
