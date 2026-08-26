@@ -187,7 +187,7 @@
   .bar .prog{position:absolute;left:0;top:0;bottom:0;background:rgba(255,255,255,.22);border-radius:8px 0 0 8px;pointer-events:none}
   .bar .h{position:absolute;top:0;bottom:0;width:9px;cursor:ew-resize;z-index:3}
   .bar .h.l{left:0}.bar .h.r{right:0}
-  .bar.blocked{outline:1.5px solid var(--bad);outline-offset:1px}
+  .bar.blocked{outline:1.5px dashed var(--warn);outline-offset:1px} /* ждёт зависимость — «ожидание», не «ошибка» */
   .bar.sec{height:8px;top:17px;border-radius:5px;opacity:.5;cursor:default}
   .bar.mile{width:0!important;overflow:visible;background:none!important;box-shadow:none;cursor:grab}
   .mileD{width:18px;height:18px;background:linear-gradient(135deg,var(--acc),var(--acc2));transform:rotate(45deg);border-radius:4px;box-shadow:0 0 12px rgba(244,114,182,.6);position:absolute;top:12px;left:-9px}
@@ -257,6 +257,8 @@
   .field label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mut2);margin-bottom:6px}
   .field .row{display:flex;gap:10px}
   .inp{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:13px;outline:none;color:var(--txt)}
+  input[type="date"]{color-scheme:dark} /* нативный календарь в тон интерфейсу */
+  body.light input[type="date"]{color-scheme:light}
   .inp:focus{border-color:var(--acc2)}
   textarea.inp{resize:vertical;min-height:64px;line-height:1.5}
   .seg{display:flex;gap:5px;flex-wrap:wrap}
@@ -305,6 +307,8 @@
   .banner b{color:var(--txt)}
   .banner .acts{margin-left:auto;display:flex;gap:8px;flex:0 0 auto}
   .banner .lnk{font-size:12px;font-weight:700;color:var(--acc2);background:none;border:none;padding:4px 6px}
+  button.lnk{font-size:12px;font-weight:700;color:var(--acc2);background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.3);border-radius:8px;padding:4px 10px;cursor:pointer;transition:.15s}
+  button.lnk:hover{background:rgba(167,139,250,.16)}
   .banner .lnk:hover{text-decoration:underline}
   .banner .lnk.mut{color:var(--mut2)}
   .banner.hide{display:none}
@@ -802,7 +806,8 @@ body.light .brand .logo{background:linear-gradient(157deg,#1b1d27,#08090d 72%)}
 .lbpts svg,.coins svg,.coffeeline svg{vertical-align:-2px}
 .lbn{flex:1;font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lbpts{font-weight:800;color:#e8b94a;font-variant-numeric:tabular-nums;flex:0 0 auto}
-.coffeeline{margin-top:11px;font-size:13px;font-weight:600;color:var(--txt);background:rgba(232,185,74,.1);border:1px solid rgba(232,185,74,.25);border-radius:10px;padding:9px 12px}
+.coffeeline{margin-top:11px;font-size:13px;font-weight:600;color:var(--txt);background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+.coffeeline svg{color:#e8b94a}
 .coffeeline b{color:#e8b94a}
 .streak{font-size:11px;font-weight:800;color:#ff7847;background:rgba(255,120,71,.13);border:1px solid rgba(255,120,71,.3);border-radius:7px;padding:1px 6px;white-space:nowrap;flex:0 0 auto}
 .lbrow .av{width:24px;height:24px;flex:0 0 auto}
@@ -905,8 +910,9 @@ body.light .drawer,body.light .modal{background:var(--sheen),rgba(255,255,255,.9
    INTAKE — очередь «На приёмке» + онбординг «Подключить Claude»
    ==================================================================== */
 .inolist{display:flex;flex-direction:column;gap:13px}
-.ino{background:var(--sheen),var(--glass);border:1px solid var(--gbrd);border-radius:18px;padding:15px 16px;box-shadow:var(--ghi),var(--depth);position:relative;overflow:hidden}
-.ino::after{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(var(--acc2),var(--acc3))}
+.ino{background:var(--sheen),var(--glass);border:1px solid var(--gbrd);border-radius:18px;padding:15px 16px;box-shadow:var(--ghi),var(--depth);position:relative;overflow:visible} /* меню ⋯ не должно резаться */
+.ino:has(.inomenu.show){z-index:70}
+.ino::after{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:18px 0 0 18px;background:rgba(167,139,250,.55)}
 .inohead{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--mut2);margin-bottom:9px}
 .inoby{color:var(--mut);font-weight:600}.inoby b{color:var(--txt)}
 .inosrc{font-size:10px;font-weight:700;color:var(--acc2);background:rgba(167,139,250,.13);border:1px solid rgba(167,139,250,.3);border-radius:6px;padding:1px 7px}
@@ -919,6 +925,12 @@ body.light .drawer,body.light .modal{background:var(--sheen),rgba(255,255,255,.9
 .inofoot{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
 .inoproj{width:auto;min-width:140px;flex:0 1 200px;font-weight:600}
 .inoacts{display:flex;gap:7px;margin-left:auto;flex-wrap:wrap}
+.inomore{position:relative}
+.inomenu{display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:5px;z-index:60;min-width:170px;box-shadow:0 14px 34px rgba(0,0,0,.45)}
+.inomenu.show{display:flex;flex-direction:column}
+.inomenu button{text-align:left;background:none;border:none;padding:9px 12px;border-radius:8px;color:var(--txt);font-size:13px;font-weight:600;cursor:pointer}
+.inomenu button:hover{background:var(--bg)}
+.inomenu button.dng{color:var(--bad)}
 .inoacts .btn{padding:9px 13px;font-size:13px}
 .inoacts .btn.danger{padding:9px 12px}
 /* bell — секция приёмки */
@@ -1022,7 +1034,8 @@ body.light .cmdchips{background:rgba(255,255,255,.98);box-shadow:0 18px 50px rgb
   border:1px solid rgba(167,139,250,.34);box-shadow:var(--ghi),0 22px 60px rgba(0,0,0,.4),0 0 0 1px rgba(167,139,250,.06)}
 .now-hero::after{content:'';position:absolute;right:-60px;top:-80px;width:280px;height:280px;border-radius:50%;
   background:radial-gradient(closest-side,rgba(167,139,250,.30),transparent);pointer-events:none}
-.now-hero.over{background:var(--sheen),linear-gradient(135deg,rgba(248,113,113,.22),rgba(251,191,36,.10) 70%),var(--glass);border-color:rgba(248,113,113,.4)}
+/* дисциплина цвета: просрочка говорит чипом и лейблом, а не кричащей рамкой всей карточки */
+.now-hero.over{background:var(--sheen),linear-gradient(135deg,rgba(248,113,113,.07),transparent 60%),var(--glass)}
 .now-hero.done{background:var(--sheen),linear-gradient(135deg,rgba(52,211,153,.18),transparent 70%),var(--glass);border-color:rgba(52,211,153,.32)}
 .nh-label{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--acc2);margin-bottom:9px;position:relative;z-index:1}
 .now-hero.over .nh-label{color:var(--bad)}.now-hero.done .nh-label{color:var(--ok)}
@@ -1378,8 +1391,8 @@ body.light::before{background:
 }
 @media (max-width:680px){.pal-scrim{padding:0}.pal{width:100%;height:100%;max-width:none;border-radius:0;display:flex;flex-direction:column}.pal-list{max-height:none;flex:1}.pal-in input{font-size:16px}}
 /* ---- self-heal card (проактивный разбор просрочек) ---- */
-.healcard{display:flex;gap:13px;align-items:flex-start;background:var(--sheen),linear-gradient(120deg,rgba(251,191,36,.15),transparent 72%),var(--glass);border:1px solid rgba(251,191,36,.36);border-radius:16px;padding:14px 16px;margin-bottom:13px;box-shadow:var(--ghi)}
-.healcard .hi{font-size:23px;flex:0 0 auto;line-height:1.15}
+.healcard{display:flex;gap:13px;align-items:flex-start;background:var(--sheen),var(--glass);border:1px solid var(--gbrd);border-radius:16px;padding:14px 16px;margin-bottom:13px;box-shadow:var(--ghi)}
+.healcard .hi{font-size:23px;flex:0 0 auto;line-height:1.15;color:var(--warn)} /* цвет живёт в иконке, не в рамке */
 .healcard .hb{flex:1;min-width:0}
 .healcard .ht{font-size:14px;font-weight:700;color:var(--txt)}
 .healcard .hs{font-size:12.5px;color:var(--mut2);margin-top:3px;line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1528,8 +1541,9 @@ body.light .vando-panel{background:var(--sheen),rgba(255,255,255,.97)}
   color:#fff;font-weight:800;font-size:16px;cursor:pointer}
 @media (max-width:680px){
   #capScrim{padding:0}
-  .capsheet{width:100vw;height:100dvh;max-width:none;border-radius:0;display:flex;flex-direction:column}
-  .cap-b{flex:1;padding-top:30px}
+  /* нижний лист по контенту — без мёртвой пустоты на пол-экрана */
+  .capsheet{width:100vw;height:auto;max-height:92dvh;max-width:none;border-radius:22px 22px 0 0;display:flex;flex-direction:column;margin-top:auto}
+  .cap-b{flex:0 1 auto;overflow:auto;padding-top:18px}
   #capIn{font-size:26px}
 }
 @media (max-width:680px){
@@ -1644,8 +1658,8 @@ body.light .mseg{background:rgba(250,251,254,.97)}
 .lpsheet .btn{justify-content:flex-start;padding:13px 14px;font-size:14px}
 @media (max-width:680px){.lpsheet{width:100vw;border-radius:22px 22px 0 0;padding-bottom:calc(14px + env(safe-area-inset-bottom))}}
 /* ---- 🧠 Вандо-наставник ---- */
-.mentorcard{display:flex;gap:12px;border:1px solid rgba(167,139,250,.35);border-radius:16px;padding:14px 16px;margin:14px 0;
-  background:linear-gradient(135deg,rgba(167,139,250,.10),transparent 70%),var(--bg2)}
+.mentorcard{display:flex;gap:12px;border:1px solid var(--gbrd);border-radius:16px;padding:14px 16px;margin:14px 0;
+  background:linear-gradient(135deg,rgba(167,139,250,.05),transparent 70%),var(--bg2)}
 .mentorcard .mi{font-size:22px;flex:0 0 auto;filter:drop-shadow(0 4px 10px rgba(167,139,250,.4))}
 .mentorcard .ml{font-size:10px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--acc2);margin-bottom:3px}
 .mentorcard .mt2{font-weight:800;font-size:13.5px;margin-bottom:4px}
@@ -1882,7 +1896,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
     <button class="btn danger" id="dDelete">Удалить</button>
     <button class="btn" id="dDup" title="Создать копию задачи">⧉ Дублировать</button>
     <div class="spacer"></div>
-    <button class="btn primary" id="dClose">Закрыть</button>
+    <button class="btn" id="dClose">Закрыть</button>
   </div>
 </aside>
 
@@ -1890,7 +1904,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
   <div class="dh"><span style="font-size:12px;color:var(--mut2);font-weight:700">👤 Профиль участника</span>
     <button class="btn danger" id="mDelete" style="margin-left:auto;padding:6px 11px;display:none">Удалить</button></div>
   <div class="db" id="mBody"></div>
-  <div class="df"><div class="spacer"></div><button class="btn primary" id="mClose">Закрыть</button></div>
+  <div class="df"><div class="spacer"></div><button class="btn" id="mClose">Закрыть</button></div>
 </aside>
 
 <aside class="drawer" id="inboxDrawer">
@@ -2466,17 +2480,17 @@ async function tgNotify(kind,t,extra){try{
 async function fetchBriefAdvice(btn){
   if(!cloudOn||!sb){toast('Войди в облако — совет от Claude для команды','🤖');return;}
   const token=await aiToken();if(!token){toast('Нужен вход','🤖');return;}
-  if(btn){btn.disabled=true;btn.textContent='🤖 Думаю…';}
+  if(btn){btn.disabled=true;btn.innerHTML=icon('sparkles',14)+' Думаю…';}
   const c=$('#briefClaude');if(c)c.innerHTML='<div class="emptymini">🤖 Claude смотрит проект…</div>';
   try{const r=await fetch(CFG.url+'/functions/v1/ai-review',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+token},body:JSON.stringify({project:aiPayload()})});
     const res=normalizeAI(await r.json());
-    if(c)c.innerHTML=`<div class="airh">🤖 Совет от Claude</div>${res.summary?`<div class="aisummary" style="font-size:13px;padding:11px 13px">${esc(res.summary)}</div>`:''}${(res.suggestions||[]).slice(0,3).map(s=>`<div class="airow"><div class="aimain"><div class="aitt">${esc(s.taskTitle||({reestimate:'Переоценить',reprioritize:'Приоритет',reschedule:'Сдвинуть',reassign:'Переназначить'}[s.type]||''))}</div><div class="aire">${esc(s.reason||'')}</div></div></div>`).join('')}`;
+    if(c)c.innerHTML=`<div class="airh">${icon('sparkles',13)} Совет от Claude</div>${res.summary?`<div class="aisummary" style="font-size:13px;padding:11px 13px">${esc(res.summary)}</div>`:''}${(res.suggestions||[]).slice(0,3).map(s=>`<div class="airow"><div class="aimain"><div class="aitt">${esc(s.taskTitle||({reestimate:'Переоценить',reprioritize:'Приоритет',reschedule:'Сдвинуть',reassign:'Переназначить'}[s.type]||''))}</div><div class="aire">${esc(s.reason||'')}</div></div></div>`).join('')}`;
     // тот же разбор проактивно оседает на «Сейчас» — Claude как второй пилот
     const sg=(res.suggestions&&res.suggestions[0])?res.suggestions[0]:null;
     if(res.summary||sg)claudeNow[S.id]={summary:res.summary||'',risk:(res.risks&&res.risks[0])||'',sug:sg?((sg.taskTitle?('«'+sg.taskTitle+'»: '):'')+(sg.reason||'')):'',ts:Date.now()};
     localStorage.setItem('cockpit_brief_ai_date',todayISO());
   }catch(e){if(c)c.innerHTML='<div class="emptymini">Claude недоступен сейчас</div>';}
-  if(btn){btn.disabled=false;btn.textContent='🤖 Совет от Claude';}
+  if(btn){btn.disabled=false;btn.innerHTML=icon('sparkles',14)+' Совет от Claude';}
 }
 let claudeNow={};
 function claudeNowCard(){const c=claudeNow[S.id];if(!c)return '';
@@ -2486,7 +2500,7 @@ async function fetchClaudeInsight(btn){
   if(!cloudOn||!sb){toast('Войди в облако (🔄 в шапке) — Claude-инсайты для команды','🤖');return;}
   let token;try{const {data}=await sb.auth.getSession();token=data&&data.session&&data.session.access_token;}catch(e){}
   if(!token){toast('Нужен вход в облако','🤖');return;}
-  if(btn){btn.disabled=true;btn.textContent='🤖 Думаю…';}
+  if(btn){btn.disabled=true;btn.innerHTML=icon('sparkles',14)+' Думаю…';}
   const nameOf=id=>{const m=member(id);return m?m.name:null;};
   const payload={today:todayISO(),project:S.projectName,
     members:S.members.map(m=>({name:m.name,capacity:m.capacity,load:S.tasks.filter(t=>t.assigneeId===m.id&&t.status!=='done').reduce((a,t)=>a+(t.estimate||0),0)})),
@@ -2498,7 +2512,7 @@ async function fetchClaudeInsight(btn){
     claudeNow[S.id]={summary:res.summary||'',risk:(res.risks&&res.risks[0])||'',sug:sg?((sg.taskTitle?('«'+sg.taskTitle+'»: '):'')+(sg.reason||'')):'',ts:Date.now()};
     if(view==='now')renderNow();else toast('Claude посмотрел проект 🤖','🤖','Открыть',()=>setView('now'));
   }catch(e){toast('Ошибка запроса к Claude','🤖');}
-  if(btn){btn.disabled=false;btn.textContent='🤖 Разбор рисков';}
+  if(btn){btn.disabled=false;btn.innerHTML=icon('sparkles',13)+' Разбор рисков';}
 }
 function renderNow(){
   const el=$('#now');if(!el)return;
@@ -2517,7 +2531,7 @@ function renderNow(){
   let next=sortedPool[0];let upNext=sortedPool.slice(1,4);
   const h=new Date().getHours();const greet=h<6?'Доброй ночи':h<12?'Доброе утро':h<18?'Добрый день':'Добрый вечер';
   const ins=buildInsights(T);const running=!!(focus.tid&&task(focus.tid));
-  const foldOpen=localStorage.getItem('cockpit_now_fold')!=='0';
+  const _ff=localStorage.getItem('cockpit_now_fold');const foldOpen=_ff!==null?_ff!=='0':done>0; /* пустой темп не занимает экран */
   // герой — по всем проектам (как на мобиле): единая ментальная модель
   let nextPid=S.id,heroX=null,upList=upNext.map(t=>({t,pid:S.id}));
   const multi=reg.list.filter(p=>!p.archived).length>1;
@@ -2543,7 +2557,7 @@ function renderNow(){
       <div class="nh-why"><b>почему этот шаг:</b> ${whyNext(next,_energy).join(' · ')}</div>
       <div class="nh-acts">
         ${isFoc?`<div class="focusrun"><span class="fdot"></span><span id="focusClock" class="fclock">00:00</span><button class="btn" id="focusStop">■ Стоп</button></div>`
-               :`<button class="btn primary big" id="focusStart">${icon('play',15)} Фокус — поехали${next.spent?` <span style="opacity:.75;font-weight:600">· уже ${next.spent}ч</span>`:''}</button>`}
+               :`<button class="btn primary big" id="focusStart">${icon('play',15)} ${next.spent?`Фокус <span style="opacity:.75;font-weight:600">· уже ${next.spent}ч</span>`:'Фокус — поехали'}</button>`}
         <button class="btn big" data-done="${next.id}">✓ Готово</button>
       </div>
      </div>
@@ -2561,8 +2575,8 @@ function renderNow(){
     ${hero}
     ${multi&&nextPid!==S.id?`<div class="ctxnote">цифры ниже — пульс этого проекта · ${esc(S.projectName)}</div>`:''}
     <div class="pulse-row">
-      <div class="pulse-card"><div class="pv" style="color:var(--ok)">${pct}%</div><div class="pl">готово</div><div class="pbar2"><span style="width:${pct}%"></span></div></div>
-      <div class="pulse-card"><div class="pv" style="color:var(--warn)">${prog}</div><div class="pl">в работе</div></div>
+      <div class="pulse-card"><div class="pv">${pct}%</div><div class="pl">готово</div></div>
+      <div class="pulse-card"><div class="pv">${prog}</div><div class="pl">в работе</div></div>
       <div class="pulse-card"><div class="pv" style="color:${ov?'var(--bad)':'var(--mut)'}">${ov}</div><div class="pl">просрочено</div></div>
       <div class="pulse-card"><div class="pv">${vel}</div><div class="pl">закрыто за 7 дней</div></div>
     </div>
@@ -2570,7 +2584,7 @@ function renderNow(){
     <details class="fold" id="nowFold" ${foldOpen?'open':''}><summary>📈 Темп и сроки проекта</summary>${momentumSpark()}${milestoneRadar()}</details>
     ${claudeNowCard()}
     <div class="now-sec">${icon('sparkles',14)} Что важно знать <span>проактивно — пока другие тулзы молчат</span>
-      <button class="btn" id="claudeBtn" style="margin-left:auto;padding:8px 13px;font-size:12.5px" title="ИИ посмотрит проект и подсветит риски">🤖 Разбор рисков</button>
+      <button class="btn" id="claudeBtn" style="margin-left:auto;padding:8px 13px;font-size:12.5px" title="ИИ посмотрит проект и подсветит риски">${icon('sparkles',13)} Разбор рисков</button>
       <button class="btn" id="aiPlanBtn" style="padding:8px 13px;font-size:12.5px" title="Опиши цель — получишь готовый план задач">${icon('sparkles',14)} Спланируй цель</button></div>
     <div class="insights">${ins.map((x,i)=>`<div class="insight ${x.act?'click':''}" data-i="${i}"><span class="ii">${x.ic}</span><div class="ib"><div class="it">${esc(x.title)}</div>${x.sub?`<div class="is">${esc(x.sub)}</div>`:''}</div>${x.act?'<span class="ia">→</span>':''}</div>`).join('')}</div>`;
   const openX=(pid,tid)=>{if(pid&&pid!==S.id){switchProject(pid);setTimeout(()=>openTask(tid),120);}else openTask(tid);};
@@ -2767,8 +2781,8 @@ function renderNowMobile(ctx){
     ${assistCard()}
     <details class="fold" style="margin-top:14px"><summary>Подробности дня</summary>
       <div class="pulse-row" style="margin-top:12px">
-        <div class="pulse-card"><div class="pv" style="color:var(--ok)">${ctx.pct}%</div><div class="pl">готово</div></div>
-        <div class="pulse-card"><div class="pv" style="color:var(--warn)">${ctx.prog}</div><div class="pl">в работе</div></div>
+        <div class="pulse-card"><div class="pv">${ctx.pct}%</div><div class="pl">готово</div></div>
+        <div class="pulse-card"><div class="pv">${ctx.prog}</div><div class="pl">в работе</div></div>
         <div class="pulse-card"><div class="pv" style="color:${ctx.ov?'var(--bad)':'var(--mut)'}">${ctx.ov}</div><div class="pl">просроч.</div></div>
         <div class="pulse-card"><div class="pv">${ctx.vel}</div><div class="pl">за 7 дней</div></div></div>
       ${claudeNowCard()}
@@ -3760,16 +3774,22 @@ function renderIntake(){
           ${projectSelectHTML(r.id,r.target_project)}
           <div class="inoacts">
             <button class="btn primary" data-acc="${r.id}">✓ Добавить</button>
-            <button class="btn" data-aisplit="${r.id}" title="Вандо превратит заявку в задачу с готовым планом-подзадачами">Разбить на план</button>
-            <button class="btn" data-edit="${r.id}">✎ Править</button>
-            <button class="btn" data-bl="${r.id}">В бэклог</button>
-            <button class="btn danger" data-rej="${r.id}">✕</button>
+            <button class="btn" data-aisplit="${r.id}" title="Вандо превратит заявку в задачу с готовым планом-подзадачами">${icon('sparkles',13)} Разбить на план</button>
+            <div class="inomore"><button class="btn" data-more="${r.id}" title="Ещё действия">⋯</button>
+              <div class="inomenu" data-menu="${r.id}">
+                <button data-edit="${r.id}">✎ Править текст</button>
+                <button data-bl="${r.id}">В бэклог идей</button>
+                <button data-rej="${r.id}" class="dng">✕ Отклонить</button>
+              </div></div>
           </div>
         </div>
       </div>`;}).join('')}</div>`
     :emptyState('📭','Очередь пуста','Скажи своему Claude: «поставь в WANDO задачу…» — она прилетит сюда на подтверждение. Кнопка «Подключить Claude» выше — если ещё не настроил.'));
   const cb=$('#intakeConnect');if(cb)cb.onclick=openConnect;
   bindCheat('#intake');
+  $$('#intake [data-more]').forEach(b=>b.onclick=e=>{e.stopPropagation();const m=$(`#intake .inomenu[data-menu="${b.dataset.more}"]`);
+    const was=m&&m.classList.contains('show');$$('#intake .inomenu.show').forEach(x=>x.classList.remove('show'));if(m&&!was)m.classList.add('show');});
+  document.addEventListener('click',()=>$$('#intake .inomenu.show').forEach(x=>x.classList.remove('show')),{once:true});
   $$('#intake [data-acc]').forEach(b=>b.onclick=()=>acceptIntake(b.dataset.acc,false));
   $$('#intake [data-aisplit]').forEach(b=>b.onclick=()=>aiSplitIntake(b.dataset.aisplit,b));
   $$('#intake [data-bl]').forEach(b=>b.onclick=()=>acceptIntake(b.dataset.bl,true));
@@ -3966,7 +3986,7 @@ function renderBrief(){
   const trow=x=>`<div class="trow" data-pid="${x.pid}" data-tid="${x.t.id}"><span class="dot" style="background:${stMap[x.t.status].c}"></span><span class="tn">${esc(x.t.title)}</span><span class="pbadge">${x.emoji||'📄'} ${esc(x.pname)}</span>${x.ov?'<span class="when over">просроч.</span>':''}</div>`;
   $('#briefModal').innerHTML=`
    <div class="ob-body" style="max-height:80vh;overflow:auto">
-     <h2>☀️ Бриф на сегодня</h2>
+     <h2>${icon('sun',18)} Бриф на сегодня</h2>
      <p>${greet}${(n=>n&&n!=='Я'&&n!=='Новый участник'?', '+esc(n.split(' ')[0]):'')(meName())}. Коротко — что важно прямо сейчас.</p>
      ${b.onMe.length?`<div class="airh">⏳ Висит на тебе — ${b.onMe.length}</div>${b.onMe.map(trow).join('')}`:''}
      ${b.today.length?`<div class="airh">🔥 Сегодня / просрочено — ${b.today.length}</div>${b.today.map(trow).join('')}`:''}
@@ -3975,7 +3995,7 @@ function renderBrief(){
      ${empty?'<div class="emptymini" style="margin-top:14px">Чисто — ничего срочного. Можно спокойно планировать день 👌</div>':''}
      <div id="briefClaude" style="margin-top:6px"></div>
    </div>
-   <div class="ob-foot"><button class="btn" id="briefAi">🤖 Совет от Claude</button><div class="spacer"></div><button class="btn primary" id="briefClose">За работу 🚀</button></div>`;
+   <div class="ob-foot"><button class="btn" id="briefAi">${icon('sparkles',14)} Совет от Claude</button><div class="spacer"></div><button class="btn primary" id="briefClose">За работу</button></div>`;
   $('#briefClose').onclick=closeBrief;
   $('#briefAi').onclick=()=>fetchBriefAdvice($('#briefAi'));
   $$('#briefModal .trow').forEach(el=>el.onclick=()=>{const pid=el.dataset.pid,tid=el.dataset.tid;closeBrief();if(pid!==S.id)switchProject(pid);setTimeout(()=>openTask(tid),90);});
@@ -4154,7 +4174,7 @@ function renderGantt(){
     let smin=Infinity,smax=-Infinity;st.forEach(t=>{smin=Math.min(smin,parseD(t.start));smax=Math.max(smax,parseD(t.end));});
     left+=`<div class="grow sec ${isC?'collapsed':''}" data-sec="${sec.id}"><span class="chev">▾</span><span class="tt">${esc(sec.name)}</span><span class="est">${st.length}</span></div>`;
     const sx=Math.round((smin-min)/dayMs)*DAY, sw=(Math.round((smax-smin)/dayMs)+1)*DAY;
-    body+=`<div class="growbg"><div class="bar sec" style="left:${sx}px;width:${sw}px;background:linear-gradient(90deg,var(--acc2),var(--acc3))"></div></div>`;
+    body+=`<div class="growbg"><div class="bar sec" style="left:${sx}px;width:${sw}px;background:rgba(167,139,250,.28)"></div></div>`;
     rowIdx++;
     if(isC) return;
     st.forEach(t=>{
@@ -4683,7 +4703,7 @@ function openTask(id){
   $('#dStatus').innerHTML=STATUSES.map(s=>`<option value="${s.k}" ${s.k===t.status?'selected':''}>${s.n}</option>`).join('');
   $('#dSection').innerHTML=S.sections.map(s=>`<option value="${s.id}" ${s.id===t.sectionId?'selected':''}>${esc(s.name)}</option>`).join('');
   $('#dAssignee').innerHTML=S.members.map(m=>`<button class="chip ${t.assigneeId===m.id?'on':''}" data-as="${m.id}" style="${t.assigneeId===m.id?`background:${m.color}`:''}">${esc(m.name)}</button>`).join('')
-    +`<button class="chip ${!t.assigneeId?'on':''}" data-as="">— никто</button>`;
+    +`<button class="chip ${!t.assigneeId?'on':''}" data-as="">Не назначено</button>`;
   $$('#dAssignee .chip').forEach(c=>c.onclick=()=>{
     const newAs=c.dataset.as||null;
     if(newAs&&newAs!==myId()&&newAs!==t.assigneeId&&t.assigneeId===myId()&&t.status!=='done'){
