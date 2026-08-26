@@ -2022,6 +2022,7 @@ function loadReg(){try{return JSON.parse(localStorage.getItem(LS_REG));}catch(e)
 function saveReg(){localStorage.setItem(LS_REG,JSON.stringify(reg));}
 function loadProj(id){try{return JSON.parse(localStorage.getItem(pkey(id)));}catch(e){return null;}}
 function migrate(p){if(!p)return p;p.ui=p.ui||{zoom:38};if(!p.ui.zoom)p.ui.zoom=38;if(p.demo===undefined)p.demo=false;
+  (p.members||[]).forEach(m=>{if(m.points===undefined)m.points=1000;});  /* стартовый капитал: экономика мотивирует, но никогда не блокирует */
   if(!p.id)p.id='p'+Math.random().toString(36).slice(2,8);p.ideas=p.ideas||[];p.tasks=p.tasks||[];p.members=p.members||[];p.sections=p.sections||[{id:'s1',name:'Задачи'}];
   p.tasks.forEach(t=>{if(!t.deps)t.deps=[];if(t.comments==null)t.comments=[];if(t.parentId===undefined)t.parentId=null;});
   p.activity=p.activity||[];p.notes=p.notes||[];if(!p.updatedAt)p.updatedAt=0;if(p.parentId===undefined)p.parentId=null;return p;}
@@ -4461,8 +4462,22 @@ function renderAccessPanel(){
 }
 
 function renderTeam(){
-  $('#whoAmI').innerHTML=S.members.map(m=>`<option value="${m.id}" ${m.id===myId()?'selected':''}>${esc(m.name)}</option>`).join('');
-  $('#whoAmI').onchange=e=>{localStorage.setItem('cockpit_me',e.target.value);render();toast('Теперь вы — '+meName(),'👤');};
+  /* личность = email сессии. Если сматчились — селектор заблокирован (нельзя «стать» другим).
+     Не сматчились (нет участника с твоей почтой) — выбрать можно ТОЛЬКО участника без email,
+     и выбор закрепляется: его email становится твоим. Свободный выбор — только в локальном режиме без облака. */
+  const bound=cloudOn&&myEmail&&S.members.find(x=>(x.email||'').toLowerCase()===myEmail);
+  if(bound){$('#whoAmI').innerHTML=`<option selected>${esc(bound.name)}</option>`;$('#whoAmI').disabled=true;$('#whoAmI').title='Вы определяетесь по почте входа: '+esc(myEmail);}
+  else{
+    $('#whoAmI').disabled=false;
+    const selectable=m=>!cloudOn||!(m.email||'').trim()||( myEmail&&(m.email||'').toLowerCase()===myEmail);
+    $('#whoAmI').innerHTML=S.members.map(m=>`<option value="${m.id}" ${m.id===myId()?'selected':''} ${selectable(m)?'':'disabled'}>${esc(m.name)}${selectable(m)?'':' · занято'}</option>`).join('');
+    $('#whoAmI').onchange=e=>{const m=member(e.target.value);if(!m)return;
+      if(cloudOn&&(m.email||'').trim()&&(m.email||'').toLowerCase()!==myEmail){toast('Этот участник привязан к другой почте','🔐');renderTeam();return;}
+      localStorage.setItem('cockpit_me',m.id);
+      if(cloudOn&&myEmail&&!(m.email||'').trim()){m.email=myEmail;save();toast('Вы — '+m.name+'. Профиль закреплён за '+myEmail,'👤');}
+      else toast('Теперь вы — '+meName(),'👤');
+      render();};
+  }
   const g=$('#team');
   const ps=personScores();const pmap={};ps.forEach(x=>pmap[(x.email||'').toLowerCase()||('n:'+(x.name||'').toLowerCase())]=x);
   const scoreOf=m=>pmap[pKey(m)]||{points:m.points||0,streak:effStreak(m)};
@@ -4607,9 +4622,10 @@ function openTask(id){
     const newAs=c.dataset.as||null;
     if(newAs&&newAs!==myId()&&newAs!==t.assigneeId&&t.status!=='done'){
       const me=member(myId())||{};const cost=taskValue(t);
-      if((me.points||0)<cost){toast('Не хватает баллов: '+(me.points||0)+'/'+cost+' 🪙. Сделай сам или заработай 💪','🪙');return;}
-      me.points-=cost;logAct('🪙',meName()+' −'+cost+' · перекинул «'+t.title+'» на '+((member(newAs)||{}).name||'?'));
-      toast('−'+cost+' 🪙 · «'+t.title+'» теперь у '+((member(newAs)||{}).name||''),'🪙');
+      /* мягкая экономика: списываем сколько есть, но НИКОГДА не блокируем рабочий поток */
+      const pay=Math.min(me.points||0,cost);me.points=(me.points||0)-pay;
+      logAct('🪙',meName()+' −'+pay+' · перекинул «'+t.title+'» на '+((member(newAs)||{}).name||'?'));
+      toast(pay<cost?('«'+t.title+'» теперь у '+((member(newAs)||{}).name||'')+' · баллы на нуле — закрой пару задач 💪'):('−'+pay+' 🪙 · «'+t.title+'» теперь у '+((member(newAs)||{}).name||'')),'🪙');
     }else{logAct('👤','«'+t.title+'» → '+(member(newAs)?member(newAs).name:'без исполнителя'));}
     t.assigneeId=newAs;save();if(newAs&&newAs!==myId())tgNotify('assign',t);openTask(id);render();});
   $('#dPrio').innerHTML=PRIOS.map(p=>`<button class="chip ${t.priority===p.k?'on':''}" data-pr="${p.k}" style="${t.priority===p.k?`background:${p.c}`:''}">${p.n}</button>`).join('');

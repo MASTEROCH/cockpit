@@ -25,6 +25,28 @@ async function planOk(email: string): Promise<boolean> {
     return false; // solo: ИИ в тарифе Founder
   } catch { return true; }
 }
+// ---- Ф5: лимиты ИИ — токены не выжигаются бездумно ----
+const AI_DAY_LIMIT = 40;      // вызовов Вандо на человека в день
+const AI_WS_DAY_LIMIT = 200;  // страховка: на весь воркспейс в день
+async function aiQuota(email: string): Promise<string | null> {
+  try {
+    const day = new Date().toISOString().slice(0, 10);
+    const { data } = await sbs.from("ai_usage").select("calls").eq("email", email).eq("day", day).maybeSingle();
+    const used = data?.calls ?? 0;
+    if (used >= AI_DAY_LIMIT) return `Дневной лимит Вандо исчерпан (${AI_DAY_LIMIT} запросов). Продолжим завтра 🙂`;
+    const { data: t } = await sbs.from("team").select("workspace_id").ilike("email", email).maybeSingle();
+    const ws = t?.workspace_id ?? "main";
+    const { data: mates } = await sbs.from("team").select("email").eq("workspace_id", ws);
+    const emails = (mates ?? []).map((x: Record<string, string>) => x.email.toLowerCase());
+    if (emails.length) {
+      const { data: rows } = await sbs.from("ai_usage").select("calls").eq("day", day).in("email", emails);
+      const total = (rows ?? []).reduce((a: number, r: Record<string, number>) => a + (r.calls ?? 0), 0);
+      if (total >= AI_WS_DAY_LIMIT) return `Команда исчерпала дневной лимит Вандо (${AI_WS_DAY_LIMIT}). Завтра снова в бою.`;
+    }
+    await sbs.from("ai_usage").upsert({ email, day, calls: used + 1 });
+    return null;
+  } catch { return null; } // таблицы нет — не ломаем ИИ
+}
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, content-type, apikey, x-client-info",
@@ -92,6 +114,10 @@ serve(async (req) => {
     const { project, mode, goal, messages, context } = body;
     if (mode !== "notify" && !(await planOk(email))) {
       return json({ error: "Вандо-ИИ доступен в тарифе Founder ⭐ — открой /plan у @wando_tasks_bot" }, 402);
+    }
+    if (mode !== "notify") {
+      const q = await aiQuota(email);
+      if (q) return json({ error: q }, 429);
     }
 
     // --- notify: пуш члену команды в TG о назначении/комменте (без Anthropic) ---

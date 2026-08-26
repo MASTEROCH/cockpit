@@ -1,0 +1,22 @@
+# Автодеплой edge-функций Supabase при изменении их кода.
+# Требует один секрет в GitHub: SUPABASE_ACCESS_TOKEN
+# (supabase.com/dashboard/account/tokens → Generate new token →
+#  github.com/MASTEROCH/cockpit/settings/secrets/actions → New repository secret)
+name: Deploy Supabase functions
+on:
+  push:
+    branches: [main]
+    paths: ['supabase/functions/**', 'supabase/config.toml']
+  workflow_dispatch: {}
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Deploy all functions
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: supabase functions deploy --project-ref tonmsmxzmycimybzywqp

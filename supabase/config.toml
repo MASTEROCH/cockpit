@@ -1,0 +1,15 @@
+# Конфиг функций для CLI/CI деплоя. verify_jwt=false там, где авторизация своя:
+# tg-bot — секрет вебхука Telegram; ics — ключ cpk_ в query; tma-auth — initData Telegram.
+project_id = "tonmsmxzmycimybzywqp"
+
+[functions.tg-bot]
+verify_jwt = false
+
+[functions.ics]
+verify_jwt = false
+
+[functions.tma-auth]
+verify_jwt = false
+
+[functions.ai-review]
+verify_jwt = false
