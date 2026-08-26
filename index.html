@@ -1442,7 +1442,7 @@ body.light .vando-panel{background:var(--sheen),rgba(255,255,255,.97)}
 .vando-hint span{font-size:11.5px;color:var(--acc2);border:1px solid rgba(167,139,250,.3);border-radius:9px;padding:3px 9px;cursor:pointer}
 .vando-hint span:hover{background:rgba(167,139,250,.12)}
 @media (max-width:680px){
-  #btnUndo,#btnRedo,#btnSearch,#btnNew{display:none}
+  #btnUndo,#btnRedo,#btnNew{display:none}
   .cmdwrap{display:none} /* захват на мобиле = ➕ по центру нава */
   header{padding-bottom:9px}
   .vando-fab{bottom:calc(132px + env(safe-area-inset-bottom));right:12px}
@@ -1705,7 +1705,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
     <div class="cmd" id="cmdBox">
       <button class="mic" id="micBtn" data-icon="mic" title="Голосовой ввод"></button>
       <input id="cmd" placeholder="Напиши задачу или команду…  ⌘K — поиск" autocomplete="off" />
-      <kbd class="cmdk" id="cmdkBtn" title="Палитра — поиск и переходы">⌘K</kbd>
+      <kbd class="cmdk" id="cmdkBtn" title="Всё в одном месте: поиск, команды, переходы (⌘K)">Меню ⌘K</kbd>
       <kbd>↵</kbd>
     </div>
     <div class="cmdchips" id="cmdChips"></div>
@@ -1917,11 +1917,11 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
   <div class="vando-in"><input id="vandoIn" placeholder="Спроси: что горит? кому что делегировать?…" autocomplete="off"><button id="vandoSend">↑</button></div>
 </div>
 <nav class="mnav" id="mnav">
-  <button data-mv="now"><i>⚡</i><span>Сегодня</span></button>
-  <button data-mv="mprojects"><i>📁</i><span>Проекты</span></button>
-  <button class="mplus" id="mPlus" title="Новая задача">＋</button>
-  <button data-mv="intake" id="mnavIntake"><i>📥</i><span>Приёмка</span></button>
-  <button id="mnavVando"><i>🤖</i><span>Вандо</span></button>
+  <button data-mv="now" aria-label="Сегодня"><i>⚡</i><span>Сегодня</span></button>
+  <button data-mv="mprojects" aria-label="Проекты"><i>📁</i><span>Проекты</span></button>
+  <button class="mplus" id="mPlus" title="Новая задача" aria-label="Новая задача">＋</button>
+  <button data-mv="intake" id="mnavIntake" aria-label="Приёмка"><i>📥</i><span>Приёмка</span></button>
+  <button id="mnavVando" aria-label="Вандо — ассистент"><i>🤖</i><span>Вандо</span></button>
 </nav>
 <div class="modal-scrim" id="capScrim"><div class="modal capsheet" id="capModal"></div></div>
 <div class="modal-scrim" id="repScrim"><div class="modal repsheet" id="repModal"></div></div>
@@ -2484,7 +2484,7 @@ function renderNow(){
   const energy=localStorage.getItem('cockpit_energy_'+todayISO())||'';
   if(window.innerWidth<=680){renderNowMobile({el,greet,next,upNext,mine,pct,prog,ov,vel,ins,running,energy:localStorage.getItem('cockpit_energy_'+todayISO())||''});return;}
   el.innerHTML=`<div class="now-greet"><h1>${greet}${(n=>n&&n!=='Я'&&n!=='Новый участник'?', '+esc(n):'!')(meName())}</h1><span>${esc(S.projectName)} · пульс проекта
-      <span class="energyrow" title="Заряд сегодня: подстрою следующий шаг"><button data-en="hi" class="${energy==='hi'?'on':''}">🔋</button><button data-en="lo" class="${energy==='lo'?'on':''}">🪫</button></span></span></div>
+      <span class="energyrow" title="Заряд сегодня: подстрою следующий шаг"><button data-en="hi" class="${energy==='hi'?'on':''}" title="Полон сил — дай крупную задачу" aria-label="Полон сил">🔋</button><button data-en="lo" class="${energy==='lo'?'on':''}" title="Мало сил — подкинь лёгкие" aria-label="Мало сил">🪫</button></span></span></div>
     ${whatsNewStrip()}
     ${hero}
     ${multi&&nextPid!==S.id?`<div class="ctxnote">цифры ниже — пульс этого проекта · ${esc(S.projectName)}</div>`:''}
@@ -2687,7 +2687,7 @@ function renderNowMobile(ctx){
     return `<div class="mrow" data-open="${t.id}" data-pid="${pid}"><span class="dot" style="background:${stMap[t.status].c}"></span><span class="mr-t">${t.cash?'💰 ':''}${prGlyph(t)}${esc(t.title)}</span>${x.pid?badge(x):''}${t.estimate?`<span class="mr-e">${t.estimate}ч</span>`:''}</div>`;}).join('');
   el.innerHTML=`
     <div class="mgreet"><h1>${greet.split(' ')[0]} ${greet.split(' ').slice(1).join(' ')}, ${esc(meName().split(' ')[0])}</h1>
-      <span class="energyrow"><button data-en="hi" class="${energy==='hi'?'on':''}">🔋</button><button data-en="lo" class="${energy==='lo'?'on':''}">🪫</button></span></div>
+      <span class="energyrow"><button data-en="hi" class="${energy==='hi'?'on':''}" title="Полон сил — дай крупную задачу" aria-label="Полон сил">🔋</button><button data-en="lo" class="${energy==='lo'?'on':''}" title="Мало сил — подкинь лёгкие" aria-label="Мало сил">🪫</button></span></div>
     ${whatsNewStrip()}
     ${hero}
     ${rows?`<div class="msec">Ещё сегодня · ${upNext.length}</div>${rows}`:''}
@@ -3890,7 +3890,7 @@ function renderWeek(){
   const el=$('#week');const days=weekDays(weekOffset);const wstart=days[0],wend=days[6],tISO=todayISO();
   const WD=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];const md=d=>d.slice(8)+'.'+d.slice(5,7);
   const tasks=myWeekTasks();const by={over:[],later:[]};days.forEach(d=>by[d]=[]);
-  tasks.forEach(x=>{const e=x.t.end;if(e<wstart)by.over.push(x);else if(e>wend)by.later.push(x);else by[e].push(x);});
+  tasks.forEach(x=>{const e=x.t.end;if(e<wstart||(weekOffset===0&&e<tISO))by.over.push(x);else if(e>wend)by.later.push(x);else by[e].push(x);});
   [...days,'over','later'].forEach(k=>by[k].sort((a,b)=>relScore(b.t)-relScore(a.t)));
   const card=x=>`<div class="wcard" draggable="true" data-pid="${x.pid}" data-tid="${x.t.id}">
     <button class="qdone" data-wd="${x.pid}|${x.t.id}" title="Готово" style="--c:${stMap[x.t.status].c}"></button>
@@ -5994,6 +5994,12 @@ if(!_shareSnap)setTimeout(()=>{
   if(anyModal)return;
   if(localStorage.getItem('cockpit_onboarded')&&localStorage.getItem('cockpit_brief_date')!==todayISO())openBrief();
 },1900);
+// разовая подсказка: где живут поиск/команды (по фидбеку — ⌘K был неочевиден)
+if(!_shareSnap)setTimeout(()=>{
+  if(localStorage.getItem('cockpit_tip_menu'))return;
+  localStorage.setItem('cockpit_tip_menu','1');
+  toast(window.innerWidth<=680?'Поиск, команды и переходы — под 🔍 наверху':'Поиск, команды и переходы — кнопка «Меню ⌘K» наверху','💡');
+},3600);
 </script>
 </body>
 </html>
