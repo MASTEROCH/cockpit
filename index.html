@@ -251,7 +251,7 @@
   .drawer.show{transform:none}
   .dh{display:flex;align-items:center;gap:10px;padding:16px;border-bottom:1px solid var(--line)}
   .db{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:16px}
-  .dtitle{font-size:18px;font-weight:700;width:100%;background:none;border:none;outline:none;resize:none;line-height:1.3;color:var(--txt)}
+  .dtitle{font-size:18px;font-weight:700;width:100%;background:none;border:none;outline:none;resize:none;line-height:1.3;color:var(--txt);transition:none}   /* transition:all + autoGrow = лавина высоты: замер ловил анимацию */
   .field label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mut2);margin-bottom:6px}
   .field .row{display:flex;gap:10px}
   .inp{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:13px;outline:none;color:var(--txt)}
@@ -1812,10 +1812,9 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
     <div id="dCrumb" class="crumbrow" style="display:none"></div>
     <textarea class="dtitle" id="dTitle" rows="1" placeholder="Название задачи"></textarea>
     <div class="field"><label>Кто делает</label><div class="seg" id="dAssignee"></div></div>
-    <div class="field"><label>Когда</label>
+    <div class="field"><label>Срок</label>
       <div class="row">
-        <div style="flex:1"><div style="font-size:10px;color:var(--mut2);margin-bottom:4px">Старт</div><input type="date" class="inp" id="dStart"></div>
-        <div style="flex:1"><div style="font-size:10px;color:var(--mut2);margin-bottom:4px">Финиш</div><input type="date" class="inp" id="dEnd"></div>
+        <div style="flex:1"><input type="date" class="inp" id="dEnd"></div>
       </div>
       <div class="qdates" id="dQDates">
         <button data-qd="0">Сегодня</button><button data-qd="1">Завтра</button><button data-qd="3">+3 дня</button><button data-qd="mon">Понедельник</button><button data-qd="7">+неделя</button>
@@ -1831,10 +1830,12 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
       <div class="cmtadd"><input class="inp" id="dSubIn" placeholder="Добавить пункт… (Enter)"><button class="btn" id="dSubBtn">＋</button></div>
     </div>
     <div id="dCashOut" style="display:none"></div>
-    <details class="dmore" id="dMore"><summary>⚙️ Ещё: описание, оценка, зависимости, повтор</summary>
+    <details class="dmore" id="dMore"><summary>Ещё: описание, старт, оценка, зависимости</summary>
       <div class="dmb">
         <div class="field"><label>Описание / план</label>
           <textarea class="inp" id="dDesc" placeholder="Что именно сделать, контекст, ссылки…"></textarea></div>
+        <div class="field"><label>Дата старта <span style="text-transform:none;font-weight:500;color:var(--mut2)">— для Ганта; обычно не нужна</span></label>
+          <input type="date" class="inp" id="dStart"></div>
         <div class="field"><label>Эстимейт / факт</label>
           <div class="estbar">
             <input class="inp" type="number" id="dEst" min="0" step="0.5" placeholder="0"> <span style="color:var(--mut2)">ч оценка</span>
@@ -1865,7 +1866,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
     <button class="btn danger" id="dDelete">Удалить</button>
     <button class="btn" id="dDup" title="Создать копию задачи">⧉ Дублировать</button>
     <div class="spacer"></div>
-    <button class="btn primary" id="dClose">Готово</button>
+    <button class="btn primary" id="dClose">Закрыть</button>
   </div>
 </aside>
 
@@ -1873,7 +1874,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
   <div class="dh"><span style="font-size:12px;color:var(--mut2);font-weight:700">👤 Профиль участника</span>
     <button class="btn danger" id="mDelete" style="margin-left:auto;padding:6px 11px;display:none">Удалить</button></div>
   <div class="db" id="mBody"></div>
-  <div class="df"><div class="spacer"></div><button class="btn primary" id="mClose">Готово</button></div>
+  <div class="df"><div class="spacer"></div><button class="btn primary" id="mClose">Закрыть</button></div>
 </aside>
 
 <aside class="drawer" id="inboxDrawer">
@@ -4640,7 +4641,7 @@ function renderKids(t){
       <button class="qdone" data-kdone="${k.id}" title="${k.status==='done'?'Вернуть в работу':'Готово'}" style="--c:${stMap[k.status].c}"></button>
       <span class="kt ${k.status==='done'?'done':''}">${esc(k.title)}${extra?` <span style="color:var(--mut2);font-size:11px">${extra}</span>`:''}</span>
       ${avatar(k.assigneeId)}<button class="kdel" data-kdel="${k.id}" title="Удалить подзадачу">✕</button></div>`;}).join('')
-    :`<div style="color:var(--mut2);font-size:12px">Разбей на шаги — каждая подзадача полноценна: свой статус, срок, исполнитель и свой список действий.</div>`;
+    :'';
   $$('#dKids .kidrow').forEach(r=>r.onclick=e=>{if(e.target.closest('[data-kdone],[data-kdel]'))return;openTask(r.dataset.kid);});
   $$('#dKids [data-kdone]').forEach(b=>b.onclick=e=>{e.stopPropagation();const k=task(b.dataset.kdone);if(!k)return;
     if(k.status!=='done'){const un=markDone(S.id,k.id);toast('Готово','✅','Отменить',()=>{un();if(curTask)renderKids(curTask);render();});}
@@ -4686,7 +4687,12 @@ function subTag(t){const s=t.subtasks||[];if(!s.length)return '';const d=s.filte
 function syncScrim(){const any=$('#drawer').classList.contains('show')||$('#mDrawer').classList.contains('show')||$('#inboxDrawer').classList.contains('show');$('#scrim').classList.toggle('show',any);}
 function applyPendingRemote(){if(pendingRemote[S.id]){S=migrate(pendingRemote[S.id]);delete pendingRemote[S.id];resetUndo();toast('Подтянул обновление партнёра','☁️');}}
 function closeDrawer(){$('#drawer').classList.remove('show');curTask=null;applyPendingRemote();syncScrim();render();}
-function autoGrow(el){el.style.height='auto';el.style.height=el.scrollHeight+'px';}
+function autoGrow(el){
+  if(!el)return;
+  /* дровер ещё схлопнут (ширина ~0) — текст ломается посимвольно и высота взрывается; ждём раскрытия */
+  if(el.clientWidth<40){el._ag=(el._ag||0)+1;if(el._ag<6)setTimeout(()=>autoGrow(el),120);return;}
+  el._ag=0;el.style.height='31px';el.style.height=el.scrollHeight+'px';
+}
 
 $('#dTitle').oninput=e=>{if(curTask){curTask.title=e.target.value;autoGrow(e.target);}};
 $('#dTitle').onblur=()=>{if(curTask){if(!curTask.title.trim())curTask.title='Без названия';save();}};
