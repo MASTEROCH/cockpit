@@ -4435,14 +4435,15 @@ function renderAccessPanel(){
     <div class="accsub">Команда видит <b>все проекты</b> (включая личные друг друга) и решает Приёмку. Гость видит только выданные ему проекты.</div>
     <div class="accsec">Команда · полный доступ</div>
     ${teamRows.map(t=>`<div class="accrow"><span class="ae">${esc(t.email)}</span><span class="an">${esc(t.name||'')}</span>
-      <span class="arole full">full</span>
+      <span class="arole full" title="Команда равноправна: видит все проекты воркспейса и решает Приёмку. Нужен точечный доступ — убери из команды и выдай гостевой на нужные проекты.">full</span>
       ${(t.email||'').toLowerCase()!==myEmail?`<span class="ax" data-rmteam="${esc(t.email)}" title="Убрать из команды">✕</span>`:'<span class="an">(вы)</span>'}</div>`).join('')}
     <div class="accadd"><input class="inp" id="accTeamEmail" type="email" placeholder="email нового члена команды">
       <input class="inp" id="accTeamName" placeholder="Имя" style="max-width:130px">
       <button class="btn primary" id="accTeamAdd">＋ В команду</button></div>
     <div class="accsec">Гости проекта «${esc(S.projectName)}»</div>
+    <div class="accsub" style="margin:2px 0 8px">Гостевой доступ выдаётся на конкретный проект. Нужен другой — переключи проект наверху и вернись сюда.</div>
     ${guestRows.length?guestRows.map(g=>`<div class="accrow"><span class="ae">${esc(g.email)}</span>
-      <span class="arole ${g.role==='viewer'?'viewer':'member'}">${g.role==='viewer'?'просмотр':'ведёт задачи'}</span>
+      <select class="fsel" data-grole="${esc(g.email)}" title="Сменить роль гостя"><option value="member" ${g.role!=='viewer'?'selected':''}>ведёт задачи</option><option value="viewer" ${g.role==='viewer'?'selected':''}>только смотрит</option></select>
       <span class="ax" data-rmguest="${esc(g.email)}" title="Отозвать доступ">✕</span></div>`).join('')
      :'<div class="accsub" style="margin:0 0 4px">Гостей нет. Выдай доступ — человек увидит ТОЛЬКО этот проект.</div>'}
     <div class="accadd"><input class="inp" id="accGuestEmail" type="email" placeholder="email гостя (напр. Саша)">
@@ -4453,6 +4454,10 @@ function renderAccessPanel(){
   const ga=$('#accGuestAdd');if(ga)ga.onclick=()=>grantAccess($('#accGuestEmail').value,$('#accGuestRole').value);
   $$('#accessPanel [data-rmteam]').forEach(b=>b.onclick=()=>removeTeamMember(b.dataset.rmteam));
   $$('#accessPanel [data-rmguest]').forEach(b=>b.onclick=()=>revokeAccess(b.dataset.rmguest));
+  $$('#accessPanel [data-grole]').forEach(sel=>sel.onchange=async()=>{
+    const {error}=await sb.from('project_access').upsert({project_id:S.id,email:sel.dataset.grole,role:sel.value,granted_by:myEmail});
+    if(error){toast('Не удалось: '+(error.message||''),'⚠');return;}
+    toast(sel.dataset.grole+' → '+(sel.value==='viewer'?'только смотрит':'ведёт задачи'),'🔐');await loadGuests();renderAccessPanel();});
 }
 
 function renderTeam(){
