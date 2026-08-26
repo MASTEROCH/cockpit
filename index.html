@@ -1527,8 +1527,8 @@ body.light .vando-panel{background:var(--sheen),rgba(255,255,255,.97)}
 .cap-b{padding:22px 20px 14px;display:flex;flex-direction:column;gap:14px}
 .cap-t{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--mut2)}
 #capIn{width:100%;min-height:120px;background:none;border:none;outline:none;resize:none;color:var(--txt);
-  font-size:22px;font-weight:600;line-height:1.4;font-family:inherit}
-#capIn::placeholder{color:var(--mut2);font-weight:500}
+  font-size:17px;font-weight:600;line-height:1.45;font-family:inherit} /* иерархия: набранный текст — контент, не заголовок */
+#capIn::placeholder{color:var(--mut2);font-weight:500;font-size:14.5px}
 .cap-chips{display:flex;gap:6px;flex-wrap:wrap;min-height:26px}
 .cap-projs{display:flex;gap:7px;flex-wrap:wrap}
 .cap-projs button{border:1px solid var(--line);background:var(--bg2);color:var(--mut);border-radius:11px;padding:8px 12px;font-size:13px;font-weight:700;cursor:pointer}
@@ -1544,7 +1544,7 @@ body.light .vando-panel{background:var(--sheen),rgba(255,255,255,.97)}
   /* нижний лист по контенту — без мёртвой пустоты на пол-экрана */
   .capsheet{width:100vw;height:auto;max-height:92dvh;max-width:none;border-radius:22px 22px 0 0;display:flex;flex-direction:column;margin-top:auto}
   .cap-b{flex:0 1 auto;overflow:auto;padding-top:18px}
-  #capIn{font-size:26px}
+  #capIn{font-size:18px} /* ≥16px — iOS не зумит; плейсхолдер не перекрикивает заголовок */
 }
 @media (max-width:680px){
   #fAssignee,#boardModeCtl,#bSelect,#fReset,#fOver{display:none!important}
@@ -5675,7 +5675,7 @@ function openCap(){
   const ordered=[...projs].sort((a,b)=>(a.id===capPid?-1:0)-(b.id===capPid?-1:0));
   $('#capModal').innerHTML=`<div class="cap-b">
     <div class="cap-t">Новая задача · говори или пиши</div>
-    <textarea id="capIn" placeholder="созвон с Димой завтра 2ч срочно…"></textarea>
+    <textarea id="capIn" placeholder="Опиши задачу своими словами — даты, часы и приоритет пойму сам…"></textarea>
     <div class="cap-chips" id="capChips"></div>
     <div class="cap-t" style="margin-top:4px">В проект</div>
     <div class="cap-projs" id="capProjs">${ordered.slice(0,8).map(p=>`<button data-p="${p.id}" class="${p.id===capPid?'on':''}">${p.emoji||'📄'} ${esc(String(p.name).slice(0,16))}</button>`).join('')}</div></div>
