@@ -220,11 +220,22 @@ async function briefFor(link: Link): Promise<string> {
   const { rows } = await myProjects(link.email);
   const today = todayISO(0);
   const mineToday: string[] = []; const mineOver: string[] = [];
+  // «социальный свет» для владельца воркспейса: у кого из команды задачи гниют 3+ дней
+  const ws = await wsByEmail(link.email);
+  const { data: w } = await sb.from("workspaces").select("created_by").eq("id", ws).maybeSingle();
+  const isOwner = (w?.created_by ?? "").toLowerCase() === link.email.toLowerCase();
+  const staleByName: Record<string, number> = {};
+  const d3 = todayISO(-3);
   for (const p of rows) {
     const me = ((p.data?.members ?? []) as Record<string, any>[]).find((m) => (m.email ?? "").toLowerCase() === link.email.toLowerCase());
     if (!me) continue;
     for (const t of taskList(p)) {
-      if (t.status === "done" || t.assigneeId !== me.id) continue;
+      if (t.status === "done") continue;
+      if (isOwner && t.assigneeId && t.assigneeId !== me.id && (t.end ?? "9999") < d3) {
+        const who = ((p.data?.members ?? []) as Record<string, any>[]).find((m) => m.id === t.assigneeId);
+        if (who?.name) staleByName[who.name] = (staleByName[who.name] ?? 0) + 1;
+      }
+      if (t.assigneeId !== me.id) continue;
       const tag = `${t.title} <i>(${p.emoji ?? "📄"} ${esc(p.name)})</i>`;
       if ((t.end ?? "9999") < today) mineOver.push(tag);
       else if (t.end === today) mineToday.push(tag);
@@ -234,6 +245,8 @@ async function briefFor(link: Link): Promise<string> {
   if (mineOver.length) out += `\n⏰ <b>Просрочено у тебя · ${mineOver.length}</b>\n${mineOver.slice(0, 3).map((t) => "• " + t).join("\n")}\n`;
   if (mineToday.length) out += `\n🎯 <b>На сегодня · ${mineToday.length}</b>\n${mineToday.slice(0, 3).map((t) => "• " + t).join("\n")}\n`;
   if (!mineOver.length && !mineToday.length) out += "\n🎯 На тебе сегодня дедлайнов нет — можно строить.\n";
+  const stale = Object.entries(staleByName).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  if (stale.length) out += `\n🕸 <b>Залежалось у команды (3+ дней):</b> ${stale.map(([n, c]) => `${esc(n)} — ${c}`).join(" · ")}\n<i>подсвети им, передай или порежь скоуп</i>\n`;
   return out;
 }
 
@@ -541,7 +554,8 @@ async function eveningReview() {
     try {
       if (pref(l, "evening", "on") !== "on") continue;
       const { rows } = await myProjects(l.email);
-      let doneToday = 0; const open: string[] = [];
+      let doneToday = 0; const open: string[] = []; let chronic = 0;
+      const d3e = todayISO(-3);
       const dayStart = new Date(today + "T00:00:00Z").getTime() - TZ * 3600_000;
       for (const p of rows) {
         const members = (p.data?.members ?? []) as Record<string, any>[];
@@ -550,13 +564,17 @@ async function eveningReview() {
         for (const t of taskList(p)) {
           if (t.assigneeId !== me.id) continue;
           if (t.status === "done" && t.doneTs && t.doneTs >= dayStart) doneToday++;
-          if (t.status !== "done" && (t.end ?? "9999") <= today) open.push(`${t.title} <i>(${p.emoji ?? "📄"} ${esc(p.name)})</i>`);
+          if (t.status !== "done" && (t.end ?? "9999") <= today) {
+            open.push(`${t.title} <i>(${p.emoji ?? "📄"} ${esc(p.name)})</i>`);
+            if ((t.end ?? "9999") < d3e) chronic++;
+          }
         }
       }
       if (!doneToday && !open.length) continue; // тишина лучше пустого отчёта
       let text = `🌇 <b>Вечерний разбор</b>\n`;
       text += doneToday ? `\n✅ Закрыто сегодня: <b>${doneToday}</b> — красавчик!\n` : "";
       if (open.length) text += `\n🌙 Не закрылось · ${open.length}:\n${open.slice(0, 6).map((t) => "• " + t).join("\n")}\n\nПеренести одним тапом — и план снова честный:`;
+      if (chronic > 0) text += `\n\n🕸 <i>${chronic} из них висит 3+ дней — закрой, передай партнёру или скажи команде, что мешает.</i>`;
       if (open.length) {
         await sayInline(l.chat_id, text, [[{ text: "🌙 На завтра", callback_data: "shiftall:tomorrow:x" }, { text: "📆 На понедельник", callback_data: "shiftall:monday:x" }]]);
       } else {
