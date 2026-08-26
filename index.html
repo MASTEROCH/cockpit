@@ -3659,7 +3659,7 @@ function projectSelectHTML(id,target){
   const opt=p=>`<option value="${p.id}" ${sel===p.id?'selected':''}>${esc(p.emoji||'📄')} ${esc(p.name)}</option>`;
   const active=reg.list.filter(p=>!p.archived);
   const tops=active.filter(p=>{const pr=p.parentId&&projMeta(p.parentId);return !pr||pr.archived;});
-  let html=`<option value="" ${sel?'':'selected'}>📁 — выбери проект —</option>`;
+  let html=`<option value="" ${sel?'':'selected'}>— выбери проект —</option>`;
   tops.forEach(t=>{const kids=childrenOf(t.id);
     if(kids.length){html+=`<optgroup label="${esc(t.emoji||'🏢')} ${esc(t.name)}">`+opt(t)+kids.map(opt).join('')+`</optgroup>`;}
     else html+=opt(t);});
@@ -3706,9 +3706,9 @@ function renderIntake(){
           ${r.source?`<span class="inosrc">${esc(r.source)}</span>`:''}<span class="inotime">${relTime(new Date(r.created_at).getTime())}</span></div>
         <div class="inotitle">${esc(p.title||r.text)}</div>
         <div class="inochips">
-          ${noTarget?'<span class="ichip" style="color:var(--warn);border-color:rgba(251,191,36,.5)">📁 без проекта — выбери ниже</span>':''}
+          ${noTarget?'<span class="ichip" style="color:var(--warn);border-color:rgba(251,191,36,.5)">без проекта — выбери ниже</span>':''}
           ${m?`<span class="ichip" style="border-color:${m.color}">${avatarOf(m,18)} ${esc(m.name)}</span>`:'<span class="ichip mut">без исполнителя</span>'}
-          ${p.start?`<span class="ichip">📅 ${p.start.slice(8)}.${p.start.slice(5,7)}${p.end&&p.end!==p.start?'–'+p.end.slice(8)+'.'+p.end.slice(5,7):''}</span>`:''}
+          ${p.start?`<span class="ichip">${p.start.slice(8)}.${p.start.slice(5,7)}${p.end&&p.end!==p.start?'–'+p.end.slice(8)+'.'+p.end.slice(5,7):''}</span>`:''}
           ${p.est?`<span class="ichip">⏱ ${p.est}ч</span>`:''}
           ${p.prio==='urgent'?'<span class="ichip" style="color:var(--bad);border-color:var(--bad)">⚑ срочно</span>':p.prio==='high'?'<span class="ichip" style="color:var(--warn);border-color:var(--warn)">⚑ важно</span>':''}
         </div>
@@ -3719,7 +3719,7 @@ function renderIntake(){
             <button class="btn primary" data-acc="${r.id}">✓ Добавить</button>
             <button class="btn" data-aisplit="${r.id}" title="Вандо превратит заявку в задачу с готовым планом-подзадачами">Разбить на план</button>
             <button class="btn" data-edit="${r.id}">✎ Править</button>
-            <button class="btn" data-bl="${r.id}">📥 В бэклог</button>
+            <button class="btn" data-bl="${r.id}">В бэклог</button>
             <button class="btn danger" data-rej="${r.id}">✕</button>
           </div>
         </div>
@@ -4965,7 +4965,7 @@ function applyQuick(t,p){if(p.assignee)t.assigneeId=p.assignee;if(p.est)t.estima
 // живой превью-разбор (чипы) для распознанных сущностей
 function nlpChips(p){const out=[];
   if(p.assignee){const m=member(p.assignee);if(m)out.push(`<span class="ichip" style="border-color:${m.color}">${avatarOf(m,16)} ${esc(m.name)}</span>`);}
-  if(p.start)out.push(`<span class="ichip">📅 ${p.start.slice(8)}.${p.start.slice(5,7)}${p.end&&p.end!==p.start?'–'+p.end.slice(8)+'.'+p.end.slice(5,7):''}</span>`);
+  if(p.start)out.push(`<span class="ichip">${p.start.slice(8)}.${p.start.slice(5,7)}${p.end&&p.end!==p.start?'–'+p.end.slice(8)+'.'+p.end.slice(5,7):''}</span>`);
   if(p.est)out.push(`<span class="ichip">⏱ ${p.est}ч</span>`);
   if(p.prio==='urgent')out.push(`<span class="ichip" style="color:var(--bad);border-color:var(--bad)">⚑ срочно</span>`);
   else if(p.prio==='high')out.push(`<span class="ichip" style="color:var(--warn);border-color:var(--warn)">⚑ важно</span>`);
