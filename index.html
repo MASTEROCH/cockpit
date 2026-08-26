@@ -1790,7 +1790,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
       <div class="secttl">Команда и загрузка
         <span style="margin-left:auto;display:flex;align-items:center;gap:7px;text-transform:none;letter-spacing:0;font-weight:500;color:var(--mut)">Вы: <select class="fsel" id="whoAmI"></select></span>
       </div>
-      <div style="font-size:12.5px;color:var(--mut2);margin:-6px 0 14px;line-height:1.5">👋 <b style="color:var(--mut)">Пригласить со-фаундера:</b> добавь участника → впиши его email → он войдёт этой почтой и сразу увидит ваши проекты и задачи. (Доступ открыт только участникам, прописанным в Supabase.)</div>
+      <div style="font-size:12.5px;color:var(--mut2);margin:-6px 0 14px;line-height:1.5"><b style="color:var(--mut)">Пригласить партнёра:</b> добавь участника → впиши его email → он войдёт этой почтой и сразу увидит ваши проекты и задачи. (Доступ открыт только участникам, прописанным в Supabase.) <button class="lnk" id="inviteCopy" style="font-size:12.5px">Скопировать приглашение</button></div>
       <div id="leaderboard"></div>
       <div class="grid" id="team"></div>
       <div id="accessPanel"></div>
@@ -6182,6 +6182,13 @@ $('#palQ').onkeydown=e=>{
 };
 $('#palScrim').onclick=e=>{if(e.target===$('#palScrim'))closePalette();};
 {const pi=$('#palIcon');if(pi)pi.innerHTML=icon('search',17);}
+{const ic=$('#inviteCopy');if(ic)ic.onclick=()=>{
+  const t=['Привет! Подключаю тебя к WANDO — нашему командному центру задач.',
+    '','1. Открой https://cock-pit.com и войди по своей почте (я уже добавил тебя в команду) — без пароля, по ссылке из письма.',
+    '2. На сайте нажми «Подключить Telegram» — один тап, и бот @wando_tasks_bot твой.',
+    '3. Дальше просто наговаривай задачи боту голосом — «созвон завтра 2ч» — остальное сделаем мы.',
+    '','Утром бот присылает только ТВОИ задачи. Слово «настройки» боту — если хочешь что-то отключить.'].join('\n');
+  navigator.clipboard.writeText(t);toast('Приглашение скопировано — отправь партнёру','✓');};}
 
 /* ============================ INIT ============================ */
 $$('[data-icon]').forEach(el=>el.insertAdjacentHTML('afterbegin',icon(el.dataset.icon)));
