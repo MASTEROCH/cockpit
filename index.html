@@ -1481,9 +1481,10 @@ body.light .vando-panel{background:var(--sheen),rgba(255,255,255,.97)}
   body.light .mnav{background:rgba(250,251,254,.98);border-top:1px solid rgba(0,0,0,.08)}
   .mnav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;border:none;background:none;
     color:var(--mut2);font-size:10px;font-weight:700;padding:4px 2px;border-radius:12px;transition:color .15s}
-  .mnav button i{font-style:normal;font-size:21px;line-height:1;filter:grayscale(1);opacity:.6;transition:.15s}
+  .mnav button i{font-style:normal;line-height:1;display:grid;place-items:center;opacity:.55;transition:.15s}
+  .mnav button i svg{width:22px;height:22px}
   .mnav button.on{color:var(--txt)}
-  .mnav button.on i{filter:none;opacity:1;transform:scale(1.08)}
+  .mnav button.on i{opacity:1;color:var(--acc2);transform:scale(1.08)}
   .mnav .mplus{flex:0 0 auto;width:56px;height:56px;margin:0 6px;border-radius:19px;transform:translateY(-14px);
     background:linear-gradient(135deg,#5472F0,#a78bfa 55%,#FE5C97);color:#fff;font-size:30px;font-weight:400;line-height:1;
     box-shadow:0 12px 28px rgba(84,114,240,.5),inset 0 1px 0 rgba(255,255,255,.35);display:grid;place-items:center;padding:0}
@@ -1756,8 +1757,8 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
   <div class="toolbar hide" id="toolbar">
     <div class="search"><span>🔍</span><input id="fq" placeholder="Поиск задач…" autocomplete="off"></div>
     <select class="fsel" id="fAssignee"><option value="">Все люди</option></select>
-    <button class="fchip" id="fMine">🙋 Моё</button>
-    <button class="fchip" id="fOver">🔴 Просрочено</button>
+    <button class="fchip" id="fMine">Моё</button>
+    <button class="fchip" id="fOver">Просрочено</button>
     <div class="seg2" id="boardModeCtl" style="display:none">
       <button class="sgb on" data-bm="status">▦ Статусы</button>
       <button class="sgb" data-bm="people">👥 По людям</button>
@@ -1777,7 +1778,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
     <div class="view" id="v-week"><div class="weekwrap" id="week"></div></div>
     <div class="view" id="v-backlog">
       <div class="pad">
-        <div class="dhead" style="margin-bottom:12px"><h1 style="font-size:20px">💡 Бэклог идей</h1><span class="sub">паркинг для всего, что нельзя терять</span></div>
+        <div class="dhead" style="margin-bottom:12px"><h1 style="font-size:20px">Бэклог идей</h1><span class="sub">паркинг для всего, что нельзя терять</span></div>
         <div class="quickadd">
           <input id="ideaIn" placeholder="Новая идея, гипотеза, фича… (Enter — добавить)" />
           <button class="btn primary" id="ideaAdd">Добавить идею</button>
@@ -1786,7 +1787,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
       </div>
     </div>
     <div class="view" id="v-team"><div class="pad">
-      <div class="secttl">👥 Команда и загрузка
+      <div class="secttl">Команда и загрузка
         <span style="margin-left:auto;display:flex;align-items:center;gap:7px;text-transform:none;letter-spacing:0;font-weight:500;color:var(--mut)">Вы: <select class="fsel" id="whoAmI"></select></span>
       </div>
       <div style="font-size:12.5px;color:var(--mut2);margin:-6px 0 14px;line-height:1.5">👋 <b style="color:var(--mut)">Пригласить со-фаундера:</b> добавь участника → впиши его email → он войдёт этой почтой и сразу увидит ваши проекты и задачи. (Доступ открыт только участникам, прописанным в Supabase.)</div>
@@ -1897,7 +1898,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
 <div class="modal-scrim" id="briefScrim"><div class="modal" id="briefModal"></div></div>
 
 <footer class="statusbar" id="statusbar">
-  <span class="sb-label">Цвета</span>
+  <span class="sb-label">Статусы</span>
   <div id="sbLegend"></div>
   <span class="sb-stats" id="sbStats"></span>
 </footer>
@@ -1943,11 +1944,11 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
   <div class="vando-in"><input id="vandoIn" placeholder="Спроси: что горит? кому что делегировать?…" autocomplete="off"><button id="vandoSend">↑</button></div>
 </div>
 <nav class="mnav" id="mnav">
-  <button data-mv="now" aria-label="Сегодня"><i>⚡</i><span>Сегодня</span></button>
-  <button data-mv="mprojects" aria-label="Проекты"><i>📁</i><span>Проекты</span></button>
+  <button data-mv="now" aria-label="Сегодня"><i data-icon="zap"></i><span>Сегодня</span></button>
+  <button data-mv="mprojects" aria-label="Проекты"><i data-icon="layers"></i><span>Проекты</span></button>
   <button class="mplus" id="mPlus" title="Новая задача" aria-label="Новая задача">＋</button>
-  <button data-mv="intake" id="mnavIntake" aria-label="Приёмка"><i>📥</i><span>Приёмка</span></button>
-  <button id="mnavVando" aria-label="Вандо — ассистент"><i>🤖</i><span>Вандо</span></button>
+  <button data-mv="intake" id="mnavIntake" aria-label="Приёмка"><i data-icon="inbox"></i><span>Приёмка</span></button>
+  <button id="mnavVando" aria-label="Вандо — ассистент"><i data-icon="sparkles"></i><span>Вандо</span></button>
 </nav>
 <div class="modal-scrim" id="capScrim"><div class="modal capsheet" id="capModal"></div></div>
 <div class="modal-scrim" id="repScrim"><div class="modal repsheet" id="repModal"></div></div>
@@ -2178,7 +2179,6 @@ function relTime(ts){const d=Math.floor((Date.now()-ts)/1000);
   if(d<45)return 'только что';if(d<3600)return Math.floor(d/60)+' мин';if(d<86400)return Math.floor(d/3600)+' ч';
   if(d<604800)return Math.floor(d/86400)+' дн';const x=new Date(ts);return String(x.getDate()).padStart(2,'0')+'.'+String(x.getMonth()+1).padStart(2,'0');}
 function legendHTML(){return `<div class="legend">
-  <span class="lg" style="color:var(--mut2)">Статусы:</span>
   ${STATUSES.map(s=>`<span class="lg"><span class="sw" style="background:${s.c}"></span>${s.n}</span>`).join('')}
   <span class="lg" style="opacity:.5">·</span>
   <span class="lg"><span class="flag" style="color:var(--warn)">⚑</span> высокий</span>
@@ -2204,15 +2204,15 @@ function relScore(t){const prW={urgent:4,high:3,med:2,low:1}[t.priority]||2;cons
    Показываем только то, что реально повлияло на выбор — никакой мистики. */
 function whyNext(t,energy){
   const r=[];const dl=daysLeft(t);
-  if(dl<0)r.push('🔥 просрочено '+(-dl)+' '+plural(-dl,'день','дня','дней'));
+  if(dl<0)r.push('просрочено '+(-dl)+' '+plural(-dl,'день','дня','дней'));
   else if(dl===0)r.push('📅 дедлайн сегодня');
   else if(dl===1)r.push('📅 дедлайн завтра');
   else if(dl<=3)r.push('📅 срок через '+dl+' '+plural(dl,'день','дня','дней'));
   if(t.cash)r.push('💰 двигает деньги'+(t.amount?' ~'+fmtMoney(t.amount):''));
   if(t.priority==='urgent')r.push('🚩 срочный приоритет');
-  else if(t.priority==='high')r.push('⚑ высокий приоритет');
-  if(energy==='lo'&&t.estimate&&t.estimate<=2)r.push('🪫 лёгкая — под сегодняшний заряд');
-  else if(energy==='hi'&&(t.estimate>=4||t.priority==='high'||t.priority==='urgent'))r.push('🔋 большая — заряд позволяет');
+  else if(t.priority==='high')r.push('высокий приоритет');
+  if(energy==='lo'&&t.estimate&&t.estimate<=2)r.push('лёгкая — под сегодняшний заряд');
+  else if(energy==='hi'&&(t.estimate>=4||t.priority==='high'||t.priority==='urgent'))r.push('большая — заряд позволяет');
   if(!r.length)r.push('ближайшая по сроку и приоритету');
   return r.slice(0,3);
 }
@@ -2291,8 +2291,8 @@ function render(){
   {const ti=document.querySelector('.tab[data-v="intake"]');if(ti)ti.style.display=isTeam?'':'none';
    const mi=$('#mnavIntake');if(mi){if(isTeam){mi.dataset.mv='intake';
        const n=(typeof intakeRows!=='undefined'&&intakeRows)?intakeRows.length:0;
-       mi.innerHTML='<i>📥'+(n?'<b class="mbadge">'+(n>9?'9+':n)+'</b>':'')+'</i><span>Приёмка</span>';}
-     else{mi.dataset.mv='backlog';mi.innerHTML='<i>💡</i><span>Бэклог</span>';}}
+       mi.innerHTML='<i>'+icon('inbox')+(n?'<b class="mbadge">'+(n>9?'9+':n)+'</b>':'')+'</i><span>Приёмка</span>';}
+     else{mi.dataset.mv='backlog';mi.innerHTML='<i>'+icon('idea')+'</i><span>Бэклог</span>';}}
    if(!isTeam&&view==='intake'){setView('now');return;}}
   const _T=S.tasks.filter(t=>!t.isMilestone);
   $('#sbStats').textContent=`${_T.length} задач · ${_T.filter(t=>t.status==='done').length} готово · ${S.tasks.filter(isOverdue).length} просроч.`;
@@ -2491,14 +2491,14 @@ function renderNow(){
   if(next){const ovn=isOverdue(next);const dl=daysLeft(next);const isFoc=focus.tid===next.id;const m=heroX?{name:heroX.aname}:(next.assigneeId?member(next.assigneeId):null);
     hero=`<div class="now-hero ${ovn?'over':''}">
      <div class="nh-main">
-      <div class="nh-label">${multi?'🎯 Твой следующий шаг · все проекты':(mine.length?'🎯 Твой следующий шаг':'🎯 Главное в проекте сейчас')}</div>
+      <div class="nh-label">${multi?'Твой следующий шаг · все проекты':(mine.length?'Твой следующий шаг':'Главное в проекте сейчас')}</div>
       <div class="nh-title" data-open="${next.id}">${next.cash?'💰 ':''}${prGlyph(next)}${esc(next.title)}</div>
       ${(cp=>cp.length?`<div class="nh-crumb">↳ ${cp.map(esc).join(' ▸ ')}</div>`:'')(task(next.id)?crumbPath(next):[])}
       <div class="nh-meta">
         ${heroX?`<span class="ichip">${heroX.emoji} ${esc(heroX.pname)}</span>`:`<span class="ichip">${avatar(next.assigneeId)} ${m?esc(m.name):'без исполнителя'}</span>`}
         <span class="ichip" style="border-color:${stMap[next.status].c}"><span class="pal-dot" style="background:${stMap[next.status].c}"></span> ${stMap[next.status].n}</span>
-        ${next.estimate?`<span class="ichip">⏱ ${next.spent||0}/${next.estimate}ч</span>`:''}
-        <span class="ichip ${ovn?'bad':''}">📅 ${ovn?'просрочено '+(-dl)+'д':dl===0?'сегодня':dl===1?'завтра':'через '+dl+'д'}</span>
+        ${next.estimate?`<span class="ichip">${next.spent||0}/${next.estimate}ч</span>`:''}
+        <span class="ichip ${ovn?'bad':''}">${ovn?'просрочено '+(-dl)+'д':dl===0?'сегодня':dl===1?'завтра':'через '+dl+'д'}</span>
       </div>
       <div class="nh-why"><b>почему этот шаг:</b> ${whyNext(next,_energy).join(' · ')}</div>
       <div class="nh-acts">
@@ -2511,7 +2511,7 @@ function renderNow(){
     </div>`;
   }else{const bare=!S.tasks.some(t=>!t.isMilestone);
     const allDone=!bare&&!S.tasks.some(t=>!t.isMilestone&&t.status!=='done');
-    hero=`<div class="now-hero done"><div class="nh-label">${bare?'🧠 Начнём?':'🎉 Чисто'}</div><div class="nh-title">${bare?'Не знаешь, с чего начать — норм':allDone?'Всё закрыто — красавчик':'Активных задач на тебе нет'}</div>
+    hero=`<div class="now-hero done"><div class="nh-label">${bare?'Начнём?':'Чисто'}</div><div class="nh-title">${bare?'Не знаешь, с чего начать — норм':allDone?'Всё закрыто — красавчик':'Активных задач на тебе нет'}</div>
       <div class="nh-meta">${bare?'<button class="btn primary" id="npPlan" style="margin-top:4px">🧠 Вандо, спланируй за меня</button>':allDone?'<span class="ichip">создай следующую задачу или запланируй новую цель</span>':'<span class="ichip">создай задачу строкой сверху или ⌘K</span>'}</div></div>`;}
   const energy=localStorage.getItem('cockpit_energy_'+todayISO())||'';
   if(window.innerWidth<=680){renderNowMobile({el,greet,next,upNext,mine,pct,prog,ov,vel,ins,running,energy:localStorage.getItem('cockpit_energy_'+todayISO())||''});return;}
@@ -2710,10 +2710,10 @@ function renderNowMobile(ctx){
         <button class="mh-done" data-done="${next.id}">✓ Готово</button>
       </div></div>`
     :(!S.tasks.some(t=>!t.isMilestone)
-      ?`<div class="mhero done"><div class="mh-label">🧠 Начнём?</div><div class="mh-title">Вандо спланирует за тебя</div><div class="mh-meta">опиши цель голосом — получи готовый план</div><button class="mh-done" id="npPlan" style="margin-top:10px">🧠 Спланируй за меня</button></div>`
+      ?`<div class="mhero done"><div class="mh-label">Начнём?</div><div class="mh-title">Вандо спланирует за тебя</div><div class="mh-meta">опиши цель голосом — получи готовый план</div><button class="mh-done" id="npPlan" style="margin-top:10px">Спланируй за меня</button></div>`
       :(S.tasks.some(t=>!t.isMilestone&&t.status!=='done')
-        ?`<div class="mhero done"><div class="mh-label">🎉 Чисто</div><div class="mh-title">На тебе задач нет</div><div class="mh-meta">жми ➕ и создай первую</div></div>`
-        :`<div class="mhero done"><div class="mh-label">🎉 Чисто</div><div class="mh-title">Всё закрыто — красавчик</div><div class="mh-meta">жми ➕ и создай следующую</div></div>`));
+        ?`<div class="mhero done"><div class="mh-label">Чисто</div><div class="mh-title">На тебе задач нет</div><div class="mh-meta">жми ➕ и создай первую</div></div>`
+        :`<div class="mhero done"><div class="mh-label">Чисто</div><div class="mh-title">Всё закрыто — красавчик</div><div class="mh-meta">жми ➕ и создай следующую</div></div>`));
   if(upNext.length&&!localStorage.getItem('cockpit_swipe_tip')){localStorage.setItem('cockpit_swipe_tip','1');
     setTimeout(()=>toast('Свайпни задачу: вправо — готово ✅, влево — на завтра 🌙','👆'),900);}
   const rows=upNext.map(x=>{const t=x.t||x;const pid=x.pid||S.id;
@@ -2725,7 +2725,7 @@ function renderNowMobile(ctx){
     ${hero}
     ${rows?`<div class="msec">Ещё сегодня · ${upNext.length}</div>${rows}`:''}
     ${selfHealCard()}${mentorCard()}${cashPulse()}
-    <details class="fold" style="margin-top:14px"><summary>📊 Подробности дня</summary>
+    <details class="fold" style="margin-top:14px"><summary>Подробности дня</summary>
       <div class="pulse-row" style="margin-top:12px">
         <div class="pulse-card"><div class="pv" style="color:var(--ok)">${ctx.pct}%</div><div class="pl">готово</div></div>
         <div class="pulse-card"><div class="pv" style="color:var(--warn)">${ctx.prog}</div><div class="pl">в работе</div></div>
@@ -2904,24 +2904,24 @@ async function runAiPlan(btn){
   const ctx=($('#planCtx')&&$('#planCtx').value||'').trim();if(ctx)g+='. Что уже есть и ограничения: '+ctx;
   if(!cloudOn||!sb){showPlanPrompt(g,'<b>Нет облака.</b> Скопируй промпт и вставь своему Claude — он создаст задачи в «Приёмке».');return;}
   const token=await aiToken();if(!token){showPlanPrompt(g);return;}
-  if(btn){btn.disabled=true;btn.textContent='🧠 Claude планирует…';}
-  $('#planOut').innerHTML='<div class="emptymini">🧠 Claude раскладывает цель на задачи…</div>';
+  if(btn){btn.disabled=true;btn.textContent='Вандо планирует…';}
+  $('#planOut').innerHTML='<div class="emptymini">Вандо раскладывает цель на задачи…</div>';
   try{
     const r=await fetch(CFG.url+'/functions/v1/ai-review',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+token},body:JSON.stringify({mode:'plan',goal:g,project:aiPayload()})});
     const res=await r.json();
     if(r.ok&&Array.isArray(res.tasks)&&res.tasks.length){
       const n=createPlanTasks(res.tasks);
       closePlan();setView('gantt');
-      toast('Claude создал '+n+' задач 🧠','🧠','Отменить',()=>undo());
+      toast('Вандо создал '+n+' задач','✓','Отменить',()=>undo());
       return;
     }
     showPlanPrompt(g,'<b>Авто-генерация недоступна</b> (обнови Edge-функцию). Пока — скопируй промпт своему Claude:');
   }catch(e){showPlanPrompt(g,'<b>Не дозвонился до Claude.</b> Скопируй промпт своему Claude:');}
-  if(btn){btn.disabled=false;btn.textContent='🧠 Создать план';}
+  if(btn){btn.disabled=false;btn.textContent='Создать план';}
 }
 function renderPlan(){
   const m=$('#planModal');
-  m.innerHTML=`<div class="ob-art" style="font-size:46px">🧠</div>
+  m.innerHTML=`<div class="ob-art" id="planArt"></div>
    <div class="ob-body">
      <h2>Вандо спланирует за тебя</h2>
      <p>Не нужно уметь планировать — просто ответь, чего хочешь. Вандо разложит на задачи со сроками, а ты подправишь.</p>
@@ -2932,10 +2932,11 @@ function renderPlan(){
        <button class="chip" data-dl="за квартал">🏔 квартал</button>
      </div>
      <textarea class="inp" id="planCtx" style="min-height:52px;line-height:1.5;margin-top:9px" placeholder="Что уже есть / ограничения? (необязательно) Напр.: дизайн готов, бюджета нет, работаю один"></textarea>
-     <button class="btn" id="planMic" style="margin-top:8px;padding:8px 13px;font-size:12.5px">🎙 Надиктовать цель</button>
+     <button class="btn" id="planMic" style="margin-top:8px;padding:8px 13px;font-size:12.5px">Надиктовать голосом</button>
      <div id="planOut"></div>
    </div>
-   <div class="ob-foot"><button class="btn" id="planClose">Закрыть</button><div class="spacer"></div><button class="btn primary" id="planGen">🧠 Создать план</button></div>`;
+   <div class="ob-foot"><button class="btn" id="planClose">Закрыть</button><div class="spacer"></div><button class="btn primary" id="planGen">Создать план</button></div>`;
+  {const pa=$('#planArt');if(pa)pa.innerHTML=logoMarkSVG(44);}
   $('#planClose').onclick=closePlan;
   $('#planMic').onclick=()=>dictateTo($('#planGoal'),$('#planMic'));
   $$('#planDl .chip').forEach(c=>c.onclick=()=>{planDl=c.dataset.dl===planDl?'':c.dataset.dl;
@@ -3339,7 +3340,7 @@ function renderDash(){
     </div>
     <div class="dcols">
       <div class="panel-c">
-        <h3>🔥 Фокус на сегодня <span class="c">${focusU.length}</span></h3>
+        <h3>Фокус на сегодня <span class="c">${focusU.length}</span></h3>
         ${focusU.length?focusU.map(t=>{const ov=isOverdue(t);const dl=daysLeft(t);
           return `<div class="trow" data-task="${t.id}"><button class="qdone" data-quickdone="${t.id}" title="Отметить готовым" style="--c:${stMap[t.status].c}"></button>
             <span class="tn">${esc(t.title)}</span>${kidsTag(t)}${subTag(t)}${avatar(t.assigneeId)}
@@ -3482,7 +3483,7 @@ function renderPortfolio(){
      <div class="kpi"><div class="v" style="color:var(--ok)">${pct}%</div><div class="l">${gDone}/${gTasks} готово</div><div class="kpibar"><span style="width:${pct}%;background:linear-gradient(90deg,var(--ok),#10b981)"></span></div></div>
      <div class="kpi"><div class="v" style="color:${gOver?'var(--bad)':'var(--mut)'}">${gOver}</div><div class="l">Просрочено везде</div></div>
    </div>
-   <button class="cmdex" id="btnRep" style="margin-bottom:16px"><span>📊</span> Отчёт недели по всем проектам — собрать и скопировать для команды</button>
+   <button class="cmdex" id="btnRep" style="margin-bottom:16px"> Отчёт недели по всем проектам — собрать и скопировать для команды</button>
    ${mine.length?`<div class="panel-c" style="margin-bottom:16px"><h3>🔥 Мои задачи по всем проектам <span class="c">${mine.length}</span></h3>
      ${mine.slice(0,14).map(x=>{const ov=over(x.t);const dl=Math.round((parseD(x.t.end)-parseD(tISO))/dayMs);
        return `<div class="trow" data-pid="${x.pid}" data-tid="${x.t.id}"><span class="dot" style="background:${stMap[x.t.status].c}"></span>
@@ -3563,7 +3564,7 @@ let intakeRows=[], intakeReady=true, intakeWorkspace='default';
 function intakePending(){return intakeRows.length;}
 function updateIntakeBadge(){const c=$('#cntIntake');if(c){c.textContent=intakeRows.length;c.style.display=intakeRows.length?'':'none';}
   const mi=$('#mnavIntake');if(mi&&mi.dataset.mv==='intake'){const n=intakeRows.length;
-    mi.innerHTML='<i>📥'+(n?'<b class="mbadge">'+(n>9?'9+':n)+'</b>':'')+'</i><span>Приёмка</span>';}
+    mi.innerHTML='<i>'+icon('inbox')+(n?'<b class="mbadge">'+(n>9?'9+':n)+'</b>':'')+'</i><span>Приёмка</span>';}
   updateInboxBadge();}
 async function loadIntake(){
   if(!cloudOn||!sb){intakeRows=[];updateIntakeBadge();return;}
@@ -3607,7 +3608,7 @@ async function aiSplitIntake(id,btn){
   if(!cloudOn||!sb){toast('Вандо-ИИ работает в облаке — войди и повтори','🧠');return;}
   const token=await aiToken();if(!token){toast('Вандо-ИИ недоступен — добавь задачу вручную','🧠');return;}
   if(pid!==S.id)switchProject(pid);           /* разбивка в контексте целевого проекта: команда, имена, занятость */
-  if(btn){btn.disabled=true;btn.textContent='🧠 Вандо раскладывает…';}
+  if(btn){btn.disabled=true;btn.textContent='Вандо раскладывает…';}
   try{
     const resp=await fetch(CFG.url+'/functions/v1/ai-review',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+token},
       body:JSON.stringify({mode:'plan',goal:r.text,project:aiPayload()})});
@@ -3632,7 +3633,7 @@ async function aiSplitIntake(id,btn){
     toast('Вандо разложил на '+n+' шагов — проверь и правь','🧠');
     render();openTask(parent.id);
   }catch(e){
-    if(btn){btn.disabled=false;btn.textContent='🧠 Разбить';}
+    if(btn){btn.disabled=false;btn.textContent='Разбить на план';}
     toast('Вандо не справился ('+((e&&e.message)||e)+') — добавь вручную','⚠');
   }
 }
@@ -3687,21 +3688,21 @@ function cheatsheetHTML(){return `<div class="cheatbody">
 function bindCheat(scope){$$(scope+' .cmdex').forEach(b=>b.onclick=()=>{navigator.clipboard.writeText(b.dataset.copy);toast('Скопировано — вставь в Claude','📋');});}
 function renderIntake(){
   const el=$('#intake');if(!el)return;
-  if(!cloudOn){el.innerHTML=`<div class="dhead"><h1>📥 Приёмка</h1></div>`+emptyState('🔌','Нужен вход в облако','Приёмка работает для команды. Нажми 🔄 в шапке и войди — задачи из бота и Claude будут прилетать сюда.');return;}
+  if(!cloudOn){el.innerHTML=`<div class="dhead"><h1>Приёмка</h1></div>`+emptyState('🔌','Нужен вход в облако','Приёмка работает для команды. Нажми 🔄 в шапке и войди — задачи из бота и Claude будут прилетать сюда.');return;}
   const connectBtn=`<button class="btn" id="intakeConnect">${icon('plug',15)} Подключить Claude</button>`;
-  if(!intakeReady){el.innerHTML=`<div class="dhead"><h1>📥 Приёмка</h1><span class="spacer"></span>${connectBtn}</div>`
+  if(!intakeReady){el.innerHTML=`<div class="dhead"><h1>Приёмка</h1><span class="spacer"></span>${connectBtn}</div>`
     +emptyState('🛠','Приёмник не активирован','Нужно один раз прогнать SQL в Supabase (supabase/intake.sql). Деплоить ничего не надо. После этого задачи из Claude появятся здесь.');
     const cb=$('#intakeConnect');if(cb)cb.onclick=openConnect;return;}
   el.innerHTML=`<div class="dhead" style="align-items:flex-start">
-      <div style="flex:1;min-width:220px"><h1>📥 Приёмка${intakeRows.length?` <span class="c" style="font-size:14px;vertical-align:3px">${intakeRows.length}</span>`:''}</h1>
+      <div style="flex:1;min-width:220px"><h1>Приёмка${intakeRows.length?` <span class="c" style="font-size:14px;vertical-align:3px">${intakeRows.length}</span>`:''}</h1>
         <div class="sub" style="margin-top:4px;line-height:1.5">задачи из бота и Claude ждут решения: выбери проект и подтверди — станут задачами</div></div>
       ${connectBtn}</div>
-    <details class="cheat"><summary>📋 Шпаргалка: быстрые команды для Claude и бота</summary>${cheatsheetHTML()}</details>`
+    <details class="cheat"><summary>Шпаргалка: быстрые команды для Claude и бота</summary>${cheatsheetHTML()}</details>`
     +(intakeRows.length?`<div class="inolist">${intakeRows.map(r=>{
       const p=parseQuick(r.text);const m=p.assignee?member(p.assignee):null;
       const noTarget=!projectMatch(r.target_project);
       return `<div class="ino" data-id="${r.id}">
-        <div class="inohead"><span class="inoby">🤖 <b>${esc(r.by_name||r.by_email)}</b>${/telegram/i.test(r.source||'')?' из Telegram':' через Claude'}</span>
+        <div class="inohead"><span class="inoby"><b>${esc(r.by_name||r.by_email)}</b>${/telegram/i.test(r.source||'')?' из Telegram':' через Claude'}</span>
           ${r.source?`<span class="inosrc">${esc(r.source)}</span>`:''}<span class="inotime">${relTime(new Date(r.created_at).getTime())}</span></div>
         <div class="inotitle">${esc(p.title||r.text)}</div>
         <div class="inochips">
@@ -3716,7 +3717,7 @@ function renderIntake(){
           ${projectSelectHTML(r.id,r.target_project)}
           <div class="inoacts">
             <button class="btn primary" data-acc="${r.id}">✓ Добавить</button>
-            <button class="btn" data-aisplit="${r.id}" title="Вандо превратит заявку в задачу с готовым планом-подзадачами">🧠 Разбить</button>
+            <button class="btn" data-aisplit="${r.id}" title="Вандо превратит заявку в задачу с готовым планом-подзадачами">Разбить на план</button>
             <button class="btn" data-edit="${r.id}">✎ Править</button>
             <button class="btn" data-bl="${r.id}">📥 В бэклог</button>
             <button class="btn danger" data-rej="${r.id}">✕</button>
@@ -3969,10 +3970,10 @@ function renderWeek(){
       <div class="wcm"><span class="pbadge">${x.emoji||'📄'} ${esc(x.pname)}</span>${x.parent?`<span style="font-size:10px;color:var(--mut2)">↳ ${esc(x.parent)}</span>`:''}${x.t.estimate?`<span style="font-size:10px;color:var(--mut2)">${x.t.estimate}ч</span>`:''}${subTag(x.t)}</div></div></div>`;
   const col=(key,label,sub,cls)=>`<div class="wcol ${cls||''}" data-day="${key}"><div class="wcolh" title="${key==='over'?'перетащи задачу в день — изменится срок':sub||''}"><span>${label}</span>${sub?`<span class="wsub">${sub}</span>`:''}<span class="wcnt">${by[key].length||''}</span></div><div class="wcolb">${by[key].map(card).join('')||'<div class="wempty">—</div>'}</div></div>`;
   const wt=weekOffset===0?'Эта неделя':weekOffset===1?'Следующая неделя':weekOffset===-1?'Прошлая неделя':md(wstart)+'–'+md(wend);
-  let cols='';if(by.over.length)cols+=col('over','⚠️ Просрочено','',' over');
+  let cols='';if(by.over.length)cols+=col('over','Просрочено','',' over');
   days.forEach((d,i)=>cols+=col(d,WD[i],md(d),d===tISO?'today':''));
   if(by.later.length)cols+=col('later','Позже','за неделей','');
-  el.innerHTML=`<div class="whead"><h2 style="margin:0;font-size:18px">🗓 Моя неделя</h2><span class="wt">${wt} · ${md(wstart)}–${md(wend)}</span>
+  el.innerHTML=`<div class="whead"><h2 style="margin:0;font-size:18px">Моя неделя</h2><span class="wt">${wt} · ${md(wstart)}–${md(wend)}</span>
       <div class="wnav"><button class="btn" id="wPrev">←</button><button class="btn" id="wToday">Сегодня</button><button class="btn" id="wNext">→</button></div></div>
     <div class="wgrid">${cols}</div>
     <div style="font-size:12px;color:var(--mut2);margin-top:10px">Это твои задачи по всем проектам на неделю. Перетаскивай между днями — меняешь срок. Клик — открыть.</div>`;
@@ -4619,6 +4620,7 @@ function openTask(id){
   renderSubtasks(t);
   renderComments(t);
   $('#drawer').classList.add('show');syncScrim();
+  setTimeout(()=>autoGrow($('#dTitle')),60);   /* пересчёт высоты уже ВИДИМОГО заголовка */
 }
 function renderCrumb(t){
   const c=$('#dCrumb');if(!c)return;
@@ -5152,10 +5154,10 @@ const OB=[
   list:[['🎯','<b>Твой следующий шаг</b> — самое важное, с кнопкой «Фокус»'],['🩹','<b>Просрочки?</b> Один тап «→ На сегодня» — план снова честный'],['👀','<b>«Было без тебя»</b> — что сделал партнёр, пока тебя не было']]},
  {art:'📥',h:'Захват отовсюду → Приёмка',
   p:'Мысль не должна ждать, пока откроешь трекер. Кидай как удобно — всё падает в Приёмку, команда подтверждает одним тапом:',
-  list:[['⌨️','<b>Строка сверху</b> — «созвон с Димой завтра 2ч срочно»'],['🎙','<b>Голосом боту</b> в Telegram — распознает и разберёт'],['🤖','<b>Из Claude</b> — «WANDO: поставь задачу…»'],['📁','Бот спросит «Куда?» одним тапом — и запомнит твой выбор']]},
+  list:[['⌨️','<b>Строка сверху</b> — «созвон с партнёром завтра 2ч срочно»'],['🎙','<b>Голосом боту</b> в Telegram — распознает и разберёт'],['🤖','<b>Из Claude</b> — «WANDO: поставь задачу…»'],['📁','Бот спросит «Куда?» одним тапом — и запомнит твой выбор']]},
  {art:'📱',h:'Telegram-бот — WANDO в кармане',
   p:'@wando_tasks_bot — карманная версия всего инструмента:',
-  list:[['🧭','<b>Мои задачи</b> · «задачи Димы» · «проект Датум» — выжимки'],['✓','<b>Приёмка прямо в чате</b> — кнопки ✓/✕ создают задачи'],['☀️','<b>9:00 бриф</b>: твой день · <b>18:00 разбор</b>: перенос незакрытого одним тапом'],['🔔','<b>«Пингануть»</b> — бот вежливо дожимает за тебя']]},
+  list:[['🧭','<b>Мои задачи</b> · «задачи &lt;имя&gt;» · «проект &lt;название&gt;» — выжимки'],['✓','<b>Приёмка прямо в чате</b> — кнопки ✓/✕ создают задачи'],['☀️','<b>9:00 бриф</b>: твой день · <b>18:00 разбор</b>: перенос незакрытого одним тапом'],['🔔','<b>«Пингануть»</b> — бот вежливо дожимает за тебя']]},
  {art:'🤖',h:'Вандо — сверхразум-проджект',
   p:'Кнопка в правом нижнем углу. Вандо видит все проекты, загрузку и даже то, как вы пользуетесь инструментом:',
   list:[['🔥','«Что горит по всем проектам?» — ответ по данным, не по воде'],['⚖️','«Кто перегружен и что перекинуть?» — с именами и часами'],['📊','Раз в неделю сам подсветит, что оптимизировать в WANDO'],['🤝','Пн/ср/пт сам выйдет на связь в TG — только если есть что сказать']]},
@@ -5630,7 +5632,7 @@ function reportText(R){
 function openEmpireRep(){
   const R=empireReport(),txt=reportText(R);
   if(typeof track==='function')track('report:open');
-  $('#repModal').innerHTML=`<div class="rep-h"><b>📊 Отчёт недели</b><span class="sub">${R.period} · собран автоматически</span><button class="iconbtn" style="margin-left:auto" id="repX" aria-label="Закрыть отчёт" title="Закрыть">✕</button></div>
+  $('#repModal').innerHTML=`<div class="rep-h"><b>Отчёт недели</b><span class="sub">${R.period} · собран автоматически</span><button class="iconbtn" style="margin-left:auto" id="repX" aria-label="Закрыть отчёт" title="Закрыть">✕</button></div>
    <div class="rep-b">
     <div class="rep-stats"><span>✅ ${R.done7} закрыто</span><span>🔄 ${R.act} в работе</span><span${R.over?' style="color:var(--bad)"':''}>🔥 ${R.over} просрочено</span>${R.cash?`<span style="color:var(--ok)">💰 ${R.cash} денежных</span>`:''}</div>
     ${R.rows.map(r=>`<div class="rep-p"><div class="rp-t">${r.meta.emoji||'📄'} ${esc(r.meta.name)}<span class="pct">${r.pct}%</span></div>
@@ -5668,8 +5670,8 @@ function renderMProjects(){
   let html='';tops.forEach(t=>{html+=row(t,false);projs.filter(k=>k.meta.parentId===t.meta.id).forEach(k=>html+=row(k,true));});
   el.innerHTML=`<div class="secttl">📁 Проекты <span style="margin-left:auto;text-transform:none;letter-spacing:0;font-weight:500;color:var(--mut2)">${projs.length}</span></div>
     <div class="mplist">${html}</div>
-    <button class="btn" style="width:100%;margin-top:14px;justify-content:center" id="mpAll">🌐 Пульс всей компании</button>
-    <button class="btn" style="width:100%;margin-top:8px;justify-content:center" id="mpRep">📊 Отчёт недели</button>
+    <button class="btn" style="width:100%;margin-top:14px;justify-content:center" id="mpAll">Пульс всей компании</button>
+    <button class="btn" style="width:100%;margin-top:8px;justify-content:center" id="mpRep">Отчёт недели</button>
     ${isTeam?'<button class="btn" style="width:100%;margin-top:8px;justify-content:center" id="mpNew">＋ Новый проект</button>':''}`;
   $$('#mprojects .mprow').forEach(r=>r.onclick=()=>{const id=r.dataset.p;if(id!==S.id)switchProject(id);else setView('board');});
   const a=$('#mpAll');if(a)a.onclick=()=>setView('all');
