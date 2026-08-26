@@ -1569,7 +1569,7 @@ body.light .mseg{background:rgba(250,251,254,.97)}
 .mhero{position:relative;border-radius:26px;padding:26px 22px;margin-bottom:14px;
   background:var(--sheen),linear-gradient(135deg,rgba(167,139,250,.16),rgba(84,114,240,.08) 70%),var(--glass);
   border:1px solid var(--gbrd);box-shadow:var(--ghi),0 18px 50px rgba(0,0,0,.35)}
-.mhero.over{background:var(--sheen),linear-gradient(135deg,rgba(248,113,113,.2),rgba(251,191,36,.08) 70%),var(--glass);border-color:rgba(248,113,113,.38)}
+.mhero.over{background:var(--sheen),linear-gradient(135deg,rgba(248,113,113,.07),transparent 60%),var(--glass)} /* просрочка — чипом, не рамкой (как на десктопе) */
 .mhero.done{border-color:rgba(52,211,153,.32)}
 .mh-label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--mut2);margin-bottom:10px}
 .mhero.over .mh-label{color:var(--bad)}
@@ -3985,7 +3985,7 @@ function renderBrief(){
   const empty=!b.partner.length&&!b.today.length&&!b.onMe.length&&!b.iWait.length;
   const trow=x=>`<div class="trow" data-pid="${x.pid}" data-tid="${x.t.id}"><span class="dot" style="background:${stMap[x.t.status].c}"></span><span class="tn">${esc(x.t.title)}</span><span class="pbadge">${x.emoji||'📄'} ${esc(x.pname)}</span>${x.ov?'<span class="when over">просроч.</span>':''}</div>`;
   $('#briefModal').innerHTML=`
-   <div class="ob-body" style="max-height:80vh;overflow:auto">
+   <div class="ob-body" style="max-height:76dvh;overflow:auto">
      <h2>${icon('sun',18)} Бриф на сегодня</h2>
      <p>${greet}${(n=>n&&n!=='Я'&&n!=='Новый участник'?', '+esc(n.split(' ')[0]):'')(meName())}. Коротко — что важно прямо сейчас.</p>
      ${b.onMe.length?`<div class="airh">⏳ Висит на тебе — ${b.onMe.length}</div>${b.onMe.map(trow).join('')}`:''}
@@ -5842,10 +5842,16 @@ async function gateSend(email){
 function tmaInitData(){try{const m=location.hash.match(/tgWebAppData=([^&]+)/);return m?decodeURIComponent(m[1]):null;}catch(e){return null;}}
 function tmaBoot(){
   if(!tmaInitData())return;
+  /* первый запуск мини-аппа: человек должен увидеть ПРОДУКТ, а не модалку брифа поверх незнакомого экрана */
+  window._tmaFirst=!localStorage.getItem('cockpit_tma_seen');
+  localStorage.setItem('cockpit_tma_seen','1');
   const sc=document.createElement('script');sc.src='https://telegram.org/js/telegram-web-app.js';
   sc.onload=()=>{try{const T=window.Telegram&&window.Telegram.WebApp;if(!T)return;
     T.ready();T.expand();
+    try{T.disableVerticalSwipes&&T.disableVerticalSwipes();}catch(e){} /* скролл списков не должен сворачивать приложение */
+    try{T.enableClosingConfirmation&&T.enableClosingConfirmation();}catch(e){} /* случайный свайп вниз не убивает сессию */
     try{T.setHeaderColor('#0f121b');T.setBackgroundColor('#0d0f17');}catch(e){}
+    if(window._tmaFirst)setTimeout(()=>{try{toast('Внизу — вкладки, по центру «+» — новая задача текстом или голосом','👋');}catch(e){}},1400);
     T.BackButton.onClick(()=>{ // системный «назад» закрывает верхний слой
       const layers=[['#lpScrim',closeLP],['#repScrim',closeEmpireRep],['#capScrim',closeCap],['#vandoPanel',()=>vandoToggle(false)],['#drawer',()=>closeDrawer&&closeDrawer()]];
       for(const [sel,fn] of layers){const el=$(sel);if(el&&el.classList.contains('show')){fn();return;}}
@@ -5910,7 +5916,7 @@ async function onLoggedIn(){cloudOn=true;closeAuth();hideGate();updateCloudBadge
     }catch(e){/* нет строки — покажем анкету один раз */}}
   if(!localStorage.getItem('cockpit_profile_done'))openProfileSetup();
   else if(!localStorage.getItem('cockpit_onboarded'))openSetupWizard();
-  else if(localStorage.getItem('cockpit_brief_date')!==todayISO())openBrief();
+  else if(!window._tmaFirst&&localStorage.getItem('cockpit_brief_date')!==todayISO())openBrief();
   setTimeout(maybeTgGate,2200);
   shareCapture(); // «поделиться» из другого приложения → лист захвата (PWA share-target)
   // deep-link из TG: ?t=PID:TID → открыть задачу (якоря в сообщениях бота)
@@ -6315,7 +6321,7 @@ if(!_shareSnap)setTimeout(()=>{
   if(cloudOn)return;
   const anyModal=['#gate','#obScrim','#npScrim','#authScrim','#profileScrim','#briefScrim'].some(id=>{const el=$(id);return el&&(id==='#gate'?!el.classList.contains('hide'):el.classList.contains('show'));});
   if(anyModal)return;
-  if(localStorage.getItem('cockpit_onboarded')&&localStorage.getItem('cockpit_brief_date')!==todayISO())openBrief();
+  if(!window._tmaFirst&&localStorage.getItem('cockpit_onboarded')&&localStorage.getItem('cockpit_brief_date')!==todayISO())openBrief();
 },1900);
 // разовая подсказка: где живут поиск/команды (по фидбеку — ⌘K был неочевиден)
 if(!_shareSnap)setTimeout(()=>{
