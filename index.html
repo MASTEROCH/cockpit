@@ -1853,7 +1853,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
     <div class="field"><label>Приоритет</label><div class="seg" id="dPrio"></div></div>
     <div class="field"><label>Подзадачи <span id="dKidsCnt" style="color:var(--mut2);font-weight:600;text-transform:none"></span></label>
       <div id="dKids"></div>
-      <div class="cmtadd"><input class="inp" id="dKidIn" placeholder="Разбить на подзадачу… (Enter)"><button class="btn" id="dKidBtn">＋</button></div>
+      <div class="cmtadd"><input class="inp" id="dKidIn" placeholder="Новая подзадача… (Enter)"><button class="btn" id="dKidBtn">＋</button></div>
     </div>
     <div class="field"><label>Список действий</label>
       <div id="dSubs"></div>
@@ -2768,10 +2768,13 @@ function renderNowMobile(ctx){
       :(S.tasks.some(t=>!t.isMilestone&&t.status!=='done')
         ?`<div class="mhero done"><div class="mh-label">Чисто</div><div class="mh-title">На тебе задач нет</div><div class="mh-meta">жми ➕ и создай первую</div></div>`
         :`<div class="mhero done"><div class="mh-label">Чисто</div><div class="mh-title">Всё закрыто — красавчик</div><div class="mh-meta">жми ➕ и создай следующую</div></div>`));
-  if(upNext.length&&!localStorage.getItem('cockpit_swipe_tip')){localStorage.setItem('cockpit_swipe_tip','1');
-    setTimeout(()=>toast('Свайпни задачу: вправо — готово ✅, влево — на завтра 🌙','👆'),900);}
+  if(upNext.length&&!localStorage.getItem('cockpit_swipe_tip')){
+    setTimeout(()=>{ /* не перекрываем открытые листы/модалки — подскажем в следующий спокойный рендер */
+      if(document.querySelector('.scrim.show,#capScrim.show,#briefScrim.show,#drawer.show'))return;
+      localStorage.setItem('cockpit_swipe_tip','1');
+      toast('Свайпни задачу: вправо — готово, влево — на завтра','👆');},900);}
   const rows=upNext.map(x=>{const t=x.t||x;const pid=x.pid||S.id;
-    return `<div class="mrow" data-open="${t.id}" data-pid="${pid}"><span class="dot" style="background:${stMap[t.status].c}"></span><span class="mr-t">${t.cash?'💰 ':''}${prGlyph(t)}${esc(t.title)}</span>${x.pid?badge(x):''}${t.estimate?`<span class="mr-e">${t.estimate}ч</span>`:''}</div>`;}).join('');
+    return `<div class="mrow" data-open="${t.id}" data-pid="${pid}"><span class="dot" style="background:${stMap[t.status].c}"></span><span class="mr-t">${prGlyph(t)}${esc(t.title)}</span>${x.pid?badge(x):''}${t.estimate?`<span class="mr-e">${t.estimate}ч</span>`:''}</div>`;}).join('');
   el.innerHTML=`
     <div class="mgreet"><h1>${greet.split(' ')[0]} ${greet.split(' ').slice(1).join(' ')}${(n=>n&&n!=='Я'&&n!=='Новый участник'?', '+esc(n.split(' ')[0]):'!')(meName())}</h1>
       <span class="energyrow"><button data-en="hi" class="${energy==='hi'?'on':''}" title="Полон сил — дай крупную задачу" aria-label="Полон сил">${icon('battery',15)}</button><button data-en="lo" class="${energy==='lo'?'on':''}" title="Мало сил — подкинь лёгкие" aria-label="Мало сил">${icon('battlow',15)}</button></span></div>
