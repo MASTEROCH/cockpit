@@ -132,7 +132,9 @@
   .trow:last-child{border-bottom:none}
   .trow:hover .tn{color:var(--acc2)}
   .trow .dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
-  .trow .tn{flex:1;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .trow .tn{flex:1;min-width:72px;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .trow .pbadge{flex:0 1 auto;max-width:44%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .trow .when{flex:0 0 auto}
   .trow .when{font-size:11px;color:var(--mut2);white-space:nowrap}
   .trow .when.over{color:var(--bad);font-weight:700}
   .trow .when.soon{color:var(--warn)}
@@ -676,7 +678,7 @@ body.light .pdemo{background:rgba(20,24,40,.05)}
 .card:hover .cdel{opacity:1}
 .card .cdel:hover{background:var(--bad);color:#fff}
 body.light .card .cdel{background:rgba(20,24,40,.1)}
-@media (hover:none){.card .cdel{opacity:.7}}
+@media (hover:none){.card .cdel{display:none}} /* на таче постоянный ✕ = случайные удаления; удалить можно из карточки */
 /* AI review */
 .aisug{display:flex;flex-direction:column;gap:10px;margin-top:14px}
 .airow{display:flex;gap:11px;align-items:flex-start;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:12px}
@@ -774,6 +776,12 @@ body.light .brand .logo{background:linear-gradient(157deg,#1b1d27,#08090d 72%)}
 .wcol:hover .wadd,.wcol.today .wadd{opacity:.75}
 .wadd:hover{opacity:1;border-color:var(--acc2);color:var(--acc2)}
 @media (hover:none){.wadd{opacity:.55}}
+/* ROCH-канон: пинг-понг длинного текста — обрезанное медленно проезжает туда-обратно с паузами на краях */
+.pp-on{text-overflow:clip}
+.ppin{display:inline-block;white-space:nowrap;vertical-align:bottom}
+.pp-on .ppin{animation:ppslide var(--ppt,7s) ease-in-out 1.2s infinite alternate}
+@keyframes ppslide{0%,14%{transform:translateX(0)}86%,100%{transform:translateX(var(--ppd,0px))}}
+@media (prefers-reduced-motion: reduce){.pp-on .ppin{animation:none}}
 .wcard{display:flex;gap:8px;align-items:flex-start;background:var(--glass-2);border:1px solid var(--gbrd);border-radius:10px;padding:9px;cursor:grab;box-shadow:var(--ghi)}
 .wcard:hover{border-color:var(--acc2)}
 .wcard.dragging{opacity:.4}
@@ -1047,12 +1055,13 @@ body.light .focusrun{background:rgba(255,255,255,.7)}
 .focusrun .fdot{width:10px;height:10px;border-radius:50%;background:var(--bad);box-shadow:0 0 0 0 rgba(248,113,113,.6);animation:fpulse 1.3s infinite}
 @keyframes fpulse{0%,100%{box-shadow:0 0 0 0 rgba(248,113,113,.55)}50%{box-shadow:0 0 0 8px rgba(248,113,113,0)}}
 .focusrun .fclock{font-variant-numeric:tabular-nums;font-weight:800;font-size:19px;letter-spacing:.5px;min-width:78px}
-.pulse-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
-.pulse-card{background:var(--sheen),var(--glass);border:1px solid var(--gbrd);border-radius:18px;padding:16px 17px;box-shadow:var(--ghi)}
-.pulse-card .pv{font-size:30px;font-weight:850;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-1px}
-.pulse-card .pl{font-size:12px;color:var(--mut2);font-weight:600;margin-top:7px}
-.pulse-card .pbar2{height:5px;border-radius:20px;background:var(--bg2);margin-top:9px;overflow:hidden}
-.pulse-card .pbar2 span{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,var(--ok),#10b981)}
+/* пульс — тихая лента фактов, не конкурент герою: одна строка, числа в line */
+.pulse-row{display:flex;align-items:stretch;gap:0;margin-bottom:18px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:9px 6px}
+.pulse-card{flex:1;display:flex;align-items:baseline;justify-content:center;gap:7px;background:none;border:none;padding:2px 10px;box-shadow:none}
+.pulse-card+.pulse-card{border-left:1px solid var(--line)}
+.pulse-card .pv{font-size:16.5px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.3px}
+.pulse-card .pl{font-size:11.5px;color:var(--mut2);font-weight:600;margin-top:0}
+.pulse-card .pbar2{display:none}
 .now-sec{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--mut);margin:4px 2px 13px;display:flex;align-items:center;gap:9px}
 .now-sec span{text-transform:none;letter-spacing:0;font-weight:500;color:var(--mut2)}
 .fold{margin-bottom:6px}
@@ -2331,7 +2340,22 @@ function render(){
   else if(view==='intake')renderIntake();
   else if(view==='mprojects')renderMProjects();
   if(typeof tickKpis==='function')tickKpis();
+  applyPingpong();
   save();
+}
+/* ROCH: пинг-понг обрезанного текста — везде, где текст не влез (вместо вечного «…») */
+const PP_SEL='.trow .tn,.mtask .tn,.pbadge,.wsub,.mr-t,.nh-up-t,.nh-crumb,.lbn,.rl';
+function applyPingpong(root){
+  try{(root||document).querySelectorAll(PP_SEL).forEach(el=>{
+    if(el._ppDone)return;el._ppDone=1;
+    const ov=el.scrollWidth-el.clientWidth;
+    if(ov<8)return; /* влезло или почти влезло — не дёргаем */
+    const sp=document.createElement('span');sp.className='ppin';
+    while(el.firstChild)sp.appendChild(el.firstChild);
+    el.appendChild(sp);el.classList.add('pp-on');
+    el.style.setProperty('--ppd',(-ov-4)+'px');
+    el.style.setProperty('--ppt',Math.min(14,Math.max(5,ov/16))+'s');
+  });}catch(e){}
 }
 function setView(v){view=v;if(typeof track==='function')track('view:'+v);
   {const mvMap={board:'mprojects',gantt:'mprojects',week:'mprojects',backlog:'mprojects',team:'mprojects',all:'mprojects',dash:'mprojects'};
@@ -2542,7 +2566,7 @@ function renderNow(){
       <div class="pulse-card"><div class="pv" style="color:${ov?'var(--bad)':'var(--mut)'}">${ov}</div><div class="pl">просрочено</div></div>
       <div class="pulse-card"><div class="pv">${vel}</div><div class="pl">закрыто за 7 дней</div></div>
     </div>
-    ${selfHealCard()}${mentorCard()}${cashPulse()}
+    ${assistCard()}
     <details class="fold" id="nowFold" ${foldOpen?'open':''}><summary>📈 Темп и сроки проекта</summary>${momentumSpark()}${milestoneRadar()}</details>
     ${claudeNowCard()}
     <div class="now-sec">${icon('sparkles',14)} Что важно знать <span>проактивно — пока другие тулзы молчат</span>
@@ -2740,7 +2764,7 @@ function renderNowMobile(ctx){
     ${whatsNewStrip()}
     ${hero}
     ${rows?`<div class="msec">Ещё сегодня · ${upNext.length}</div>${rows}`:''}
-    ${selfHealCard()}${mentorCard()}${cashPulse()}
+    ${assistCard()}
     <details class="fold" style="margin-top:14px"><summary>Подробности дня</summary>
       <div class="pulse-row" style="margin-top:12px">
         <div class="pulse-card"><div class="pv" style="color:var(--ok)">${ctx.pct}%</div><div class="pl">готово</div></div>
@@ -2770,6 +2794,9 @@ function renderNowMobile(ctx){
   clearTimeout(_nowSeenT);_nowSeenT=setTimeout(()=>{try{localStorage.setItem('cockpit_seen_'+S.id,Date.now());}catch(e){}},4200);
 }
 // проактивная актуализация просрочек прямо с «Сейчас»
+/* иерархия «Сейчас»: герой — один, помощник — один. Приоритет: просрочки > наставник > деньги.
+   Остальные подсказки не пропадают — всплывут в следующие дни, когда актуальная закроется. */
+function assistCard(){return selfHealCard()||mentorCard()||cashPulse();}
 function selfHealCard(){
   const ov=S.tasks.filter(isOverdue);if(!ov.length)return '';
   const names=ov.slice(0,3).map(t=>t.title).join(' · ');
@@ -3927,7 +3954,7 @@ function briefData(){
   out.partner.sort((a,b)=>b.ts-a.ts);out.today.sort((a,b)=>(b.ov-a.ov));
   return out;
 }
-function openBrief(){renderBrief();$('#briefScrim').classList.add('show');
+function openBrief(){renderBrief();$('#briefScrim').classList.add('show');requestAnimationFrame(()=>applyPingpong($('#briefModal')));
   // проактивный ритуал: раз в день Claude сам смотрит проект — без нажатия кнопки
   if(cloudOn&&sb&&localStorage.getItem('cockpit_brief_ai_date')!==todayISO()){
     setTimeout(()=>{if($('#briefScrim').classList.contains('show'))fetchBriefAdvice($('#briefAi'));},450);
@@ -3940,7 +3967,7 @@ function renderBrief(){
   $('#briefModal').innerHTML=`
    <div class="ob-body" style="max-height:80vh;overflow:auto">
      <h2>☀️ Бриф на сегодня</h2>
-     <p>${greet}, ${esc(meName())}. Коротко — что важно прямо сейчас.</p>
+     <p>${greet}${(n=>n&&n!=='Я'&&n!=='Новый участник'?', '+esc(n.split(' ')[0]):'')(meName())}. Коротко — что важно прямо сейчас.</p>
      ${b.onMe.length?`<div class="airh">⏳ Висит на тебе — ${b.onMe.length}</div>${b.onMe.map(trow).join('')}`:''}
      ${b.today.length?`<div class="airh">🔥 Сегодня / просрочено — ${b.today.length}</div>${b.today.map(trow).join('')}`:''}
      ${b.iWait.length?`<div class="airh">🤝 Ждёшь от партнёра — ${b.iWait.length}</div>${b.iWait.map(x=>`<div class="trow" data-pid="${x.pid}" data-tid="${x.t.id}"><span class="dot" style="background:${stMap[x.t.status].c}"></span><span class="tn">${esc(x.t.title)}</span><span class="pbadge">от ${esc(x.who||'?')}</span></div>`).join('')}`:''}
@@ -4011,6 +4038,7 @@ function renderWeek(){
       if(day!=='over'&&day!=='later')editTaskInProject(weekDrag.pid,weekDrag.tid,t=>{const _o=t.end;t.end=day;if(parseD(t.start)>parseD(day))t.start=day;
         if(_o&&_o!==day){const f=x=>x.slice(8)+'.'+x.slice(5,7);t.comments=t.comments||[];t.comments.push({ts:Date.now(),author:meName(),authorId:myId(),text:'📅 Срок: '+f(_o)+' → '+f(day)+' — перенос в «Моей неделе»'});}});
       weekDrag=null;renderWeek();};});
+  applyPingpong($('#week'));
 }
 
 /* ============================ CLIENT REPORT (статус-сводка) ============================ */
@@ -4238,7 +4266,12 @@ function wireBar(el,min,DAY){
   const up=()=>{el.classList.remove('dragging');
     document.removeEventListener('mousemove',move);document.removeEventListener('mouseup',up);
     document.removeEventListener('touchmove',move);document.removeEventListener('touchend',up);
-    if(dragged){const tk=task(id);if(tk)logAct('📅','передвинул «'+tk.title+'»');save();renderGantt();}mode=null;};
+    if(dragged){const tk=task(id);if(tk){
+      /* сроки двигаются только со следом: тот же коммент-причина, что в карточке и Неделе */
+      const _os=fmtD(oS),_oe=fmtD(oE);
+      if(tk.start!==_os||tk.end!==_oe){const f=x=>x.slice(8)+'.'+x.slice(5,7);
+        tk.comments=tk.comments||[];tk.comments.push({ts:Date.now(),author:meName(),authorId:myId(),text:'📅 Срок: '+f(_os)+'–'+f(_oe)+' → '+f(tk.start)+'–'+f(tk.end)+' — сдвинуто на Ганте'});}
+      logAct('📅','передвинул «'+tk.title+'»');}save();renderGantt();}mode=null;};
   el.onmousedown=e=>{if(e.target.classList.contains('h'))return;down(e,'move');};
   el.ontouchstart=e=>{if(e.target.classList.contains('h'))return;down(e,'move');};
   const lh=el.querySelector('.h.l'),rh=el.querySelector('.h.r');
@@ -4416,12 +4449,28 @@ async function loadGuests(){
   try{const {data}=await sb.from('project_access').select('email,role').eq('project_id',S.id).order('created_at');
     guestRows=data||[];}catch(e){guestRows=[];}
 }
+/* мой воркспейс — из своей строки team; всё остальное скоупит RLS */
+async function myWorkspaceId(){
+  try{const {data}=await sb.from('team').select('workspace_id').ilike('email',myEmail).maybeSingle();
+    return (data&&data.workspace_id)||'main';}catch(e){return 'main';}
+}
 async function addTeamMember(email,name){
   email=(email||'').trim().toLowerCase();
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){toast('Похоже, это не email','⚠');return;}
-  const {error}=await sb.from('team').insert({email,name:(name||'').trim()||email.split('@')[0]});
+  const {error}=await sb.from('team').insert({email,name:(name||'').trim()||email.split('@')[0],workspace_id:await myWorkspaceId()});
   if(error){toast('Не удалось: '+(error.message||''),'⚠');return;}
   toast(email+' — теперь в команде, видит всё ✅','👥');loadAccess();
+}
+/* карточка участника обещает «впиши email — он войдёт этой почтой» — держим слово:
+   валидный новый email тихо попадает в team (доступ), а не только в JSON проекта */
+async function syncMemberToTeam(email,name){
+  email=(email||'').trim().toLowerCase();
+  if(!cloudOn||!sb||!accessReady||!isTeam)return;
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return;
+  if(teamRows.find(t=>(t.email||'').toLowerCase()===email))return;
+  try{const {error}=await sb.from('team').insert({email,name:(name||'').trim()||email.split('@')[0],workspace_id:await myWorkspaceId()});
+    if(!error){toast(email+' теперь может войти этой почтой ✅','👥');loadAccess();}
+  }catch(e){/* нет облака/таблицы — просто email в карточке */}
 }
 async function removeTeamMember(email){
   if(email===myEmail){toast('Себя убрать нельзя 🙂','⚠');return;}
@@ -4580,7 +4629,7 @@ function openMember(id){
     $('#mAvatar').onclick=()=>pickPhoto(m);
     $('#mName').onblur=e=>{m.name=e.target.value.trim()||'—';save();render();};
     $('#mRole').onblur=e=>{m.role=e.target.value.trim()||'—';save();render();};
-    {const em=$('#mEmail');if(em)em.onblur=e=>{m.email=e.target.value.trim();save();render();};}
+    {const em=$('#mEmail');if(em)em.onblur=e=>{m.email=e.target.value.trim();save();render();syncMemberToTeam(m.email,m.name);};}
     $('#mCap').onchange=e=>{m.capacity=parseInt(e.target.value)||0;save();openMember(id);render();};
     $$('#mColors .cdot').forEach(el=>el.onclick=()=>{m.color=el.dataset.c;save();openMember(id);render();});
   }
@@ -4637,7 +4686,8 @@ function openTask(id){
     +`<button class="chip ${!t.assigneeId?'on':''}" data-as="">— никто</button>`;
   $$('#dAssignee .chip').forEach(c=>c.onclick=()=>{
     const newAs=c.dataset.as||null;
-    if(newAs&&newAs!==myId()&&newAs!==t.assigneeId&&t.status!=='done'){
+    if(newAs&&newAs!==myId()&&newAs!==t.assigneeId&&t.assigneeId===myId()&&t.status!=='done'){
+      /* платит только владелец задачи, который её отдаёт; PM-диспетчеризация чужих — бесплатно */
       const me=member(myId())||{};const cost=taskValue(t);
       /* мягкая экономика: списываем сколько есть, но НИКОГДА не блокируем рабочий поток */
       const pay=Math.min(me.points||0,cost);me.points=(me.points||0)-pay;
@@ -6263,6 +6313,8 @@ try{const _fs=JSON.parse(localStorage.getItem('cockpit_focus'));
 let _bip=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();_bip=e;});
 try{localStorage.setItem('cockpit_visits',String(+(localStorage.getItem('cockpit_visits')||0)+1));}catch(e){}
 if(!_shareSnap)setTimeout(()=>{
+  if(tmaInitData()||(window.Telegram&&window.Telegram.WebApp&&window.Telegram.WebApp.initData))return; /* внутри Telegram «на домашний экран» не существует */
+  if(document.querySelector('.scrim.show,#briefScrim.show'))return; /* не перекрываем открытую модалку — подскажем в другой визит */
   if(localStorage.getItem('cockpit_tip_pwa'))return;
   if(window.matchMedia('(display-mode: standalone)').matches||navigator.standalone)return;
   if(window.innerWidth>680)return;
