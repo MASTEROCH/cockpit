@@ -1659,9 +1659,9 @@ body.light .mseg{background:rgba(250,251,254,.97)}
 .cashpulse:hover{border-color:rgba(52,211,153,.55)}
 .cashpulse:active{transform:scale(.985)}
 .cashpulse b{color:var(--txt)}
-.nh-why{font-size:12px;color:var(--mut2);margin-top:9px}
+.nh-why{font-size:12px;color:var(--mut2);margin:9px 0 16px}
 .nh-why b{color:var(--mut);font-weight:600}
-.mh-why{font-size:11.5px;color:var(--mut2);margin-top:7px;opacity:.9}
+.mh-why{font-size:11.5px;color:var(--mut2);margin:7px 0 14px;opacity:.9}
 .ghint{margin-left:auto;font-size:10px;color:var(--mut2);opacity:.7;white-space:nowrap}
 .wnav{margin-left:auto;display:flex;gap:6px}
 @media (max-width:680px){
@@ -2205,11 +2205,11 @@ function relScore(t){const prW={urgent:4,high:3,med:2,low:1}[t.priority]||2;cons
 function whyNext(t,energy){
   const r=[];const dl=daysLeft(t);
   if(dl<0)r.push('просрочено '+(-dl)+' '+plural(-dl,'день','дня','дней'));
-  else if(dl===0)r.push('📅 дедлайн сегодня');
-  else if(dl===1)r.push('📅 дедлайн завтра');
-  else if(dl<=3)r.push('📅 срок через '+dl+' '+plural(dl,'день','дня','дней'));
+  else if(dl===0)r.push('дедлайн сегодня');
+  else if(dl===1)r.push('дедлайн завтра');
+  else if(dl<=3)r.push('срок через '+dl+' '+plural(dl,'день','дня','дней'));
   if(t.cash)r.push('💰 двигает деньги'+(t.amount?' ~'+fmtMoney(t.amount):''));
-  if(t.priority==='urgent')r.push('🚩 срочный приоритет');
+  if(t.priority==='urgent')r.push('срочный приоритет');
   else if(t.priority==='high')r.push('высокий приоритет');
   if(energy==='lo'&&t.estimate&&t.estimate<=2)r.push('лёгкая — под сегодняшний заряд');
   else if(energy==='hi'&&(t.estimate>=4||t.priority==='high'||t.priority==='urgent'))r.push('большая — заряд позволяет');
