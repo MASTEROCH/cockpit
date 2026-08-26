@@ -5676,7 +5676,7 @@ function renderMProjects(){
  $$('.mnav [data-mv]').forEach(b=>b.onclick=()=>setView(b.dataset.mv));}
 
 /* ============================ CLOUD SYNC (Supabase) ============================ */
-function loadSb(){return new Promise((res,rej)=>{if(window.supabase)return res();const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';s.onload=()=>res();s.onerror=rej;document.head.appendChild(s);});}
+function loadSb(){return new Promise((res,rej)=>{if(window.supabase)return res();const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js';s.onload=()=>res();s.onerror=rej;document.head.appendChild(s);});}   /* версия ПРИКОЛОЧЕНА: плавающий @2 однажды сменил дефолтный auth-flow и сломал вход */
 function updateCloudBadge(){const sd=$('#syncDot');if(sd)sd.classList.toggle('on',!!cloudOn);
   const b=$('#btnCloud');if(!b)return;b.classList.toggle('on',cloudOn);b.classList.toggle('off',!cloudOn);
   b.innerHTML=cloudOn?icon('check'):icon('sync');
@@ -5739,7 +5739,9 @@ async function cloudInit(){
   if(!CFG||!CFG.url||!CFG.anon){hideGate();return;}
   renderGate('loading');
   try{await loadSb();}catch(e){renderGate('login');toast('Нет сети — не удалось загрузить вход','⚠');return;}
-  try{sb=window.supabase.createClient(CFG.url,CFG.anon,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});}catch(e){renderGate('login');return;}
+  /* flowType implicit ОБЯЗАТЕЛЕН: magic-link должен работать в ЛЮБОМ браузере, где открыли письмо
+     (PKCE-дефолт новых supabase-js требует того же браузера, где вводили email — ломает вход) */
+  try{sb=window.supabase.createClient(CFG.url,CFG.anon,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'implicit'}});}catch(e){renderGate('login');return;}
   sb.auth.onAuthStateChange((ev,sess)=>{
     if(sess&&sess.user){myEmail=(sess.user.email||'').toLowerCase();if(!cloudOn){me=sess.user.id;onLoggedIn();}hideGate();}
     else if(ev==='SIGNED_OUT'){cloudOn=false;updateCloudBadge();showGate();}
