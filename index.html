@@ -1203,7 +1203,7 @@ body.light .bulkbar{background:var(--sheen),rgba(255,255,255,.97)}
 .rd-s{font-size:12px;color:var(--mut2);margin-top:2px}
 .rd-mid{flex:1;min-width:160px}
 .rd-bar{height:9px;border-radius:20px;background:var(--bg2);overflow:hidden}
-.rd-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--acc2),var(--acc3));transition:width .6s var(--ease)}
+.rd-fill{height:100%;border-radius:20px;background:var(--acc2);transition:width .6s var(--ease)}
 .rd-pct{font-size:11.5px;color:var(--mut2);margin-top:6px}
 .rd-r{flex:0 0 auto;text-align:right;min-width:150px}
 .rd-v{font-size:20px;font-weight:850}.rd-v span{font-size:12px;color:var(--mut2);font-weight:600}
@@ -1683,7 +1683,7 @@ body.light .mseg{background:rgba(250,251,254,.97)}
 .cashout .cok{font-size:11.5px;color:var(--ok)}
 .mm-fc{margin-top:10px;font-size:12.5px;line-height:1.5;border-radius:11px;padding:9px 12px}
 .mm-fc.warn{color:#fbbf24;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25)}
-.mm-fc.ok{color:var(--ok);background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.2)}
+.mm-fc.ok{color:var(--mut);background:var(--bg2);border:1px solid var(--line)} /* «успеваешь» — не событие; цвет только у риска */
 .cashpulse{display:flex;align-items:center;gap:7px;margin:14px 0;padding:12px 15px;border-radius:14px;cursor:pointer;font-size:13px;color:var(--mut);
   border:1px solid rgba(52,211,153,.3);background:linear-gradient(120deg,rgba(52,211,153,.09),transparent 70%),var(--bg2);transition:border-color .2s,transform .3s var(--spring)}
 .cashpulse:hover{border-color:rgba(52,211,153,.55)}
@@ -2432,10 +2432,10 @@ function milestoneForecast(){
   let closed=0;(S.activity||[]).forEach(a=>{if(/Готово|✅/.test((a.text||'')+(a.icon||''))&&(Date.now()-a.ts)<14*dayMs)closed++;});
   const perDay=closed/14;
   const msIn=Math.round((parseD(ms.end)-parseD(todayISO()))/dayMs);
-  if(!perDay)return msIn<=30?`<div class="mm-fc warn">⚠ Веха «${esc(ms.title)}» через ${msIn} ${plural(msIn,'день','дня','дней')}, а темп нулевой — начни с одной задачи сегодня</div>`:'';
+  if(!perDay)return msIn<=30?`<div class="mm-fc warn">Веха «${esc(ms.title)}» через ${msIn} ${plural(msIn,'день','дня','дней')}, а темп нулевой — начни с одной задачи сегодня</div>`:'';
   const need=Math.ceil(open/perDay);const slip=need-msIn;
-  if(slip>2)return `<div class="mm-fc warn">📉 Этим темпом ${open} открытых разберутся за ~${need}д — веха «${esc(ms.title)}» уедет на ~${slip} ${plural(slip,'день','дня','дней')}. Режь скоуп или двигай дату</div>`;
-  return `<div class="mm-fc ok">📈 Темпа хватает: веха «${esc(ms.title)}» через ${msIn} ${plural(msIn,'день','дня','дней')} — успеваешь</div>`;
+  if(slip>2)return `<div class="mm-fc warn">Этим темпом ${open} открытых разберутся за ~${need}д — веха «${esc(ms.title)}» уедет на ~${slip} ${plural(slip,'день','дня','дней')}. Режь скоуп или двигай дату</div>`;
+  return `<div class="mm-fc ok">Темпа хватает: веха «${esc(ms.title)}» через ${msIn} ${plural(msIn,'день','дня','дней')} — успеваешь</div>`;
 }
 function momentumSpark(){
   const days=14;const counts=new Array(days).fill(0);
@@ -2445,13 +2445,13 @@ function momentumSpark(){
   const line=counts.map((c,i)=>{const[x,y]=xy(i);return `${x.toFixed(1)},${y.toFixed(1)}`;}).join(' ');
   const area=`0,${H} `+line+` ${W},${H}`;
   const total=counts.reduce((a,b)=>a+b,0);
-  if(total===0)return `<div class="momentum"><div class="mm-head"><span>💓 Моментум <b>· 14 дней</b></span></div>
-    <div class="mm-empty">Пока нет закрытых задач. Закрой первую — и здесь оживёт линия темпа 📈</div></div>`;
+  if(total===0)return `<div class="momentum"><div class="mm-head"><span>Моментум <b>· 14 дней</b></span></div>
+    <div class="mm-empty">Пока нет закрытых задач. Закрой первую — и здесь оживёт линия темпа.</div></div>`;
   const last7=counts.slice(7).reduce((a,b)=>a+b,0),prev7=counts.slice(0,7).reduce((a,b)=>a+b,0);
   const trend=last7>prev7?'↑ ускоряемся':last7<prev7?'↓ замедление':'→ ровно';
   const tcol=last7>prev7?'var(--ok)':last7<prev7?'var(--warn)':'var(--mut2)';
   return `<div class="momentum">
-    <div class="mm-head"><span>💓 Моментум <b>· 14 дней</b></span><span class="mm-trend" style="color:${tcol}">${trend}</span></div>
+    <div class="mm-head"><span>Моментум <b>· 14 дней</b></span><span class="mm-trend" style="color:${tcol}">${trend}</span></div>
     <svg class="mm-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
       <defs><linearGradient id="mmg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(167,139,250,.45)"/><stop offset="1" stop-color="rgba(167,139,250,0)"/></linearGradient></defs>
       <polygon points="${area}" fill="url(#mmg)"/>
@@ -2546,7 +2546,7 @@ function renderNow(){
     hero=`<div class="now-hero ${ovn?'over':''}">
      <div class="nh-main">
       <div class="nh-label">${multi?'Твой следующий шаг · все проекты':(mine.length?'Твой следующий шаг':'Главное в проекте сейчас')}</div>
-      <div class="nh-title" data-open="${next.id}">${next.cash?'💰 ':''}${prGlyph(next)}${esc(next.title)}</div>
+      <div class="nh-title" data-open="${next.id}">${prGlyph(next)}${esc(next.title)}</div>
       ${(cp=>cp.length?`<div class="nh-crumb">↳ ${cp.map(esc).join(' ▸ ')}</div>`:'')(task(next.id)?crumbPath(next):[])}
       <div class="nh-meta">
         ${heroX?`<span class="ichip">${heroX.emoji} ${esc(heroX.pname)}</span>`:`<span class="ichip">${avatar(next.assigneeId)} ${m?esc(m.name):'без исполнителя'}</span>`}
@@ -2561,7 +2561,7 @@ function renderNow(){
         <button class="btn big" data-done="${next.id}">✓ Готово</button>
       </div>
      </div>
-     ${upList.length?`<div class="nh-side"><div class="nh-side-t">На очереди · ${upList.length}</div>${upList.map(x=>`<div class="nh-up" data-open="${x.t.id}" data-pid="${x.pid}"><button class="nh-qd" data-qd="${x.t.id}" data-pid="${x.pid}" title="Готово" aria-label="Готово" style="--c:${stMap[x.t.status].c}">✓</button><span class="nh-up-t">${x.t.cash?'💰 ':''}${prGlyph(x.t)}${esc(x.t.title)}</span>${multi?`<span class="nh-up-e">${x.emoji||''}</span>`:(x.t.estimate?`<span class="nh-up-e">${x.t.estimate}ч</span>`:'')}</div>`).join('')}</div>`:''}
+     ${upList.length?`<div class="nh-side"><div class="nh-side-t">На очереди · ${upList.length}</div>${upList.map(x=>`<div class="nh-up" data-open="${x.t.id}" data-pid="${x.pid}"><button class="nh-qd" data-qd="${x.t.id}" data-pid="${x.pid}" title="Готово" aria-label="Готово" style="--c:${stMap[x.t.status].c}">✓</button><span class="nh-up-t">${prGlyph(x.t)}${esc(x.t.title)}</span>${multi?`<span class="nh-up-e">${x.emoji||''}</span>`:(x.t.estimate?`<span class="nh-up-e">${x.t.estimate}ч</span>`:'')}</div>`).join('')}</div>`:''}
     </div>`;
   }else{const bare=!S.tasks.some(t=>!t.isMilestone);
     const allDone=!bare&&!S.tasks.some(t=>!t.isMilestone&&t.status!=='done');
@@ -2581,7 +2581,7 @@ function renderNow(){
       <div class="pulse-card"><div class="pv">${vel}</div><div class="pl">закрыто за 7 дней</div></div>
     </div>
     ${assistCard()}
-    <details class="fold" id="nowFold" ${foldOpen?'open':''}><summary>📈 Темп и сроки проекта</summary>${momentumSpark()}${milestoneRadar()}</details>
+    <details class="fold" id="nowFold" ${foldOpen?'open':''}><summary>Темп и сроки проекта</summary>${momentumSpark()}${milestoneRadar()}</details>
     ${claudeNowCard()}
     <div class="now-sec">${icon('sparkles',14)} Что важно знать <span>проактивно — пока другие тулзы молчат</span>
       <button class="btn" id="claudeBtn" style="margin-left:auto;padding:8px 13px;font-size:12.5px" title="ИИ посмотрит проект и подсветит риски">${icon('sparkles',13)} Разбор рисков</button>
@@ -2754,7 +2754,7 @@ function renderNowMobile(ctx){
   const heroX=multi&&poolAll&&poolAll.length?poolAll[0]:null;
   const hero=next?`<div class="mhero ${isOverdue(next)?'over':''}" data-open="${next.id}">
       <div class="mh-label">${multi?'Твой следующий шаг · все проекты':(ctx.mine.length?'Твой следующий шаг':'Главное сейчас')}</div>
-      <div class="mh-title">${next.cash?'💰 ':''}${prGlyph(next)}${esc(next.title)}</div>
+      <div class="mh-title">${prGlyph(next)}${esc(next.title)}</div>
       ${(cp=>cp.length?`<div class="mh-crumb">↳ ${cp.map(esc).join(' ▸ ')}</div>`:'')(task(next.id)?crumbPath(next):[])}
       <div class="mh-meta">${heroX?`${heroX.emoji} ${esc(heroX.pname)} · `:''}${next.estimate?`${next.spent||0}/${next.estimate}ч · `:''}${(d=>d<0?`<b style="color:var(--bad)">просрочено ${-d}д</b>`:d===0?'сегодня':d===1?'завтра':'в плане')(daysLeft(next))}</div>
       <div class="mh-why">почему: ${whyNext(next,energy).join(' · ')}</div>
@@ -3069,7 +3069,7 @@ function milestoneRadar(){
   const risk=need>teamDaily*0.9;
   const days=Math.max(0,Math.round((end-parseD(tISO))/dayMs));
   return `<div class="radar ${risk?'risk':'okk'}">
-    <div class="rd-l"><div class="rd-k">🚩 Ближайшая веха</div><div class="rd-t">${esc(mile.title)}</div><div class="rd-s">${days} дн · ${mile.end.slice(8)}.${mile.end.slice(5,7)}</div></div>
+    <div class="rd-l"><div class="rd-k">Ближайшая веха</div><div class="rd-t">${esc(mile.title)}</div><div class="rd-s">${days} дн · ${mile.end.slice(8)}.${mile.end.slice(5,7)}</div></div>
     <div class="rd-mid"><div class="rd-bar"><div class="rd-fill" style="width:${pct}%"></div></div><div class="rd-pct">${pct}% объёма закрыто</div></div>
     <div class="rd-r"><div class="rd-v">${remain}ч <span>осталось</span></div><div class="rd-verdict">${risk?`⚠️ нужно ~${need.toFixed(1)}ч/день — не успеваем`:`✅ в графике (~${need.toFixed(1)}ч/день)`}</div></div>
   </div>`;
