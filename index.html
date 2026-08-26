@@ -3533,20 +3533,20 @@ function renderPortfolio(){
   allAct.sort((a,b)=>b.ts-a.ts);
   if(projs.length<=1){el.innerHTML=emptyState('🌐','Пока один проект','Создавай проекты под разные ниши и клиентов — здесь будет общий пульс всей компании, без переключений');return;}
   el.innerHTML=`
-   <div class="dhead"><h1>🌐 Все проекты</h1><span class="sub">${projs.length} проектов · общий пульс компании</span></div>
+   <div class="dhead"><h1>Все проекты</h1><span class="sub">${projs.length} проектов · общий пульс компании</span></div>
    <div class="kpis">
      <div class="kpi"><div class="v">${projs.length}</div><div class="l">Проектов</div></div>
-     <div class="kpi"><div class="v" style="color:var(--warn)">${gActive}</div><div class="l">Активных задач</div></div>
-     <div class="kpi"><div class="v" style="color:var(--ok)">${pct}%</div><div class="l">${gDone}/${gTasks} готово</div><div class="kpibar"><span style="width:${pct}%;background:linear-gradient(90deg,var(--ok),#10b981)"></span></div></div>
+     <div class="kpi"><div class="v">${gActive}</div><div class="l">Активных задач</div></div>
+     <div class="kpi"><div class="v">${pct}%</div><div class="l">${gDone}/${gTasks} готово</div><div class="kpibar"><span style="width:${pct}%;background:linear-gradient(90deg,var(--ok),#10b981)"></span></div></div>
      <div class="kpi"><div class="v" style="color:${gOver?'var(--bad)':'var(--mut)'}">${gOver}</div><div class="l">Просрочено везде</div></div>
    </div>
    <button class="cmdex" id="btnRep" style="margin-bottom:16px"> Отчёт недели по всем проектам — собрать и скопировать для команды</button>
-   ${mine.length?`<div class="panel-c" style="margin-bottom:16px"><h3>🔥 Мои задачи по всем проектам <span class="c">${mine.length}</span></h3>
+   ${mine.length?`<div class="panel-c" style="margin-bottom:16px"><h3>Мои задачи по всем проектам <span class="c">${mine.length}</span></h3>
      ${mine.slice(0,14).map(x=>{const ov=over(x.t);const dl=Math.round((parseD(x.t.end)-parseD(tISO))/dayMs);
        return `<div class="trow" data-pid="${x.pid}" data-tid="${x.t.id}"><span class="dot" style="background:${stMap[x.t.status].c}"></span>
          <span class="tn">${esc(x.t.title)}</span><span class="pbadge">${x.emoji||'📄'} ${esc(x.pname)}</span>
          <span class="when ${ov?'over':''}">${ov?'просроч.':dl<=0?'сегодня':'через '+dl+'д'}</span></div>`;}).join('')}</div>`:''}
-   <div class="panel-c"><h3>📊 Проекты <span class="c">${projs.length}</span></h3>
+   <div class="panel-c"><h3>Проекты <span class="c">${projs.length}</span></h3>
      <div class="plist">${(()=>{ // порядок деревом: компания → её проекты → одиночки
        const byId={};projs.forEach(x=>byId[x.meta.id]=x);
        const tops=projs.filter(x=>{const pr=x.meta.parentId&&projMeta(x.meta.parentId);return !pr||pr.archived;});
@@ -6252,14 +6252,14 @@ function palScore(q,it){
   return -1;
 }
 const PAL_GROUPS=[
-  ['🧭 Разделы', it=>it.type==='Переход'],
-  ['🧠 AI и Claude', it=>it.grp==='AI'],
-  ['➕ Создать', it=>it.grp==='Создать'],
-  ['🗓 Планирование', it=>it.grp==='Планирование'],
-  ['👥 Команда', it=>it.grp==='Команда'],
-  ['🔗 Поделиться', it=>it.grp==='Делёжка'],
-  ['📂 Проекты', it=>it.type==='Проект'],
-  ['⚙️ Настройки', it=>it.grp==='Настройки'],
+  ['Разделы', it=>it.type==='Переход'],
+  ['AI и Claude', it=>it.grp==='AI'],
+  ['Создать', it=>it.grp==='Создать'],
+  ['Планирование', it=>it.grp==='Планирование'],
+  ['Команда', it=>it.grp==='Команда'],
+  ['Поделиться', it=>it.grp==='Делёжка'],
+  ['Проекты', it=>it.type==='Проект'],
+  ['Настройки', it=>it.grp==='Настройки'],
 ];
 function palRowHTML(it,i){return `<div class="pal-row ${i===palSel?'sel':''}" data-i="${i}">
     <span class="pal-rico">${it.icon}</span><span class="pal-rt">${esc(it.title)}</span>
