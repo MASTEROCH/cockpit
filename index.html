@@ -761,7 +761,7 @@ body.light .brand .logo{background:linear-gradient(157deg,#1b1d27,#08090d 72%)}
 .whead{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
 .whead .wt{font-size:13px;color:var(--mut2)}
 .wgrid{display:flex;gap:10px;align-items:flex-start;overflow-x:auto;padding-bottom:6px}
-.wcol{flex:1 1 0;min-width:155px;background:var(--bg2);border:1px solid var(--line);border-radius:13px;display:flex;flex-direction:column;max-height:calc(100vh - 230px)}
+.wcol{flex:1 1 0;min-width:138px;background:var(--bg2);border:1px solid var(--line);border-radius:13px;display:flex;flex-direction:column;max-height:calc(100vh - 230px)}
 .wcol.today{border-color:var(--acc2);box-shadow:0 0 0 1px rgba(167,139,250,.3)}
 .wcol.over{border-color:rgba(248,113,113,.4)}
 .wcol.drop{outline:2px dashed var(--acc2);outline-offset:-3px}
@@ -770,6 +770,10 @@ body.light .brand .logo{background:linear-gradient(157deg,#1b1d27,#08090d 72%)}
 .wcolh .wcnt{margin-left:auto;font-size:11px;color:var(--mut2);background:var(--bg);padding:0 6px;border-radius:20px}
 .wcolb{padding:8px;display:flex;flex-direction:column;gap:7px;overflow:auto;flex:1;min-height:50px}
 .wempty{color:var(--mut2);font-size:12px;text-align:center;padding:8px 0;opacity:.45}
+.wadd{display:block;width:calc(100% - 16px);margin:4px 8px 8px;padding:8px;border:1px dashed var(--line2);border-radius:9px;color:var(--mut2);background:none;font-size:12px;font-weight:600;cursor:pointer;transition:.15s;opacity:0}
+.wcol:hover .wadd,.wcol.today .wadd{opacity:.75}
+.wadd:hover{opacity:1;border-color:var(--acc2);color:var(--acc2)}
+@media (hover:none){.wadd{opacity:.55}}
 .wcard{display:flex;gap:8px;align-items:flex-start;background:var(--glass-2);border:1px solid var(--gbrd);border-radius:10px;padding:9px;cursor:grab;box-shadow:var(--ghi)}
 .wcard:hover{border-color:var(--acc2)}
 .wcard.dragging{opacity:.4}
@@ -785,7 +789,9 @@ body.light .brand .logo{background:linear-gradient(157deg,#1b1d27,#08090d 72%)}
 .lbrow-wrap{display:flex;flex-direction:column;gap:4px}
 .lbrow{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)}
 .lbrow:last-child{border-bottom:none}
-.lbrank{font-size:15px;width:24px;text-align:center;font-weight:800;color:var(--mut2);flex:0 0 auto}
+.lbrank{font-size:13px;width:24px;text-align:center;font-weight:800;color:var(--mut2);flex:0 0 auto}
+.lbrank.r1{color:#e8b94a}.lbrank.r2{color:#b9c4d4}.lbrank.r3{color:#c98a5a}
+.lbpts svg,.coins svg,.coffeeline svg{vertical-align:-2px}
 .lbn{flex:1;font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lbpts{font-weight:800;color:#e8b94a;font-variant-numeric:tabular-nums;flex:0 0 auto}
 .coffeeline{margin-top:11px;font-size:13px;font-weight:600;color:var(--txt);background:rgba(232,185,74,.1);border:1px solid rgba(232,185,74,.25);border-radius:10px;padding:9px 12px}
@@ -1461,7 +1467,8 @@ body.light .vando-panel{background:var(--sheen),rgba(255,255,255,.97)}
   .vando-panel{left:0;right:0;top:0;bottom:0;width:auto;height:100dvh;max-width:none;border-radius:0}
 }
 /* ---- деньги и энергия ---- */
-.cashbtn{margin-left:auto;border:1px solid var(--line);background:var(--bg2);border-radius:9px;padding:5px 10px;font-size:15px;cursor:pointer;filter:grayscale(1);opacity:.55;transition:.15s}
+.cashbtn{margin-left:auto;border:1px solid var(--line);background:var(--bg2);border-radius:9px;padding:5px 10px;cursor:pointer;color:var(--mut);opacity:.6;transition:.15s;display:inline-flex;align-items:center}
+.cashbtn.on{color:#34d399}
 .cashbtn.on{filter:none;opacity:1;border-color:rgba(52,211,153,.5);background:rgba(52,211,153,.12);box-shadow:0 0 12px rgba(52,211,153,.25)}
 #dCash+#dStatus{margin-left:8px!important}
 .cashtag{font-size:11px}
@@ -1505,10 +1512,10 @@ body.light .vando-panel{background:var(--sheen),rgba(255,255,255,.97)}
 .cap-projs button{border:1px solid var(--line);background:var(--bg2);color:var(--mut);border-radius:11px;padding:8px 12px;font-size:13px;font-weight:700;cursor:pointer}
 .cap-projs button.on{background:linear-gradient(135deg,rgba(167,139,250,.25),rgba(84,114,240,.2));border-color:rgba(167,139,250,.45);color:var(--txt)}
 .cap-f{display:flex;gap:10px;padding:14px 20px calc(16px + env(safe-area-inset-bottom));border-top:1px solid var(--line);align-items:center}
-.cap-mic{width:52px;height:52px;border-radius:16px;border:1px solid var(--line);background:var(--bg2);color:var(--acc);
+.cap-mic{width:52px;height:52px;border-radius:16px;border:1px solid var(--line);background:var(--bg2);color:var(--acc);display:inline-flex;align-items:center;justify-content:center;
   font-size:22px;display:grid;place-items:center;cursor:pointer;flex:0 0 auto}
 .cap-mic.rec{background:var(--acc);color:#fff;animation:pulse 1s infinite}
-.cap-go{flex:1;border:none;border-radius:16px;padding:15px;background:linear-gradient(135deg,#a78bfa,#5472F0);
+.cap-go{flex:1;border:none;border-radius:16px;padding:15px;background:linear-gradient(135deg,#a78bfa,#5472F0);display:inline-flex;align-items:center;justify-content:center;gap:7px;
   color:#fff;font-weight:800;font-size:16px;cursor:pointer}
 @media (max-width:680px){
   #capScrim{padding:0}
@@ -1806,7 +1813,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
   <div class="dh">
     <span class="dot" id="dDot" style="width:9px;height:9px;border-radius:50%;background:var(--acc)"></span>
     <span style="font-size:12px;color:var(--mut2);font-weight:600" id="dId">TASK</span>
-    <button class="cashbtn" id="dCash" title="Двигает деньги">💰</button><select class="inp" id="dStatus" style="width:auto;margin-left:auto"></select>
+    <button class="cashbtn" id="dCash" title="Двигает деньги"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2.4"/><circle cx="12" cy="12" r="2.6"/><path d="M5.6 9.6h.01M18.4 14.4h.01"/></svg></button><select class="inp" id="dStatus" style="width:auto;margin-left:auto"></select>
   </div>
   <div class="db">
     <div id="dCrumb" class="crumbrow" style="display:none"></div>
@@ -2117,6 +2124,13 @@ const ICONS={
  search:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
  play:'<path d="M7 4v16l13-8z" fill="currentColor" stroke="none"/>',
  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+ battery:'<rect x="2" y="7" width="17" height="10" rx="2.5"/><path d="M22 10.5v3"/><path d="M6 10.2v3.6M9.3 10.2v3.6M12.6 10.2v3.6"/>',
+ battlow:'<rect x="2" y="7" width="17" height="10" rx="2.5"/><path d="M22 10.5v3"/><path d="M6 10.2v3.6"/>',
+ cash:'<rect x="2" y="6" width="20" height="12" rx="2.4"/><circle cx="12" cy="12" r="2.6"/><path d="M5.6 9.6h.01M18.4 14.4h.01"/>',
+ coin:'<circle cx="12" cy="12" r="8.6"/><path d="M12 7.8v8.4M14.8 9.3c-.6-.9-2-1.4-3.2-1-1.3.4-1.9 1.6-1.2 2.6.8 1.1 3.2.7 3.9 1.9.6 1.1-.2 2.2-1.6 2.5-1.2.2-2.4-.2-3-1"/>',
+ coffee:'<path d="M4 9.5h12v5.5a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M16 10.8h1.8a2.4 2.4 0 0 1 0 4.8H16M7.4 6.4c0-1 .8-1.1.8-2.2M11 6.4c0-1 .8-1.1.8-2.2"/>',
+ edit:'<path d="M16.8 3.8 20.2 7.2 8.7 18.7l-4.2.8.8-4.2z"/><path d="M14.2 6.4l3.4 3.4"/>',
+ trophy:'<path d="M8 21.2h8M12 17.4v3.8M7 3.8h10v6.4a5 5 0 0 1-10 0z"/><path d="M7 5.2H3.8v1.6a3.2 3.2 0 0 0 3.2 3.2M17 5.2h3.2v1.6a3.2 3.2 0 0 1-3.2 3.2"/>',
 };
 function icon(n,s){s=s||18;return `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]||''}</svg>`;}
 const LOGO_PATHS='<path transform="translate(-239 -299)" d="M590.549 318.732C592.945 318.453 596.745 318.696 599.286 318.696C634.434 318.703 667.897 316.824 700.032 333.775C783.727 377.923 786.207 488.78 731.835 556.811C700.794 595.65 657.566 620.752 607.3 623.356C576.646 624.841 542.765 617.244 517.207 638.881C505.403 648.755 500.588 660.76 494.308 674.336C488.985 685.844 483.927 697.868 478.034 709.061C447.129 709.003 414.041 709.686 383.322 708.993C390.272 692.78 399.544 674.533 407.172 658.357C414.402 641.263 425.054 620.531 433.24 603.375L468.064 529.888C478.844 507.375 489.815 485.216 500.033 462.397C508.607 461.72 522.007 461.939 530.747 461.916C551.732 461.88 572.716 462.073 593.696 462.496C589.717 468.96 584.172 482.027 580.797 489.352C574.315 503.42 567.316 518.312 561.52 532.628C562.821 532.707 564.123 532.765 565.426 532.803C574.929 533.092 584.848 532.969 594.379 533.027C601.077 532.791 608.447 533.526 615.073 532.731C648.617 528.704 677.207 498.097 677.706 464.145C678.091 437.865 664.532 415.164 637.935 409.832C622.705 406.779 607.684 407.916 592.303 407.965C569.853 408.116 547.402 408.135 524.952 408.02C539.76 379.17 553.156 348.033 567.408 318.783C575.059 318.869 582.922 319.055 590.549 318.732Z"/><path transform="translate(-239 -299)" d="M436.648 318.711C438.535 318.361 446.366 318.402 448.541 318.408L474.9 318.684C498.905 318.824 523.676 318.103 547.68 318.994C534.009 349.063 519.82 378.173 505.694 407.974L452.824 407.966C437.639 407.999 418.311 406.719 404.007 410.92C374.633 419.548 349.545 452.473 349.489 483.221C349.376 496.888 354.815 510.016 364.561 519.599C378.937 533.945 398.3 532.85 417.331 532.946L446.601 533.036C439.517 549.455 431.978 565.674 423.991 581.673C417.562 595.433 410.688 609.303 404.066 623C374.725 623.045 349.066 625.26 321.887 611.554C233.151 566.808 241.2 449.578 300.225 384.017C338.665 341.322 379.901 322.449 436.648 318.711Z"/>';
@@ -2514,11 +2528,11 @@ function renderNow(){
   }else{const bare=!S.tasks.some(t=>!t.isMilestone);
     const allDone=!bare&&!S.tasks.some(t=>!t.isMilestone&&t.status!=='done');
     hero=`<div class="now-hero done"><div class="nh-label">${bare?'Начнём?':'Чисто'}</div><div class="nh-title">${bare?'Не знаешь, с чего начать — норм':allDone?'Всё закрыто — красавчик':'Активных задач на тебе нет'}</div>
-      <div class="nh-meta">${bare?'<button class="btn primary" id="npPlan" style="margin-top:4px">🧠 Вандо, спланируй за меня</button>':allDone?'<span class="ichip">создай следующую задачу или запланируй новую цель</span>':'<span class="ichip">создай задачу строкой сверху или ⌘K</span>'}</div></div>`;}
+      <div class="nh-meta">${bare?'<button class="btn primary" id="npPlan" style="margin-top:4px">'+icon('sparkles',14)+' Вандо, спланируй за меня</button>':allDone?'<span class="ichip">создай следующую задачу или запланируй новую цель</span>':'<span class="ichip">создай задачу строкой сверху или ⌘K</span>'}</div></div>`;}
   const energy=localStorage.getItem('cockpit_energy_'+todayISO())||'';
   if(window.innerWidth<=680){renderNowMobile({el,greet,next,upNext,mine,pct,prog,ov,vel,ins,running,energy:localStorage.getItem('cockpit_energy_'+todayISO())||''});return;}
   el.innerHTML=`<div class="now-greet"><h1>${greet}${(n=>n&&n!=='Я'&&n!=='Новый участник'?', '+esc(n):'!')(meName())}</h1><span>${esc(S.projectName)} · пульс проекта
-      <span class="energyrow" title="Заряд сегодня: подстрою следующий шаг"><button data-en="hi" class="${energy==='hi'?'on':''}" title="Полон сил — дай крупную задачу" aria-label="Полон сил">🔋</button><button data-en="lo" class="${energy==='lo'?'on':''}" title="Мало сил — подкинь лёгкие" aria-label="Мало сил">🪫</button></span></span></div>
+      <span class="energyrow" title="Заряд сегодня: подстрою следующий шаг"><button data-en="hi" class="${energy==='hi'?'on':''}" title="Полон сил — дай крупную задачу" aria-label="Полон сил">${icon('battery',15)}</button><button data-en="lo" class="${energy==='lo'?'on':''}" title="Мало сил — подкинь лёгкие" aria-label="Мало сил">${icon('battlow',15)}</button></span></span></div>
     ${whatsNewStrip()}
     ${hero}
     ${multi&&nextPid!==S.id?`<div class="ctxnote">цифры ниже — пульс этого проекта · ${esc(S.projectName)}</div>`:''}
@@ -2531,9 +2545,9 @@ function renderNow(){
     ${selfHealCard()}${mentorCard()}${cashPulse()}
     <details class="fold" id="nowFold" ${foldOpen?'open':''}><summary>📈 Темп и сроки проекта</summary>${momentumSpark()}${milestoneRadar()}</details>
     ${claudeNowCard()}
-    <div class="now-sec">🧠 Что важно знать <span>проактивно — пока другие тулзы молчат</span>
+    <div class="now-sec">${icon('sparkles',14)} Что важно знать <span>проактивно — пока другие тулзы молчат</span>
       <button class="btn" id="claudeBtn" style="margin-left:auto;padding:8px 13px;font-size:12.5px" title="ИИ посмотрит проект и подсветит риски">🤖 Разбор рисков</button>
-      <button class="btn" id="aiPlanBtn" style="padding:8px 13px;font-size:12.5px" title="Опиши цель — получишь готовый план задач">🧠 Спланируй цель</button></div>
+      <button class="btn" id="aiPlanBtn" style="padding:8px 13px;font-size:12.5px" title="Опиши цель — получишь готовый план задач">${icon('sparkles',14)} Спланируй цель</button></div>
     <div class="insights">${ins.map((x,i)=>`<div class="insight ${x.act?'click':''}" data-i="${i}"><span class="ii">${x.ic}</span><div class="ib"><div class="it">${esc(x.title)}</div>${x.sub?`<div class="is">${esc(x.sub)}</div>`:''}</div>${x.act?'<span class="ia">→</span>':''}</div>`).join('')}</div>`;
   const openX=(pid,tid)=>{if(pid&&pid!==S.id){switchProject(pid);setTimeout(()=>openTask(tid),120);}else openTask(tid);};
   const ns=el.querySelector('.nh-title[data-open]');if(ns)ns.onclick=()=>openX(nextPid,ns.dataset.open);
@@ -2722,7 +2736,7 @@ function renderNowMobile(ctx){
     return `<div class="mrow" data-open="${t.id}" data-pid="${pid}"><span class="dot" style="background:${stMap[t.status].c}"></span><span class="mr-t">${t.cash?'💰 ':''}${prGlyph(t)}${esc(t.title)}</span>${x.pid?badge(x):''}${t.estimate?`<span class="mr-e">${t.estimate}ч</span>`:''}</div>`;}).join('');
   el.innerHTML=`
     <div class="mgreet"><h1>${greet.split(' ')[0]} ${greet.split(' ').slice(1).join(' ')}${(n=>n&&n!=='Я'&&n!=='Новый участник'?', '+esc(n.split(' ')[0]):'!')(meName())}</h1>
-      <span class="energyrow"><button data-en="hi" class="${energy==='hi'?'on':''}" title="Полон сил — дай крупную задачу" aria-label="Полон сил">🔋</button><button data-en="lo" class="${energy==='lo'?'on':''}" title="Мало сил — подкинь лёгкие" aria-label="Мало сил">🪫</button></span></div>
+      <span class="energyrow"><button data-en="hi" class="${energy==='hi'?'on':''}" title="Полон сил — дай крупную задачу" aria-label="Полон сил">${icon('battery',15)}</button><button data-en="lo" class="${energy==='lo'?'on':''}" title="Мало сил — подкинь лёгкие" aria-label="Мало сил">${icon('battlow',15)}</button></span></div>
     ${whatsNewStrip()}
     ${hero}
     ${rows?`<div class="msec">Ещё сегодня · ${upNext.length}</div>${rows}`:''}
@@ -2759,7 +2773,7 @@ function renderNowMobile(ctx){
 function selfHealCard(){
   const ov=S.tasks.filter(isOverdue);if(!ov.length)return '';
   const names=ov.slice(0,3).map(t=>t.title).join(' · ');
-  return `<div class="healcard"><span class="hi">🩹</span><div class="hb">
+  return `<div class="healcard"><span class="hi">${icon('sync',20)}</span><div class="hb">
     <div class="ht">${ov.length} ${plural(ov.length,'задача просрочена','задачи просрочены','задач просрочено')} — актуализировать план?</div>
     <div class="hs">${esc(names)}${ov.length>3?' · +'+(ov.length-3):''}</div>
     <div class="ha">
@@ -2825,7 +2839,7 @@ function mentorCard(){try{
         tip={k:'silent',t:(p.emoji||'📄')+' '+p.name+' молчит уже '+days+' '+plural(days,'день','дня','дней'),
           s:'Навык ведения: проект без движения гниёт незаметно. Один маленький шаг сегодня — или честная заморозка в архив.',a:'👀 Открыть проект'};break;}}}
   if(!tip)return '';
-  return `<div class="mentorcard"><span class="mi">🧠</span><div class="mb2">
+  return `<div class="mentorcard"><span class="mi">${icon('sparkles',20)}</span><div class="mb2">
     <div class="ml">Вандо · наставник</div>
     <div class="mt2">${tip.t}</div><div class="ms2">${tip.s}</div>
     <div class="ma2"><button class="btn primary" data-ma="${tip.k}">${tip.a}</button>
@@ -3383,7 +3397,7 @@ async function aiReview(){
   if(!cloudOn||!sb){toast('Войди в облако (🔄 в шапке) — AI-разбор работает для команды','🧠');return;}
   let token;try{const {data}=await sb.auth.getSession();token=data&&data.session&&data.session.access_token;}catch(e){}
   if(!token){toast('Нужен вход в облако','🧠');return;}
-  $('#aiModal').innerHTML=`<div class="ob-body" style="text-align:center;padding:54px 24px"><div style="font-size:42px">🧠</div><h2 style="margin:10px 0 4px">Анализирую доску…</h2><p>Claude смотрит задачи, эстимейты, загрузку и сроки</p></div>`;
+  $('#aiModal').innerHTML=`<div class="ob-body" style="text-align:center;padding:54px 24px"><div style="opacity:.9;color:var(--acc2)">${icon('sparkles',46)}</div><h2 style="margin:10px 0 4px">Анализирую доску…</h2><p>Claude смотрит задачи, эстимейты, загрузку и сроки</p></div>`;
   $('#aiScrim').classList.add('show');
   const nameOf=id=>{const m=member(id);return m?m.name:null;};
   const payload={today:todayISO(),project:S.projectName,
@@ -3418,7 +3432,7 @@ function normalizeAI(res){
   return res;
 }
 function renderAIError(msg){
-  $('#aiModal').innerHTML=`<div class="ob-body" style="padding:30px 26px"><h2>🧠 AI-разбор</h2>
+  $('#aiModal').innerHTML=`<div class="ob-body" style="padding:30px 26px"><h2>${icon('sparkles',17)} AI-разбор</h2>
     <p style="color:var(--bad)">${esc(msg)}</p>
     <p style="font-size:12.5px;margin-top:10px">Похоже, функция ещё не задеплоена или не задан ключ. Это настраивается один раз — см. инструкцию.</p></div>
     <div class="ob-foot"><div class="spacer"></div><button class="btn primary" id="aiClose">Закрыть</button></div>`;
@@ -3439,7 +3453,7 @@ function renderAI(res){
   const sug=(res.suggestions||[]).filter(s=>s&&s.taskTitle);
   $('#aiModal').innerHTML=`
     <div class="ob-body" style="max-height:78vh;overflow:auto">
-      <h2>🧠 AI-разбор доски</h2>
+      <h2>${icon('sparkles',17)} AI-разбор доски</h2>
       ${res.summary?`<div class="aisummary">${esc(res.summary)}</div>`:''}
       ${res.risks&&res.risks.length?`<div class="airisks"><div class="airh">⚠️ На что обратить внимание</div><ul>${res.risks.map(r=>`<li>${esc(r)}</li>`).join('')}</ul></div>`:''}
       ${sug.length?`<div class="airh" style="margin-top:18px">💡 Предложения — ${sug.length}</div><div class="aisug">${sug.map((s,i)=>aiSugHTML(s,i)).join('')}</div>`:'<div class="emptymini" style="margin-top:16px">Доска в порядке — серьёзных правок не предлагаю 👍</div>'}
@@ -3970,7 +3984,7 @@ function renderWeek(){
     <button class="qdone" data-wd="${x.pid}|${x.t.id}" title="Готово" style="--c:${stMap[x.t.status].c}"></button>
     <div class="wcb"><div class="wct">${x.t.waitingOn?'⏳ ':''}${esc(x.t.title)}</div>
       <div class="wcm"><span class="pbadge">${x.emoji||'📄'} ${esc(x.pname)}</span>${x.parent?`<span style="font-size:10px;color:var(--mut2)">↳ ${esc(x.parent)}</span>`:''}${x.t.estimate?`<span style="font-size:10px;color:var(--mut2)">${x.t.estimate}ч</span>`:''}${subTag(x.t)}</div></div></div>`;
-  const col=(key,label,sub,cls)=>`<div class="wcol ${cls||''}" data-day="${key}"><div class="wcolh" title="${key==='over'?'перетащи задачу в день — изменится срок':sub||''}"><span>${label}</span>${sub?`<span class="wsub">${sub}</span>`:''}<span class="wcnt">${by[key].length||''}</span></div><div class="wcolb">${by[key].map(card).join('')||'<div class="wempty">—</div>'}</div></div>`;
+  const col=(key,label,sub,cls)=>`<div class="wcol ${cls||''}" data-day="${key}"><div class="wcolh" title="${key==='over'?'перетащи задачу в день — изменится срок':sub||''}"><span>${label}</span>${sub?`<span class="wsub">${sub}</span>`:''}<span class="wcnt">${by[key].length||''}</span></div><div class="wcolb">${by[key].map(card).join('')||(key!=='over'&&key!=='later'?'':'<div class="wempty">—</div>')}${key!=='over'&&key!=='later'?`<button class="wadd" data-wadd="${key}">＋ задача</button>`:''}</div></div>`;
   const wt=weekOffset===0?'Эта неделя':weekOffset===1?'Следующая неделя':weekOffset===-1?'Прошлая неделя':md(wstart)+'–'+md(wend);
   let cols='';if(by.over.length)cols+=col('over','Просрочено','',' over');
   days.forEach((d,i)=>cols+=col(d,WD[i],md(d),d===tISO?'today':''));
@@ -3987,6 +4001,9 @@ function renderWeek(){
     c.ondragstart=()=>{weekDrag={pid:c.dataset.pid,tid:c.dataset.tid};c.classList.add('dragging');};
     c.ondragend=()=>c.classList.remove('dragging');});
   $$('#week .qdone').forEach(b=>b.onclick=e=>{e.stopPropagation();const a=b.dataset.wd.split('|');const un=markDone(a[0],a[1]);toast('Готово','✅','Отменить',()=>{un();renderWeek();});renderWeek();});
+  $$('#week [data-wadd]').forEach(b=>b.onclick=e=>{e.stopPropagation();const d=b.dataset.wadd;
+    const t=newTask('',null);t.status='todo';t.start=d;t.end=d;if(!t.assigneeId)t.assigneeId=myId()||null;
+    save();renderWeek();openTask(t.id);});
   $$('#week .wcol').forEach(colEl=>{
     colEl.ondragover=e=>{e.preventDefault();colEl.classList.add('drop');};
     colEl.ondragleave=()=>colEl.classList.remove('drop');
@@ -4492,7 +4509,7 @@ function renderTeam(){
     return `<div class="mcard click" data-m="${m.id}">
       <div class="top">${av}<div style="min-width:0;flex:1">
         <div class="nm">${esc(m.name)} ${m.id===myId()?'<span class="youbadge">вы</span>':''}</div>
-        <div class="rl">${esc(m.role)}</div></div><span class="coins" title="Очки · стрик дней подряд">🪙 ${sc.points}${sc.streak>1?` · 🔥${sc.streak}`:''}</span></div>
+        <div class="rl">${esc(m.role)}</div></div><span class="coins" title="Баланс баллов · стрик дней подряд">${icon('coin',12)} ${sc.points}${sc.streak>1?` · 🔥${sc.streak}`:''}</span></div>
       <div class="meter"><span style="width:${pct}%;${over?'background:linear-gradient(90deg,#fb7185,#f87171)':''}"></span></div>
       <div class="mstat"><span>${mt.length} задач · ${load}ч</span><span style="${over?'color:var(--bad)':''}">${load}/${m.capacity}ч ${over?'⚠':''}</span></div>
     </div>`;}).join('')
@@ -4500,13 +4517,13 @@ function renderTeam(){
   const payer=ps.length>1?ps[ps.length-1]:null;
   const av2=x=>x.photo?`<span class="av" style="background-image:url('${x.photo}');background-size:cover;background-position:center"></span>`:`<span class="av" style="background:${x.color}">${initials(x.name)}</span>`;
   let last=null;try{last=JSON.parse(localStorage.getItem('cockpit_month_result'));}catch(e){}
-  $('#leaderboard').innerHTML=ps.length<2?'':`<div class="panel-c" style="margin-bottom:16px"><h3>🏆 Очки команды <span class="c">${MONTHF[new Date().getMonth()]}</span></h3>
-    <div class="lbrow-wrap">${ps.map((x,i)=>`<div class="lbrow"><span class="lbrank">${['🥇','🥈','🥉'][i]||(i+1)}</span>${av2(x)}<span class="lbn">${esc(x.name)}</span>${x.streak>1?`<span class="streak">🔥 ${x.streak}</span>`:''}<span class="lbpts">🪙 ${x.points}</span></div>`).join('')}</div>
-    ${payer?`<div class="coffeeline">☕ Кофе пока с <b>${esc(payer.name)}</b> — у кого меньше всех баллов</div>`:''}
+  $('#leaderboard').innerHTML=ps.length<2?'':`<div class="panel-c" style="margin-bottom:16px"><h3>${icon('trophy',15)} Баллы команды <span class="c">${MONTHF[new Date().getMonth()]}</span></h3>
+    <div class="lbrow-wrap">${ps.map((x,i)=>`<div class="lbrow"><span class="lbrank r${i+1}">${i+1}</span>${av2(x)}<span class="lbn">${esc(x.name)}</span>${x.streak>1?`<span class="streak">🔥 ${x.streak}</span>`:''}<span class="lbpts">${icon('coin',12)} ${x.points}</span></div>`).join('')}</div>
+    ${payer?`<div class="coffeeline">${icon('coffee',14)} Кофе пока с <b>${esc(payer.name)}</b> — у кого меньше всех баллов</div>`:''}
     <div style="display:flex;gap:10px;align-items:center;margin-top:11px;flex-wrap:wrap">
-      <button class="btn" id="closeMonthBtn">☕ Закрыть месяц</button>
+      <button class="btn" id="closeMonthBtn">${icon('coffee',14)} Закрыть месяц</button>
       ${last?`<span style="font-size:11.5px;color:var(--mut2)">Прошлый раз кофе платил <b style="color:var(--mut)">${esc(last.payer)}</b></span>`:''}</div>
-    <div style="font-size:12px;color:var(--mut2);margin-top:10px;line-height:1.5">🪙 — за выполненные задачи (× приоритет). 🔥 — стрик дней подряд. Можно потратить, чтобы перекинуть свою задачу на партнёра (откупиться). Купить/одолжить нельзя — только заработать. По итогам месяца — кофе с того, у кого меньше. Просто мотиватор заходить и закрывать задачи каждый день 🙂</div></div>`;
+    <div style="font-size:12px;color:var(--mut2);margin-top:10px;line-height:1.5">Старт у каждого — 1000 баллов. Закрыл задачу — заработал (× приоритет), перекинул свою на партнёра — потратил. 🔥 — стрик дней подряд. Итог месяца: кофе покупает тот, у кого меньше. Мотиватор, а не наказание — баллы никогда ничего не блокируют.</div></div>`;
   $$('#team .mcard.click').forEach(el=>el.onclick=()=>openMember(el.dataset.m));
   $('#addMember2').onclick=addBlankMember;
   const cm=$('#closeMonthBtn');if(cm)cm.onclick=closeMonth;
@@ -5592,8 +5609,8 @@ function openCap(){
     <div class="cap-chips" id="capChips"></div>
     <div class="cap-t" style="margin-top:4px">В проект</div>
     <div class="cap-projs" id="capProjs">${ordered.slice(0,8).map(p=>`<button data-p="${p.id}" class="${p.id===capPid?'on':''}">${p.emoji||'📄'} ${esc(String(p.name).slice(0,16))}</button>`).join('')}</div></div>
-   <div class="cap-f"><button class="cap-mic" id="capMic">🎙</button>
-    <button class="cap-go" id="capGo">⚡ Создать задачу</button></div>`;
+   <div class="cap-f"><button class="cap-mic" id="capMic">${icon('mic',24)}</button>
+    <button class="cap-go" id="capGo">${icon('zap',15)} Создать задачу</button></div>`;
   $('#capScrim').classList.add('show');
   const inp=$('#capIn');
   const chips=()=>{const p=parseQuick(inp.value);$('#capChips').innerHTML=nlpChips(p).join('');};
