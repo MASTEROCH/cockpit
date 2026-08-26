@@ -103,7 +103,16 @@ function chips(p: Parsed): string {
 }
 
 // ---------- доступ ----------
-type Link = { chat_id: number; email: string; name: string | null; token_hash: string; workspace: string; revoked: boolean };
+type Link = { chat_id: number; email: string; name: string | null; token_hash: string; workspace: string; revoked: boolean; prefs?: Record<string, string> };
+// персональные настройки уведомлений: только то, что касается лично тебя (запрос Роча)
+function pref(l: { prefs?: Record<string, string> } | null | undefined, k: string, def: string): string {
+  return (l?.prefs && l.prefs[k]) || def;
+}
+async function setPref(chatId: number, k: string, v: string) {
+  const { data } = await sb.from("tg_links").select("prefs").eq("chat_id", chatId).maybeSingle();
+  const p = (data?.prefs ?? {}) as Record<string, string>; p[k] = v;
+  await sb.from("tg_links").update({ prefs: p }).eq("chat_id", chatId);
+}
 async function getLink(chatId: number): Promise<Link | null> {
   const { data } = await sb.from("tg_links").select("*").eq("chat_id", chatId).maybeSingle();
   return data && !data.revoked ? data as Link : null;
@@ -222,10 +231,9 @@ async function briefFor(link: Link): Promise<string> {
     }
   }
   let out = `☀️ <b>Доброе утро${link.name ? ", " + esc(link.name.split(" ")[0]) : ""}!</b>\n`;
-  if (mineOver.length) out += `\n⏰ <b>Просрочено у тебя · ${mineOver.length}</b>\n${mineOver.slice(0, 5).map((t) => "• " + t).join("\n")}\n`;
-  if (mineToday.length) out += `\n🎯 <b>На сегодня · ${mineToday.length}</b>\n${mineToday.slice(0, 5).map((t) => "• " + t).join("\n")}\n`;
+  if (mineOver.length) out += `\n⏰ <b>Просрочено у тебя · ${mineOver.length}</b>\n${mineOver.slice(0, 3).map((t) => "• " + t).join("\n")}\n`;
+  if (mineToday.length) out += `\n🎯 <b>На сегодня · ${mineToday.length}</b>\n${mineToday.slice(0, 3).map((t) => "• " + t).join("\n")}\n`;
   if (!mineOver.length && !mineToday.length) out += "\n🎯 На тебе сегодня дедлайнов нет — можно строить.\n";
-  out += "\n" + await statusSummary(link.email, false);
   return out;
 }
 
@@ -403,7 +411,14 @@ async function notifyNewIntake(rec: Record<string, any>) {
   if (rec.source === "telegram-idea") return; // идеи маршрутизирует сам автор — не шумим
   const p = parseTask(rec.text ?? "");
   const tl = await targetLabel(rec.target_project);
-  for (const l of await teamLinks(rec.by_email, rec.workspace_id ?? "main")) {
+  const ws = rec.workspace_id ?? "main";
+  const { data: w } = await sb.from("workspaces").select("created_by").eq("id", ws).maybeSingle();
+  const owner = (w?.created_by ?? "").toLowerCase();
+  const all = await teamLinks(rec.by_email, ws);
+  // шум — точечно: владелец воркспейса разбирает приёмку, остальные подписываются сами (⚙️)
+  let targets = all.filter((l) => pref(l, "intake", l.email.toLowerCase() === owner ? "on" : "off") === "on");
+  if (!targets.length) targets = all; // некому разбирать — лучше шум, чем потерянная заявка
+  for (const l of targets) {
     await sayInline(l.chat_id, `📥 <b>Новая заявка</b> от <b>${esc(rec.by_name ?? rec.by_email)}</b>${rec.source ? " · " + esc(rec.source) : ""}\n«${esc(p.title || rec.text)}»${chips(p)}${tl}`,
       [[{ text: "✓ Добавить", callback_data: "acc:" + rec.id }, { text: "✕ Отклонить", callback_data: "rej:" + rec.id }]]);
   }
@@ -416,6 +431,21 @@ async function notifyDecision(rec: Record<string, any>) {
   const map: Record<string, string> = { accepted: "✅ Твоя задача принята", backlog: "📥 Твоя задача ушла в бэклог", rejected: "✕ Твоя задача отклонена" };
   await say(link.chat_id, `${map[rec.status] ?? "Решение: " + rec.status}: «${esc(t)}»\n<i>решил: ${esc(rec.decided_by ?? "")}</i>`);
 }
+async function sendSettings(chatId: number, link: Link) {
+  const { data: fresh } = await sb.from("tg_links").select("prefs").eq("chat_id", chatId).maybeSingle();
+  const L = { ...link, prefs: (fresh?.prefs ?? {}) as Record<string, string> };
+  const ws = await wsByEmail(L.email);
+  const { data: w } = await sb.from("workspaces").select("created_by").eq("id", ws).maybeSingle();
+  const owner = (w?.created_by ?? "").toLowerCase() === L.email.toLowerCase();
+  const st = (k: string, d: string) => pref(L, k, d) === "on";
+  const row = (k: string, label: string, d: string) =>
+    [{ text: `${st(k, d) ? "🔔" : "🔕"} ${label} — ${st(k, d) ? "вкл" : "выкл"}`, callback_data: `set:${k}:${st(k, d) ? "off" : "on"}` }];
+  await sayInline(chatId, `⚙️ <b>Уведомления</b>\nКаждому — только его личное. Жми, чтобы переключить:`,
+    [row("morning", "☀️ Утренний бриф", "on"),
+     row("evening", "🌇 Вечерний разбор", "on"),
+     row("intake", "📥 Новые заявки команды", owner ? "on" : "off"),
+     row("pulse", "🤖 AI-пульс Вандо", "on")]);
+}
 async function morningBrief() {
   const { data: links } = await sb.from("tg_links").select("*").eq("revoked", false);
   for (const l of (links ?? []) as Link[]) {
@@ -423,11 +453,13 @@ async function morningBrief() {
   }
 }
 // бриф + отдельные «ждёшь от X» с кнопкой пинга (бот — плохой полицейский, не ты)
-async function sendBrief(link: Link) {
-  await say(link.chat_id, await briefFor(link));
+async function sendBrief(link: Link, force = false) {
+  if (!force && pref(link, "morning", "on") !== "on") return;
+  await sayInline(link.chat_id, await briefFor(link), [[{ text: "📊 Подробнее по проектам", callback_data: "more:brief:x" }]]);
   const waits = await myWaits(link.email);
-  for (const w of waits.slice(0, 3)) {
-    await sayInline(link.chat_id, `🤝 Ждёшь от <b>${esc(w.whoName)}</b>: «${esc(w.title)}» <i>(${w.pemoji} ${esc(w.pname)})</i>`,
+  if (waits.length) {
+    const w = waits[0];
+    await sayInline(link.chat_id, `🤝 Ждёшь от <b>${esc(w.whoName)}</b>: «${esc(w.title)}» <i>(${w.pemoji} ${esc(w.pname)})</i>${waits.length > 1 ? `\n<i>…и ещё ${waits.length - 1} — в 📊 Статус</i>` : ""}`,
       [[{ text: "🔔 Пингануть " + w.whoName.split(" ")[0], callback_data: `ping:${w.pid}:${w.tid}` }]]);
   }
 }
@@ -507,6 +539,7 @@ async function eveningReview() {
   const today = todayISO(0);
   for (const l of (links ?? []) as Link[]) {
     try {
+      if (pref(l, "evening", "on") !== "on") continue;
       const { rows } = await myProjects(l.email);
       let doneToday = 0; const open: string[] = [];
       const dayStart = new Date(today + "T00:00:00Z").getTime() - TZ * 3600_000;
@@ -558,6 +591,7 @@ async function aiPulse() {
   for (const l of (links ?? []) as Array<Link & { last_ai_ping?: string; last_ai_text?: string }>) {
     try {
       if (!(await isTeam(l.email))) continue; // пульс — для фаундеров
+      if (pref(l, "pulse", "on") !== "on") continue;
       if (l.last_ai_ping && Date.now() - new Date(l.last_ai_ping).getTime() < 48 * 3600_000) continue;
       const status = (await statusSummary(l.email, false)).replace(/<[^>]+>/g, "");
       const waits = await myWaits(l.email);
@@ -624,7 +658,8 @@ const HELP = `<b>WANDO-бот — пульт в кармане</b>
 <b>Автомагия</b>
 • ☀️ 9:00 — утренний бриф: твой день + «ждёшь от…» с кнопкой 🔔 Пингануть
 • 🌇 18:00 — вечерний разбор: что закрыто, незакрытое — на завтра одним тапом
-• Новая заявка → команде пуш с ✓/✕; решение → автору пуш
+• Новая заявка → пуш разборщику приёмки с ✓/✕; решение → автору пуш
+• ⚙️ <b>Настройки</b> — какие уведомления получать лично тебе (напиши «настройки»)
 • 💬 Ответь (reply) на сообщение бота о задаче — текст станет комментом в её карточке
 • ⭐ /plan — тариф Founder (оплата Stars прямо здесь)\n• 🧍 «стендап» — соберу у команды «вчера/сегодня/мешает», ответы пришлю тебе
 
@@ -741,6 +776,16 @@ Deno.serve(async (req) => {
         result = n ? `🌙 Перенёс ${n} задач(и) на ${target.slice(8)}.${target.slice(5, 7)} — план снова честный ✅` : "Нечего переносить — всё чисто ✨";
       } else if (act === "ping") { // вежливый пинг того, от кого ждёшь
         result = await pingWaiting(link, id, arg);
+      } else if (act === "more") { // полная сводка — только по запросу
+        await TG("answerCallbackQuery", { callback_query_id: cb.id });
+        await say(chatId, await statusSummary(link.email, false));
+        handled = true;
+      } else if (act === "set") { // ⚙️ переключение личных уведомлений
+        await setPref(chatId, id, arg);
+        await TG("answerCallbackQuery", { callback_query_id: cb.id, text: "Сохранено ✓" });
+        await TG("deleteMessage", { chat_id: chatId, message_id: cb.message.message_id });
+        await sendSettings(chatId, link);
+        handled = true;
       }
     }
     if (!handled) {
@@ -857,8 +902,9 @@ Deno.serve(async (req) => {
         await say(chatId, "Пришли свой <b>email</b> — создам тебе личное пространство 🚀\nИли привяжись к команде: " + SITE + " → «Подключить Telegram», либо <code>/key cpk_…</code>");
         return new Response("ok");
       }
-      if (/^\/standup|^стендап|^🧍/i.test(text)) { await say(chatId, await askStandup(link, chatId)); }
-      else if (/^\/brief|^☀️/.test(text)) { await sendBrief(link); }
+      if (/^\/settings|^⚙|^настрой/i.test(text)) { await sendSettings(chatId, link); }
+      else if (/^\/standup|^стендап|^🧍/i.test(text)) { await say(chatId, await askStandup(link, chatId)); }
+      else if (/^\/brief|^☀️/.test(text)) { await sendBrief(link, true); }
       else if (/^🔥|^\/fire|что горит|^аврал/i.test(text)) { await say(chatId, await statusSummary(link.email, true)); }
       else if (/^📊|^\/status|^стат/i.test(text)) { await say(chatId, await statusSummary(link.email, false)); }
       else if (/^📥|^\/intake|^приёмка|^приемка/i.test(text)) { await listIntake(chatId, link); }

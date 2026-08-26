@@ -128,3 +128,39 @@ test('утилиты: isGoalLike, shareCapture, personScores-склейка, э�
   });
   for (const [k, v] of Object.entries(r)) expect(v, k).toBe(true);
 });
+
+test('вложенность: 3 уровня, глубина-кап, каскад, корни на доске', async ({ page }) => {
+  await boot(page);
+  const r = await page.evaluate(() => {
+    const out = {};
+    const root = newTask('Передача визитки'); root.status = 'todo';
+    const l2 = newTask('Подарок', root.id);
+    const l3 = newTask('Анимация подарка', l2.id);
+    // глубины
+    out.depth = taskDepth(root) === 1 && taskDepth(l2) === 2 && taskDepth(l3) === 3;
+    // migrate проставляет parentId старым задачам
+    out.migrated = S.tasks.filter(t => t.parentId === undefined).length === 0;
+    // потомки собираются рекурсивно
+    const desc = descendants(root.id).map(t => t.id).sort();
+    out.desc = JSON.stringify(desc) === JSON.stringify([l2.id, l3.id].sort());
+    // крошки строятся от корня
+    out.crumb = JSON.stringify(crumbPath(l3)) === JSON.stringify(['Передача визитки', 'Подарок']);
+    // глубина n уровней: addKid на L3 создаёт L4
+    curTask = l3; const before = S.tasks.length;
+    const inp = document.getElementById('dKidIn'); inp.value = 'глубже'; addKid();
+    const l4 = S.tasks[S.tasks.length - 1];
+    out.cap = S.tasks.length === before + 1 && l4.parentId === l3.id && taskDepth(l4) === 4;
+    // доска показывает только корни; бейдж 🧩 на корне
+    renderBoard();
+    const boardIds = Array.from(document.querySelectorAll('#board .card')).map(c => c.dataset.id || c.dataset.task || '');
+    const boardHtml = document.getElementById('board').innerHTML;
+    out.roots = !boardHtml.includes('Анимация подарка') && boardHtml.includes('Передача визитки');
+    out.badge = boardHtml.includes('🧩 0/1');
+    // каскадное удаление вместе с deps-чисткой
+    const ids = new Set([root.id, ...descendants(root.id).map(x => x.id)]);
+    S.tasks = S.tasks.filter(x => !ids.has(x.id)); S.tasks.forEach(x => x.deps = x.deps.filter(d => !ids.has(d)));
+    out.cascade = !S.tasks.find(t => [root.id, l2.id, l3.id].includes(t.id));
+    return out;
+  });
+  for (const [k, v] of Object.entries(r)) expect(v, k).toBe(true);
+});

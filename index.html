@@ -731,6 +731,18 @@ body.light .brand .logo{background:linear-gradient(157deg,#1b1d27,#08090d 72%)}
 .subprog span{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,var(--acc2),#8b6ff0)}
 .subcount{font-size:11px;color:var(--mut2);font-variant-numeric:tabular-nums}
 .subrow{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+/* вложенные подзадачи (полноценные задачи) + хлебные крошки в карточке */
+.crumbrow{display:flex;flex-wrap:wrap;gap:2px;align-items:center;margin:0 0 6px;font-size:12px;color:var(--mut2)}
+.crumbrow button{border:none;background:none;color:var(--acc2);cursor:pointer;font-size:12px;padding:2px 4px;border-radius:6px;font-weight:600}
+.crumbrow button:hover{background:rgba(167,139,250,.12)}
+.kidrow{display:flex;align-items:center;gap:8px;padding:7px 9px;border:1px solid var(--line);border-radius:11px;margin-bottom:6px;background:var(--bg2);cursor:pointer;transition:border-color .15s}
+.kidrow:hover{border-color:var(--acc2)}
+.kidrow .kt{flex:1;font-size:13.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kidrow .kt.done{color:var(--mut2);text-decoration:line-through}
+.kidrow .kdel{border:none;background:none;color:var(--mut2);cursor:pointer;font-size:13px;padding:2px 5px;border-radius:6px}
+.kidrow .kdel:hover{color:var(--bad)}
+.nh-crumb{font-size:12px;color:var(--mut2);margin:2px 0 4px}
+.mh-crumb{font-size:11.5px;color:var(--mut2);margin:2px 0 3px}
 .subck{flex:0 0 auto;width:22px;height:22px;border-radius:7px;border:1.5px solid var(--line2);background:var(--bg2);color:#fff;font-size:12px;display:grid;place-items:center;cursor:pointer}
 .subck.on{background:var(--ok);border-color:var(--ok)}
 .subtxt{flex:1;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--txt);outline:none}
@@ -1796,6 +1808,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
     <button class="cashbtn" id="dCash" title="Двигает деньги">💰</button><select class="inp" id="dStatus" style="width:auto;margin-left:auto"></select>
   </div>
   <div class="db">
+    <div id="dCrumb" class="crumbrow" style="display:none"></div>
     <textarea class="dtitle" id="dTitle" rows="1" placeholder="Название задачи"></textarea>
     <div class="field"><label>Кто делает</label><div class="seg" id="dAssignee"></div></div>
     <div class="field"><label>Когда</label>
@@ -1808,7 +1821,11 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
       </div>
     </div>
     <div class="field"><label>Приоритет</label><div class="seg" id="dPrio"></div></div>
-    <div class="field"><label>✓ Чеклист / подзадачи</label>
+    <div class="field"><label>🧩 Подзадачи <span id="dKidsCnt" style="color:var(--mut2);font-weight:600;text-transform:none"></span></label>
+      <div id="dKids"></div>
+      <div class="cmtadd"><input class="inp" id="dKidIn" placeholder="Разбить на подзадачу… (Enter)"><button class="btn" id="dKidBtn">＋</button></div>
+    </div>
+    <div class="field"><label>✓ Список действий</label>
       <div id="dSubs"></div>
       <div class="cmtadd"><input class="inp" id="dSubIn" placeholder="Добавить пункт… (Enter)"><button class="btn" id="dSubBtn">＋</button></div>
     </div>
@@ -1865,6 +1882,15 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
   <div class="df"><div class="spacer"></div><button class="btn primary" id="inboxClose">Готово</button></div>
 </aside>
 
+<div class="modal-scrim" id="rsScrim"><div class="modal" style="width:min(440px,94vw);padding:18px">
+  <h3 style="margin:0 0 4px;font-size:16px">📅 Срок сдвигается <span id="rsDates" style="color:var(--mut);font-weight:600"></span></h3>
+  <div style="font-size:12.5px;color:var(--mut2);margin-bottom:10px">Причину увидит команда — она попадёт в комментарии задачи.</div>
+  <input class="inp" id="rsIn" placeholder="Почему? (клиент попросил, ждём дизайн, недооценили…)">
+  <div class="row" style="margin-top:12px;justify-content:flex-end;gap:8px">
+    <button class="btn" id="rsSkip">Без причины</button>
+    <button class="btn primary" id="rsOk">Сохранить</button>
+  </div>
+</div></div>
 <div class="modal-scrim" id="reportScrim"><div class="modal" id="reportModal"></div></div>
 <div class="modal-scrim" id="aiScrim"><div class="modal" id="aiModal"></div></div>
 <div class="modal-scrim" id="profileScrim"><div class="modal" id="profileModal"></div></div>
@@ -1995,7 +2021,7 @@ function saveReg(){localStorage.setItem(LS_REG,JSON.stringify(reg));}
 function loadProj(id){try{return JSON.parse(localStorage.getItem(pkey(id)));}catch(e){return null;}}
 function migrate(p){if(!p)return p;p.ui=p.ui||{zoom:38};if(!p.ui.zoom)p.ui.zoom=38;if(p.demo===undefined)p.demo=false;
   if(!p.id)p.id='p'+Math.random().toString(36).slice(2,8);p.ideas=p.ideas||[];p.tasks=p.tasks||[];p.members=p.members||[];p.sections=p.sections||[{id:'s1',name:'Задачи'}];
-  p.tasks.forEach(t=>{if(!t.deps)t.deps=[];if(t.comments==null)t.comments=[];});
+  p.tasks.forEach(t=>{if(!t.deps)t.deps=[];if(t.comments==null)t.comments=[];if(t.parentId===undefined)t.parentId=null;});
   p.activity=p.activity||[];p.notes=p.notes||[];if(!p.updatedAt)p.updatedAt=0;if(p.parentId===undefined)p.parentId=null;return p;}
 
 function blankProject(){return {projectName:'Мой проект',emoji:'🚀',demo:false,ui:{zoom:38},
@@ -2467,6 +2493,7 @@ function renderNow(){
      <div class="nh-main">
       <div class="nh-label">${multi?'🎯 Твой следующий шаг · все проекты':(mine.length?'🎯 Твой следующий шаг':'🎯 Главное в проекте сейчас')}</div>
       <div class="nh-title" data-open="${next.id}">${next.cash?'💰 ':''}${prGlyph(next)}${esc(next.title)}</div>
+      ${(cp=>cp.length?`<div class="nh-crumb">↳ ${cp.map(esc).join(' ▸ ')}</div>`:'')(task(next.id)?crumbPath(next):[])}
       <div class="nh-meta">
         ${heroX?`<span class="ichip">${heroX.emoji} ${esc(heroX.pname)}</span>`:`<span class="ichip">${avatar(next.assigneeId)} ${m?esc(m.name):'без исполнителя'}</span>`}
         <span class="ichip" style="border-color:${stMap[next.status].c}"><span class="pal-dot" style="background:${stMap[next.status].c}"></span> ${stMap[next.status].n}</span>
@@ -2674,6 +2701,7 @@ function renderNowMobile(ctx){
   const hero=next?`<div class="mhero ${isOverdue(next)?'over':''}" data-open="${next.id}">
       <div class="mh-label">${multi?'Твой следующий шаг · все проекты':(ctx.mine.length?'Твой следующий шаг':'Главное сейчас')}</div>
       <div class="mh-title">${next.cash?'💰 ':''}${prGlyph(next)}${esc(next.title)}</div>
+      ${(cp=>cp.length?`<div class="mh-crumb">↳ ${cp.map(esc).join(' ▸ ')}</div>`:'')(task(next.id)?crumbPath(next):[])}
       <div class="mh-meta">${heroX?`${heroX.emoji} ${esc(heroX.pname)} · `:''}${next.estimate?`${next.spent||0}/${next.estimate}ч · `:''}${(d=>d<0?`<b style="color:var(--bad)">просрочено ${-d}д</b>`:d===0?'сегодня':d===1?'завтра':'в плане')(daysLeft(next))}</div>
       <div class="mh-why">почему: ${whyNext(next,energy).join(' · ')}</div>
       <div class="mh-acts">
@@ -3314,7 +3342,7 @@ function renderDash(){
         <h3>🔥 Фокус на сегодня <span class="c">${focusU.length}</span></h3>
         ${focusU.length?focusU.map(t=>{const ov=isOverdue(t);const dl=daysLeft(t);
           return `<div class="trow" data-task="${t.id}"><button class="qdone" data-quickdone="${t.id}" title="Отметить готовым" style="--c:${stMap[t.status].c}"></button>
-            <span class="tn">${esc(t.title)}</span>${subTag(t)}${avatar(t.assigneeId)}
+            <span class="tn">${esc(t.title)}</span>${kidsTag(t)}${subTag(t)}${avatar(t.assigneeId)}
             <span class="when ${ov?'over':''}">${ov?'просрочено '+(-dl)+'д':'до '+t.end.slice(8)+'.'+t.end.slice(5,7)}</span></div>`;}).join(''):'<div class="emptymini">На сегодня активных задач нет 🎉</div>'}
       </div>
       <div class="panel-c">
@@ -3878,7 +3906,7 @@ function weekDays(offset){const now=new Date();const d=new Date(now.getFullYear(
   const dow=(d.getDay()+6)%7;const mon=new Date(d);mon.setDate(d.getDate()-dow+offset*7);
   const out=[];for(let i=0;i<7;i++){const x=new Date(mon);x.setDate(mon.getDate()+i);out.push(`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`);}return out;}
 function myWeekTasks(){const out=[];reg.list.filter(p=>!p.archived).forEach(p=>{const data=loadProj(p.id);if(!data)return;const me=myMemberIn(data);if(!me)return;
-  (data.tasks||[]).forEach(t=>{if(t.isMilestone)return;if(t.assigneeId===me.id&&t.status!=='done')out.push({t,pid:p.id,pname:p.name,emoji:p.emoji});});});return out;}
+  (data.tasks||[]).forEach(t=>{if(t.isMilestone)return;if(t.assigneeId===me.id&&t.status!=='done')out.push({t,pid:p.id,pname:p.name,emoji:p.emoji,parent:t.parentId?((data.tasks.find(x=>x.id===t.parentId)||{}).title||null):null});});});return out;}
 /* done с правом передумать: возвращает undo-замыкание для тоста «Отменить» */
 function markDone(pid,tid){let prev='todo',prevSpent,ttl='';
   editTaskInProject(pid,tid,t=>{prev=t.status;prevSpent=t.spent;ttl=t.title;t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;});
@@ -3900,7 +3928,7 @@ function renderWeek(){
   const card=x=>`<div class="wcard" draggable="true" data-pid="${x.pid}" data-tid="${x.t.id}">
     <button class="qdone" data-wd="${x.pid}|${x.t.id}" title="Готово" style="--c:${stMap[x.t.status].c}"></button>
     <div class="wcb"><div class="wct">${x.t.waitingOn?'⏳ ':''}${esc(x.t.title)}</div>
-      <div class="wcm"><span class="pbadge">${x.emoji||'📄'} ${esc(x.pname)}</span>${x.t.estimate?`<span style="font-size:10px;color:var(--mut2)">${x.t.estimate}ч</span>`:''}${subTag(x.t)}</div></div></div>`;
+      <div class="wcm"><span class="pbadge">${x.emoji||'📄'} ${esc(x.pname)}</span>${x.parent?`<span style="font-size:10px;color:var(--mut2)">↳ ${esc(x.parent)}</span>`:''}${x.t.estimate?`<span style="font-size:10px;color:var(--mut2)">${x.t.estimate}ч</span>`:''}${subTag(x.t)}</div></div></div>`;
   const col=(key,label,sub,cls)=>`<div class="wcol ${cls||''}" data-day="${key}"><div class="wcolh" title="${key==='over'?'перетащи задачу в день — изменится срок':sub||''}"><span>${label}</span>${sub?`<span class="wsub">${sub}</span>`:''}<span class="wcnt">${by[key].length||''}</span></div><div class="wcolb">${by[key].map(card).join('')||'<div class="wempty">—</div>'}</div></div>`;
   const wt=weekOffset===0?'Эта неделя':weekOffset===1?'Следующая неделя':weekOffset===-1?'Прошлая неделя':md(wstart)+'–'+md(wend);
   let cols='';if(by.over.length)cols+=col('over','⚠️ Просрочено','',' over');
@@ -3922,7 +3950,8 @@ function renderWeek(){
     colEl.ondragover=e=>{e.preventDefault();colEl.classList.add('drop');};
     colEl.ondragleave=()=>colEl.classList.remove('drop');
     colEl.ondrop=e=>{e.preventDefault();colEl.classList.remove('drop');const day=colEl.dataset.day;if(!weekDrag)return;
-      if(day!=='over'&&day!=='later')editTaskInProject(weekDrag.pid,weekDrag.tid,t=>{t.end=day;if(parseD(t.start)>parseD(day))t.start=day;});
+      if(day!=='over'&&day!=='later')editTaskInProject(weekDrag.pid,weekDrag.tid,t=>{const _o=t.end;t.end=day;if(parseD(t.start)>parseD(day))t.start=day;
+        if(_o&&_o!==day){const f=x=>x.slice(8)+'.'+x.slice(5,7);t.comments=t.comments||[];t.comments.push({ts:Date.now(),author:meName(),authorId:myId(),text:'📅 Срок: '+f(_o)+' → '+f(day)+' — перенос в «Моей неделе»'});}});
       weekDrag=null;renderWeek();};});
 }
 
@@ -3991,7 +4020,7 @@ function openInlineAdd(el){
 }
 function renderGantt(){
   const wrap=$('#gantt');
-  const all=S.tasks.filter(passFilter);
+  const all=S.tasks.filter(t=>!t.parentId&&passFilter(t));   /* гант = структура: только корневые */
   if(!all.length){wrap.innerHTML=filterActive()
     ? emptyState('🔍','Под фильтр ничего не попало','Сбрось фильтры сверху, чтобы увидеть все задачи проекта')
     : emptyState('🗂️','Пока нет задач','Добавь через ＋ под разделом, командную строку или 🎙 голосом');return;}
@@ -4212,7 +4241,7 @@ function renderBoard(){
   const b=$('#board');b.className='board'+(boardSelOn?' selecting':'');b.innerHTML='';
   STATUSES.forEach(st=>{
     const col=document.createElement('div');col.className='col';col.dataset.st=st.k;
-    const items=S.tasks.filter(t=>t.status===st.k&&passFilter(t)).sort((a,b)=>{
+    const items=S.tasks.filter(t=>t.status===st.k&&!t.parentId&&passFilter(t)).sort((a,b)=>{
       const ar=a.rank,br=b.rank;
       if(ar!=null&&br!=null)return ar-br;
       if(ar!=null)return -1;if(br!=null)return 1;
@@ -4229,7 +4258,7 @@ function renderBoard(){
           ${t.status!=='done'&&!t.isMilestone?`<button class="qdone cdone" title="Отметить готовым" style="--c:${stMap[t.status].c}"></button>`:''}
           ${prTag(t)}
           ${waitTag(t)}
-          ${subTag(t)}
+          ${kidsTag(t)}${subTag(t)}
           ${t.estimate?`<span>⏱ ${t.estimate}ч</span>`:''}
           ${(t.comments||[]).length?`<span>💬 ${(t.comments||[]).length}</span>`:''}
           ${ov?`<span style="color:var(--bad);font-weight:700">⚠ просроч.</span>`:''}
@@ -4489,12 +4518,18 @@ function closeMember(){$('#mDrawer').classList.remove('show');curMember=null;app
 $('#mClose').onclick=closeMember;
 
 /* ============================ TASK CRUD + DRAWER ============================ */
-function newTask(title){
+function newTask(title,parentId){
   const t={id:uid('t'),title:title||'Новая задача',sectionId:S.sections[0].id,assigneeId:null,
     start:todayISO(),end:todayISO(),status:'backlog',estimate:0,spent:0,priority:'med',
-    description:'',comments:[],isMilestone:false,deps:[],createdTs:Date.now()};
+    description:'',comments:[],isMilestone:false,deps:[],parentId:parentId||null,createdTs:Date.now()};
   S.tasks.push(t);logAct('➕','новая задача «'+t.title+'»');return t;
 }
+/* ---- вложенность задач: до 3 уровней (L1→L2→L3), чеклист = список действий ---- */
+function kids(id){return S.tasks.filter(x=>x.parentId===id);}
+function taskDepth(t){let d=1,cur=t,g=0;while(cur&&cur.parentId&&g++<100){cur=task(cur.parentId);d++;}return d;}
+function descendants(id){const out=[];kids(id).forEach(k=>{out.push(k);out.push(...descendants(k.id));});return out;}
+function crumbPath(t){const parts=[];let cur=t&&t.parentId?task(t.parentId):null,g=0;while(cur&&g++<100){parts.unshift(cur.title);cur=cur.parentId?task(cur.parentId):null;}return parts;}
+function kidsTag(t){const k=kids(t.id);if(!k.length)return '';const d=k.filter(x=>x.status==='done').length;return `<span class="subbadge${d===k.length?' all':''}" title="Подзадачи">🧩 ${d}/${k.length}</span>`;}
 let curTask=null;
 function openTask(id){
   const t=task(id);if(!t)return;curTask=t;
@@ -4541,9 +4576,48 @@ function openTask(id){
   // ждёт от (waiting-on)
   $('#dWaiting').innerHTML=S.members.map(m=>`<button class="chip ${t.waitingOn===m.id?'on':''}" data-wo="${m.id}" style="${t.waitingOn===m.id?`background:${m.color}`:''}">${esc(m.name)}</button>`).join('')+`<button class="chip ${!t.waitingOn?'on':''}" data-wo="">— никого</button>`;
   $$('#dWaiting .chip').forEach(c=>c.onclick=()=>{const wid=c.dataset.wo||null;t.waitingOn=wid;logAct('⏳',wid?('«'+t.title+'» ждёт от '+((member(wid)||{}).name||'?')):('«'+t.title+'» — снято ожидание'));save();openTask(id);render();});
+  renderCrumb(t);
+  renderKids(t);
   renderSubtasks(t);
   renderComments(t);
   $('#drawer').classList.add('show');syncScrim();
+}
+function renderCrumb(t){
+  const c=$('#dCrumb');if(!c)return;
+  if(!t.parentId){c.style.display='none';c.innerHTML='';return;}
+  const chain=[];let cur=task(t.parentId),g=0;
+  while(cur&&g++<100){chain.unshift(cur);cur=cur.parentId?task(cur.parentId):null;}
+  c.innerHTML=chain.map(p=>`<button data-cr="${p.id}">${esc(p.title)}</button><span>▸</span>`).join('');
+  c.style.display='flex';
+  $$('#dCrumb [data-cr]').forEach(b=>b.onclick=()=>openTask(b.dataset.cr));
+}
+function renderKids(t){
+  const c=$('#dKids');if(!c)return;const ks=kids(t.id);
+  const cnt=$('#dKidsCnt');if(cnt)cnt.textContent=ks.length?ks.filter(k=>k.status==='done').length+'/'+ks.length:'';
+  c.innerHTML=ks.length?ks.map(k=>{const kk=kids(k.id);const sb=(k.subtasks||[]);
+    const extra=kk.length?` 🧩${kk.filter(x=>x.status==='done').length}/${kk.length}`:(sb.length?` ✓${sb.filter(x=>x.done).length}/${sb.length}`:'');
+    return `<div class="kidrow" data-kid="${k.id}">
+      <button class="qdone" data-kdone="${k.id}" title="${k.status==='done'?'Вернуть в работу':'Готово'}" style="--c:${stMap[k.status].c}"></button>
+      <span class="kt ${k.status==='done'?'done':''}">${esc(k.title)}${extra?` <span style="color:var(--mut2);font-size:11px">${extra}</span>`:''}</span>
+      ${avatar(k.assigneeId)}<button class="kdel" data-kdel="${k.id}" title="Удалить подзадачу">✕</button></div>`;}).join('')
+    :`<div style="color:var(--mut2);font-size:12px">Разбей на шаги — каждая подзадача полноценна: свой статус, срок, исполнитель и свой список действий.</div>`;
+  $$('#dKids .kidrow').forEach(r=>r.onclick=e=>{if(e.target.closest('[data-kdone],[data-kdel]'))return;openTask(r.dataset.kid);});
+  $$('#dKids [data-kdone]').forEach(b=>b.onclick=e=>{e.stopPropagation();const k=task(b.dataset.kdone);if(!k)return;
+    if(k.status!=='done'){const un=markDone(S.id,k.id);toast('Готово','✅','Отменить',()=>{un();if(curTask)renderKids(curTask);render();});}
+    else{k.status='progress';logAct('↩️','«'+k.title+'» снова в работе');save();}
+    if(curTask)renderKids(curTask);render();});
+  $$('#dKids [data-kdel]').forEach(b=>b.onclick=e=>{e.stopPropagation();const k=task(b.dataset.kdel);if(!k)return;
+    const desc=descendants(k.id);
+    if(desc.length&&!confirm('Удалить «'+k.title+'» вместе с '+desc.length+' вложенными?'))return;
+    const ids=new Set([k.id,...desc.map(x=>x.id)]);
+    S.tasks=S.tasks.filter(x=>!ids.has(x.id));S.tasks.forEach(x=>x.deps=x.deps.filter(d=>!ids.has(d)));
+    logAct('🗑','удалил подзадачу «'+k.title+'»');save();if(curTask)renderKids(curTask);render();});
+}
+function addKid(){
+  const inp=$('#dKidIn');const v=(inp&&inp.value||'').trim();if(!v||!curTask)return;
+  const nt=newTask(v,curTask.id);nt.sectionId=curTask.sectionId;nt.assigneeId=curTask.assigneeId;
+  nt.status='todo';nt.start=curTask.start;nt.end=curTask.end;
+  inp.value='';save();renderKids(curTask);render();
 }
 function hlMentions(text){return esc(text).replace(/@([A-Za-zА-Яа-яЁё][\wА-Яа-яЁё.\-]*)/g,'<span class="mention">@$1</span>');}
 function renderComments(t){
@@ -4563,8 +4637,8 @@ function renderSubtasks(t){
   $$('#dSubs .subck').forEach(b=>b.onclick=()=>{const s=subs.find(x=>x.id===b.dataset.sub);if(s){s.done=!s.done;save();renderSubtasks(t);render();}});
   $$('#dSubs .subtxt').forEach(i=>i.onblur=()=>{const s=subs.find(x=>x.id===i.dataset.subt);if(s){s.text=i.value.trim();save();}});
   $$('#dSubs .subto').forEach(b=>b.onclick=()=>{const s=subs.find(x=>x.id===b.dataset.subto);if(!s||!s.text.trim())return;
-    const nt=newTask(s.text.trim());nt.sectionId=t.sectionId;nt.assigneeId=t.assigneeId;nt.status='todo';nt.start=t.start;nt.end=t.end;
-    t.subtasks=subs.filter(x=>x.id!==s.id);logAct('🧩','подзадача → задача «'+nt.title+'»');save();renderSubtasks(t);render();toast('Подзадача стала задачей','🧩');});
+    const nt=newTask(s.text.trim(),t.id);nt.sectionId=t.sectionId;nt.assigneeId=t.assigneeId;nt.status='todo';nt.start=t.start;nt.end=t.end;
+    t.subtasks=subs.filter(x=>x.id!==s.id);logAct('🧩','пункт → подзадача «'+nt.title+'»');save();renderSubtasks(t);renderKids(t);render();toast('Пункт стал подзадачей','🧩');});
   $$('#dSubs .subdel').forEach(b=>b.onclick=()=>{t.subtasks=subs.filter(x=>x.id!==b.dataset.subd);save();renderSubtasks(t);render();});
 }
 function addSub(){const v=($('#dSubIn').value||'').trim();if(!v||!curTask)return;if(!curTask.subtasks)curTask.subtasks=[];curTask.subtasks.push({id:uid('sb'),text:v,done:false});$('#dSubIn').value='';save();renderSubtasks(curTask);render();}
@@ -4580,7 +4654,36 @@ $('#dDesc').oninput=e=>{if(curTask)curTask.description=e.target.value;};
 $('#dDesc').onblur=()=>{if(curTask)save();};
 $('#dSection').onchange=e=>{if(curTask){curTask.sectionId=e.target.value;save();}};
 $('#dStart').onchange=e=>{if(curTask){curTask.start=e.target.value;if(parseD(curTask.end)<parseD(curTask.start))curTask.end=curTask.start;save();}};
-$('#dEnd').onchange=e=>{if(curTask){curTask.end=e.target.value;if(parseD(curTask.end)<parseD(curTask.start))curTask.start=curTask.end;save();}};
+$('#dEnd').onchange=e=>{if(curTask){const _old=curTask.end;curTask.end=e.target.value;if(parseD(curTask.end)<parseD(curTask.start))curTask.start=curTask.end;save();askShiftReason(curTask,_old,curTask.end);}};
+/* ---- причина переноса срока: видна всем (Asana-паттерн, запрос Роча) ---- */
+function logDeadlineShift(t,oldEnd,newEnd,reason){
+  if(!t||oldEnd===newEnd)return;
+  const f=d=>d?d.slice(8)+'.'+d.slice(5,7):'—';
+  t.comments=t.comments||[];
+  t.comments.push({ts:Date.now(),author:meName(),authorId:myId(),text:'📅 Срок: '+f(oldEnd)+' → '+f(newEnd)+(reason?' — '+reason:' (без причины)')});
+  logAct('📅','«'+t.title+'»: срок '+f(oldEnd)+' → '+f(newEnd)+(reason?' — '+reason:''));
+}
+let _rs=null;
+function askShiftReason(t,oldEnd,newEnd,after){
+  if(!t||!oldEnd||oldEnd===newEnd){after&&after();return;}
+  const later=parseD(newEnd)>parseD(oldEnd);
+  /* вопрос — только когда срок уезжает ПОЗЖЕ и в проекте есть команда; сдвиг раньше/соло — тихая запись */
+  if(!later||S.members.length<2){logDeadlineShift(t,oldEnd,newEnd,'');save();if(curTask===t)renderComments(t);after&&after();return;}
+  _rs={t,oldEnd,newEnd,after};
+  const f=d=>d.slice(8)+'.'+d.slice(5,7);
+  $('#rsDates').textContent=f(oldEnd)+' → '+f(newEnd);
+  $('#rsIn').value='';$('#rsScrim').classList.add('show');setTimeout(()=>{const i=$('#rsIn');if(i)i.focus();},80);
+}
+function closeReasonSheet(commit){
+  if(!_rs)return;const {t,oldEnd,newEnd,after}=_rs;_rs=null;
+  logDeadlineShift(t,oldEnd,newEnd,commit?($('#rsIn').value||'').trim():'');
+  save();$('#rsScrim').classList.remove('show');
+  if(curTask===t)renderComments(t);render();after&&after();
+}
+{const ok=$('#rsOk');if(ok)ok.onclick=()=>closeReasonSheet(true);}
+{const sk=$('#rsSkip');if(sk)sk.onclick=()=>closeReasonSheet(false);}
+{const ri=$('#rsIn');if(ri)ri.onkeydown=e=>{if(e.key==='Enter')closeReasonSheet(true);if(e.key==='Escape')closeReasonSheet(false);};}
+{const rs=$('#rsScrim');if(rs)rs.onclick=e=>{if(e.target===rs)closeReasonSheet(false);};}
 $('#dMile').onchange=e=>{if(curTask){curTask.isMilestone=e.target.checked;if(e.target.checked)curTask.end=curTask.start;save();}};
 $('#dRepeat').onchange=e=>{if(curTask){curTask.repeat=e.target.value||undefined;save();render();}};
 $('#dEst').oninput=e=>{if(curTask)curTask.estimate=parseFloat(e.target.value)||0;};
@@ -4601,6 +4704,8 @@ $('#dCmtIn').addEventListener('input',e=>{
   $$('#dMention .mention-i').forEach(b=>b.onmousedown=ev=>{ev.preventDefault();e.target.value=v.replace(/@([^@\s]*)$/,'@'+b.dataset.n+' ');box.classList.remove('show');e.target.focus();});
 });
 $('#dSubBtn').onclick=addSub;
+{const kb=$('#dKidBtn');if(kb)kb.onclick=addKid;}
+{const ki=$('#dKidIn');if(ki)ki.onkeydown=e=>{if(e.key==='Enter')addKid();};}
 $('#dCash').onclick=()=>{if(!curTask)return;curTask.cash=!curTask.cash;
   $('#dCash').classList.toggle('on',!!curTask.cash);save();
   toast(curTask.cash?'💰 Двигает деньги — подниму в приоритетах':'Метка денег снята','💰');};
@@ -4609,15 +4714,18 @@ $$('#dQDates button').forEach(b=>b.onclick=()=>{if(!curTask)return;
   const q=b.dataset.qd;let d;
   if(q==='mon'){const t=parseD(todayISO());const dow=(new Date(t).getDay()+6)%7;d=fmtD(t+(7-dow)*dayMs);}
   else d=fmtD(parseD(todayISO())+(+q)*dayMs);
-  curTask.end=d;if(parseD(curTask.start)>parseD(d))curTask.start=d;
+  const _old=curTask.end;curTask.end=d;if(parseD(curTask.start)>parseD(d))curTask.start=d;
   $('#dStart').value=curTask.start;$('#dEnd').value=curTask.end;save();
-  toast('Срок → '+d.slice(8)+'.'+d.slice(5,7),'📅');});
+  toast('Срок → '+d.slice(8)+'.'+d.slice(5,7),'📅');askShiftReason(curTask,_old,d);});
 $('#dSubIn').onkeydown=e=>{if(e.key==='Enter')addSub();};
 function addComment(){const v=$('#dCmtIn').value.trim();if(!v||!curTask)return;
   curTask.comments.push({text:v,author:meName(),authorId:myId(),when:'сейчас',ts:Date.now()});logAct('💬','коммент к «'+curTask.title+'»');$('#dCmtIn').value='';save();tgNotify('comment',curTask,v);renderComments(curTask);}
 $('#dDelete').onclick=()=>{if(!curTask)return;const t=curTask;const idx=S.tasks.indexOf(t);
-  S.tasks=S.tasks.filter(x=>x.id!==t.id);S.tasks.forEach(x=>x.deps=x.deps.filter(d=>d!==t.id));logAct('🗑','удалил «'+t.title+'»');closeDrawer();
-  toast('Удалено: «'+t.title+'»','🗑','Отменить',()=>{S.tasks.splice(idx,0,t);logAct('↩️','вернул «'+t.title+'»');save();render();});};
+  const desc=descendants(t.id);
+  if(desc.length&&!confirm('Удалить «'+t.title+'» вместе с '+desc.length+' подзадач(ами)?'))return;
+  const ids=new Set([t.id,...desc.map(x=>x.id)]);const removed=[t,...desc];
+  S.tasks=S.tasks.filter(x=>!ids.has(x.id));S.tasks.forEach(x=>x.deps=x.deps.filter(d=>!ids.has(d)));logAct('🗑','удалил «'+t.title+'»'+(desc.length?' + '+desc.length+' подзадач':''));closeDrawer();
+  toast('Удалено: «'+t.title+'»'+(desc.length?' + '+desc.length:''),'🗑','Отменить',()=>{S.tasks.splice(idx,0,...removed);logAct('↩️','вернул «'+t.title+'»');save();render();});};
 $('#dDup').onclick=()=>{if(!curTask)return;const t=curTask;
   const c=JSON.parse(JSON.stringify(t));c.id=uid('t');c.title=t.title+' (копия)';
   c.status='todo';c.spent=0;c.comments=[];c.pointsAwarded=undefined;c.createdTs=Date.now();
@@ -4835,11 +4943,14 @@ function healOverdue(target,scope){
   let list=S.tasks.filter(isOverdue);
   if(scope&&scope.assignee)list=list.filter(t=>t.assigneeId===scope.assignee);
   if(!list.length){toast('Просрочек нет — чисто ✨','✨');return 0;}
+  const _olds=list.map(t=>({t,e:t.end}));
   let n,label;
   if(target==='today'){n=moveTasksTo(list,todayISO());label='на сегодня';}
   else if(target==='tomorrow'){n=moveTasksTo(list,fmtD(parseD(todayISO())+dayMs));label='на завтра';}
   else if(typeof target==='number'){n=shiftTasksBy(list,target);label='на +'+target+'д';}
   else{n=moveTasksTo(list,nextMondayISO());label='на следующую неделю';}
+  _olds.forEach(({t,e})=>{if(t.end!==e){const f=x=>x.slice(8)+'.'+x.slice(5,7);t.comments=t.comments||[];
+    t.comments.push({ts:Date.now(),author:meName(),authorId:myId(),text:'📅 Срок: '+f(e)+' → '+f(t.end)+' — разбор просрочки'});}});
   const undo=list.map(t=>({t,s:t.start,e:t.end}));
   logAct('📅','перенёс '+n+' '+plural(n,'просрочку','просрочки','просрочек')+' '+label);save();render();
   toast('Перенёс '+n+' '+plural(n,'задачу','задачи','задач')+' '+label,'📅','Отменить',()=>{undo.forEach(u=>{u.t.start=u.s;u.t.end=u.e;});save();render();});
