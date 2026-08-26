@@ -4837,18 +4837,23 @@ micBtn.onclick=()=>{
 };
 
 /* ============================ COMMAND BAR ============================ */
-const HINT=`<b>🎙 Командная строка</b> — говори или печатай. Прототип Telegram-бота. Кликни пример:<br>
-<b style="color:#9aa0b3">Создать</b> <span class="ex">добавь задачу Лендинг @дима с 22 по 28 июня 12ч !срочно</span> · <span class="ex">добавь задачу Созвон завтра 2ч</span><br>
-<b style="color:#9aa0b3">Статус</b> <span class="ex">статус Вёрстка в работе</span> · <span class="ex">приоритет Тексты высокий</span><br>
-<b style="color:#9aa0b3">Люди/сроки</b> <span class="ex">назначь Тестирование на меня</span> · <span class="ex">срок Релиз до 1 июля</span> · <span class="ex">эстимейт Геймдизайн 24ч</span><br>
-<b style="color:#9aa0b3">Командуй планом</b> <span class="ex">проект Датум: созвон завтра 2ч</span> · <span class="ex">перенеси все просрочки на следующую неделю</span> · <span class="ex">сделай Тексты срочным и назначь на меня</span> · <span class="ex">что горит</span><br>
-<b style="color:#9aa0b3">Ещё</b> <span class="ex">переименуй Тексты в Копирайтинг</span> · <span class="ex">коммент Тексты: нужен тон бренда</span> · <span class="ex">идея реферальная петля</span> · <span class="ex">запомни с клиентом Х работаем по предоплате</span> · <span class="ex">удали задачу Саунддизайн</span><br>
-<span style="color:#838aa6">⌨ <b>⌘K</b> палитра · <b>/</b> команда · <b>N</b> новая · на доске <b>J/K</b> ходи · <b>X</b> готово · <b>E</b> открыть · <b>⌘Z</b> отмена · разделы O/B/G/W/I/T/A</span>`;
-cmdEl.onfocus=()=>{hintEl.innerHTML=HINT;hintEl.classList.add('show');bindEx();};
+/* подсказка живая: примеры из ТВОИХ задач и людей — никаких захардкоженных демо-имён */
+function hintHTML(){
+  const ts=(S.tasks||[]).filter(t=>t.status!=='done'&&!t.isMilestone&&!t.parentId&&t.title.length<=26).map(t=>t.title);
+  const t1=ts[0]||'Лендинг', t2=ts[1]||t1;
+  const other=(S.members.find(m=>m.id!==myId()&&m.name&&m.name!=='Я')||{}).name;
+  const ex=s=>`<span class="ex">${esc(s)}</span>`;
+  return `<b>🎙 Командная строка</b> — говори или печатай, как боту в Telegram. Кликни пример:<br>
+<b style="color:#9aa0b3">Создать</b> ${ex('добавь задачу Созвон завтра 2ч'+(other?' @'+other.split(' ')[0]:''))} · ${ex('идея реферальная программа')}<br>
+<b style="color:#9aa0b3">Управлять</b> ${ex('статус '+t1+' в работе')} · ${ex('назначь '+t2+' на меня')} · ${ex('срок '+t1+' до пятницы')}<br>
+<b style="color:#9aa0b3">Спросить</b> ${ex('что горит')} · ${ex('перенеси все просрочки на следующую неделю')} · ${ex('запомни: работаем по предоплате')}<br>
+<span style="color:#838aa6">⌨ <b>⌘K</b> меню · <b>N</b> новая · доска: <b>J/K</b> ходи · <b>X</b> готово · <b>E</b> открыть · <b>⌘Z</b> отмена</span>`;
+}
+cmdEl.onfocus=()=>{hintEl.innerHTML=hintHTML();hintEl.classList.add('show');bindEx();};
 cmdEl.onblur=()=>setTimeout(()=>{hintEl.classList.remove('show');$('#cmdChips').classList.remove('show');},180);
 function bindEx(){$$('#cmdhint .ex').forEach(e=>e.onmousedown=ev=>{ev.preventDefault();cmdEl.value=e.textContent;cmdEl.focus();cmdLiveChips();});}
 function cmdLiveChips(){const box=$('#cmdChips');const s=cmdEl.value;
-  const hide=()=>{box.classList.remove('show');box.innerHTML='';if(document.activeElement===cmdEl){hintEl.innerHTML=HINT;hintEl.classList.add('show');bindEx();}};
+  const hide=()=>{box.classList.remove('show');box.innerHTML='';if(document.activeElement===cmdEl){hintEl.innerHTML=hintHTML();hintEl.classList.add('show');bindEx();}};
   if(!s.trim()||isManageCmd(s))return hide();
   const p=parseQuick(s);const chips=nlpChips(p);
   if(p.title&&(chips.length||p.title!==s.trim())){
@@ -5758,8 +5763,23 @@ async function onLoggedIn(){cloudOn=true;closeAuth();hideGate();updateCloudBadge
   const hasReal=reg.list.filter(p=>!p.archived).some(p=>{const d=p.id===S.id?S:loadProj(p.id);
     return d&&((d.tasks||[]).length||(d.ideas||[]).length||d.projectName!=='Новый проект');});
   if(hasReal){localStorage.setItem('cockpit_onboarded','1');
-    const m=S.members.find(x=>(x.email||'').toLowerCase()===myEmail);
+    // ищем себя по email во ВСЕХ проектах воркспейса, не только в активном
+    let m=S.members.find(x=>(x.email||'').toLowerCase()===myEmail);
+    if(!m)for(const p of reg.list){const d=p.id===S.id?S:loadProj(p.id);
+      const f=d&&(d.members||[]).find(x=>(x.email||'').toLowerCase()===myEmail);if(f){m=f;break;}}
     if(m&&m.name&&m.name!=='Я'&&m.name!=='Новый участник')localStorage.setItem('cockpit_profile_done','1');}
+  // профиль живёт в ОБЛАКЕ (workspace_meta) — новый девайс подхватывает молча, без анкеты
+  if(!localStorage.getItem('cockpit_profile_done')){
+    try{const {data:cp}=await sb.from('workspace_meta').select('v').eq('k','profile:'+myEmail).maybeSingle();
+      if(cp&&cp.v&&cp.v.name){const v=cp.v;
+        let mm=S.members.find(x=>(x.email||'').toLowerCase()===myEmail);
+        if(!mm&&S.members.length===1&&!S.members[0].email)mm=S.members[0];
+        if(!mm){mm={id:uid('m'),capacity:30};S.members.push(mm);}
+        mm.name=v.name;mm.role=v.role||mm.role||'—';mm.color=v.color||mm.color;if(v.photo)mm.photo=v.photo;mm.email=myEmail;
+        localStorage.setItem('cockpit_me',mm.id);
+        localStorage.setItem('cockpit_profile',JSON.stringify(v));
+        localStorage.setItem('cockpit_profile_done','1');save();render();}
+    }catch(e){/* нет строки — покажем анкету один раз */}}
   if(!localStorage.getItem('cockpit_profile_done'))openProfileSetup();
   else if(!localStorage.getItem('cockpit_onboarded'))openSetupWizard();
   else if(localStorage.getItem('cockpit_brief_date')!==todayISO())openBrief();
@@ -5813,8 +5833,10 @@ function saveProfileSetup(){
   if(!m){m={id:uid('m'),capacity:30};S.members.push(m);}
   m.name=nm;m.role=profileDraft.role||'—';m.color=profileDraft.color;if(profileDraft.photo)m.photo=profileDraft.photo;m.email=myEmail||m.email||'';
   localStorage.setItem('cockpit_me',m.id);
-  localStorage.setItem('cockpit_profile',JSON.stringify({name:nm,role:m.role,color:m.color,photo:m.photo||'',email:myEmail}));
+  const prof={name:nm,role:m.role,color:m.color,photo:m.photo||'',email:myEmail};
+  localStorage.setItem('cockpit_profile',JSON.stringify(prof));
   localStorage.setItem('cockpit_profile_done','1');
+  if(cloudOn&&sb){try{sb.from('workspace_meta').upsert({k:'profile:'+myEmail,v:prof,updated_at:new Date().toISOString()}).then(()=>{});}catch(e){}}
   logAct('🧑','настроил профиль');save();render();
   $('#profileScrim').classList.remove('show');toast('Профиль сохранён','✅');
   if(!localStorage.getItem('cockpit_onboarded'))openSetupWizard();
@@ -5873,10 +5895,10 @@ async function cloudSync(){
   const cloudById={};rows.forEach(r=>cloudById[r.id]=r);
   // эпоха сброса: если команда делала 🧨 сброс ПОСЛЕ нашего последнего синка —
   // локальные проекты, которых нет в облаке, НЕ пушим обратно, а вычищаем
-  let purge=false;
+  let purge=false,resetTs=0;
   try{const {data:wm}=await sb.from('workspace_meta').select('v').eq('k','reset').maybeSingle();
-    const rts=(wm&&wm.v&&wm.v.ts)||0;
-    if(rts>+(localStorage.getItem('cockpit_reset_seen')||0)){purge=true;localStorage.setItem('cockpit_reset_seen',String(rts));}
+    resetTs=(wm&&wm.v&&wm.v.ts)||0;
+    if(resetTs>+(localStorage.getItem('cockpit_reset_seen')||0)){purge=true;localStorage.setItem('cockpit_reset_seen',String(resetTs));}
   }catch(e){/* таблицы может не быть — старое поведение */}
   // merge cloud↔local per project — трёхстороннее слияние, ничего не теряем
   rows.forEach(r=>{
@@ -5905,7 +5927,10 @@ async function cloudSync(){
     if(purge){localStorage.removeItem(pkey(p.id));localStorage.removeItem(bkey(p.id));localStorage.removeItem('cockpit_seen_'+p.id);}
     else{const local=loadProj(p.id);if(!local)return;
       const emptyDefault=!(local.tasks||[]).length&&!(local.ideas||[]).length&&/^(Мой проект|Новый проект)$/.test(local.projectName||'');
-      if(emptyDefault&&rows.length){junkIds.push(p.id);localStorage.removeItem(pkey(p.id));localStorage.removeItem(bkey(p.id));}
+      // АНТИ-ЗОМБИ: проект, не менявшийся с момента командного 🧨 сброса, — устаревшая
+      // локальная копия удалённого. Опоздавшее устройство НЕ должно воскрешать его в облаке.
+      const staleSinceReset=resetTs&&(local.updatedAt||0)<resetTs;
+      if((emptyDefault&&rows.length)||staleSinceReset){junkIds.push(p.id);localStorage.removeItem(pkey(p.id));localStorage.removeItem(bkey(p.id));localStorage.removeItem('cockpit_seen_'+p.id);}
       else cloudPush(local,true);}
   }});
   if(junkIds.length)reg.list=reg.list.filter(p=>!junkIds.includes(p.id));
