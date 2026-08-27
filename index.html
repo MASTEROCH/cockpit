@@ -814,8 +814,8 @@ body.light .brand .logo{background:linear-gradient(157deg,#1b1d27,#08090d 72%)}
 @media (prefers-reduced-motion: reduce){.pp-on .ppin{animation:none}}
 /* ═══ Слой движения: быстро, тактильно, дорого. Всё гаснет при reduced-motion ═══ */
 @media (prefers-reduced-motion: no-preference){
-  @keyframes viewIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
-  .view.active{animation:viewIn .24s cubic-bezier(.2,.8,.2,1)}
+  @keyframes viewRise{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+  .view.active{animation:viewRise .24s cubic-bezier(.2,.8,.2,1)}
   @keyframes rowIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
   .wcard,.trow,.insight,.prow,.ino,.frow,.lbrow{animation:rowIn .26s cubic-bezier(.2,.8,.2,1) both}
   .wcard:nth-child(2),.trow:nth-child(2),.insight:nth-child(2),.prow:nth-child(2),.ino:nth-child(2){animation-delay:.03s}
@@ -832,6 +832,8 @@ body.light .brand .logo{background:linear-gradient(157deg,#1b1d27,#08090d 72%)}
   .card{transition:transform .15s cubic-bezier(.2,.8,.2,1),box-shadow .2s,border-color .15s}
   .card:hover{transform:translateY(-2px)}
   .qdone:hover{transform:scale(1.12)}
+  @keyframes landed{0%{box-shadow:0 0 0 2px var(--acc2),0 6px 22px rgba(167,139,250,.25);transform:scale(1.015)}100%{box-shadow:none;transform:none}}
+  .card.justmoved{animation:landed .6s cubic-bezier(.2,.8,.2,1)}
   .hdot{transition:transform .12s}.hdot:hover{transform:scale(1.25)}
   .frow,.trow,.wcard{transition:background .15s,border-color .15s}
 }
@@ -4516,6 +4518,8 @@ function renderBoardPeople(){renderBulkBar();
 function boardSwipes(){if(window.innerWidth>680)return;
   $$('#board .card[data-id]').forEach(c=>attachSwipe(c,c.dataset.id));}
 function renderBoard(){
+  setTimeout(()=>{if(window._justMoved){const el=document.querySelector(`.card[data-id="${window._justMoved}"]`);
+    if(el){el.classList.add('justmoved');setTimeout(()=>el.classList.remove('justmoved'),650);}window._justMoved=null;}},30);
   if(boardMode==='people'){boardSelOn=false;return renderBoardPeople();}
   const b=$('#board');b.className='board'+(boardSelOn?' selecting':'');b.innerHTML='';
   STATUSES.forEach(st=>{
@@ -4561,7 +4565,7 @@ function renderBoard(){
     col.ondragleave=()=>col.classList.remove('drop');
     col.ondrop=e=>{e.preventDefault();col.classList.remove('drop');
       if(!dragCard)return;const t=task(dragCard);if(!t)return;
-      const movedCol=t.status!==st.k;t.status=st.k;if(movedCol)t.statusTs=Date.now();
+      const movedCol=t.status!==st.k;t.status=st.k;if(movedCol){t.statusTs=Date.now();window._justMoved=t.id;}
       const bodyEl2=col.querySelector('.colb');
       const cards=[...bodyEl2.querySelectorAll('.card')].filter(c=>c.dataset.id!==dragCard);
       let idx=cards.length;for(let i=0;i<cards.length;i++){const r=cards[i].getBoundingClientRect();if(e.clientY<r.top+r.height/2){idx=i;break;}}
