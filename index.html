@@ -24,10 +24,10 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23f472b6'/%3E%3Cstop offset='0.5' stop-color='%23a78bfa'/%3E%3Cstop offset='1' stop-color='%2338bdf8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='24' fill='url(%23g)'/%3E%3Cg transform='translate(18,25) scale(0.117)' fill='%23fff'%3E%3Cpath transform='translate(-239 -299)' d='M590.549 318.732C592.945 318.453 596.745 318.696 599.286 318.696C634.434 318.703 667.897 316.824 700.032 333.775C783.727 377.923 786.207 488.78 731.835 556.811C700.794 595.65 657.566 620.752 607.3 623.356C576.646 624.841 542.765 617.244 517.207 638.881C505.403 648.755 500.588 660.76 494.308 674.336C488.985 685.844 483.927 697.868 478.034 709.061C447.129 709.003 414.041 709.686 383.322 708.993C390.272 692.78 399.544 674.533 407.172 658.357C414.402 641.263 425.054 620.531 433.24 603.375L468.064 529.888C478.844 507.375 489.815 485.216 500.033 462.397C508.607 461.72 522.007 461.939 530.747 461.916C551.732 461.88 572.716 462.073 593.696 462.496C589.717 468.96 584.172 482.027 580.797 489.352C574.315 503.42 567.316 518.312 561.52 532.628C562.821 532.707 564.123 532.765 565.426 532.803C574.929 533.092 584.848 532.969 594.379 533.027C601.077 532.791 608.447 533.526 615.073 532.731C648.617 528.704 677.207 498.097 677.706 464.145C678.091 437.865 664.532 415.164 637.935 409.832C622.705 406.779 607.684 407.916 592.303 407.965C569.853 408.116 547.402 408.135 524.952 408.02C539.76 379.17 553.156 348.033 567.408 318.783C575.059 318.869 582.922 319.055 590.549 318.732Z'/%3E%3Cpath transform='translate(-239 -299)' d='M436.648 318.711C438.535 318.361 446.366 318.402 448.541 318.408L474.9 318.684C498.905 318.824 523.676 318.103 547.68 318.994C534.009 349.063 519.82 378.173 505.694 407.974L452.824 407.966C437.639 407.999 418.311 406.719 404.007 410.92C374.633 419.548 349.545 452.473 349.489 483.221C349.376 496.888 354.815 510.016 364.561 519.599C378.937 533.945 398.3 532.85 417.331 532.946L446.601 533.036C439.517 549.455 431.978 565.674 423.991 581.673C417.562 595.433 410.688 609.303 404.066 623C374.725 623.045 349.066 625.26 321.887 611.554C233.151 566.808 241.2 449.578 300.225 384.017C338.665 341.322 379.901 322.449 436.648 318.711Z'/%3E%3C/g%3E%3C/svg%3E" />
 <style>
   :root{
-    --bg:#0c0d12; --bg2:#10121a; --panel:#161922; --panel2:#1c2029;
-    --line:#262a36; --line2:#2f3340;
-    --txt:#e7e9f0; --mut:#9aa0b3; --mut2:#6b7186;
-    --acc:#f472b6; --acc2:#a78bfa; --acc3:#38bdf8;
+    --bg:#0d0d10; --bg2:#131317; --panel:#17171c; --panel2:#1d1d23;
+    --line:#26262c; --line2:#303037;
+    --txt:#e8e9ec; --mut:#9b9da6; --mut2:#6d6f79;
+    --acc:#d98bb8; --acc2:#a78bfa; --acc3:#6ea8d8;
     --ok:#34d399; --warn:#fbbf24; --bad:#f87171;
     --radius:14px; --row:42px;
     --shadow:0 10px 40px rgba(0,0,0,.5);
@@ -36,8 +36,8 @@
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
   html,body{margin:0;height:100%}
   body{
-    background:radial-gradient(1200px 700px at 80% -10%, rgba(167,139,250,.10), transparent 60%),
-               radial-gradient(900px 600px at -5% 10%, rgba(244,114,182,.08), transparent 55%),
+    background:radial-gradient(1200px 700px at 80% -10%, rgba(167,139,250,.05), transparent 60%),
+               radial-gradient(900px 600px at -5% 10%, rgba(217,139,184,.035), transparent 55%),
                var(--bg);
     color:var(--txt);
     font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter",Segoe UI,Roboto,sans-serif;
@@ -219,7 +219,7 @@
   .quickadd input:focus{border-color:var(--acc2)}
   .btn{border:1px solid var(--line2);background:var(--panel2);border-radius:11px;padding:11px 16px;font-weight:700;font-size:13px;color:var(--txt);transition:.15s;white-space:nowrap}
   .btn:hover{background:#262b38;border-color:var(--acc2)}
-  .btn.primary{background:linear-gradient(180deg,var(--acc2),#8b6ff0);border-color:transparent;color:#fff;box-shadow:0 4px 14px rgba(167,139,250,.35)}
+  .btn.primary{background:linear-gradient(180deg,var(--acc2),#8b6ff0);border-color:transparent;color:#fff;box-shadow:0 3px 10px rgba(167,139,250,.2)}
   .btn.primary:hover{filter:brightness(1.08)}
   .ideas{display:flex;flex-direction:column;gap:10px}
   .idea{display:flex;align-items:flex-start;gap:13px;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:13px 15px;transition:.15s}
@@ -779,6 +779,12 @@ body.light .brand .logo{background:linear-gradient(157deg,#1b1d27,#08090d 72%)}
 .wadd{display:block;width:calc(100% - 16px);margin:4px 8px 8px;padding:8px;border:1px dashed var(--line2);border-radius:9px;color:var(--mut2);background:none;font-size:12px;font-weight:600;cursor:pointer;transition:.15s;opacity:0}
 .wcol:hover .wadd,.wcol.today .wadd{opacity:.75}
 .wadd:hover{opacity:1;border-color:var(--acc2);color:var(--acc2)}
+.stuck{color:var(--warn);font-size:10.5px;font-weight:800;white-space:nowrap}
+.hdot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-left:8px;vertical-align:1px;cursor:pointer;background:var(--bg2);border:1.5px dashed var(--line2)}
+.hdot:not(.unset){border:none}
+.hnote{font-size:11.5px;color:var(--mut2);margin-left:7px;font-weight:500}
+.apvbar{display:flex;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:13px;font-weight:600}
+.apvbar span{flex:1;color:var(--mut)}
 @media (hover:none){.wadd{opacity:.55}}
 /* ROCH-канон: пинг-понг длинного текста — обрезанное медленно проезжает туда-обратно с паузами на краях */
 .pp-on{text-overflow:clip}
@@ -1836,10 +1842,11 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
   <div class="dh">
     <span class="dot" id="dDot" style="width:9px;height:9px;border-radius:50%;background:var(--acc)"></span>
     <span style="font-size:12px;color:var(--mut2);font-weight:600" id="dId">TASK</span>
-    <button class="cashbtn" id="dCash" title="Двигает деньги"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2.4"/><circle cx="12" cy="12" r="2.6"/><path d="M5.6 9.6h.01M18.4 14.4h.01"/></svg></button><select class="inp" id="dStatus" style="width:auto;margin-left:auto"></select>
+    <button class="cashbtn" id="dCash" title="Двигает деньги"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2.4"/><circle cx="12" cy="12" r="2.6"/><path d="M5.6 9.6h.01M18.4 14.4h.01"/></svg></button><button class="cashbtn" id="dApprove" title="Задача-согласование: у исполнителя появятся кнопки ✓/✗">🤝</button><select class="inp" id="dStatus" style="width:auto;margin-left:auto"></select>
   </div>
   <div class="db">
     <div id="dCrumb" class="crumbrow" style="display:none"></div>
+    <div id="dApproveBar"></div>
     <textarea class="dtitle" id="dTitle" rows="1" placeholder="Название задачи"></textarea>
     <div class="field"><label>Кто делает</label><div class="seg" id="dAssignee"></div></div>
     <div class="field"><label>Срок</label>
@@ -1993,10 +2000,10 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
 /* ============================ STATE ============================ */
 const LS='cockpit_v1';
 const CURRENT_USER='m1';
-const COLORS=['#f472b6','#a78bfa','#38bdf8','#34d399','#fbbf24','#fb7185','#22d3ee','#c084fc'];
+const COLORS=['#cf8fb4','#a190d6','#7aa3cd','#7cb59a','#c4ac79','#c98f8f','#7fb0b7','#ab90c8']; /* Neutral Graphite: различимо, не кричит */
 const STATUSES=[
   {k:'backlog',  n:'Бэклог',     c:'#6b7186'},
-  {k:'todo',     n:'К работе',   c:'#38bdf8'},
+  {k:'todo',     n:'К работе',   c:'#6ea8d8'},
   {k:'progress', n:'В работе',   c:'#fbbf24'},
   {k:'review',   n:'Проверка',   c:'#a78bfa'},
   {k:'done',     n:'Готово',     c:'#34d399'},
@@ -2403,6 +2410,30 @@ function stopFocus(silent){if(!focus.tid)return;clearInterval(focus.iv);focus.iv
   if(t&&mins>=0.5){t.spent=Math.round(((t.spent||0)+mins/60)*10)/10;logAct('⏱','фокус '+Math.round(mins)+'м · «'+t.title+'»');save();}
   focus.tid=null;if(!silent&&view==='now')renderNow();}
 function plural(n,one,few,many){const m=n%100,d=n%10;if(m>=11&&m<=14)return many;if(d===1)return one;if(d>=2&&d<=4)return few;return many;}
+/* Asana-урок: светофор проекта — недельный статус одной строкой, виден в «Всё» и в отчёте */
+const HEALTH={g:['#34d399','по плану'],y:['#fbbf24','есть риски'],r:['#f87171','горим']};
+function healthDot(pid,data){
+  const h=data&&data.health;
+  const c=h&&HEALTH[h.c]?h.c:null;
+  const age=h&&h.ts?Math.floor((Date.now()-h.ts)/dayMs):null;
+  const note=h&&h.note?esc(h.note):'';
+  return ` <span class="hdot${c?'':' unset'}" data-health="${pid}" title="${c?HEALTH[c][1]+(note?' · '+note:'')+(age!=null?' · обновлено '+(age===0?'сегодня':age+' дн назад'):''):'Статус проекта: тапни — по плану / риски / горим'}" style="${c?'background:'+HEALTH[c][0]:''}"></span>${note?`<span class="hnote">${note}</span>`:''}`;
+}
+function cycleHealth(pid){
+  const data=pid===S.id?S:loadProj(pid);if(!data)return;
+  const order=[null,'g','y','r'];
+  const cur=data.health&&data.health.c?data.health.c:null;
+  const next=order[(order.indexOf(cur)+1)%order.length];
+  if(!next){delete data.health;}
+  else{
+    let note=data.health&&data.health.note||'';
+    if(next==='y'||next==='r'){const inp=prompt(next==='y'?'Что за риск? (одной фразой)':'Что горит? (одной фразой)',note);if(inp!==null)note=inp.trim();}
+    else note='';
+    data.health={c:next,note:note.slice(0,80),ts:Date.now(),by:meName()};
+  }
+  if(pid===S.id){save();}else{data.updatedAt=Date.now();localStorage.setItem(pkey(pid),JSON.stringify(data));if(cloudOn)cloudPush(data,true);}
+  render();
+}
 function buildInsights(T){
   const out=[],me=myId();
   const ov=T.filter(isOverdue);
@@ -2413,6 +2444,10 @@ function buildInsights(T){
     if(m.capacity&&load>m.capacity*1.15)out.push({ic:'🥵',title:`${m.name} перегружен`,sub:`${load}/${m.capacity}ч — жми, чтобы разгрузить автоматически`,act:()=>openRebalance()});});
   const rot=T.filter(t=>t.status!=='done'&&(t.status==='backlog'||t.status==='todo')&&(t.spent||0)===0&&t.createdTs&&(Date.now()-t.createdTs>10*dayMs));
   if(rot.length)out.push({ic:'🕸',title:`${rot.length} ${plural(rot.length,'задача застряла','задачи застряли','задач застряло')}`,sub:'больше 10 дней без движения — сделать, делегировать или удалить',act:()=>openTask(rot[0].id)});
+  {const stuck=T.filter(t=>t.statusTs&&t.status!=='done'&&t.status!=='backlog'&&(Date.now()-t.statusTs)>4*dayMs)
+     .sort((x,y)=>x.statusTs-y.statusTs)[0];
+   if(stuck){const d=Math.floor((Date.now()-stuck.statusTs)/dayMs);
+     out.push({ic:'⏳',title:`«${stuck.title.slice(0,34)}» — ${d} дн в «${stMap[stuck.status].n}»`,sub:'застряла между статусами — двинь или раздели',act:()=>openTask(stuck.id)});}}
   const last=(S.activity||[])[0];
   if(last&&Date.now()-last.ts>3*dayMs)out.push({ic:'🌙',title:'Тишина 3+ дня',sub:'проект не двигался — закинь следующий шаг',act:()=>{const c=$('#cmd');if(c)c.focus();}});
   if(!out.length)out.push({ic:'✨',title:'Всё под контролем',sub:'просрочек и перегруза нет — можно строить',act:null});
@@ -3036,7 +3071,7 @@ function kbOpen(){const it=kbCur();if(!it)return;if(it.pid===S.id)openTask(it.ti
 function kbComment(){const it=kbCur();if(!it)return;const foc=()=>setTimeout(()=>{const c=$('#dCmtIn');if(c)c.focus();},130);
   if(it.pid===S.id){openTask(it.tid);foc();}else{switchProject(it.pid);setTimeout(()=>{openTask(it.tid);foc();},150);}}
 function kbDone(){const it=kbCur();if(!it)return;const r=it.el.getBoundingClientRect();const cx=r.left+r.width/2,cy=r.top+r.height/2;
-  if(it.pid===S.id){const t=task(it.tid);if(!t||t.status==='done')return;t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;
+  if(it.pid===S.id){const t=task(it.tid);if(!t||t.status==='done')return;t.status='done';t.statusTs=Date.now();if(t.estimate&&!t.spent)t.spent=t.estimate;
     logAct('✅','«'+t.title+'» → Готово');const v=awardForDone(S,t);celebrate(cx,cy);save();render();toast(v?('+'+v+' 🪙'):'Готово ✅',v?'🪙':'✅');}
   else{const un=markDone(it.pid,it.tid);celebrate(cx,cy);render();toast('Готово','✅','Отменить',un);}}
 function kbAssign(){const it=kbCur();if(!it||it.pid!==S.id){toast('Назначение — на доске или ганте','👤');return;}
@@ -3419,7 +3454,7 @@ function renderDash(){
         <h3>Фокус на сегодня <span class="c">${focusU.length}</span></h3>
         ${focusU.length?focusU.map(t=>{const ov=isOverdue(t);const dl=daysLeft(t);
           return `<div class="trow" data-task="${t.id}"><button class="qdone" data-quickdone="${t.id}" title="Отметить готовым" style="--c:${stMap[t.status].c}"></button>
-            <span class="tn">${esc(t.title)}</span>${kidsTag(t)}${subTag(t)}${avatar(t.assigneeId)}
+            <span class="tn">${esc(t.title)}</span>${kidsTag(t)}${subTag(t)}${stuckChip(t)}${avatar(t.assigneeId)}
             <span class="when ${ov?'over':''}">${ov?'просрочено '+(-dl)+'д':'до '+t.end.slice(8)+'.'+t.end.slice(5,7)}</span></div>`;}).join(''):'<div class="emptymini">На сегодня активных задач нет 🎉</div>'}
       </div>
       <div class="panel-c">
@@ -3446,7 +3481,7 @@ function renderDash(){
     <div class="panel-c" style="margin-top:16px"><h3>🕑 Лента активности <span class="c">${(S.activity||[]).length}</span></h3>
       <div class="actfeed">${(S.activity||[]).length?S.activity.slice(0,20).map(a=>`<div class="actrow"><span class="ai">${a.icon}</span><span class="atx"><b>${esc(a.who)}</b> ${esc(a.text)}</span><span class="att">${relTime(a.ts)}</span></div>`).join(''):'<div class="emptymini">Здесь появится история: кто что создал, передвинул, закрыл. Ничего не теряется — всё под контролем.</div>'}</div></div>`;
   $$('#dash .trow').forEach(el=>el.onclick=()=>openTask(el.dataset.task));
-  $$('#dash .qdone').forEach(b=>b.onclick=e=>{e.stopPropagation();const t=task(b.dataset.quickdone);if(t){t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;logAct('✅','«'+t.title+'» → Готово');const _v=awardForDone(S,t);celebrateAt(e);save();render();toast(_v?('+'+_v+' 🪙 за «'+t.title+'»'):('Готово: «'+t.title+'» ✅'),_v?'🪙':'✅');}});
+  $$('#dash .qdone').forEach(b=>b.onclick=e=>{e.stopPropagation();const t=task(b.dataset.quickdone);if(t){t.status='done';t.statusTs=Date.now();if(t.estimate&&!t.spent)t.spent=t.estimate;logAct('✅','«'+t.title+'» → Готово');const _v=awardForDone(S,t);celebrateAt(e);save();render();toast(_v?('+'+_v+' 🪙 за «'+t.title+'»'):('Готово: «'+t.title+'» ✅'),_v?'🪙':'✅');}});
   $$('#dash .prow[data-open]').forEach(el=>el.onclick=()=>switchProject(el.dataset.open));
   const ab=$('#aiBtn');if(ab)ab.onclick=aiReview;
   const bb=$('#briefBtn');if(bb)bb.onclick=openBrief;
@@ -3579,7 +3614,7 @@ function renderPortfolio(){
        const team=(data.members||[]).filter(m=>(data.tasks||[]).some(t=>t.assigneeId===m.id&&t.status!=='done')).slice(0,5);
        return `<div class="prow" data-open="${meta.id}"${depth?' style="margin-left:26px"':''}>
          <div class="pemoji">${depth?'<span style="color:var(--mut2);margin-right:2px">↳</span>':''}${meta.emoji||'📄'}</div>
-         <div class="pmain"><div class="pn">${esc(meta.name)}${data.demo?' <span class="pdemo">демо</span>':''}</div>
+         <div class="pmain"><div class="pn">${esc(meta.name)}${data.demo?' <span class="pdemo">демо</span>':''}${healthDot(meta.id,data)}</div>
            <div class="pbar"><span style="width:${p}%;${ov?'background:linear-gradient(90deg,#fb7185,#f87171)':''}"></span></div>
            <div class="pmeta">${ts.length} задач · ${done} готово${ov?` · <b style="color:var(--bad)">${ov} просроч.</b>`:''}${next?` · срок ${next.end.slice(8)}.${next.end.slice(5,7)}`:''}</div></div>
          <div class="pteam">${team.map(m=>avatarOf(m,26)).join('')}</div>
@@ -3588,6 +3623,7 @@ function renderPortfolio(){
    <div class="panel-c" style="margin-top:16px"><h3>🕑 История компании <span class="c">${allAct.length}</span></h3>
      <div class="actfeed">${allAct.length?allAct.slice(0,50).map(a=>`<div class="actrow"><span class="ai">${a.icon}</span><span class="atx"><b>${esc(a.who)}</b> ${esc(a.text)} <span class="pbadge" style="margin-left:5px;vertical-align:middle">${a.emoji||'📄'} ${esc(a.pname)}</span></span><span class="att">${relTime(a.ts)}</span></div>`).join(''):'<div class="emptymini">История появится по мере работы команды</div>'}</div></div>`;
   {const br=$('#btnRep');if(br)br.onclick=openEmpireRep;}
+  $$('#portfolio [data-health]').forEach(el=>el.onclick=e=>{e.stopPropagation();cycleHealth(el.dataset.health);});
   $$('#portfolio .prow').forEach(e=>e.onclick=()=>{const id=e.dataset.open;if(id===S.id)setView('board');else switchProject(id);});
   $$('#portfolio .trow').forEach(e=>e.onclick=()=>{const pid=e.dataset.pid,tid=e.dataset.tid;if(pid!==S.id)switchProject(pid);setTimeout(()=>openTask(tid),80);});
 }
@@ -4049,7 +4085,7 @@ function myWeekTasks(){const out=[];reg.list.filter(p=>!p.archived).forEach(p=>{
   (data.tasks||[]).forEach(t=>{if(t.isMilestone)return;if(t.assigneeId===me.id&&t.status!=='done')out.push({t,pid:p.id,pname:p.name,emoji:p.emoji,parent:t.parentId?((data.tasks.find(x=>x.id===t.parentId)||{}).title||null):null});});});return out;}
 /* done с правом передумать: возвращает undo-замыкание для тоста «Отменить» */
 function markDone(pid,tid){let prev='todo',prevSpent,ttl='';
-  editTaskInProject(pid,tid,t=>{prev=t.status;prevSpent=t.spent;ttl=t.title;t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;});
+  editTaskInProject(pid,tid,t=>{prev=t.status;prevSpent=t.spent;ttl=t.title;t.status='done';t.statusTs=Date.now();if(t.estimate&&!t.spent)t.spent=t.estimate;});
   if(pid===S.id){logAct('✅','«'+ttl+'» → Готово');save();}
   else{const d=loadProj(pid);if(d){d.activity=d.activity||[];
     d.activity.unshift({ts:Date.now(),who:meName(),icon:'✅',text:'«'+ttl+'» → Готово'});
@@ -4120,6 +4156,7 @@ function renderReport(){
     <div class="rp">
       <h1>${esc(S.projectName)}</h1>
       <div class="rpsub">Статус-отчёт · ${dateStr}</div>
+      ${S.health&&HEALTH[S.health.c]?`<div style="margin:10px 0 2px;font-size:13.5px;font-weight:600;color:#3a3f4e"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${HEALTH[S.health.c][0]};margin-right:7px;vertical-align:0"></span>${HEALTH[S.health.c][1]}${S.health.note?' — '+esc(S.health.note):''}</div>`:''}
       <div class="rpkpi">
         <div><b>${pct}%</b>готовность</div>
         <div><b>${done}/${ts.length}</b>задач закрыто</div>
@@ -4265,7 +4302,7 @@ function renderGantt(){
   $$('#gantt .grow.sec').forEach(el=>el.querySelector('.tt').onclick=()=>{collapsed[el.dataset.sec]=!collapsed[el.dataset.sec];renderGantt();});
   $$('#gantt .tt[data-task]').forEach(el=>el.onclick=()=>openTask(el.dataset.task));
   $$('#gantt .bar[data-task]').forEach(el=>wireBar(el,min,DAY));
-  $$('#gantt .dot[data-cycle]').forEach(el=>el.onclick=e=>{e.stopPropagation();const t=task(el.dataset.cycle);const i=STATUSES.findIndex(s=>s.k===t.status);t.status=STATUSES[(i+1)%STATUSES.length].k;if(t.status==='done'&&t.estimate&&!t.spent)t.spent=t.estimate;logAct('🔀','«'+t.title+'» → '+stMap[t.status].n);const _v=awardForDone(S,t);save();renderGantt();toast(_v?('+'+_v+' 🪙 · «'+t.title+'» готово'):('«'+t.title+'» → '+stMap[t.status].n),_v?'🪙':'✓');});
+  $$('#gantt .dot[data-cycle]').forEach(el=>el.onclick=e=>{e.stopPropagation();const t=task(el.dataset.cycle);const i=STATUSES.findIndex(s=>s.k===t.status);t.status=STATUSES[(i+1)%STATUSES.length].k;t.statusTs=Date.now();if(t.status==='done'&&t.estimate&&!t.spent)t.spent=t.estimate;logAct('🔀','«'+t.title+'» → '+stMap[t.status].n);const _v=awardForDone(S,t);save();renderGantt();toast(_v?('+'+_v+' 🪙 · «'+t.title+'» готово'):('«'+t.title+'» → '+stMap[t.status].n),_v?'🪙':'✓');});
   $$('#gantt .addrow').forEach(el=>el.onclick=()=>openInlineAdd(el));
   if(autoAddSec){const ar=document.querySelector('#gantt .addrow[data-addsec="'+autoAddSec+'"]');if(ar)openInlineAdd(ar);}
   if(ganttNeedsScroll&&tMs>=min&&tMs<=max){ganttNeedsScroll=false;
@@ -4355,7 +4392,7 @@ function renderBulkBar(){
     <button class="btn danger" id="bbDel">🗑</button>
     <button class="btn" id="bbClear">Готово</button>`;
   bar.classList.add('show');
-  $('#bbStatus').onchange=e=>{const v=e.target.value;if(!v)return;boardSel.forEach(id=>{const t=task(id);if(t){t.status=v;if(v==='done'){if(t.estimate&&!t.spent)t.spent=t.estimate;awardForDone(S,t);}}});logAct('🔀','массово → '+stMap[v].n+' ('+boardSel.size+')');save();renderBoard();toast('Статус обновлён у '+n,'🔀');};
+  $('#bbStatus').onchange=e=>{const v=e.target.value;if(!v)return;boardSel.forEach(id=>{const t=task(id);if(t){t.status=v;t.statusTs=Date.now();if(v==='done'){if(t.estimate&&!t.spent)t.spent=t.estimate;awardForDone(S,t);}}});logAct('🔀','массово → '+stMap[v].n+' ('+boardSel.size+')');save();renderBoard();toast('Статус обновлён у '+n,'🔀');};
   $('#bbAssign').onchange=e=>{const v=e.target.value;if(!v)return;const aid=v==='__none'?null:v;boardSel.forEach(id=>{const t=task(id);if(t)t.assigneeId=aid;});logAct('👤','массово назначено ('+boardSel.size+')');save();renderBoard();toast('Исполнитель обновлён','👤');};
   $('#bbDel').onclick=()=>{if(!confirm('Удалить выбранные ('+boardSel.size+')?'))return;const ids=new Set(boardSel);S.tasks=S.tasks.filter(t=>!ids.has(t.id));S.tasks.forEach(t=>t.deps=t.deps.filter(d=>!ids.has(d)));logAct('🗑','массово удалено '+ids.size);boardSel.clear();save();renderBoard();toast('Удалено','🗑');};
   $('#bbClear').onclick=()=>{boardSel.clear();boardSelOn=false;renderBoard();};
@@ -4405,12 +4442,12 @@ function renderBoard(){
       const card=document.createElement('div');card.className='card'+(boardSel.has(t.id)?' selected':'');card.draggable=!boardSelOn;card.dataset.id=t.id;
       const ov=isOverdue(t);const blk=isBlocked(t);
       card.innerHTML=`<button class="cdel" title="Удалить задачу">${icon('x',13)}</button>
-        <div class="ct">${t.cash?'💰 ':''}${t.isMilestone?'🔹 ':''}${t.repeat?'🔁 ':''}${blk?'🔒 ':''}${esc(t.title)}</div>
+        <div class="ct">${t.approval?'🤝 ':''}${t.cash?'💰 ':''}${t.isMilestone?'🔹 ':''}${t.repeat?'🔁 ':''}${blk?'🔒 ':''}${esc(t.title)}</div>
         <div class="cm">
           ${t.status!=='done'&&!t.isMilestone?`<button class="qdone cdone" title="Отметить готовым" style="--c:${stMap[t.status].c}"></button>`:''}
           ${prTag(t)}
           ${waitTag(t)}
-          ${kidsTag(t)}${subTag(t)}
+          ${kidsTag(t)}${subTag(t)}${stuckChip(t)}
           ${t.estimate?`<span>⏱ ${t.estimate}ч</span>`:''}
           ${(t.comments||[]).length?`<span>💬 ${(t.comments||[]).length}</span>`:''}
           ${ov?`<span style="color:var(--bad);font-weight:700">⚠ просроч.</span>`:''}
@@ -4418,7 +4455,7 @@ function renderBoard(){
         </div>`;
       card.onclick=()=>{if(boardSelOn)toggleBoardSel(t.id,card);else openTask(t.id);};
       const qd=card.querySelector('.cdone');if(qd)qd.onclick=ev=>{ev.stopPropagation();if(boardSelOn){toggleBoardSel(t.id,card);return;}
-        t.status='done';if(t.estimate&&!t.spent)t.spent=t.estimate;logAct('✅','«'+t.title+'» → Готово');
+        t.status='done';t.statusTs=Date.now();if(t.estimate&&!t.spent)t.spent=t.estimate;logAct('✅','«'+t.title+'» → Готово');
         const _v=awardForDone(S,t);celebrateAt(ev);save();renderBoard();toast(_v?('+'+_v+' 🪙 за «'+t.title+'»'):('Готово: «'+t.title+'» ✅'),_v?'🪙':'✅');};
       card.querySelector('.cdel').onclick=ev=>{ev.stopPropagation();if(!confirm('Удалить задачу «'+t.title+'»?'))return;
         const idx=S.tasks.indexOf(t);S.tasks=S.tasks.filter(x=>x.id!==t.id);S.tasks.forEach(x=>x.deps=x.deps.filter(d=>d!==t.id));
@@ -4434,7 +4471,7 @@ function renderBoard(){
     col.ondragleave=()=>col.classList.remove('drop');
     col.ondrop=e=>{e.preventDefault();col.classList.remove('drop');
       if(!dragCard)return;const t=task(dragCard);if(!t)return;
-      const movedCol=t.status!==st.k;t.status=st.k;
+      const movedCol=t.status!==st.k;t.status=st.k;if(movedCol)t.statusTs=Date.now();
       const bodyEl2=col.querySelector('.colb');
       const cards=[...bodyEl2.querySelectorAll('.card')].filter(c=>c.dataset.id!==dragCard);
       let idx=cards.length;for(let i=0;i<cards.length;i++){const r=cards[i].getBoundingClientRect();if(e.clientY<r.top+r.height/2){idx=i;break;}}
@@ -4716,6 +4753,12 @@ function kids(id){return S.tasks.filter(x=>x.parentId===id);}
 function taskDepth(t){let d=1,cur=t,g=0;while(cur&&cur.parentId&&g++<100){cur=task(cur.parentId);d++;}return d;}
 function descendants(id){const out=[];kids(id).forEach(k=>{out.push(k);out.push(...descendants(k.id));});return out;}
 function crumbPath(t){const parts=[];let cur=t&&t.parentId?task(t.parentId):null,g=0;while(cur&&g++<100){parts.unshift(cur.title);cur=cur.parentId?task(cur.parentId):null;}return parts;}
+/* ClickUp-урок: время в статусе — узкие места видны сразу */
+function stuckChip(t){
+  if(!t.statusTs||t.status==='done'||t.status==='backlog')return '';
+  const d=Math.floor((Date.now()-t.statusTs)/dayMs);
+  if(d<3)return '';
+  return `<span class="stuck" title="В статусе «${stMap[t.status].n}» уже ${d} дн — узкое место?">⏳ ${d}д</span>`;}
 function kidsTag(t){const k=kids(t.id);if(!k.length)return '';const d=k.filter(x=>x.status==='done').length;return `<span class="subbadge${d===k.length?' all':''}" title="Подзадачи">🧩 ${d}/${k.length}</span>`;}
 let curTask=null;
 function openTask(id){
@@ -4739,6 +4782,8 @@ function openTask(id){
   $('#dStart').value=t.start;$('#dEnd').value=t.end;renderSnoozeRow();
   $('#dMile').checked=t.isMilestone;
   $('#dRepeat').value=t.repeat||'';
+  {const a=$('#dApprove');if(a){a.classList.toggle('on',!!t.approval);}}
+  renderApproveBar();
   {const c=$('#dCash');if(c){c.classList.toggle('on',!!t.cash);c.title=t.cash?'Двигает деньги — снять метку':'Пометить: двигает деньги';}}
   $('#dEst').value=t.estimate||'';$('#dSpent').value=t.spent||'';
   $('#dStatus').innerHTML=STATUSES.map(s=>`<option value="${s.k}" ${s.k===t.status?'selected':''}>${s.n}</option>`).join('');
@@ -4885,7 +4930,7 @@ $('#dEst').oninput=e=>{if(curTask)curTask.estimate=parseFloat(e.target.value)||0
 $('#dEst').onblur=()=>{if(curTask)save();};
 $('#dSpent').oninput=e=>{if(curTask)curTask.spent=parseFloat(e.target.value)||0;};
 $('#dSpent').onblur=()=>{if(curTask)save();};
-$('#dStatus').onchange=e=>{if(curTask){curTask.status=e.target.value;if(curTask.status==='done'&&curTask.estimate&&!curTask.spent)curTask.spent=curTask.estimate;$('#dDot').style.background=stMap[curTask.status].c;logAct('🔀','«'+curTask.title+'» → '+stMap[curTask.status].n);const _v=awardForDone(S,curTask);save();render();if(_v)toast('+'+_v+' 🪙 за «'+curTask.title+'»','🪙');}};
+$('#dStatus').onchange=e=>{if(curTask){curTask.status=e.target.value;curTask.statusTs=Date.now();if(curTask.status==='done'&&curTask.estimate&&!curTask.spent)curTask.spent=curTask.estimate;$('#dDot').style.background=stMap[curTask.status].c;logAct('🔀','«'+curTask.title+'» → '+stMap[curTask.status].n);const _v=awardForDone(S,curTask);save();render();if(_v)toast('+'+_v+' 🪙 за «'+curTask.title+'»','🪙');}};
 $('#dCmtBtn').onclick=addComment;
 $('#dCmtIn').onkeydown=e=>{if(e.key==='Enter'&&!$('#dMention').classList.contains('show'))addComment();
   if(e.key==='Escape')$('#dMention').classList.remove('show');};
@@ -4901,6 +4946,28 @@ $('#dCmtIn').addEventListener('input',e=>{
 $('#dSubBtn').onclick=addSub;
 {const kb=$('#dKidBtn');if(kb)kb.onclick=addKid;}
 {const ki=$('#dKidIn');if(ki)ki.onkeydown=e=>{if(e.key==='Enter')addKid();};}
+$('#dApprove').onclick=()=>{if(!curTask)return;curTask.approval=!curTask.approval;
+  $('#dApprove').classList.toggle('on',!!curTask.approval);save();renderApproveBar();
+  toast(curTask.approval?'Согласование: у исполнителя появятся ✓ / ✗':'Метка согласования снята','🤝');};
+/* Asana-урок: approvals — решение фиксируется кнопкой, а не перепиской */
+function renderApproveBar(){
+  const box=$('#dApproveBar');if(!box)return;const t=curTask;
+  if(!t||!t.approval||t.status==='done'){box.innerHTML='';return;}
+  box.innerHTML=`<div class="apvbar"><span>🤝 Ждёт решения${t.assigneeId?' от '+esc((member(t.assigneeId)||{}).name||''):''}</span>
+    <button class="btn primary" id="apvYes">✓ Согласовать</button><button class="btn" id="apvNo">✕ Вернуть</button></div>`;
+  $('#apvYes').onclick=()=>{const t2=curTask;if(!t2)return;
+    t2.status='done';t2.statusTs=Date.now();if(t2.estimate&&!t2.spent)t2.spent=t2.estimate;
+    t2.comments=t2.comments||[];t2.comments.push({ts:Date.now(),author:meName(),authorId:myId(),text:'✓ Согласовано'});
+    logAct('🤝','согласовал «'+t2.title+'»');const _v=awardForDone(S,t2);celebrate();save();render();openTask(t2.id);
+    toast(_v?('Согласовано ✓ · +'+_v):'Согласовано ✓','🤝');};
+  $('#apvNo').onclick=()=>{const t2=curTask;if(!t2)return;
+    const why=prompt('Что поправить? (уйдёт комментом автору)','');if(why===null)return;
+    t2.status='todo';t2.statusTs=Date.now();
+    t2.comments=t2.comments||[];t2.comments.push({ts:Date.now(),author:meName(),authorId:myId(),text:'✕ Возвращено'+(why.trim()?': '+why.trim():'')});
+    logAct('🤝','вернул «'+t2.title+'» на доработку');save();render();openTask(t2.id);
+    if(t2.assigneeId&&t2.assigneeId!==myId())tgNotify('comment',t2,{text:'✕ Возвращено'+(why.trim()?': '+why.trim():'')});
+    toast('Возвращено с комментарием','🤝');};
+}
 $('#dCash').onclick=()=>{if(!curTask)return;curTask.cash=!curTask.cash;
   $('#dCash').classList.toggle('on',!!curTask.cash);save();
   toast(curTask.cash?'💰 Двигает деньги — подниму в приоритетах':'Метка денег снята','💰');};
@@ -5099,7 +5166,8 @@ function curYear(){return new Date().getFullYear();}
    · «сегодня/завтра/послезавтра» · «с 22 по 28 июня» · «на 3 дня/2 недели» */
 function parseQuick(raw){
   let body=(raw||'').replace(/^(добавь?|создай?|сделай|add|new)\s*(задачу|задача|таск|task)?\s*/i,'').trim();
-  let assignee=null,est=0,start=null,end=null,prio=null;
+  let assignee=null,est=0,start=null,end=null,prio=null,approval=false;
+  if(/^(согласуй|согласовать|согласование|аппрув|approve)[:\s]/i.test(body)){approval=true;body=body.replace(/^(согласуй|согласовать|согласование|аппрув|approve)[:\s]+/i,'').trim();}
   // эстимейт: с ключевым словом ИЛИ голое «Nч»/«Nh» (\b неприменим к кириллице — ловим юникод-границей)
   let em=body.match(/(?:эстимейт|оцен\w*|est|estimate|~)\s*(\d+(?:[.,]\d+)?)\s*(?:часов|часа|час|ч|h)?/i)
        ||body.match(/(\d+(?:[.,]\d+)?)\s*(?:часов|часа|час|ч|h)(?![а-яёa-z\d])/i);
@@ -5129,10 +5197,10 @@ function parseQuick(raw){
   const ndm=body.match(/на\s+(\d{1,2})\s*(дн[а-яё]*|день|недел[а-яё]*)/i);
   if(ndm){const n=+ndm[1]*(/недел/i.test(ndm[2])?7:1);if(!start)start=todayISO();end=fmtD(parseD(start)+(n-1)*dayMs);body=body.replace(ndm[0],' ').trim();}
   body=body.replace(/\s{2,}/g,' ').replace(/^[,;\-—\s]+|[,;\-—\s]+$/g,'').trim();
-  return {title:body,assignee,est,prio,start,end};
+  return {title:body,assignee,est,prio,start,end,approval};
 }
 // применить разобранные поля к задаче (кроме названия)
-function applyQuick(t,p){if(p.assignee)t.assigneeId=p.assignee;if(p.est)t.estimate=p.est;if(p.prio)t.priority=p.prio;if(p.start){t.start=p.start;t.end=p.end||p.start;}return t;}
+function applyQuick(t,p){if(p.approval)t.approval=true;if(p.assignee)t.assigneeId=p.assignee;if(p.est)t.estimate=p.est;if(p.prio)t.priority=p.prio;if(p.start){t.start=p.start;t.end=p.end||p.start;}return t;}
 // живой превью-разбор (чипы) для распознанных сущностей
 function nlpChips(p){const out=[];
   if(p.assignee){const m=member(p.assignee);if(m)out.push(`<span class="ichip" style="border-color:${m.color}">${avatarOf(m,16)} ${esc(m.name)}</span>`);}
