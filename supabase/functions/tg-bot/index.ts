@@ -55,9 +55,9 @@ async function sha256hex(s: string): Promise<string> {
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-// ---------- время (локальное, Батуми) ----------
-function todayISO(plusDays = 0): string {
-  const d = new Date(Date.now() + TZ * 3600_000 + plusDays * 86400_000);
+// ---------- время (дефолт — Батуми; персональный пояс приходит из prefs.tz) ----------
+function todayISO(plusDays = 0, tz = TZ): string {
+  const d = new Date(Date.now() + tz * 3600_000 + plusDays * 86400_000);
   return d.toISOString().slice(0, 10);
 }
 
@@ -107,6 +107,11 @@ type Link = { chat_id: number; email: string; name: string | null; token_hash: s
 // персональные настройки уведомлений: только то, что касается лично тебя (запрос Роча)
 function pref(l: { prefs?: Record<string, string> } | null | undefined, k: string, def: string): string {
   return (l?.prefs && l.prefs[k]) || def;
+}
+/* персональный часовой пояс (⚙️): «сегодня/просрочено» и вечер считаются по поясу человека, не по Батуми */
+function tzOf(l: { prefs?: Record<string, string> } | null | undefined): number {
+  const v = parseInt(pref(l, "tz", String(TZ)), 10);
+  return Number.isFinite(v) && v >= -12 && v <= 14 ? v : TZ;
 }
 async function setPref(chatId: number, k: string, v: string) {
   const { data } = await sb.from("tg_links").select("prefs").eq("chat_id", chatId).maybeSingle();
@@ -191,10 +196,10 @@ async function myProjects(email: string) {
 }
 function taskList(p: Record<string, any>) { return ((p.data?.tasks ?? []) as Record<string, any>[]).filter((t) => !t.isMilestone); }
 
-async function statusSummary(email: string, fireOnly: boolean): Promise<string> {
+async function statusSummary(email: string, fireOnly: boolean, tz = TZ): Promise<string> {
   const { rows } = await myProjects(email);
   if (!rows.length) return "Пока нет доступных проектов.";
-  const today = todayISO(0);
+  const today = todayISO(0, tz);
   const out: string[] = [];
   for (const p of rows) {
     const tasks = taskList(p);
@@ -218,14 +223,15 @@ async function statusSummary(email: string, fireOnly: boolean): Promise<string> 
 
 async function briefFor(link: Link): Promise<string> {
   const { rows } = await myProjects(link.email);
-  const today = todayISO(0);
+  const tz = tzOf(link);
+  const today = todayISO(0, tz);
   const mineToday: string[] = []; const mineOver: string[] = [];
   // «социальный свет» для владельца воркспейса: у кого из команды задачи гниют 3+ дней
   const ws = await wsByEmail(link.email);
   const { data: w } = await sb.from("workspaces").select("created_by").eq("id", ws).maybeSingle();
   const isOwner = (w?.created_by ?? "").toLowerCase() === link.email.toLowerCase();
   const staleByName: Record<string, number> = {};
-  const d3 = todayISO(-3);
+  const d3 = todayISO(-3, tz);
   for (const p of rows) {
     const me = ((p.data?.members ?? []) as Record<string, any>[]).find((m) => (m.email ?? "").toLowerCase() === link.email.toLowerCase());
     if (!me) continue;
@@ -364,7 +370,7 @@ async function listIntake(chatId: number, link: Link) {
 // ---------- карманные выжимки: мои / человека / проекта ----------
 async function myTasksList(link: Link): Promise<string> {
   const { rows } = await myProjects(link.email);
-  const today = todayISO(0);
+  const today = todayISO(0, tzOf(link));
   const items: Array<{ s: string; end: string }> = [];
   for (const p of rows) {
     const me = ((p.data?.members ?? []) as Record<string, any>[]).find((m) => (m.email ?? "").toLowerCase() === link.email.toLowerCase());
@@ -381,7 +387,7 @@ async function myTasksList(link: Link): Promise<string> {
 }
 async function memberTasksList(link: Link, whoName: string): Promise<string> {
   const { rows } = await myProjects(link.email);
-  const today = todayISO(0); const wn = whoName.toLowerCase();
+  const today = todayISO(0, tzOf(link)); const wn = whoName.toLowerCase();
   const items: Array<{ s: string; end: string }> = []; let realName = whoName;
   for (const p of rows) {
     const m = ((p.data?.members ?? []) as Record<string, any>[]).find((m) => (m.name ?? "").toLowerCase().startsWith(wn));
@@ -453,11 +459,14 @@ async function sendSettings(chatId: number, link: Link) {
   const st = (k: string, d: string) => pref(L, k, d) === "on";
   const row = (k: string, label: string, d: string) =>
     [{ text: `${st(k, d) ? "🔔" : "🔕"} ${label} — ${st(k, d) ? "вкл" : "выкл"}`, callback_data: `set:${k}:${st(k, d) ? "off" : "on"}` }];
+  const tz = tzOf(L);
+  const tzNext = tz >= 8 ? 0 : tz + 1; // цикл UTC+0…+8 — покрывает всю географию команды
   await sayInline(chatId, `⚙️ <b>Уведомления</b>\nКаждому — только его личное. Жми, чтобы переключить:`,
     [row("morning", "☀️ Утренний бриф", "on"),
      row("evening", "🌇 Вечерний разбор", "on"),
      row("intake", "📥 Новые заявки команды", owner ? "on" : "off"),
-     row("pulse", "🤖 AI-пульс Вандо", "on")]);
+     row("pulse", "🤖 AI-пульс Вандо", "on"),
+     [{ text: `🌍 Часовой пояс — UTC+${tz} (тап: UTC+${tzNext})`, callback_data: `set:tz:${tzNext}` }]]);
 }
 async function morningBrief() {
   const { data: links } = await sb.from("tg_links").select("*").eq("revoked", false);
@@ -549,14 +558,15 @@ async function shiftMyTasks(email: string, targetISO: string): Promise<number> {
 }
 async function eveningReview() {
   const { data: links } = await sb.from("tg_links").select("*").eq("revoked", false);
-  const today = todayISO(0);
   for (const l of (links ?? []) as Link[]) {
     try {
       if (pref(l, "evening", "on") !== "on") continue;
+      const tz = tzOf(l);
+      const today = todayISO(0, tz);
       const { rows } = await myProjects(l.email);
       let doneToday = 0; const open: string[] = []; let chronic = 0;
-      const d3e = todayISO(-3);
-      const dayStart = new Date(today + "T00:00:00Z").getTime() - TZ * 3600_000;
+      const d3e = todayISO(-3, tz);
+      const dayStart = new Date(today + "T00:00:00Z").getTime() - tz * 3600_000;
       for (const p of rows) {
         const members = (p.data?.members ?? []) as Record<string, any>[];
         const me = members.find((m) => (m.email ?? "").toLowerCase() === l.email.toLowerCase());
@@ -611,7 +621,7 @@ async function aiPulse() {
       if (!(await isTeam(l.email))) continue; // пульс — для фаундеров
       if (pref(l, "pulse", "on") !== "on") continue;
       if (l.last_ai_ping && Date.now() - new Date(l.last_ai_ping).getTime() < 48 * 3600_000) continue;
-      const status = (await statusSummary(l.email, false)).replace(/<[^>]+>/g, "");
+      const status = (await statusSummary(l.email, false, tzOf(l))).replace(/<[^>]+>/g, "");
       const waits = await myWaits(l.email);
       const ctx = `Человек: ${l.name ?? l.email}\nСегодня: ${todayISO(0)}\n\nСостояние проектов:\n${status}\n\nОн ждёт шагов от других: ${waits.map((w) => `«${w.title}» от ${w.whoName}`).join("; ") || "нет"}\n\nЧто ты говорил ему в прошлый раз (НЕ повторяйся): ${l.last_ai_text ?? "ничего"}`;
       const out = await askClaude(PULSE_SYSTEM, ctx);
@@ -796,7 +806,7 @@ Deno.serve(async (req) => {
         result = await pingWaiting(link, id, arg);
       } else if (act === "more") { // полная сводка — только по запросу
         await TG("answerCallbackQuery", { callback_query_id: cb.id });
-        await say(chatId, await statusSummary(link.email, false));
+        await say(chatId, await statusSummary(link.email, false, tzOf(link)));
         handled = true;
       } else if (act === "set") { // ⚙️ переключение личных уведомлений
         await setPref(chatId, id, arg);
@@ -923,8 +933,8 @@ Deno.serve(async (req) => {
       if (/^\/settings|^⚙|^настрой/i.test(text)) { await sendSettings(chatId, link); }
       else if (/^\/standup|^стендап|^🧍/i.test(text)) { await say(chatId, await askStandup(link, chatId)); }
       else if (/^\/brief|^☀️/.test(text)) { await sendBrief(link, true); }
-      else if (/^🔥|^\/fire|что горит|^аврал/i.test(text)) { await say(chatId, await statusSummary(link.email, true)); }
-      else if (/^📊|^\/status|^стат/i.test(text)) { await say(chatId, await statusSummary(link.email, false)); }
+      else if (/^🔥|^\/fire|что горит|^аврал/i.test(text)) { await say(chatId, await statusSummary(link.email, true, tzOf(link))); }
+      else if (/^📊|^\/status|^стат/i.test(text)) { await say(chatId, await statusSummary(link.email, false, tzOf(link))); }
       else if (/^📥|^\/intake|^приёмка|^приемка/i.test(text)) { await listIntake(chatId, link); }
       else if (/^💡( Идея)?$/i.test(text)) { await say(chatId, "💡 Пиши: <code>идея твоя мысль…</code> — закину в бэклог идей нужного проекта (спрошу куда одним тапом)."); }
       else if (/^(💡\s*)?идея[:\s]/i.test(text)) {

@@ -2154,6 +2154,10 @@ const ICONS={
  coffee:'<path d="M4 9.5h12v5.5a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M16 10.8h1.8a2.4 2.4 0 0 1 0 4.8H16M7.4 6.4c0-1 .8-1.1.8-2.2M11 6.4c0-1 .8-1.1.8-2.2"/>',
  edit:'<path d="M16.8 3.8 20.2 7.2 8.7 18.7l-4.2.8.8-4.2z"/><path d="M14.2 6.4l3.4 3.4"/>',
  trophy:'<path d="M8 21.2h8M12 17.4v3.8M7 3.8h10v6.4a5 5 0 0 1-10 0z"/><path d="M7 5.2H3.8v1.6a3.2 3.2 0 0 0 3.2 3.2M17 5.2h3.2v1.6a3.2 3.2 0 0 1-3.2 3.2"/>',
+ doc:'<path d="M14 2.5H6a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8.5z"/><path d="M14 2.5V8.5h6M9 13h6M9 17h4"/>',
+ archive:'<rect x="2.5" y="4" width="19" height="5" rx="1.5"/><path d="M4.5 9v9a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V9M10 13h4"/>',
+ trash:'<path d="M3.5 6.5h17M8.5 6.5V4.8a1.8 1.8 0 0 1 1.8-1.8h3.4a1.8 1.8 0 0 1 1.8 1.8v1.7M6 6.5l1 13a2 2 0 0 0 2 1.8h6a2 2 0 0 0 2-1.8l1-13M10 10.5v6M14 10.5v6"/>',
+ gear:'<circle cx="12" cy="12" r="7.6"/><circle cx="12" cy="12" r="2.9"/><path d="M12 4.4V8M12 16v3.6M4.4 12H8M16 12h3.6M6.6 6.6l2.5 2.5M14.9 14.9l2.5 2.5M17.4 6.6l-2.5 2.5M9.1 14.9l-2.5 2.5"/>',
 };
 function icon(n,s){s=s||18;return `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]||''}</svg>`;}
 const LOGO_PATHS='<path transform="translate(-239 -299)" d="M590.549 318.732C592.945 318.453 596.745 318.696 599.286 318.696C634.434 318.703 667.897 316.824 700.032 333.775C783.727 377.923 786.207 488.78 731.835 556.811C700.794 595.65 657.566 620.752 607.3 623.356C576.646 624.841 542.765 617.244 517.207 638.881C505.403 648.755 500.588 660.76 494.308 674.336C488.985 685.844 483.927 697.868 478.034 709.061C447.129 709.003 414.041 709.686 383.322 708.993C390.272 692.78 399.544 674.533 407.172 658.357C414.402 641.263 425.054 620.531 433.24 603.375L468.064 529.888C478.844 507.375 489.815 485.216 500.033 462.397C508.607 461.72 522.007 461.939 530.747 461.916C551.732 461.88 572.716 462.073 593.696 462.496C589.717 468.96 584.172 482.027 580.797 489.352C574.315 503.42 567.316 518.312 561.52 532.628C562.821 532.707 564.123 532.765 565.426 532.803C574.929 533.092 584.848 532.969 594.379 533.027C601.077 532.791 608.447 533.526 615.073 532.731C648.617 528.704 677.207 498.097 677.706 464.145C678.091 437.865 664.532 415.164 637.935 409.832C622.705 406.779 607.684 407.916 592.303 407.965C569.853 408.116 547.402 408.135 524.952 408.02C539.76 379.17 553.156 348.033 567.408 318.783C575.059 318.869 582.922 319.055 590.549 318.732Z"/><path transform="translate(-239 -299)" d="M436.648 318.711C438.535 318.361 446.366 318.402 448.541 318.408L474.9 318.684C498.905 318.824 523.676 318.103 547.68 318.994C534.009 349.063 519.82 378.173 505.694 407.974L452.824 407.966C437.639 407.999 418.311 406.719 404.007 410.92C374.633 419.548 349.545 452.473 349.489 483.221C349.376 496.888 354.815 510.016 364.561 519.599C378.937 533.945 398.3 532.85 417.331 532.946L446.601 533.036C439.517 549.455 431.978 565.674 423.991 581.673C417.562 595.433 410.688 609.303 404.066 623C374.725 623.045 349.066 625.26 321.887 611.554C233.151 566.808 241.2 449.578 300.225 384.017C338.665 341.322 379.901 322.449 436.648 318.711Z"/>';
@@ -2586,7 +2590,7 @@ function renderNow(){
     <div class="now-sec">${icon('sparkles',14)} Что важно знать <span>проактивно — пока другие тулзы молчат</span>
       <button class="btn" id="claudeBtn" style="margin-left:auto;padding:8px 13px;font-size:12.5px" title="ИИ посмотрит проект и подсветит риски">${icon('sparkles',13)} Разбор рисков</button>
       <button class="btn" id="aiPlanBtn" style="padding:8px 13px;font-size:12.5px" title="Опиши цель — получишь готовый план задач">${icon('sparkles',14)} Спланируй цель</button></div>
-    <div class="insights">${ins.map((x,i)=>`<div class="insight ${x.act?'click':''}" data-i="${i}"><span class="ii">${x.ic}</span><div class="ib"><div class="it">${esc(x.title)}</div>${x.sub?`<div class="is">${esc(x.sub)}</div>`:''}</div>${x.act?'<span class="ia">→</span>':''}</div>`).join('')}</div>`;
+    <div class="insights">${ins.map((x,i)=>`<div class="insight ${x.act?'click':''}" data-i="${i}"><span class="ii">${insIcon(x.ic)}</span><div class="ib"><div class="it">${esc(x.title)}</div>${x.sub?`<div class="is">${esc(x.sub)}</div>`:''}</div>${x.act?'<span class="ia">→</span>':''}</div>`).join('')}</div>`;
   const openX=(pid,tid)=>{if(pid&&pid!==S.id){switchProject(pid);setTimeout(()=>openTask(tid),120);}else openTask(tid);};
   const ns=el.querySelector('.nh-title[data-open]');if(ns)ns.onclick=()=>openX(nextPid,ns.dataset.open);
   $$('#now .nh-up[data-open]').forEach(e=>e.onclick=()=>openX(e.dataset.pid,e.dataset.open));
@@ -2626,10 +2630,10 @@ function haptic(kind){try{const T=window.Telegram&&window.Telegram.WebApp;if(!T|
 function openLP(taskId,pid){
   const d=pid===S.id?S:loadProj(pid);const t=d&&(d.tasks||[]).find(x=>x.id===taskId);if(!t)return;
   $('#lpModal').innerHTML=`<div class="lp-t">${t.cash?'💰 ':''}${esc(t.title)}</div>
-   <button class="btn" data-lp="done">✅ Готово</button>
-   <button class="btn" data-lp="tomorrow">🌙 На завтра</button>
-   <button class="btn" data-lp="progress">▶ В работу</button>
-   <button class="btn" data-lp="open">✏️ Открыть карточку</button>`;
+   <button class="btn" data-lp="done">${icon('check',14)} Готово</button>
+   <button class="btn" data-lp="tomorrow">${icon('moon',14)} На завтра</button>
+   <button class="btn" data-lp="progress">${icon('play',12)} В работу</button>
+   <button class="btn" data-lp="open">${icon('edit',14)} Открыть карточку</button>`;
   $('#lpScrim').classList.add('show');haptic('light');
   $$('#lpModal [data-lp]').forEach(b=>b.onclick=()=>{const k=b.dataset.lp;closeLP();
     if(k==='done'){const un=markDone(pid,taskId);render();toast('Готово','✅','Отменить',un);haptic('ok');}
@@ -2789,7 +2793,7 @@ function renderNowMobile(ctx){
         <div class="pulse-card"><div class="pv" style="color:${ctx.ov?'var(--bad)':'var(--mut)'}">${ctx.ov}</div><div class="pl">просроч.</div></div>
         <div class="pulse-card"><div class="pv">${ctx.vel}</div><div class="pl">за 7 дней</div></div></div>
       ${claudeNowCard()}
-      <div class="insights" style="margin-top:12px">${ins.map((x,i)=>`<div class="insight ${x.act?'click':''}" data-i="${i}"><span class="ii">${x.ic}</span><div class="ib"><div class="it">${esc(x.title)}</div>${x.sub?`<div class="is">${esc(x.sub)}</div>`:''}</div></div>`).join('')}</div>
+      <div class="insights" style="margin-top:12px">${ins.map((x,i)=>`<div class="insight ${x.act?'click':''}" data-i="${i}"><span class="ii">${insIcon(x.ic)}</span><div class="ib"><div class="it">${esc(x.title)}</div>${x.sub?`<div class="is">${esc(x.sub)}</div>`:''}</div></div>`).join('')}</div>
       ${momentumSpark()}</details>`;
   const openX=(pid,tid)=>{if(pid&&pid!==S.id){switchProject(pid);setTimeout(()=>openTask(tid),120);}else openTask(tid);};
   const mh=el.querySelector('.mhero[data-open] .mh-title');if(mh)mh.onclick=()=>openX(nextPid,el.querySelector('.mhero').dataset.open);
@@ -4128,6 +4132,9 @@ function openInlineAdd(el){
   inp.onblur=()=>{if(!inp.value.trim()&&autoAddSec===sec){autoAddSec=null;if(view==='gantt')renderGantt();}};
 }
 function renderGantt(){
+  if(window.innerWidth<=680&&!localStorage.getItem('cockpit_gantt_mob'))setTimeout(()=>{
+    if(document.querySelector('.scrim.show'))return;localStorage.setItem('cockpit_gantt_mob','1');
+    toast('Гант широкий — тяни полотно вбок. В полную силу он раскрывается на десктопе','↔');},700);
   const wrap=$('#gantt');
   const all=S.tasks.filter(t=>!t.parentId&&passFilter(t));   /* гант = структура: только корневые */
   if(!all.length){wrap.innerHTML=filterActive()
@@ -5504,15 +5511,15 @@ projBtn.onclick=e=>{e.stopPropagation();
   projMenu.innerHTML=tops.map(p=>item(p,false)).join('')
     +`<div class="sep"></div>`
     +(isTeam?`<button data-act="newp">＋ Новый проект</button>`:'')
-    +`<button data-act="mgmt" style="color:var(--mut)">⚙️ Управление проектом <span id="projChev" style="color:var(--mut2)">▸</span></button>`
+    +`<button data-act="mgmt" style="color:var(--mut)">${icon('gear',14)} Управление проектом <span id="projChev" style="color:var(--mut2)">▸</span></button>`
     +`<div id="projMgmt" style="display:none;border-left:2px solid var(--line);margin:2px 0 4px 14px">`
       +(isTeam?`<button data-act="makechild">📦 Вложить в проект…</button>`
       +`${cur&&cur.parentId?'<button data-act="unparent">⬆️ Вынести наверх</button>':''}`:'')
-      +`<button data-act="report">📄 Отчёт для клиента</button>`
+      +`<button data-act="report">${icon('doc',14)} Отчёт для клиента</button>`
       +(isTeam?`<button data-act="pemoji">😀 Сменить эмодзи</button>`
-      +`<button data-act="renp">✏️ Переименовать</button>`
-      +`<button data-act="archive">${cur&&cur.archived?'♻️ Вернуть из архива':'🗄 В архив'}</button>`
-      +`${active.length>1?'<button data-act="delp" class="dng">🗑 Удалить проект</button>':''}`:'')
+      +`<button data-act="renp">${icon('edit',14)} Переименовать</button>`
+      +`<button data-act="archive">${cur&&cur.archived?icon('sync',14)+' Вернуть из архива':icon('archive',14)+' В архив'}</button>`
+      +`${active.length>1?'<button data-act="delp" class="dng">'+icon('trash',14)+' Удалить проект</button>':''}`:'')
     +`</div>`
     +`${arch.length?`<div class="sep"></div><div style="font-size:10px;color:var(--mut2);padding:5px 11px;text-transform:uppercase;letter-spacing:.5px">Архив · ${arch.length}</div>`+arch.map(p=>`<button data-switch="${p.id}" style="opacity:.6">🗄 ${esc(p.name)}</button>`).join(''):''}`;
   const r=projBtn.getBoundingClientRect();projMenu.style.left=r.left+'px';projMenu.style.right='auto';projMenu.style.top=(r.bottom+6)+'px';
@@ -5643,10 +5650,33 @@ async function vandoSend(){
     const token=await aiToken();if(!token)throw new Error('нужен вход');
     const r=await fetch(CFG.url+'/functions/v1/ai-review',{method:'POST',
       headers:{'content-type':'application/json','authorization':'Bearer '+token},
-      body:JSON.stringify({mode:'chat',context:vandoContext(),messages:vandoHist.filter(m=>!m.tip).map(m=>({role:m.role,content:m.content}))})});
-    const data=await r.json();
-    if(!r.ok||data.error)throw new Error(data.error||('HTTP '+r.status));
-    vandoHist.push({role:'assistant',content:data.text||'…'});vandoSaveHist();
+      body:JSON.stringify({mode:'chat',stream:true,context:vandoContext(),messages:vandoHist.filter(m=>!m.tip).map(m=>({role:m.role,content:m.content}))})});
+    const ct=r.headers.get('content-type')||'';
+    if(!r.ok||!ct.includes('event-stream')){ /* ошибка или старая функция без стрима — обычный JSON-путь */
+      const data=await r.json();
+      if(!r.ok||data.error)throw new Error(data.error||('HTTP '+r.status));
+      vandoHist.push({role:'assistant',content:data.text||'…'});vandoSaveHist();
+    }else{ /* живой стрим: печатаем дельты прямо в пузырь, пока Вандо говорит */
+      const reader=r.body.getReader();const dec=new TextDecoder();
+      let buf='',acc='',started=false;
+      const flow=()=>{th.textContent=acc;box.scrollTop=box.scrollHeight;};
+      for(;;){
+        const {done,value}=await reader.read();if(done)break;
+        buf+=dec.decode(value,{stream:true});
+        const lines=buf.split('\n');buf=lines.pop();
+        for(const ln of lines){
+          if(!ln.startsWith('data:'))continue;
+          const s=ln.slice(5).trim();if(!s||s==='[DONE]')continue;
+          let ev;try{ev=JSON.parse(s);}catch(e){continue;}
+          if(ev.type==='content_block_delta'&&ev.delta&&typeof ev.delta.text==='string'){
+            if(!started){started=true;clearInterval(_stTimer);th.className='vmsg a';}
+            acc+=ev.delta.text;flow();
+          }else if(ev.type==='error'){throw new Error((ev.error&&ev.error.message)||'stream error');}
+        }
+      }
+      if(!acc)throw new Error('пустой ответ');
+      vandoHist.push({role:'assistant',content:acc});vandoSaveHist();
+    }
   }catch(e){vandoHist.push({role:'assistant',content:'⚠ Не получилось ответить: '+(e.message||e)+'. Попробуй ещё раз.'});}
   clearInterval(_stTimer);
   _vandoBusy=false;vandoRender();
@@ -5987,6 +6017,15 @@ const bkey=id=>'cockpit_b_'+id;
 function loadBase(id){try{return JSON.parse(localStorage.getItem(bkey(id)));}catch(e){return null;}}
 function saveBase(id,data){try{localStorage.setItem(bkey(id),typeof data==='string'?data:JSON.stringify(data));}catch(e){}}
 function _mById(a){const m={};(a||[]).forEach(x=>{if(x&&x.id)m[x.id]=x;});return m;}
+/* инсайты: семантический цвет в маленькой иконке, не в эмодзи */
+function insIcon(ic){
+  const map={'🔴':['dot','var(--bad)'],'🥵':['battlow','var(--warn)'],'🕸':['archive','var(--mut2)'],'🌙':['moon','var(--acc2)'],'✨':['sparkles','var(--ok)'],'⏳':['clock','var(--warn)']};
+  const m=map[ic];
+  if(!m)return String(ic).startsWith('<path')?`<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ic}</svg>`:ic;
+  if(m[0]==='dot')return `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${m[1]}"></span>`;
+  return `<span style="color:${m[1]};display:inline-flex">${icon(m[0],17)}</span>`;
+}
+let _mergeConflicts=[]; /* задачи, где правили ОБА и чья-то версия проиграла — покажем, не промолчим */
 function mergeList(bA,lA,cA,lNewer){
   const b=_mById(bA),l=_mById(lA),c=_mById(cA);
   const ids=[...new Set([...Object.keys(l),...Object.keys(c)])];
@@ -5998,6 +6037,7 @@ function mergeList(bA,lA,cA,lNewer){
       if(bx&&js(lx)===js(bx)){out.push(cx);return;}   // менялось только в облаке
       if(bx&&js(cx)===js(bx)){out.push(lx);return;}   // менялось только у нас
       const win=lNewer?lx:cx;                          // обе стороны правили — новее побеждает…
+      if(win&&win.title)_mergeConflicts.push(String(win.title));
       if(lx.comments||cx.comments){                    // …но комменты объединяем всегда
         const seen={},cm=[];[...(lx.comments||[]),...(cx.comments||[])].forEach(x=>{
           const k=(x.ts||0)+'|'+(x.author||'')+'|'+(x.text||'');if(!seen[k]){seen[k]=1;cm.push(x);}});
@@ -6047,7 +6087,12 @@ async function cloudSync(){
     if(base&&lch&&cch){                                            // правили оба → сливаем
       const merged=mergeProj(base,local,r.data);
       localStorage.setItem(pkey(r.id),js(merged));cloudPush(merged,true);saveBase(r.id,merged);
-      if(r.id===reg.active)toast('Слил твои правки с правками партнёра — ничего не потеряно','🤝');
+      if(r.id===reg.active){
+        if(_mergeConflicts.length){const two=_mergeConflicts.slice(0,2).map(t=>'«'+t.slice(0,40)+'»').join(', ');
+          toast('Вы правили одновременно: '+two+(_mergeConflicts.length>2?' и ещё '+(_mergeConflicts.length-2):'')+' — взял свежую версию, проверь','⚡');}
+        else toast('Слил твои правки с правками партнёра — ничего не потеряно','🤝');
+      }
+      _mergeConflicts=[];
       return;}
     if(base&&lch){cloudPush(local,true);saveBase(r.id,local);return;}      // менялись только мы
     if(base&&!lch&&cch){localStorage.setItem(pkey(r.id),js(r.data));saveBase(r.id,r.data);return;} // только облако

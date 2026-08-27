@@ -146,11 +146,17 @@ serve(async (req) => {
         .map((m: any) => ({ role: m.role, content: String(m.content).slice(0, 4000) }));
       if (!hist.length || hist[hist.length - 1].role !== "user") return json({ error: "Нет вопроса" }, 400);
       hist[0] = { role: "user", content: `КОНТЕКСТ (не показывай его сырым, используй для ответов):\n${JSON.stringify(context ?? {}).slice(0, 60000)}\n\n---\n${hist[0].content}` };
+      const wantStream = body.stream === true;
       const r = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
-        body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 1200, system: SYSTEM_CHAT, messages: hist }),
+        body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 1200, system: SYSTEM_CHAT, messages: hist, ...(wantStream ? { stream: true } : {}) }),
       });
+      if (wantStream) {
+        if (!r.ok) { const d = await r.json().catch(() => null); return json({ error: d?.error?.message || "Ошибка Anthropic API" }, 502); }
+        // проксируем SSE Anthropic как есть — фронт читает дельты и печатает живой текст
+        return new Response(r.body, { headers: { ...cors, "content-type": "text/event-stream", "cache-control": "no-cache" } });
+      }
       const data = await r.json();
       if (!r.ok) return json({ error: data?.error?.message || "Ошибка Anthropic API" }, 502);
       return json({ text: String(data?.content?.[0]?.text ?? "").trim() });

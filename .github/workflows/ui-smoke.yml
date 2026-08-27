@@ -1,0 +1,44 @@
+# Смоук-тест прода после каждого деплоя фронта:
+# страница открывается, тайтл WANDO, гейт на месте, консоль без ошибок.
+name: UI smoke on prod
+on:
+  push:
+    branches: [main]
+    paths: ['index.html']
+  workflow_dispatch: {}
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Pages deploy
+        run: sleep 100
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Install Playwright Chromium
+        run: |
+          npm init -y > /dev/null
+          npm i playwright@1.55.0 > /dev/null
+          npx playwright install --with-deps chromium
+      - name: Smoke cock-pit.com
+        run: |
+          cat > smoke.mjs << 'EOF'
+          import { chromium } from 'playwright';
+          const br = await chromium.launch();
+          const pg = await br.newPage();
+          const errs = [];
+          pg.on('pageerror', e => errs.push('PAGEERROR: ' + e));
+          pg.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
+          const resp = await pg.goto('https://cock-pit.com', { waitUntil: 'networkidle', timeout: 60000 });
+          if (!resp || resp.status() !== 200) { console.error('HTTP', resp && resp.status()); process.exit(1); }
+          await pg.waitForTimeout(2500);
+          const title = await pg.title();
+          if (!/WANDO/i.test(title)) { console.error('BAD TITLE:', title); process.exit(1); }
+          const gate = await pg.evaluate(() => !!document.querySelector('#gate'));
+          if (!gate) { console.error('NO GATE ELEMENT'); process.exit(1); }
+          const real = errs.filter(t => !/favicon/i.test(t));
+          if (real.length) { console.error('CONSOLE ERRORS:\n' + real.join('\n')); process.exit(1); }
+          console.log('SMOKE OK ·', title);
+          await br.close();
+          EOF
+          node smoke.mjs
