@@ -766,25 +766,37 @@ body.light .brand .logo{background:linear-gradient(157deg,#1b1d27,#08090d 72%)}
 .weekwrap{padding:16px;max-width:1500px;margin:0 auto}
 .whead{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
 .whead .wt{font-size:13px;color:var(--mut2)}
-.wgrid{display:flex;gap:10px;align-items:flex-start;overflow-x:auto;padding-bottom:6px}
-.wcol{flex:1 1 0;min-width:138px;background:var(--bg2);border:1px solid var(--line);border-radius:13px;display:flex;flex-direction:column;max-height:calc(100vh - 230px)}
+/* Неделя = вертикальная агенда: день — широкая полоса, задача — строка (широко, но низко) */
+.wgrid{display:flex;flex-direction:column;gap:10px;padding-bottom:6px}
+.wcol{width:100%;min-width:0;background:var(--bg2);border:1px solid var(--line);border-radius:13px;display:flex;flex-direction:column}
 .wcol.today{border-color:var(--acc2);box-shadow:0 0 0 1px rgba(167,139,250,.3)}
 .wcol.over{border-color:rgba(248,113,113,.4)}
 .wcol.drop{outline:2px dashed var(--acc2);outline-offset:-3px}
-.wcolh{padding:9px 11px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:6px;font-weight:700;font-size:12.5px;white-space:nowrap;overflow:hidden}
-.wcolh .wsub{font-size:10px;color:var(--mut2);font-weight:500;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
-.wcolh .wcnt{margin-left:auto;font-size:11px;color:var(--mut2);background:var(--bg);padding:0 6px;border-radius:20px}
-.wcolb{padding:8px;display:flex;flex-direction:column;gap:7px;overflow:auto;flex:1;min-height:50px}
-.wempty{color:var(--mut2);font-size:12px;text-align:center;padding:8px 0;opacity:.45}
-.wadd{display:block;width:calc(100% - 16px);margin:4px 8px 8px;padding:8px;border:1px dashed var(--line2);border-radius:9px;color:var(--mut2);background:none;font-size:12px;font-weight:600;cursor:pointer;transition:.15s;opacity:0}
-.wcol:hover .wadd,.wcol.today .wadd{opacity:.75}
-.wadd:hover{opacity:1;border-color:var(--acc2);color:var(--acc2)}
+.wcolh{padding:8px 13px;display:flex;align-items:center;gap:8px;font-weight:700;font-size:12.5px;white-space:nowrap;overflow:hidden}
+.wcol:not(.wfree) .wcolh{border-bottom:1px solid var(--line)}
+.wcol.wfree{opacity:.75}
+.wcolh .wsub{font-size:10.5px;color:var(--mut2);font-weight:500;flex:0 0 auto}
+.wcolh .wcnt{font-size:11px;color:var(--mut2);background:var(--bg);padding:0 6px;border-radius:20px}
+.wcolb{padding:4px 6px 6px;display:flex;flex-direction:column;gap:2px}
+.wadd{margin-left:auto;padding:3px 10px;border:1px dashed var(--line2);border-radius:8px;color:var(--mut2);background:none;font-size:11.5px;font-weight:600;cursor:pointer;transition:.15s;opacity:.45}
+.wcol:hover .wadd,.wcol.today .wadd{opacity:.9}
+.wadd:hover{border-color:var(--acc2);color:var(--acc2);opacity:1}
 .stuck{color:var(--warn);font-size:10.5px;font-weight:800;white-space:nowrap}
 .hdot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-left:8px;vertical-align:1px;cursor:pointer;background:var(--bg2);border:1.5px dashed var(--line2)}
 .hdot:not(.unset){border:none}
 .hnote{font-size:11.5px;color:var(--mut2);margin-left:7px;font-weight:500}
 .apvbar{display:flex;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:13px;font-weight:600}
 .apvbar span{flex:1;color:var(--mut)}
+.fscard{position:relative;background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:13px 16px;margin-bottom:16px}
+.fst{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--acc2);margin-bottom:9px}
+.fsrow{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:13.5px;color:var(--txt)}
+.fsrow[data-fs]{cursor:pointer}
+.fsrow[data-fs]:hover span:last-child{color:var(--acc2)}
+.fsrow.ok{color:var(--mut2);text-decoration:line-through}
+.fsc{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--line2);display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;color:var(--ok)}
+.fsrow.ok .fsc{border-color:var(--ok)}
+.fsx{position:absolute;top:9px;right:9px;background:none;border:none;color:var(--mut2);cursor:pointer;font-size:13px;padding:4px}
+.fsx:hover{color:var(--txt)}
 @media (hover:none){.wadd{opacity:.55}}
 /* ROCH-канон: пинг-понг длинного текста — обрезанное медленно проезжает туда-обратно с паузами на краях */
 .pp-on{text-overflow:clip}
@@ -792,14 +804,15 @@ body.light .brand .logo{background:linear-gradient(157deg,#1b1d27,#08090d 72%)}
 .pp-on .ppin{animation:ppslide var(--ppt,7s) ease-in-out 1.2s infinite alternate}
 @keyframes ppslide{0%,14%{transform:translateX(0)}86%,100%{transform:translateX(var(--ppd,0px))}}
 @media (prefers-reduced-motion: reduce){.pp-on .ppin{animation:none}}
-.wcard{display:flex;gap:8px;align-items:flex-start;background:var(--glass-2);border:1px solid var(--gbrd);border-radius:10px;padding:9px;cursor:grab;box-shadow:var(--ghi)}
-.wcard:hover{border-color:var(--acc2)}
+/* задача = одна строка: широко, низко, читаемо */
+.wcard{display:flex;gap:10px;align-items:center;background:none;border:none;border-radius:9px;padding:7px 9px;cursor:grab}
+.wcard:hover{background:var(--bg)}
 .wcard.dragging{opacity:.4}
-.wcard .wcb{flex:1;min-width:0}
-.wct{font-size:12.5px;font-weight:600;line-height:1.3;margin-bottom:5px}
-.wcm{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.wcard .qdone{margin-top:1px}
-@media (max-width:680px){.wcol{min-width:78vw;scroll-snap-align:center}.wgrid{scroll-snap-type:x mandatory}}
+.wcard .wcb{flex:1;min-width:0;display:flex;align-items:center;gap:10px}
+.wct{font-size:13.5px;font-weight:600;line-height:1.25;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:70px;flex:0 1 auto}
+.wcm{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;margin-left:auto;flex:0 0 auto;max-width:60%;overflow:hidden}
+.wcm .pbadge{max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wcard .qdone{margin-top:0;flex:0 0 auto}
 /* fix: закрытый дровер не должен светить тенью на правый край экрана */
 .drawer:not(.show){box-shadow:none}
 /* геймификация: очки и лидерборд */
@@ -1681,6 +1694,7 @@ body.light .mseg{background:rgba(250,251,254,.97)}
 .hk-r kbd{background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:2px 7px;font-size:11.5px;font-family:inherit;min-width:22px;text-align:center}
 /* ---- синк-индикатор в мобильном HUD ---- */
 .syncdot{display:none;width:7px;height:7px;border-radius:50%;background:#6b7280;flex:0 0 auto;margin-right:2px;transition:background .3s}
+.syncdot.offline{background:var(--warn)!important;display:inline-block}
 .syncdot.on{background:var(--ok);box-shadow:0 0 6px rgba(52,211,153,.6)}
 @media (max-width:680px){.syncdot{display:inline-block}}
 .ctxnote{font-size:11px;color:var(--mut2);margin:-8px 0 8px 2px}
@@ -1848,7 +1862,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
     <div id="dCrumb" class="crumbrow" style="display:none"></div>
     <div id="dApproveBar"></div>
     <textarea class="dtitle" id="dTitle" rows="1" placeholder="Название задачи"></textarea>
-    <div class="field"><label>Кто делает</label><div class="seg" id="dAssignee"></div></div>
+    <div class="field"><label style="display:flex;align-items:center">Кто делает<button class="lnk" id="dPing" style="margin-left:auto;display:none;text-transform:none;letter-spacing:0">🔔 Пингнуть в TG</button></label><div class="seg" id="dAssignee"></div></div>
     <div class="field"><label>Срок</label>
       <div class="row">
         <div style="flex:1"><input type="date" class="inp" id="dEnd"></div>
@@ -1868,6 +1882,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
       <div class="cmtadd"><input class="inp" id="dSubIn" placeholder="Добавить пункт… (Enter)"><button class="btn" id="dSubBtn">＋</button></div>
     </div>
     <div id="dCashOut" style="display:none"></div>
+    <div class="field" id="dHillWrap" style="display:none"><label>Фаза <span style="text-transform:none;letter-spacing:0;font-weight:500;color:var(--mut2)">— в гору или с горы? (честнее процентов)</span></label><div class="seg" id="dHill"></div></div>
     <details class="dmore" id="dMore"><summary>Ещё: описание, старт, оценка, зависимости</summary>
       <div class="dmb">
         <div class="field"><label>Описание / план</label>
@@ -2367,10 +2382,19 @@ function render(){
   else if(view==='mprojects')renderMProjects();
   if(typeof tickKpis==='function')tickKpis();
   applyPingpong();
+  try{ /* бейдж на иконке PWA: сколько горит лично у меня */
+    if(navigator.setAppBadge){const n=myTasksAll().filter(x=>isOverdue(x.t)||x.t.end===todayISO()).length;
+      if(n)navigator.setAppBadge(n);else if(navigator.clearAppBadge)navigator.clearAppBadge();}
+  }catch(e){}
   save();
 }
+/* офлайн: точка синка желтеет, правки копятся локально; сеть вернулась — синк сам */
+window.addEventListener('offline',()=>{const sd=$('#syncDot');if(sd)sd.classList.add('offline');
+  toast('Офлайн — всё сохраняется локально и улетит при сети','📴');});
+window.addEventListener('online',()=>{const sd=$('#syncDot');if(sd)sd.classList.remove('offline');
+  if(cloudOn&&typeof cloudSync==='function'){cloudSync();toast('Сеть вернулась — синхронизирую','☁️');}});
 /* ROCH: пинг-понг обрезанного текста — везде, где текст не влез (вместо вечного «…») */
-const PP_SEL='.trow .tn,.mtask .tn,.pbadge,.wsub,.mr-t,.nh-up-t,.nh-crumb,.lbn,.rl';
+const PP_SEL='.trow .tn,.mtask .tn,.pbadge,.wsub,.mr-t,.nh-up-t,.nh-crumb,.lbn,.rl,.wct';
 function applyPingpong(root){
   try{(root||document).querySelectorAll(PP_SEL).forEach(el=>{
     if(el._ppDone)return;el._ppDone=1;
@@ -2444,6 +2468,8 @@ function buildInsights(T){
     if(m.capacity&&load>m.capacity*1.15)out.push({ic:'🥵',title:`${m.name} перегружен`,sub:`${load}/${m.capacity}ч — жми, чтобы разгрузить автоматически`,act:()=>openRebalance()});});
   const rot=T.filter(t=>t.status!=='done'&&(t.status==='backlog'||t.status==='todo')&&(t.spent||0)===0&&t.createdTs&&(Date.now()-t.createdTs>10*dayMs));
   if(rot.length)out.push({ic:'🕸',title:`${rot.length} ${plural(rot.length,'задача застряла','задачи застряли','задач застряло')}`,sub:'больше 10 дней без движения — сделать, делегировать или удалить',act:()=>openTask(rot[0].id)});
+  {const uph=T.filter(t=>t.hill==='up'&&t.status==='progress'&&t.statusTs&&(Date.now()-t.statusTs)>2*dayMs)[0];
+   if(uph)out.push({ic:'🧗',title:`«${uph.title.slice(0,32)}» стоит на подъёме`,sub:'разбор не идёт 2+ дня — помоги или созвон на 15 минут',act:()=>openTask(uph.id)});}
   {const stuck=T.filter(t=>t.statusTs&&t.status!=='done'&&t.status!=='backlog'&&(Date.now()-t.statusTs)>4*dayMs)
      .sort((x,y)=>x.statusTs-y.statusTs)[0];
    if(stuck){const d=Math.floor((Date.now()-stuck.statusTs)/dayMs);
@@ -2614,6 +2640,7 @@ function renderNow(){
       <span class="energyrow" title="Заряд сегодня: подстрою следующий шаг"><button data-en="hi" class="${energy==='hi'?'on':''}" title="Полон сил — дай крупную задачу" aria-label="Полон сил">${icon('battery',15)}</button><button data-en="lo" class="${energy==='lo'?'on':''}" title="Мало сил — подкинь лёгкие" aria-label="Мало сил">${icon('battlow',15)}</button></span></span></div>
     ${whatsNewStrip()}
     ${hero}
+    ${firstStepsCard()}
     ${multi&&nextPid!==S.id?`<div class="ctxnote">цифры ниже — пульс этого проекта · ${esc(S.projectName)}</div>`:''}
     <div class="pulse-row">
       <div class="pulse-card"><div class="pv">${pct}%</div><div class="pl">готово</div></div>
@@ -2645,6 +2672,10 @@ function renderNow(){
         if(nx.pid!==S.id){switchProject(nx.pid);setTimeout(()=>startFocus(nx.id),160);}else startFocus(nx.id);});},3600);};
   ins.forEach((x,i)=>{const c=el.querySelector(`.insight[data-i="${i}"]`);if(c&&x.act)c.onclick=x.act;});
   const ap=$('#aiPlanBtn');if(ap)ap.onclick=openAiPlan;
+  $$('#now [data-fs]').forEach(b=>b.onclick=()=>{const a=b.dataset.fs;
+    if(a==='skip'){localStorage.setItem('cockpit_fs_done','1');render();}
+    else if(a==='tg'){if(!cloudOn)toast('Сначала войди в облако','🤖');else openTgGate();}
+    else if(a==='add'){if(window.innerWidth<=680)openCap();else{const c=$('#cmd');if(c){c.focus();toast('Пиши: «созвон завтра 2ч важно» — разберу сам','⚡');}}}});
   {const np=$('#npPlan');if(np)np.onclick=openAiPlan;}
   const cb=$('#claudeBtn');if(cb)cb.onclick=()=>fetchClaudeInsight(cb);
   const nf=$('#nowFold');if(nf)nf.ontoggle=()=>localStorage.setItem('cockpit_now_fold',nf.open?'1':'0');
@@ -2862,6 +2893,21 @@ function renderNowMobile(ctx){
   clearTimeout(_nowSeenT);_nowSeenT=setTimeout(()=>{try{localStorage.setItem('cockpit_seen_'+S.id,Date.now());}catch(e){}},4200);
 }
 // проактивная актуализация просрочек прямо с «Сейчас»
+/* Чеклист новичка: 3 шага до «ага-момента», гаснет сам. Понятность > фичи. */
+function firstStepsCard(){
+  if(localStorage.getItem('cockpit_fs_done'))return '';
+  const T=S.tasks.filter(t=>!t.isMilestone);
+  const s1=T.some(t=>t.status==='done');                                   // закрыл задачу
+  const s2=T.some(t=>t.createdTs&&t.createdTs>Date.now()-30*dayMs)&&T.length>1; // добавил свою
+  const s3=tgLinked;                                                        // подключил TG
+  if(s1&&s2&&s3){localStorage.setItem('cockpit_fs_done','1');return '';}
+  const row=(ok,txt,act)=>`<div class="fsrow${ok?' ok':''}" ${act&&!ok?`data-fs="${act}"`:''}><span class="fsc">${ok?icon('check',13):''}</span><span>${txt}</span></div>`;
+  return `<div class="fscard"><div class="fst">Три шага — и WANDO твой</div>
+    ${row(s2,'Добавь задачу своими словами — «＋» или строка сверху','add')}
+    ${row(s1,'Закрой первую — кнопкой «Готово» у героя','')}
+    ${row(s3,'Подключи Telegram — задачи голосом из кармана','tg')}
+    <button class="fsx" data-fs="skip" title="Скрыть">✕</button></div>`;
+}
 /* иерархия «Сейчас»: герой — один, помощник — один. Приоритет: просрочки > наставник > деньги.
    Остальные подсказки не пропадают — всплывут в следующие дни, когда актуальная закроется. */
 function assistCard(){return selfHealCard()||mentorCard()||cashPulse();}
@@ -4105,7 +4151,10 @@ function renderWeek(){
     <button class="qdone" data-wd="${x.pid}|${x.t.id}" title="Готово" style="--c:${stMap[x.t.status].c}"></button>
     <div class="wcb"><div class="wct">${x.t.waitingOn?'⏳ ':''}${esc(x.t.title)}</div>
       <div class="wcm"><span class="pbadge">${x.emoji||'📄'} ${esc(x.pname)}</span>${x.parent?`<span style="font-size:10px;color:var(--mut2)">↳ ${esc(x.parent)}</span>`:''}${x.t.estimate?`<span style="font-size:10px;color:var(--mut2)">${x.t.estimate}ч</span>`:''}${subTag(x.t)}</div></div></div>`;
-  const col=(key,label,sub,cls)=>`<div class="wcol ${cls||''}" data-day="${key}"><div class="wcolh" title="${key==='over'?'перетащи задачу в день — изменится срок':sub||''}"><span>${label}</span>${sub?`<span class="wsub">${sub}</span>`:''}<span class="wcnt">${by[key].length||''}</span></div><div class="wcolb">${by[key].map(card).join('')||(key!=='over'&&key!=='later'?'':'<div class="wempty">—</div>')}${key!=='over'&&key!=='later'?`<button class="wadd" data-wadd="${key}">＋ задача</button>`:''}</div></div>`;
+  const col=(key,label,sub,cls)=>{const items=by[key];const empty=!items.length;
+    return `<div class="wcol ${cls||''}${empty?' wfree':''}" data-day="${key}">
+      <div class="wcolh" title="${key==='over'?'перетащи задачу в день — изменится срок':sub||''}"><span>${label}</span>${sub?`<span class="wsub">${sub}</span>`:''}<span class="wcnt">${items.length||''}</span>${key!=='over'&&key!=='later'?`<button class="wadd" data-wadd="${key}">＋ задача</button>`:''}</div>
+      ${empty?'':`<div class="wcolb">${items.map(card).join('')}</div>`}</div>`;};
   const wt=weekOffset===0?'Эта неделя':weekOffset===1?'Следующая неделя':weekOffset===-1?'Прошлая неделя':md(wstart)+'–'+md(wend);
   let cols='';if(by.over.length)cols+=col('over','Просрочено','',' over');
   days.forEach((d,i)=>cols+=col(d,WD[i],md(d),d===tISO?'today':''));
@@ -4784,6 +4833,18 @@ function openTask(id){
   $('#dRepeat').value=t.repeat||'';
   {const a=$('#dApprove');if(a){a.classList.toggle('on',!!t.approval);}}
   renderApproveBar();
+  {const pg=$('#dPing');if(pg){const m=member(t.assigneeId);
+    const can=cloudOn&&m&&m.email&&t.assigneeId!==myId();
+    pg.style.display=can?'':'none';
+    pg.onclick=()=>{tgNotify('comment',t,'🔔 '+meName()+' напоминает про эту задачу — глянь, когда сможешь');
+      toast('Пингнул '+((m&&m.name)||'')+' в Telegram','🔔');};}}
+  {const hw=$('#dHillWrap'),hs=$('#dHill');
+   if(hw&&hs){const show=t.status==='progress'||t.hill;hw.style.display=show?'':'none';
+    if(show){const opts=[['','—'],['up','🧗 разбираемся'],['down','🏂 катим']];
+      hs.innerHTML=opts.map(([v,l])=>`<button class="chip ${((t.hill||'')===v)?'on':''}" data-hill="${v}">${l}</button>`).join('');
+      hs.querySelectorAll('[data-hill]').forEach(b=>b.onclick=()=>{const v=b.dataset.hill;
+        if(v)t.hill=v;else delete t.hill;save();openTask(t.id);
+        if(v==='down')toast('С горы! Дальше только исполнение 🏂','⛰');});}}}
   {const c=$('#dCash');if(c){c.classList.toggle('on',!!t.cash);c.title=t.cash?'Двигает деньги — снять метку':'Пометить: двигает деньги';}}
   $('#dEst').value=t.estimate||'';$('#dSpent').value=t.spent||'';
   $('#dStatus').innerHTML=STATUSES.map(s=>`<option value="${s.k}" ${s.k===t.status?'selected':''}>${s.n}</option>`).join('');
@@ -4946,6 +5007,17 @@ $('#dCmtIn').addEventListener('input',e=>{
 $('#dSubBtn').onclick=addSub;
 {const kb=$('#dKidBtn');if(kb)kb.onclick=addKid;}
 {const ki=$('#dKidIn');if(ki)ki.onkeydown=e=>{if(e.key==='Enter')addKid();};}
+/* листание задач в карточке: ←/→ — разбор дня без «открыл-закрыл ×20» */
+document.addEventListener('keydown',e=>{
+  const dr=$('#drawer');if(!dr||!dr.classList.contains('show')||!curTask)return;
+  if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;
+  const tg=e.target;if(tg&&(['INPUT','TEXTAREA','SELECT'].includes(tg.tagName)||tg.isContentEditable))return;
+  const list=S.tasks.filter(x=>!x.isMilestone);if(list.length<2)return;
+  const i=list.findIndex(x=>x.id===curTask.id);if(i<0)return;
+  e.preventDefault();
+  const j=e.key==='ArrowRight'?(i+1)%list.length:(i-1+list.length)%list.length;
+  openTask(list[j].id);
+});
 $('#dApprove').onclick=()=>{if(!curTask)return;curTask.approval=!curTask.approval;
   $('#dApprove').classList.toggle('on',!!curTask.approval);save();renderApproveBar();
   toast(curTask.approval?'Согласование: у исполнителя появятся ✓ / ✗':'Метка согласования снята','🤝');};
@@ -4965,7 +5037,7 @@ function renderApproveBar(){
     t2.status='todo';t2.statusTs=Date.now();
     t2.comments=t2.comments||[];t2.comments.push({ts:Date.now(),author:meName(),authorId:myId(),text:'✕ Возвращено'+(why.trim()?': '+why.trim():'')});
     logAct('🤝','вернул «'+t2.title+'» на доработку');save();render();openTask(t2.id);
-    if(t2.assigneeId&&t2.assigneeId!==myId())tgNotify('comment',t2,{text:'✕ Возвращено'+(why.trim()?': '+why.trim():'')});
+    if(t2.assigneeId&&t2.assigneeId!==myId())tgNotify('comment',t2,'✕ Возвращено'+(why.trim()?': '+why.trim():''));
     toast('Возвращено с комментарием','🤝');};
 }
 $('#dCash').onclick=()=>{if(!curTask)return;curTask.cash=!curTask.cash;
