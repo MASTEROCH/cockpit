@@ -1849,6 +1849,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
       <div class="qdates" id="dQDates">
         <button data-qd="0">Сегодня</button><button data-qd="1">Завтра</button><button data-qd="3">+3 дня</button><button data-qd="mon">Понедельник</button><button data-qd="7">+неделя</button>
       </div>
+      <div class="qdates" id="dSnooze" style="margin-top:6px"></div>
     </div>
     <div class="field"><label>Приоритет</label><div class="seg" id="dPrio"></div></div>
     <div class="field"><label>Подзадачи <span id="dKidsCnt" style="color:var(--mut2);font-weight:600;text-transform:none"></span></label>
@@ -2527,8 +2528,8 @@ function renderNow(){
   const ov=T.filter(isOverdue).length;
   const weekAgo=Date.now()-7*dayMs;
   const vel=(S.activity||[]).filter(a=>a.ts>weekAgo&&/Готово|✅/.test((a.text||'')+(a.icon||''))).length;
-  const mine=T.filter(t=>t.assigneeId===me&&t.status!=='done');
-  const pool=mine.length?mine:T.filter(t=>t.status!=='done');
+  const mine=T.filter(t=>t.assigneeId===me&&t.status!=='done'&&!isSnoozed(t));
+  const pool=mine.length?mine:T.filter(t=>t.status!=='done'&&!isSnoozed(t));
   const _energy=localStorage.getItem('cockpit_energy_'+todayISO())||'';
   const enW=t=>_energy==='lo'?((t.estimate&&t.estimate<=2)?1.6:0):_energy==='hi'?((t.estimate>=4||t.priority==='high'||t.priority==='urgent')?1.2:0):0;
   const sortedPool=[...pool].sort((a,b)=>(relScore(b)+enW(b))-(relScore(a)+enW(a)));
@@ -2573,6 +2574,7 @@ function renderNow(){
       <div class="nh-meta">${bare?'<button class="btn primary" id="npPlan" style="margin-top:4px">'+icon('sparkles',14)+' Вандо, спланируй за меня</button>':allDone?'<span class="ichip">создай следующую задачу или запланируй новую цель</span>':'<span class="ichip">создай задачу строкой сверху или ⌘K</span>'}</div></div>`;}
   const energy=localStorage.getItem('cockpit_energy_'+todayISO())||'';
   if(window.innerWidth<=680){renderNowMobile({el,greet,next,upNext,mine,pct,prog,ov,vel,ins,running,energy:localStorage.getItem('cockpit_energy_'+todayISO())||''});return;}
+  window._heroNext=next?{id:next.id,title:next.title,est:next.estimate,pid:nextPid}:null;
   el.innerHTML=`<div class="now-greet"><h1>${greet}${(n=>n&&n!=='Я'&&n!=='Новый участник'?', '+esc(n):'!')(meName())}</h1><span>${esc(S.projectName)} · пульс проекта
       <span class="energyrow" title="Заряд сегодня: подстрою следующий шаг"><button data-en="hi" class="${energy==='hi'?'on':''}" title="Полон сил — дай крупную задачу" aria-label="Полон сил">${icon('battery',15)}</button><button data-en="lo" class="${energy==='lo'?'on':''}" title="Мало сил — подкинь лёгкие" aria-label="Мало сил">${icon('battlow',15)}</button></span></span></div>
     ${whatsNewStrip()}
@@ -2601,7 +2603,11 @@ function renderNow(){
   if(running){if(!focus.iv)focus.iv=setInterval(updFocus,1000);updFocus();}
   const dn=el.querySelector('[data-done]');if(dn)dn.onclick=(ev)=>{if(focus.tid===dn.dataset.done)stopFocus(true);
     const un=markDone(nextPid,dn.dataset.done);
-    celebrateAt(ev);render();toast('Готово','✅','Отменить',un);};
+    celebrateAt(ev);render();toast('Готово','✅','Отменить',un);
+    /* фокус-цепочка: после окна «Отменить» предлагаем следующий шаг — день как конвейер */
+    setTimeout(()=>{const nx=window._heroNext;if(!nx||nx.id===dn.dataset.done)return;
+      toast('Дальше: «'+String(nx.title).slice(0,42)+'»'+(nx.est?' · '+nx.est+'ч':''),'⚡','Поехали',()=>{
+        if(nx.pid!==S.id){switchProject(nx.pid);setTimeout(()=>startFocus(nx.id),160);}else startFocus(nx.id);});},3600);};
   ins.forEach((x,i)=>{const c=el.querySelector(`.insight[data-i="${i}"]`);if(c&&x.act)c.onclick=x.act;});
   const ap=$('#aiPlanBtn');if(ap)ap.onclick=openAiPlan;
   {const np=$('#npPlan');if(np)np.onclick=openAiPlan;}
@@ -2731,12 +2737,14 @@ function tickKpis(){
 }
 // ===== МОБИЛЬНЫЙ «Сегодня»: один вопрос на экран =====
 // мои открытые задачи по ВСЕМ доступным проектам
+/* «Отложить до…»: задача прячется из «Сейчас», срок не трогаем — план не врёт */
+function isSnoozed(t){return !!(t&&t.snooze&&t.snooze>todayISO());}
 function myTasksAll(){
   const out=[];
   reg.list.filter(p=>!p.archived).forEach(p=>{
     const data=p.id===S.id?S:loadProj(p.id);if(!data)return;
     const me2=myMemberIn(data);if(!me2)return;
-    (data.tasks||[]).forEach(t=>{if(!t.isMilestone&&t.status!=='done'&&t.assigneeId===me2.id)out.push({t,pid:p.id,pname:p.name,emoji:p.emoji||'📄',aname:me2.name});});
+    (data.tasks||[]).forEach(t=>{if(!t.isMilestone&&t.status!=='done'&&t.assigneeId===me2.id&&!isSnoozed(t))out.push({t,pid:p.id,pname:p.name,emoji:p.emoji||'📄',aname:me2.name});});
   });
   return out;}
 function renderNowMobile(ctx){
@@ -2754,6 +2762,7 @@ function renderNowMobile(ctx){
       upNext=poolAll.slice(1,4);
     }else{next=null;upNext=[];}
   }
+  window._heroNext=next?{id:next.id,title:next.title,est:next.estimate,pid:nextPid}:null;
   const badge=x=>multi?`<span class="mr-p">${x.emoji} ${esc(x.pname)}</span>`:'';
   const heroX=multi&&poolAll&&poolAll.length?poolAll[0]:null;
   const hero=next?`<div class="mhero ${isOverdue(next)?'over':''}" data-open="${next.id}">
@@ -2803,7 +2812,10 @@ function renderNowMobile(ctx){
   if(ctx.running){if(!focus.iv)focus.iv=setInterval(updFocus,1000);updFocus();}
   const dn=el.querySelector('[data-done]');if(dn)dn.onclick=(ev)=>{if(focus.tid===dn.dataset.done)stopFocus(true);
     const un=markDone(nextPid,dn.dataset.done);
-    celebrateAt(ev);haptic('ok');render();toast('Готово','✅','Отменить',un);};
+    celebrateAt(ev);haptic('ok');render();toast('Готово','✅','Отменить',un);
+    setTimeout(()=>{const nx=window._heroNext;if(!nx||nx.id===dn.dataset.done)return;
+      toast('Дальше: «'+String(nx.title).slice(0,42)+'»'+(nx.est?' · '+nx.est+'ч':''),'⚡','Поехали',()=>{
+        if(nx.pid!==S.id){switchProject(nx.pid);setTimeout(()=>startFocus(nx.id),160);}else startFocus(nx.id);});},3600);};
   {const np=$('#npPlan');if(np)np.onclick=openAiPlan;}
   ins.forEach((x,i)=>{const c=el.querySelector(`.insight[data-i="${i}"]`);if(c&&x.act)c.onclick=x.act;});
   const ht=$('#healToday');if(ht)ht.onclick=()=>healOverdue('today');
@@ -3762,6 +3774,8 @@ function renderIntake(){
         <div class="sub" style="margin-top:4px;line-height:1.5">задачи из бота и Claude ждут решения: выбери проект и подтверди — станут задачами</div></div>
       ${connectBtn}</div>
     <details class="cheat"><summary>Шпаргалка: быстрые команды для Claude и бота</summary>${cheatsheetHTML()}</details>`
+    +((()=>{const ready=intakeRows.filter(r=>projectMatch(r.target_project));
+      return ready.length>=2?`<button class="btn" id="intakeAll" style="margin-bottom:12px">✓ Принять все, где проект уже известен · ${ready.length}</button>`:'';})())
     +(intakeRows.length?`<div class="inolist">${intakeRows.map(r=>{
       const p=parseQuick(r.text);const m=p.assignee?member(p.assignee):null;
       const noTarget=!projectMatch(r.target_project);
@@ -3802,6 +3816,23 @@ function renderIntake(){
   $$('#intake [data-bl]').forEach(b=>b.onclick=()=>acceptIntake(b.dataset.bl,true));
   $$('#intake [data-edit]').forEach(b=>b.onclick=()=>editIntake(b.dataset.edit));
   $$('#intake [data-rej]').forEach(b=>b.onclick=()=>{decideIntake(b.dataset.rej,'rejected');toast('Отклонено','✕');});
+  {const ba=$('#intakeAll');if(ba)ba.onclick=()=>{const ready=intakeRows.filter(r=>projectMatch(r.target_project));
+    ready.forEach(r=>acceptIntake(r.id,false));toast('Принято: '+ready.length+' — все в своих проектах ✓','✓');};}
+  /* мобайл: свайп по заявке — вправо принять, влево отклонить (инбокс-зеро пальцем) */
+  if(window.innerWidth<=680)$$('#intake .ino').forEach(card=>{
+    let sx=0,sy=0,dx=0,drag=false;
+    card.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;dx=0;drag=true;},{passive:true});
+    card.addEventListener('touchmove',e=>{if(!drag)return;const mx=e.touches[0].clientX-sx,my=e.touches[0].clientY-sy;
+      if(Math.abs(dx)<10&&Math.abs(my)>Math.abs(mx)){drag=false;card.style.transform='';return;}
+      dx=mx;card.style.transition='none';card.style.transform='translateX('+dx+'px)';},{passive:true});
+    card.addEventListener('touchend',()=>{if(!drag)return;drag=false;card.style.transition='transform .18s ease';
+      const id=card.dataset.id;
+      if(dx>90){const pid=intakePid(id);
+        if(pid){card.style.transform='translateX(110%)';haptic('ok');setTimeout(()=>acceptIntake(id,false),170);}
+        else{card.style.transform='';toast('Сначала выбери проект в заявке','📁');}}
+      else if(dx<-90){card.style.transform='translateX(-110%)';haptic('light');setTimeout(()=>{decideIntake(id,'rejected');toast('Отклонено','✕');},170);}
+      else card.style.transform='';});
+  });
 }
 function onIntakeRealtime(payload){
   const r=payload.new||payload.old;if(!r)return;
@@ -4705,7 +4736,7 @@ function openTask(id){
   }}
   $('#dTitle').value=t.title;autoGrow($('#dTitle'));
   $('#dDesc').value=t.description;
-  $('#dStart').value=t.start;$('#dEnd').value=t.end;
+  $('#dStart').value=t.start;$('#dEnd').value=t.end;renderSnoozeRow();
   $('#dMile').checked=t.isMilestone;
   $('#dRepeat').value=t.repeat||'';
   {const c=$('#dCash');if(c){c.classList.toggle('on',!!t.cash);c.title=t.cash?'Двигает деньги — снять метку':'Пометить: двигает деньги';}}
@@ -4874,6 +4905,22 @@ $('#dCash').onclick=()=>{if(!curTask)return;curTask.cash=!curTask.cash;
   $('#dCash').classList.toggle('on',!!curTask.cash);save();
   toast(curTask.cash?'💰 Двигает деньги — подниму в приоритетах':'Метка денег снята','💰');};
 // быстрые сроки одним тапом
+/* «Отложить до…» — спрятать из «Сейчас», не трогая срок (план не врёт) */
+function renderSnoozeRow(){
+  const box=$('#dSnooze');if(!box||!curTask)return;
+  const t=curTask;
+  if(isSnoozed(t)){
+    box.innerHTML=`<span style="font-size:12px;color:var(--mut2);align-self:center">💤 скрыта из «Сейчас» до ${t.snooze.slice(8)}.${t.snooze.slice(5,7)}</span><button data-snz="off">Вернуть</button>`;
+  }else{
+    box.innerHTML=`<span style="font-size:12px;color:var(--mut2);align-self:center">💤 Отложить:</span><button data-snz="1">до завтра</button><button data-snz="mon">до Пн</button><button data-snz="7">на неделю</button>`;
+  }
+  box.querySelectorAll('[data-snz]').forEach(b=>b.onclick=()=>{
+    const v=b.dataset.snz;
+    if(v==='off'){delete t.snooze;toast('Задача снова в «Сейчас»','☀️');}
+    else{let d;if(v==='mon'){const x=parseD(todayISO());const dow=(new Date(x).getDay()+6)%7;d=fmtD(x+(7-dow)*dayMs);}else d=fmtD(parseD(todayISO())+(+v)*dayMs);
+      t.snooze=d;toast('Отложена до '+d.slice(8)+'.'+d.slice(5,7)+' — срок не тронут','💤');}
+    save();renderSnoozeRow();});
+}
 $$('#dQDates button').forEach(b=>b.onclick=()=>{if(!curTask)return;
   const q=b.dataset.qd;let d;
   if(q==='mon'){const t=parseD(todayISO());const dow=(new Date(t).getDay()+6)%7;d=fmtD(t+(7-dow)*dayMs);}
