@@ -1921,10 +1921,14 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
     </div>
     <div id="dCashOut" style="display:none"></div>
     <div class="field" id="dHillWrap" style="display:none"><label>Фаза <span style="text-transform:none;letter-spacing:0;font-weight:500;color:var(--mut2)">— в гору или с горы? (честнее процентов)</span></label><div class="seg" id="dHill"></div></div>
+    <details class="dmore" id="dHistBox" style="display:none"><summary>История изменений <span id="dHistCnt" style="color:var(--mut2);font-weight:500;text-transform:none"></span></summary>
+      <div class="dmb" id="dHistList" style="font-size:12px;color:var(--mut2);line-height:1.7"></div></details>
     <details class="dmore" id="dMore"><summary>Ещё: описание, старт, оценка, зависимости</summary>
       <div class="dmb">
         <div class="field"><label>Описание / план</label>
           <textarea class="inp" id="dDesc" placeholder="Что именно сделать, контекст, ссылки…"></textarea></div>
+        <div class="field"><label>Повтор <span style="text-transform:none;font-weight:500;color:var(--mut2)">— после «Готово» создастся следующая</span></label>
+          <div class="seg" id="dRepeat"></div></div>
         <div class="field"><label>Дата старта <span style="text-transform:none;font-weight:500;color:var(--mut2)">— для Ганта; обычно не нужна</span></label>
           <input type="date" class="inp" id="dStart"></div>
         <div class="field"><label>Эстимейт / факт</label>
@@ -1935,14 +1939,6 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
         <div class="field"><label>Раздел</label><select class="inp" id="dSection"></select></div>
         <div class="field"><label>Зависит от (блокеры)</label><div class="seg" id="dDeps"></div></div>
         <div class="field"><label>⏳ Ждёт от — кто должен сделать шаг</label><div class="seg" id="dWaiting"></div></div>
-        <div class="field"><label>🔁 Повтор</label>
-          <select class="inp" id="dRepeat">
-            <option value="">Не повторять</option>
-            <option value="daily">Каждый день</option>
-            <option value="weekly">Каждую неделю</option>
-            <option value="monthly">Каждый месяц</option>
-          </select>
-          <div style="font-size:11px;color:var(--mut2);margin-top:5px">При «Готово» создастся следующая копия со сдвинутым сроком.</div></div>
         <label style="display:flex;gap:7px;align-items:center;cursor:pointer;font-size:12px;color:var(--mut)">
           <input type="checkbox" id="dMile"> 🔹 это веха / релиз (milestone)</label>
       </div>
@@ -2116,7 +2112,7 @@ function migrate(p){if(!p)return p;p.ui=p.ui||{zoom:38};if(!p.ui.zoom)p.ui.zoom=
   (p.members||[]).forEach(m=>{if(m.points===undefined)m.points=1000;});  /* стартовый капитал: экономика мотивирует, но никогда не блокирует */
   if(!p.id)p.id='p'+Math.random().toString(36).slice(2,8);p.ideas=p.ideas||[];p.tasks=p.tasks||[];p.members=p.members||[];p.sections=p.sections||[{id:'s1',name:'Задачи'}];
   p.tasks.forEach(t=>{if(!t.deps)t.deps=[];if(t.comments==null)t.comments=[];if(t.parentId===undefined)t.parentId=null;});
-  p.activity=p.activity||[];p.notes=p.notes||[];if(!p.updatedAt)p.updatedAt=0;if(p.parentId===undefined)p.parentId=null;return p;}
+  p.activity=p.activity||[];p.notes=p.notes||[];if(p.trash)p.trash=p.trash.filter(e=>Date.now()-(e.ts||0)<2592000000);if(!p.updatedAt)p.updatedAt=0;if(p.parentId===undefined)p.parentId=null;return p;}
 
 function blankProject(){return {projectName:'Мой проект',emoji:'🚀',demo:false,ui:{zoom:38},
   members:[{id:'m1',name:'Я',role:'Founder',color:COLORS[1],capacity:30}],
@@ -3160,7 +3156,7 @@ function kbOpen(){const it=kbCur();if(!it)return;if(it.pid===S.id)openTask(it.ti
 function kbComment(){const it=kbCur();if(!it)return;const foc=()=>setTimeout(()=>{const c=$('#dCmtIn');if(c)c.focus();},130);
   if(it.pid===S.id){openTask(it.tid);foc();}else{switchProject(it.pid);setTimeout(()=>{openTask(it.tid);foc();},150);}}
 function kbDone(){const it=kbCur();if(!it)return;const r=it.el.getBoundingClientRect();const cx=r.left+r.width/2,cy=r.top+r.height/2;
-  if(it.pid===S.id){const t=task(it.tid);if(!t||t.status==='done')return;t.status='done';t.statusTs=Date.now();if(t.estimate&&!t.spent)t.spent=t.estimate;
+  if(it.pid===S.id){const t=task(it.tid);if(!t||t.status==='done')return;t.status='done';t.statusTs=Date.now();histAdd(t,'статус → Готово');if(t.estimate&&!t.spent)t.spent=t.estimate;
     logAct('✅','«'+t.title+'» → Готово');const v=awardForDone(S,t);celebrate(cx,cy);save();render();toast(v?('+'+v+' 🪙'):'Готово ✅',v?'🪙':'✅');}
   else{const un=markDone(it.pid,it.tid);celebrate(cx,cy);render();toast('Готово','✅','Отменить',un);}}
 function kbAssign(){const it=kbCur();if(!it||it.pid!==S.id){toast('Назначение — на доске или ганте','👤');return;}
@@ -3570,7 +3566,7 @@ function renderDash(){
     <div class="panel-c" style="margin-top:16px"><h3>🕑 Лента активности <span class="c">${(S.activity||[]).length}</span></h3>
       <div class="actfeed">${(S.activity||[]).length?S.activity.slice(0,20).map(a=>`<div class="actrow"><span class="ai">${a.icon}</span><span class="atx"><b>${esc(a.who)}</b> ${esc(a.text)}</span><span class="att">${relTime(a.ts)}</span></div>`).join(''):'<div class="emptymini">Здесь появится история: кто что создал, передвинул, закрыл. Ничего не теряется — всё под контролем.</div>'}</div></div>`;
   $$('#dash .trow').forEach(el=>el.onclick=()=>openTask(el.dataset.task));
-  $$('#dash .qdone').forEach(b=>b.onclick=e=>{e.stopPropagation();const t=task(b.dataset.quickdone);if(t){t.status='done';t.statusTs=Date.now();if(t.estimate&&!t.spent)t.spent=t.estimate;logAct('✅','«'+t.title+'» → Готово');const _v=awardForDone(S,t);celebrateAt(e);save();render();toast(_v?('+'+_v+' 🪙 за «'+t.title+'»'):('Готово: «'+t.title+'» ✅'),_v?'🪙':'✅');}});
+  $$('#dash .qdone').forEach(b=>b.onclick=e=>{e.stopPropagation();const t=task(b.dataset.quickdone);if(t){t.status='done';t.statusTs=Date.now();histAdd(t,'статус → Готово');if(t.estimate&&!t.spent)t.spent=t.estimate;logAct('✅','«'+t.title+'» → Готово');const _v=awardForDone(S,t);celebrateAt(e);save();render();toast(_v?('+'+_v+' 🪙 за «'+t.title+'»'):('Готово: «'+t.title+'» ✅'),_v?'🪙':'✅');}});
   $$('#dash .prow[data-open]').forEach(el=>el.onclick=()=>switchProject(el.dataset.open));
   const ab=$('#aiBtn');if(ab)ab.onclick=aiReview;
   const bb=$('#briefBtn');if(bb)bb.onclick=openBrief;
@@ -3723,7 +3719,12 @@ function inboxItems(){
   const out=[];const seen=+(localStorage.getItem('cockpit_inbox_seen')||0);
   reg.list.filter(p=>!p.archived).forEach(p=>{
     const data=loadProj(p.id);if(!data)return;const me=myMemberIn(data);if(!me)return;
-    (data.tasks||[]).forEach(t=>{(t.comments||[]).forEach(c=>{
+    (data.tasks||[]).forEach(t=>{
+      if(t.assigneeId===me.id&&t.assignedTs&&t.assignedBy&&t.assignedBy!==me.name&&t.status!=='done'){
+        out.push({ts:t.assignedTs,icon:'👤',
+          text:`<b>${esc(t.assignedBy)}</b> назначил на тебя: «${esc(t.title)}»`,
+          sub:`${p.emoji||'📄'} ${esc(p.name)}`,pid:p.id,tid:t.id,unread:t.assignedTs>seen});}
+      (t.comments||[]).forEach(c=>{
       if(!c.ts||c.authorId===me.id)return;
       const mentioned=(c.text||'').toLowerCase().includes((me.name||'').toLowerCase());
       const onMine=t.assigneeId===me.id;
@@ -4174,7 +4175,7 @@ function myWeekTasks(){const out=[];reg.list.filter(p=>!p.archived).forEach(p=>{
   (data.tasks||[]).forEach(t=>{if(t.isMilestone)return;if(t.assigneeId===me.id&&t.status!=='done')out.push({t,pid:p.id,pname:p.name,emoji:p.emoji,parent:t.parentId?((data.tasks.find(x=>x.id===t.parentId)||{}).title||null):null});});});return out;}
 /* done с правом передумать: возвращает undo-замыкание для тоста «Отменить» */
 function markDone(pid,tid){let prev='todo',prevSpent,ttl='';
-  editTaskInProject(pid,tid,t=>{prev=t.status;prevSpent=t.spent;ttl=t.title;t.status='done';t.statusTs=Date.now();if(t.estimate&&!t.spent)t.spent=t.estimate;});
+  editTaskInProject(pid,tid,t=>{prev=t.status;prevSpent=t.spent;ttl=t.title;t.status='done';t.statusTs=Date.now();histAdd(t,'статус → Готово');if(t.estimate&&!t.spent)t.spent=t.estimate;});
   if(pid===S.id){logAct('✅','«'+ttl+'» → Готово');save();}
   else{const d=loadProj(pid);if(d){d.activity=d.activity||[];
     d.activity.unshift({ts:Date.now(),who:meName(),icon:'✅',text:'«'+ttl+'» → Готово'});
@@ -4394,7 +4395,7 @@ function renderGantt(){
   $$('#gantt .grow.sec').forEach(el=>el.querySelector('.tt').onclick=()=>{collapsed[el.dataset.sec]=!collapsed[el.dataset.sec];renderGantt();});
   $$('#gantt .tt[data-task]').forEach(el=>el.onclick=()=>openTask(el.dataset.task));
   $$('#gantt .bar[data-task]').forEach(el=>wireBar(el,min,DAY));
-  $$('#gantt .dot[data-cycle]').forEach(el=>el.onclick=e=>{e.stopPropagation();const t=task(el.dataset.cycle);const i=STATUSES.findIndex(s=>s.k===t.status);t.status=STATUSES[(i+1)%STATUSES.length].k;t.statusTs=Date.now();if(t.status==='done'&&t.estimate&&!t.spent)t.spent=t.estimate;logAct('🔀','«'+t.title+'» → '+stMap[t.status].n);const _v=awardForDone(S,t);save();renderGantt();toast(_v?('+'+_v+' 🪙 · «'+t.title+'» готово'):('«'+t.title+'» → '+stMap[t.status].n),_v?'🪙':'✓');});
+  $$('#gantt .dot[data-cycle]').forEach(el=>el.onclick=e=>{e.stopPropagation();const t=task(el.dataset.cycle);const i=STATUSES.findIndex(s=>s.k===t.status);t.status=STATUSES[(i+1)%STATUSES.length].k;t.statusTs=Date.now();histAdd(t,'статус → '+stMap[t.status].n);if(t.status==='done'&&t.estimate&&!t.spent)t.spent=t.estimate;logAct('🔀','«'+t.title+'» → '+stMap[t.status].n);const _v=awardForDone(S,t);save();renderGantt();toast(_v?('+'+_v+' 🪙 · «'+t.title+'» готово'):('«'+t.title+'» → '+stMap[t.status].n),_v?'🪙':'✓');});
   $$('#gantt .addrow').forEach(el=>el.onclick=()=>openInlineAdd(el));
   if(autoAddSec){const ar=document.querySelector('#gantt .addrow[data-addsec="'+autoAddSec+'"]');if(ar)openInlineAdd(ar);}
   if(ganttNeedsScroll&&tMs>=min&&tMs<=max){ganttNeedsScroll=false;
@@ -4484,9 +4485,9 @@ function renderBulkBar(){
     <button class="btn danger" id="bbDel">🗑</button>
     <button class="btn" id="bbClear">Готово</button>`;
   bar.classList.add('show');
-  $('#bbStatus').onchange=e=>{const v=e.target.value;if(!v)return;boardSel.forEach(id=>{const t=task(id);if(t){t.status=v;t.statusTs=Date.now();if(v==='done'){if(t.estimate&&!t.spent)t.spent=t.estimate;awardForDone(S,t);}}});logAct('🔀','массово → '+stMap[v].n+' ('+boardSel.size+')');save();renderBoard();toast('Статус обновлён у '+n,'🔀');};
-  $('#bbAssign').onchange=e=>{const v=e.target.value;if(!v)return;const aid=v==='__none'?null:v;boardSel.forEach(id=>{const t=task(id);if(t)t.assigneeId=aid;});logAct('👤','массово назначено ('+boardSel.size+')');save();renderBoard();toast('Исполнитель обновлён','👤');};
-  $('#bbDel').onclick=()=>{if(!confirm('Удалить выбранные ('+boardSel.size+')?'))return;const ids=new Set(boardSel);S.tasks=S.tasks.filter(t=>!ids.has(t.id));S.tasks.forEach(t=>t.deps=t.deps.filter(d=>!ids.has(d)));logAct('🗑','массово удалено '+ids.size);boardSel.clear();save();renderBoard();toast('Удалено','🗑');};
+  $('#bbStatus').onchange=e=>{const v=e.target.value;if(!v)return;boardSel.forEach(id=>{const t=task(id);if(t){t.status=v;t.statusTs=Date.now();histAdd(t,'статус → '+stMap[v].n);if(v==='done'){if(t.estimate&&!t.spent)t.spent=t.estimate;awardForDone(S,t);}}});logAct('🔀','массово → '+stMap[v].n+' ('+boardSel.size+')');save();renderBoard();toast('Статус обновлён у '+n,'🔀');};
+  $('#bbAssign').onchange=e=>{const v=e.target.value;if(!v)return;const aid=v==='__none'?null:v;boardSel.forEach(id=>{const t=task(id);if(t&&t.assigneeId!==aid){t.assigneeId=aid;t.assignedTs=Date.now();t.assignedBy=meName();histAdd(t,'исполнитель → '+(aid?(((member(aid)||{}).name)||'?'):'не назначено'));}});logAct('👤','массово назначено ('+boardSel.size+')');save();renderBoard();toast('Исполнитель обновлён','👤');};
+  $('#bbDel').onclick=()=>{if(!confirm('Удалить выбранные ('+boardSel.size+')?'))return;const ids=new Set(boardSel);trashPush(S,S.tasks.filter(t=>ids.has(t.id)));S.tasks=S.tasks.filter(t=>!ids.has(t.id));S.tasks.forEach(t=>t.deps=t.deps.filter(d=>!ids.has(d)));logAct('🗑','массово удалено '+ids.size);boardSel.clear();save();renderBoard();toast('Удалено','🗑');};
   $('#bbClear').onclick=()=>{boardSel.clear();boardSelOn=false;renderBoard();};
 }
 function renderBoardPeople(){renderBulkBar();
@@ -4549,10 +4550,10 @@ function renderBoard(){
         </div>`;
       card.onclick=()=>{if(boardSelOn)toggleBoardSel(t.id,card);else openTask(t.id);};
       const qd=card.querySelector('.cdone');if(qd)qd.onclick=ev=>{ev.stopPropagation();if(boardSelOn){toggleBoardSel(t.id,card);return;}
-        t.status='done';t.statusTs=Date.now();if(t.estimate&&!t.spent)t.spent=t.estimate;logAct('✅','«'+t.title+'» → Готово');
+        t.status='done';t.statusTs=Date.now();histAdd(t,'статус → Готово');if(t.estimate&&!t.spent)t.spent=t.estimate;logAct('✅','«'+t.title+'» → Готово');
         const _v=awardForDone(S,t);celebrateAt(ev);save();renderBoard();toast(_v?('+'+_v+' 🪙 за «'+t.title+'»'):('Готово: «'+t.title+'» ✅'),_v?'🪙':'✅');};
       card.querySelector('.cdel').onclick=ev=>{ev.stopPropagation();if(!confirm('Удалить задачу «'+t.title+'»?'))return;
-        const idx=S.tasks.indexOf(t);S.tasks=S.tasks.filter(x=>x.id!==t.id);S.tasks.forEach(x=>x.deps=x.deps.filter(d=>d!==t.id));
+        const idx=S.tasks.indexOf(t);trashPush(S,[t]);S.tasks=S.tasks.filter(x=>x.id!==t.id);S.tasks.forEach(x=>x.deps=x.deps.filter(d=>d!==t.id));
         logAct('🗑','удалил «'+t.title+'»');save();renderBoard();
         toast('Удалено: «'+t.title+'»','🗑','Отменить',()=>{S.tasks.splice(idx,0,t);save();render();});};
       card.ondragstart=()=>{dragCard=t.id;card.classList.add('dragging');};
@@ -4565,7 +4566,7 @@ function renderBoard(){
     col.ondragleave=()=>col.classList.remove('drop');
     col.ondrop=e=>{e.preventDefault();col.classList.remove('drop');
       if(!dragCard)return;const t=task(dragCard);if(!t)return;
-      const movedCol=t.status!==st.k;t.status=st.k;if(movedCol){t.statusTs=Date.now();window._justMoved=t.id;}
+      const movedCol=t.status!==st.k;t.status=st.k;if(movedCol){t.statusTs=Date.now();window._justMoved=t.id;histAdd(t,'статус → '+st.n);}
       const bodyEl2=col.querySelector('.colb');
       const cards=[...bodyEl2.querySelectorAll('.card')].filter(c=>c.dataset.id!==dragCard);
       let idx=cards.length;for(let i=0;i<cards.length;i++){const r=cards[i].getBoundingClientRect();if(e.clientY<r.top+r.height/2){idx=i;break;}}
@@ -4875,7 +4876,6 @@ function openTask(id){
   $('#dDesc').value=t.description;
   $('#dStart').value=t.start;$('#dEnd').value=t.end;renderSnoozeRow();renderFiles();
   $('#dMile').checked=t.isMilestone;
-  $('#dRepeat').value=t.repeat||'';
   {const a=$('#dApprove');if(a){a.classList.toggle('on',!!t.approval);}}
   renderApproveBar();
   {const pg=$('#dPing');if(pg){const m=member(t.assigneeId);
@@ -4883,6 +4883,16 @@ function openTask(id){
     pg.style.display=can?'':'none';
     pg.onclick=()=>{tgNotify('comment',t,'🔔 '+meName()+' напоминает про эту задачу — глянь, когда сможешь');
       toast('Пингнул '+((m&&m.name)||'')+' в Telegram','🔔');};}}
+  {const rp=$('#dRepeat');if(rp){const opts=[['','нет'],['daily','каждый день'],['weekly','каждую неделю'],['monthly','каждый месяц']];
+    rp.innerHTML=opts.map(([v,l])=>`<button class="chip ${((t.repeat||'')===v)?'on':''}" data-rep="${v}">${l}</button>`).join('');
+    rp.querySelectorAll('[data-rep]').forEach(b=>b.onclick=()=>{const v=b.dataset.rep;
+      if(v)t.repeat=v;else delete t.repeat;histAdd(t,'повтор: '+(v||'выключен'));save();openTask(t.id);
+      toast(v?'Повтор включён — после «Готово» задача пересоздастся':'Повтор выключен','🔁');});}}
+  {const hb=$('#dHistBox'),hl=$('#dHistList');
+   if(hb&&hl){const h=(t.hist||[]).slice().reverse();
+    hb.style.display=h.length?'':'none';
+    const cnt=$('#dHistCnt');if(cnt)cnt.textContent=h.length?('· '+h.length):'';
+    hl.innerHTML=h.map(x=>`<div>${new Date(x.ts).toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})} ${new Date(x.ts).toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'})} · <b style="color:var(--mut)">${esc(x.who)}</b> — ${esc(x.text)}</div>`).join('');}}
   {const hw=$('#dHillWrap'),hs=$('#dHill');
    if(hw&&hs){const show=t.status==='progress'||t.hill;hw.style.display=show?'':'none';
     if(show){const opts=[['','—'],['up','🧗 разбираемся'],['down','🏂 катим']];
@@ -4906,6 +4916,7 @@ function openTask(id){
       logAct('🪙',meName()+' −'+pay+' · перекинул «'+t.title+'» на '+((member(newAs)||{}).name||'?'));
       toast(pay<cost?('«'+t.title+'» теперь у '+((member(newAs)||{}).name||'')+' · баллы на нуле — закрой пару задач 💪'):('−'+pay+' 🪙 · «'+t.title+'» теперь у '+((member(newAs)||{}).name||'')),'🪙');
     }else{logAct('👤','«'+t.title+'» → '+(member(newAs)?member(newAs).name:'без исполнителя'));}
+    if(newAs!==t.assigneeId){t.assignedTs=Date.now();t.assignedBy=meName();histAdd(t,'исполнитель → '+(newAs?(((member(newAs)||{}).name)||'?'):'не назначено'));}
     t.assigneeId=newAs;save();if(newAs&&newAs!==myId())tgNotify('assign',t);openTask(id);render();});
   $('#dPrio').innerHTML=PRIOS.map(p=>`<button class="chip ${t.priority===p.k?'on':''}" data-pr="${p.k}" style="${t.priority===p.k?`background:${p.c}`:''}">${p.n}</button>`).join('');
   $$('#dPrio .chip').forEach(c=>c.onclick=()=>{t.priority=c.dataset.pr;save();openTask(id);render();});
@@ -5031,12 +5042,11 @@ function closeReasonSheet(commit){
 {const ri=$('#rsIn');if(ri)ri.onkeydown=e=>{if(e.key==='Enter')closeReasonSheet(true);if(e.key==='Escape')closeReasonSheet(false);};}
 {const rs=$('#rsScrim');if(rs)rs.onclick=e=>{if(e.target===rs)closeReasonSheet(false);};}
 $('#dMile').onchange=e=>{if(curTask){curTask.isMilestone=e.target.checked;if(e.target.checked)curTask.end=curTask.start;save();}};
-$('#dRepeat').onchange=e=>{if(curTask){curTask.repeat=e.target.value||undefined;save();render();}};
 $('#dEst').oninput=e=>{if(curTask)curTask.estimate=parseFloat(e.target.value)||0;};
 $('#dEst').onblur=()=>{if(curTask)save();};
 $('#dSpent').oninput=e=>{if(curTask)curTask.spent=parseFloat(e.target.value)||0;};
 $('#dSpent').onblur=()=>{if(curTask)save();};
-$('#dStatus').onchange=e=>{if(curTask){curTask.status=e.target.value;curTask.statusTs=Date.now();if(curTask.status==='done'&&curTask.estimate&&!curTask.spent)curTask.spent=curTask.estimate;$('#dDot').style.background=stMap[curTask.status].c;logAct('🔀','«'+curTask.title+'» → '+stMap[curTask.status].n);const _v=awardForDone(S,curTask);save();render();if(_v)toast('+'+_v+' 🪙 за «'+curTask.title+'»','🪙');}};
+$('#dStatus').onchange=e=>{if(curTask){curTask.status=e.target.value;curTask.statusTs=Date.now();histAdd(curTask,'статус → '+stMap[curTask.status].n);if(curTask.status==='done'&&curTask.estimate&&!curTask.spent)curTask.spent=curTask.estimate;$('#dDot').style.background=stMap[curTask.status].c;logAct('🔀','«'+curTask.title+'» → '+stMap[curTask.status].n);const _v=awardForDone(S,curTask);save();render();if(_v)toast('+'+_v+' 🪙 за «'+curTask.title+'»','🪙');}};
 $('#dCmtBtn').onclick=addComment;
 $('#dCmtIn').onkeydown=e=>{if(e.key==='Enter'&&!$('#dMention').classList.contains('show'))addComment();
   if(e.key==='Escape')$('#dMention').classList.remove('show');};
@@ -5095,6 +5105,23 @@ $('#dCash').onclick=()=>{if(!curTask)return;curTask.cash=!curTask.cash;
   $('#dCash').classList.toggle('on',!!curTask.cash);save();
   toast(curTask.cash?'💰 Двигает деньги — подниму в приоритетах':'Метка денег снята','💰');};
 // быстрые сроки одним тапом
+/* история изменений задачи — «кто что менял», доверие как в Asana */
+/* корзина задач: 30 дней на «ой» — доверие как в Basecamp */
+function trashPush(data,tasks){data.trash=data.trash||[];data.trash.unshift({ts:Date.now(),who:meName(),tasks:JSON.parse(JSON.stringify(tasks))});if(data.trash.length>40)data.trash=data.trash.slice(0,40);}
+function openTrashBin(){
+  const tr=(S.trash||[]);
+  $('#lpModal').innerHTML=`<div class="lp-t">${icon('trash',15)} Корзина <span style="color:var(--mut2);font-weight:500">· хранится 30 дней</span></div>
+    ${tr.length?tr.map((e,i)=>`<div class="frow" style="cursor:default"><span class="fname">${e.tasks.map(x=>esc(x.title)).join(', ').slice(0,80)}</span>
+      <span class="fsz">${relTime(e.ts)} · ${esc(e.who)}</span><button class="btn" data-restore="${i}" style="padding:5px 12px">Вернуть</button></div>`).join('')
+      :'<div class="emptymini">Пусто. Удалённые задачи будут ждать здесь 30 дней.</div>'}`;
+  $('#lpScrim').classList.add('show');
+  $$('#lpModal [data-restore]').forEach(b=>b.onclick=()=>{
+    const e=S.trash[+b.dataset.restore];if(!e)return;
+    S.trash.splice(+b.dataset.restore,1);S.tasks.push(...e.tasks);
+    logAct('↩️','вернул из корзины: '+e.tasks.map(x=>x.title).join(', ').slice(0,60));
+    save();render();openTrashBin();toast('Возвращено: '+e.tasks.length,'↩️');});
+}
+function histAdd(t,text){if(!t)return;t.hist=t.hist||[];t.hist.push({ts:Date.now(),who:meName(),text:String(text).slice(0,120)});if(t.hist.length>30)t.hist=t.hist.slice(-30);}
 /* 📎 файлы к задачам: приватный Storage, путь workspace/project/task; доступ по RLS is_member */
 let _wsIdCache=null;
 async function myWsCached(){if(_wsIdCache)return _wsIdCache;return _wsIdCache=await myWorkspaceId();}
@@ -5148,7 +5175,7 @@ function renderSnoozeRow(){
     const v=b.dataset.snz;
     if(v==='off'){delete t.snooze;toast('Задача снова в «Сейчас»','☀️');}
     else{let d;if(v==='mon'){const x=parseD(todayISO());const dow=(new Date(x).getDay()+6)%7;d=fmtD(x+(7-dow)*dayMs);}else d=fmtD(parseD(todayISO())+(+v)*dayMs);
-      t.snooze=d;toast('Отложена до '+d.slice(8)+'.'+d.slice(5,7)+' — срок не тронут','💤');}
+      t.snooze=d;histAdd(t,'отложена до '+d.slice(8)+'.'+d.slice(5,7));toast('Отложена до '+d.slice(8)+'.'+d.slice(5,7)+' — срок не тронут','💤');}
     save();renderSnoozeRow();});
 }
 $$('#dQDates button').forEach(b=>b.onclick=()=>{if(!curTask)return;
@@ -5165,6 +5192,7 @@ $('#dDelete').onclick=()=>{if(!curTask)return;const t=curTask;const idx=S.tasks.
   const desc=descendants(t.id);
   if(desc.length&&!confirm('Удалить «'+t.title+'» вместе с '+desc.length+' подзадач(ами)?'))return;
   const ids=new Set([t.id,...desc.map(x=>x.id)]);const removed=[t,...desc];
+  trashPush(S,removed);
   S.tasks=S.tasks.filter(x=>!ids.has(x.id));S.tasks.forEach(x=>x.deps=x.deps.filter(d=>!ids.has(d)));logAct('🗑','удалил «'+t.title+'»'+(desc.length?' + '+desc.length+' подзадач':''));closeDrawer();
   toast('Удалено: «'+t.title+'»'+(desc.length?' + '+desc.length:''),'🗑','Отменить',()=>{S.tasks.splice(idx,0,...removed);logAct('↩️','вернул «'+t.title+'»');save();render();});};
 $('#dDup').onclick=()=>{if(!curTask)return;const t=curTask;
@@ -5796,6 +5824,7 @@ projBtn.onclick=e=>{e.stopPropagation();
       +`<button data-act="report">${icon('doc',14)} Отчёт для клиента</button>`
       +(isTeam?`<button data-act="pemoji">😀 Сменить эмодзи</button>`
       +`<button data-act="renp">${icon('edit',14)} Переименовать</button>`
+      +`<button data-act="trashbin">${icon('trash',14)} Корзина${S.trash&&S.trash.length?' · '+S.trash.length:''}</button>`
       +`<button data-act="archive">${cur&&cur.archived?icon('sync',14)+' Вернуть из архива':icon('archive',14)+' В архив'}</button>`
       +`${active.length>1?'<button data-act="delp" class="dng">'+icon('trash',14)+' Удалить проект</button>':''}`:'')
     +`</div>`
@@ -5816,6 +5845,7 @@ projMenu.onclick=e=>{const b=e.target.closest('button');if(!b)return;
   else if(b.dataset.act==='renp'){const n=prompt('Название проекта:',S.projectName);if(n){S.projectName=n.trim();save();render();}}
   else if(b.dataset.act==='pemoji'){const cur=(projMeta(S.id)||{}).emoji||'📄';let em=(prompt('Эмодзи проекта:',cur)||'').trim();
     if(em){em=[...em][0];const e2=projMeta(S.id);if(e2)e2.emoji=em;S.emoji=em;saveReg();save();render();toast('Эмодзи обновлён: '+em,em);}}
+  else if(b.dataset.act==='trashbin')openTrashBin();
   else if(b.dataset.act==='archive')archiveProject(S.id,!(reg.list.find(p=>p.id===S.id)||{}).archived);
   else if(b.dataset.act==='delp')deleteProject(S.id);};
 
