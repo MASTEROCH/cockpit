@@ -465,9 +465,37 @@ async function sendSettings(chatId: number, link: Link) {
     [row("morning", "☀️ Утренний бриф", "on"),
      row("evening", "🌇 Вечерний разбор", "on"),
      row("friday", "🏁 Пятничный итог недели", "on"),
+     row("graveyard", "⚰️ Кладбище амбиций (раз в месяц)", "on"),
      row("intake", "📥 Новые заявки команды", owner ? "on" : "off"),
      row("pulse", "🤖 AI-пульс Вандо", "on"),
      [{ text: `🌍 Часовой пояс — UTC+${tz} (тап: UTC+${tzNext})`, callback_data: `set:tz:${tzNext}` }]]);
+}
+// чек-ин: получатель — владелец воркспейса; если это ты сам — первый партнёр с привязанным ботом
+async function checkinRecipient(link: Link): Promise<{ chat_id: number; name: string } | null> {
+  const ws = await wsByEmail(link.email);
+  const { data: w } = await sb.from("workspaces").select("created_by").eq("id", ws).maybeSingle();
+  const ownerEmail = (w?.created_by ?? "").toLowerCase();
+  const { data: team } = await sb.from("team").select("email").eq("workspace_id", ws);
+  const emails = new Set((team ?? []).map((t) => String(t.email ?? "").toLowerCase()));
+  const { data: links } = await sb.from("tg_links").select("chat_id,email,name").eq("revoked", false);
+  const rows = (links ?? []).filter((r) => r.chat_id !== link.chat_id && emails.has(String(r.email ?? "").toLowerCase()));
+  if (!rows.length) return null;
+  const owner = rows.find((r) => (r.email ?? "").toLowerCase() === ownerEmail);
+  const r = owner ?? rows[0];
+  return { chat_id: r.chat_id as number, name: String(r.name ?? r.email ?? "") };
+}
+// 🔌 API-ключ воркспейса: выдаёт только владелец, показывается один раз, ротация гасит старый
+async function makeApiKey(link: Link): Promise<string> {
+  const ws = await wsByEmail(link.email);
+  const { data: w } = await sb.from("workspaces").select("created_by").eq("id", ws).maybeSingle();
+  if ((w?.created_by ?? "").toLowerCase() !== link.email.toLowerCase()) return "🔌 API-ключ выдаётся только владельцу воркспейса";
+  const raw = new Uint8Array(24); crypto.getRandomValues(raw);
+  const key = "wk_" + [...raw].map((b) => b.toString(16).padStart(2, "0")).join("");
+  const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(key));
+  const hash = [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  await sb.from("api_keys").delete().eq("workspace_id", ws);
+  await sb.from("api_keys").insert({ workspace_id: ws, key_hash: hash, label: "default" });
+  return `🔌 <b>API-ключ WANDO</b> — показываю один раз, старый (если был) отозван:\n<code>${key}</code>\n\nБаза: <code>https://tonmsmxzmycimybzywqp.supabase.co/functions/v1/api</code>\n· GET ?op=projects — проекты\n· GET ?op=tasks&amp;project=… — задачи\n· POST {"op":"create","project":"…","title":"…"}\n· POST {"op":"status","task":"#ABC12","status":"done"}\nЗаголовок: <code>Authorization: Bearer &lt;ключ&gt;</code>`;
 }
 async function morningBrief() {
   const { data: links } = await sb.from("tg_links").select("*").eq("revoked", false);
@@ -478,7 +506,10 @@ async function morningBrief() {
 // бриф + отдельные «ждёшь от X» с кнопкой пинга (бот — плохой полицейский, не ты)
 async function sendBrief(link: Link, force = false) {
   if (!force && pref(link, "morning", "on") !== "on") return;
-  await sayInline(link.chat_id, await briefFor(link), [[{ text: "📊 Подробнее по проектам", callback_data: "more:brief:x" }]]);
+  await sayInline(link.chat_id, await briefFor(link), [
+    [{ text: "📊 Подробнее по проектам", callback_data: "more:brief:x" }],
+    [{ text: "✅ Всё по плану", callback_data: "checkin:ok:x" }, { text: "🔴 Есть затык", callback_data: "checkin:stuck:x" }],
+  ]);
   const waits = await myWaits(link.email);
   if (waits.length) {
     const w = waits[0];
@@ -594,6 +625,87 @@ async function eveningReview() {
       }
     } catch { /* следующий */ }
   }
+}
+
+// ---------- Кладбище амбиций: раз в месяц список гниющих задач с кнопками ----------
+// Список остаётся честным: то, что не трогали 30+ дней, либо хоронится в корзину, либо получает срок.
+async function graveyardReview() {
+  const { data: links } = await sb.from("tg_links").select("*").eq("revoked", false);
+  for (const l of (links ?? []) as Link[]) {
+    try {
+      if (pref(l, "graveyard", "on") !== "on") continue;
+      const cutoff = Date.now() - 30 * 86400_000;
+      const { rows } = await myProjects(l.email);
+      const old: Array<{ pid: string; pname: string; pemoji: string; tid: string; title: string }> = [];
+      for (const p of rows) {
+        const members = (p.data?.members ?? []) as Record<string, any>[];
+        const me = members.find((m) => (m.email ?? "").toLowerCase() === l.email.toLowerCase());
+        for (const t of taskList(p)) {
+          if (t.isMilestone || (t.status !== "backlog" && t.status !== "todo")) continue;
+          if ((t.spent ?? 0) > 0) continue;
+          if (me && t.assigneeId && t.assigneeId !== me.id) continue;
+          const ts = Math.max(t.statusTs ?? 0, t.createdTs ?? 0);
+          if (!ts || ts > cutoff) continue;
+          old.push({ pid: p.id, pname: p.name, pemoji: p.emoji ?? "📄", tid: t.id, title: t.title });
+          if (old.length >= 5) break;
+        }
+        if (old.length >= 5) break;
+      }
+      if (!old.length) continue;
+      let text = `⚰️ <b>Кладбище амбиций</b> · раз в месяц
+Эти задачи не трогали 30+ дней. Честный вопрос: похоронить или воскресить?
+
+`;
+      text += old.map((x, i) => `${i + 1}. «${esc(x.title)}» <i>(${x.pemoji} ${esc(x.pname)})</i>`).join("\n");
+      text += `
+
+<i>Похороненное лежит в корзине проекта 30 дней — вернуть можно всегда.</i>`;
+      const kb = old.map((x, i) => [
+        { text: `⚰️ Похоронить ${i + 1}`, callback_data: `gdel:${x.pid}:${x.tid}` },
+        { text: `🔄 Воскресить ${i + 1}`, callback_data: `glive:${x.pid}:${x.tid}` },
+      ]);
+      await sayInline(l.chat_id, text, kb);
+    } catch { /* следующий */ }
+  }
+}
+// действия кладбища: работают по одной задаче, свежие данные читаем прямо перед правкой
+async function graveAct(link: Link, kind: "del" | "live", pid: string, tid: string): Promise<string> {
+  const { data: p } = await sb.from("projects").select("*").eq("id", pid).maybeSingle();
+  if (!p?.data) return "Проект не найден";
+  const tasks = (p.data.tasks ?? []) as Record<string, any>[];
+  const t = tasks.find((x) => x.id === tid);
+  if (!t) return "Задача уже удалена";
+  const who = (link.name ?? link.email.split("@")[0]) + " · TG";
+  if (kind === "del") {
+    const ids = new Set([tid]);
+    let grew = true; // подзадачи уходят вместе с родителем — как в вебе
+    while (grew) { grew = false; for (const x of tasks) if (x.parentId && ids.has(x.parentId) && !ids.has(x.id)) { ids.add(x.id); grew = true; } }
+    const bunch = tasks.filter((x) => ids.has(x.id));
+    p.data.trash = p.data.trash ?? [];
+    p.data.trash.unshift({ ts: Date.now(), who, tasks: JSON.parse(JSON.stringify(bunch)) });
+    if (p.data.trash.length > 40) p.data.trash = p.data.trash.slice(0, 40);
+    p.data.tasks = tasks.filter((x) => !ids.has(x.id));
+    for (const x of p.data.tasks) if (Array.isArray(x.deps)) x.deps = x.deps.filter((d: string) => !ids.has(d));
+    p.data.activity = p.data.activity ?? [];
+    p.data.activity.unshift({ ts: Date.now(), who, icon: "⚰️", text: `«${t.title}» — в корзину (кладбище амбиций)` });
+  } else {
+    const nd = todayISO(2, tzOf(link));
+    if (!t.end || t.end < nd) t.end = nd;
+    if (t.start && t.start > t.end) t.start = t.end;
+    if (t.status === "backlog") t.status = "todo";
+    t.statusTs = Date.now();
+    t.hist = t.hist ?? [];
+    t.hist.push({ ts: Date.now(), who, text: "воскрешена с кладбища — срок " + t.end.slice(8) + "." + t.end.slice(5, 7) });
+    if (t.hist.length > 30) t.hist = t.hist.slice(-30);
+    p.data.activity = p.data.activity ?? [];
+    p.data.activity.unshift({ ts: Date.now(), who, icon: "🔄", text: `«${t.title}» воскрешена — срок ${t.end}` });
+  }
+  if (p.data.activity && p.data.activity.length > 150) p.data.activity.length = 150;
+  p.data.updatedAt = Date.now();
+  await sb.from("projects").update({ data: p.data, updated_at: new Date().toISOString(), updated_by: null }).eq("id", pid);
+  return kind === "del"
+    ? `⚰️ «${esc(t.title)}» — в корзине проекта 30 дней. Список стал честнее.`
+    : `🔄 «${esc(t.title)}» воскрешена — срок ${t.end.slice(8)}.${t.end.slice(5, 7)}. Теперь не подведи её ещё раз 🙂`;
 }
 
 // ---------- Пятничный итог: статус-митинг, сжатый до одного сообщения ----------
@@ -748,6 +860,7 @@ Deno.serve(async (req) => {
       else if (ev.kind === "morning_brief") await morningBrief();
       else if (ev.kind === "evening_review") await eveningReview();
       else if (ev.kind === "friday_digest") await fridayDigest();
+      else if (ev.kind === "graveyard") await graveyardReview();
       else if (ev.kind === "ai_pulse") await aiPulse();
     } catch { /* не роняем */ }
     return new Response("ok");
@@ -851,6 +964,21 @@ Deno.serve(async (req) => {
         await TG("answerCallbackQuery", { callback_query_id: cb.id });
         await say(chatId, await statusSummary(link.email, false, tzOf(link)));
         handled = true;
+      } else if (act === "checkin") { // однострочный статус из утреннего брифа
+        const rc = await checkinRecipient(link);
+        const meName = link.name ?? link.email.split("@")[0];
+        if (id === "ok") {
+          if (rc) await say(rc.chat_id, `✅ <b>${esc(meName)}</b>: всё по плану`);
+          result = rc ? "Принял 👍 Команда в курсе" : "Принял 👍";
+        } else {
+          if (!rc) result = "Пока некому передать — партнёры ещё не привязали бота";
+          else {
+            await say(chatId, `🔴 Что мешает? <a href="https://${SITE}/?su=${rc.chat_id}">Ответь</a> на ЭТО сообщение одной фразой — передам ${esc(rc.name.split(" ")[0])}.`);
+            result = "Жду одну фразу 🔴";
+          }
+        }
+      } else if (act === "gdel" || act === "glive") { // кладбище амбиций
+        result = await graveAct(link, act === "gdel" ? "del" : "live", id, arg);
       } else if (act === "set") { // ⚙️ переключение личных уведомлений
         await setPref(chatId, id, arg);
         await TG("answerCallbackQuery", { callback_query_id: cb.id, text: "Сохранено ✓" });
@@ -974,6 +1102,7 @@ Deno.serve(async (req) => {
         return new Response("ok");
       }
       if (/^\/settings|^⚙|^настрой/i.test(text)) { await sendSettings(chatId, link); }
+      else if (/^\/apikey|^api[ -]?ключ/i.test(text)) { await say(chatId, await makeApiKey(link)); }
       else if (/^\/standup|^стендап|^🧍/i.test(text)) { await say(chatId, await askStandup(link, chatId)); }
       else if (/^\/brief|^☀️/.test(text)) { await sendBrief(link, true); }
       else if (/^🔥|^\/fire|что горит|^аврал/i.test(text)) { await say(chatId, await statusSummary(link.email, true, tzOf(link))); }

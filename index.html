@@ -783,6 +783,8 @@ body.light .brand .logo{background:linear-gradient(157deg,#1b1d27,#08090d 72%)}
 .wcol:hover .wadd,.wcol.today .wadd{opacity:.9}
 .wadd:hover{border-color:var(--acc2);color:var(--acc2);opacity:1}
 .stuck{color:var(--warn);font-size:10.5px;font-weight:800;white-space:nowrap}
+.wiphint{margin:0 10px 8px;padding:7px 10px;border:1px solid var(--line);border-left:3px solid var(--warn);border-radius:9px;font-size:11.5px;color:var(--warn);cursor:pointer;line-height:1.35;background:var(--card)}
+.wiphint:hover{border-color:var(--warn)}
 .hdot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-left:8px;vertical-align:1px;cursor:pointer;background:var(--bg2);border:1.5px dashed var(--line2)}
 .hdot:not(.unset){border:none}
 .hnote{font-size:11.5px;color:var(--mut2);margin-left:7px;font-weight:500}
@@ -1953,6 +1955,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
   <div class="df">
     <button class="btn danger" id="dDelete">Удалить</button>
     <button class="btn" id="dDup" title="Создать копию задачи">⧉ Дублировать</button>
+    <button class="btn" id="dGuest" title="Ссылка для человека вне команды — увидит и сможет комментировать только ЭТУ задачу">🌐 Гость</button>
     <div class="spacer"></div>
     <button class="btn" id="dClose">Закрыть</button>
   </div>
@@ -2576,6 +2579,47 @@ function aiPayload(){const nameOf=id=>{const m=member(id);return m?m.name:null;}
   return {today:todayISO(),project:S.projectName,
     members:S.members.map(m=>({name:m.name,capacity:m.capacity,load:S.tasks.filter(t=>t.assigneeId===m.id&&t.status!=='done').reduce((a,t)=>a+(t.estimate||0),0)})),
     tasks:S.tasks.map(t=>({title:t.title,status:stMap[t.status].n,assignee:nameOf(t.assigneeId),start:t.start,end:t.end,estimate:t.estimate||0,spent:t.spent||0,priority:prMap[t.priority].n,deps:(t.deps||[]).map(d=>{const x=task(d);return x?x.title:null;}).filter(Boolean),blocked:isBlocked(t),overdue:isOverdue(t),milestone:!!t.isMilestone}))};}
+/* ---- гость-в-задачу: просмотр одной задачи по ?guest=<token>, поверх всего ---- */
+window._guestTok=(()=>{try{return new URLSearchParams(location.search).get('guest');}catch(e){return null;}})();
+async function renderGuestView(){
+  const tok=window._guestTok;if(!tok)return;
+  let ov=document.getElementById('guestView');
+  if(!ov){ov=document.createElement('div');ov.id='guestView';
+    ov.style.cssText='position:fixed;inset:0;z-index:99999;background:var(--bg);overflow:auto;padding:30px 18px';
+    document.body.appendChild(ov);}
+  ov.innerHTML='<div class="emptymini" style="margin-top:60px">Открываю задачу…</div>';
+  try{
+    const r=await fetch(CFG.url+'/functions/v1/task-share?t='+encodeURIComponent(tok));
+    const res=await r.json();if(!r.ok||!res.task)throw 0;
+    const t=res.task;
+    ov.innerHTML=`<div style="max-width:640px;margin:0 auto">
+      <div style="font-size:12px;color:var(--mut2);margin-bottom:16px">${esc(t.emoji||'')} ${esc(t.project||'')} · гостевой доступ к одной задаче</div>
+      <h1 style="font-size:23px;line-height:1.3;margin:0 0 12px">${esc(t.title||'')}</h1>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+        <span class="ichip">${esc(t.statusName||'')}</span>
+        ${t.assignee?`<span class="ichip">👤 ${esc(t.assignee)}</span>`:''}
+        ${t.end?`<span class="ichip">📅 до ${esc(String(t.end).slice(8))}.${esc(String(t.end).slice(5,7))}</span>`:''}</div>
+      ${t.description?`<div style="font-size:14px;line-height:1.6;white-space:pre-wrap;margin-bottom:16px;color:var(--fg)">${esc(t.description)}</div>`:''}
+      ${t.subtasks&&t.subtasks.length?`<div style="margin-bottom:16px">${t.subtasks.map(x=>`<div style="font-size:13.5px;padding:3px 0;color:${x.done?'var(--mut2)':'var(--fg)'}">${x.done?'✅':'⬜️'} ${esc(x.text||'')}</div>`).join('')}</div>`:''}
+      <div style="font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--mut2);margin:20px 0 10px">Комментарии</div>
+      <div>${(t.comments||[]).map(c=>`<div style="margin-bottom:11px"><b style="font-size:12.5px">${esc(c.author||'')}</b><div style="font-size:13.5px;line-height:1.5;white-space:pre-wrap">${esc(c.text||'')}</div></div>`).join('')||'<div class="emptymini">Пока пусто — напиши первым</div>'}</div>
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+        <input class="inp" id="gvName" placeholder="Твоё имя" style="flex:0 0 132px" maxlength="40">
+        <input class="inp" id="gvText" placeholder="Комментарий…" style="flex:1;min-width:170px" maxlength="1000">
+        <button class="btn primary" id="gvSend">↑</button></div>
+      <div style="font-size:11.5px;color:var(--mut2);margin-top:26px">Сделано в <b>WANDO</b> — таск-трекере для фаундеров · cock-pit.com</div>
+    </div>`;
+    try{const nm=localStorage.getItem('wando_guest_name');if(nm)document.getElementById('gvName').value=nm;}catch(e){}
+    document.getElementById('gvSend').onclick=async()=>{
+      const nm=(document.getElementById('gvName').value||'').trim(),tx=(document.getElementById('gvText').value||'').trim();
+      if(!tx)return;const bb=document.getElementById('gvSend');bb.disabled=true;
+      try{localStorage.setItem('wando_guest_name',nm);}catch(e){}
+      try{const rr=await fetch(CFG.url+'/functions/v1/task-share',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({op:'comment',t:tok,name:nm,text:tx})});
+        if(!rr.ok)throw 0;renderGuestView();}
+      catch(e){bb.disabled=false;toast&&toast('Не отправилось — попробуй ещё раз','⚠️');}};
+  }catch(e){ov.innerHTML='<div class="empty"><span class="eico">🔗</span><div class="etitle">Ссылка не действует</div><div class="esub">Попроси новую у того, кто её прислал</div></div>';}
+}
+if(window._guestTok)setTimeout(renderGuestView,60);
 async function aiToken(){try{const {data}=await sb.auth.getSession();return data&&data.session&&data.session.access_token;}catch(e){return null;}}
 /* пуш члену команды в TG (назначение/коммент) — fire-and-forget, молча */
 async function tgNotify(kind,t,extra){try{
@@ -3086,9 +3130,10 @@ function closePlan(){$('#planScrim').classList.remove('show');}
 $('#planScrim').onclick=e=>{if(e.target===$('#planScrim'))closePlan();};
 function createPlanTasks(tasks){
   const byName=n=>{if(!n)return null;n=String(n).toLowerCase();const m=S.members.find(x=>x.name.toLowerCase()===n)||S.members.find(x=>x.name.toLowerCase().startsWith(n)||n.startsWith(x.name.toLowerCase()));return m?m.id:null;};
-  const pm={low:'low',med:'med',medium:'med',high:'high',urgent:'urgent'};let n=0;
+  const pm={low:'low',med:'med',medium:'med',high:'high',urgent:'urgent'};let n=0;createPlanTasks._later=0;
   tasks.slice(0,16).forEach(t=>{if(!t||!t.title)return;const nt=newTask(String(t.title).slice(0,140));
-    nt.status='todo';if(t.estimate)nt.estimate=+t.estimate||0;nt.priority=pm[(t.priority||'med')]||'med';
+    nt.status=t.impact==='later'?'backlog':'todo';if(t.impact==='later')createPlanTasks._later++;
+    if(t.estimate)nt.estimate=+t.estimate||0;nt.priority=pm[(t.priority||'med')]||'med';
     const aid=byName(t.assignee);if(aid)nt.assigneeId=aid;
     if(t.start&&/^\d{4}-\d\d-\d\d$/.test(t.start))nt.start=t.start;
     if(t.end&&/^\d{4}-\d\d-\d\d$/.test(t.end))nt.end=t.end;else nt.end=nt.start;
@@ -3114,9 +3159,9 @@ async function runAiPlan(btn){
     const r=await fetch(CFG.url+'/functions/v1/ai-review',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+token},body:JSON.stringify({mode:'plan',goal:g,project:aiPayload()})});
     const res=await r.json();
     if(r.ok&&Array.isArray(res.tasks)&&res.tasks.length){
-      const n=createPlanTasks(res.tasks);
+      const n=createPlanTasks(res.tasks);const lt=createPlanTasks._later||0;
       closePlan();setView('gantt');
-      toast('Вандо создал '+n+' задач','✓','Отменить',()=>undo());
+      toast('Вандо создал '+n+' задач'+(lt?' · '+lt+' не критичны — в бэклог':''),'✓','Отменить',()=>undo());
       return;
     }
     showPlanPrompt(g,'<b>Авто-генерация недоступна</b> (обнови Edge-функцию). Пока — скопируй промпт своему Claude:');
@@ -4551,6 +4596,15 @@ function renderBoard(){
       return relScore(b)-relScore(a);});
     col.innerHTML=`<div class="colh"><span class="pip" style="background:${st.c}"></span>${st.n}<span class="cnt">${items.length}</span></div>
       <div class="colb"></div><button class="addcard">＋ задача</button>`;
+    /* WIP-лимит по-человечески: >3 «В работе» на человека — зеркало, не запрет */
+    if(st.k==='progress'&&S.members.length>1){
+      const over=S.members.map(m=>({m,n:S.tasks.filter(t=>t.status==='progress'&&!t.isMilestone&&t.assigneeId===m.id).length}))
+        .filter(x=>x.n>3).sort((a,b)=>b.n-a.n)[0];
+      if(over){const w=document.createElement('div');w.className='wiphint';
+        w.textContent='🥵 '+over.m.name+' тянет '+over.n+' сразу — так не делается ни одна';
+        w.title='Больше 3 задач «В работе» на человека — всё стоит. Жми: только его задачи';
+        w.onclick=()=>{filter.assignee=over.m.id;render();toast('Доска: только задачи '+over.m.name+'. Снять — «Все люди»','👤');};
+        col.insertBefore(w,col.querySelector('.colb'));}}
     const bodyEl=col.querySelector('.colb');
     items.forEach(t=>{
       const card=document.createElement('div');card.className='card'+(boardSel.has(t.id)?' selected':'');card.draggable=!boardSelOn;card.dataset.id=t.id;
@@ -5074,6 +5128,18 @@ $('#dEst').onblur=()=>{if(curTask)save();};
 $('#dSpent').oninput=e=>{if(curTask)curTask.spent=parseFloat(e.target.value)||0;};
 $('#dSpent').onblur=()=>{if(curTask)save();};
 $('#dStatus').onchange=e=>{if(curTask){curTask.status=e.target.value;curTask.statusTs=Date.now();histAdd(curTask,'статус → '+stMap[curTask.status].n);if(curTask.status==='done'&&curTask.estimate&&!curTask.spent)curTask.spent=curTask.estimate;$('#dDot').style.background=stMap[curTask.status].c;logAct('🔀','«'+curTask.title+'» → '+stMap[curTask.status].n);const _v=awardForDone(S,curTask);save();render();if(_v)toast('+'+_v+' 🪙 за «'+curTask.title+'»','🪙');}};
+/* гость-в-задачу: одна задача наружу, ссылка копируется в буфер */
+$('#dGuest').onclick=async()=>{if(!curTask)return;
+  if(!cloudOn||!sb){toast('Гостевые ссылки работают в облаке — сначала войди','🌐');return;}
+  const b=$('#dGuest');b.disabled=true;
+  try{const token=await aiToken();
+    const r=await fetch(CFG.url+'/functions/v1/task-share',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+token},body:JSON.stringify({op:'create',project:S.id,task:curTask.id})});
+    const res=await r.json();if(!r.ok||!res.token)throw 0;
+    const url='https://cock-pit.com/?guest='+res.token;
+    try{await navigator.clipboard.writeText(url);toast('Ссылка гостя скопирована — он увидит только эту задачу','🌐');}
+    catch(e){prompt('Ссылка гостя (скопируй):',url);}
+  }catch(e){toast('Не получилось создать ссылку — проверь облако','⚠️');}
+  b.disabled=false;};
 $('#dCmtBtn').onclick=addComment;
 $('#dCmtIn').onkeydown=e=>{if(e.key==='Enter'&&!$('#dMention').classList.contains('show'))addComment();
   if(e.key==='Escape')$('#dMention').classList.remove('show');};
@@ -5135,6 +5201,84 @@ $('#dCash').onclick=()=>{if(!curTask)return;curTask.cash=!curTask.cash;
 /* история изменений задачи — «кто что менял», доверие как в Asana */
 /* корзина задач: 30 дней на «ой» — доверие как в Basecamp */
 function trashPush(data,tasks){data.trash=data.trash||[];data.trash.unshift({ts:Date.now(),who:meName(),tasks:JSON.parse(JSON.stringify(tasks))});if(data.trash.length>40)data.trash=data.trash.slice(0,40);}
+/* ---- импорт CSV (Asana-экспорт или любой CSV с колонкой названий) ---- */
+function parseCSV(txt){
+  const rows=[];let row=[],cell='',q=false;
+  for(let i=0;i<txt.length;i++){const c=txt[i];
+    if(q){if(c==='"'){if(txt[i+1]==='"'){cell+='"';i++;}else q=false;}else cell+=c;}
+    else if(c==='"')q=true;
+    else if(c===','){row.push(cell);cell='';}
+    else if(c==='\n'){row.push(cell);cell='';if(row.some(x=>x.trim()!==''))rows.push(row);row=[];}
+    else if(c!=='\r')cell+=c;}
+  if(cell!==''||row.length){row.push(cell);if(row.some(x=>x.trim()!==''))rows.push(row);}
+  return rows;}
+function csvDate(v){
+  if(!v)return null;v=String(v).trim();
+  let m=v.match(/^(\d{4})-(\d\d)-(\d\d)/);if(m)return m[1]+'-'+m[2]+'-'+m[3];
+  m=v.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);if(m)return m[3]+'-'+String(m[2]).padStart(2,'0')+'-'+String(m[1]).padStart(2,'0');
+  m=v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(m)return m[3]+'-'+String(m[1]).padStart(2,'0')+'-'+String(m[2]).padStart(2,'0');
+  return null;}
+function mapCsv(rows){
+  if(rows.length<2)return null;
+  const hd=rows[0].map(h=>String(h).trim().toLowerCase());
+  const col=names=>{for(const n of names){const i=hd.findIndex(h=>h===n||h.startsWith(n));if(i>=0)return i;}return -1;};
+  const iName=col(['name','title','task name','task','название','задача']);
+  if(iName<0)return null;
+  const ix={name:iName,assignee:col(['assignee','исполнитель','ответственный']),
+    start:col(['start date','start','начало']),due:col(['due date','due','deadline','end','срок','дедлайн']),
+    notes:col(['notes','description','описание','заметки']),section:col(['section/column','section','column','раздел','колонка']),
+    done:col(['completed at','completed','done at','done','готово','завершена']),
+    priority:col(['priority','приоритет']),est:col(['estimated hours','estimate','estimated time','оценка','часы'])};
+  const g=(r,i)=>i>=0?String(r[i]||'').trim():'';
+  const out=[];
+  rows.slice(1).forEach(r=>{const title=g(r,ix.name);if(!title)return;
+    out.push({title,assignee:g(r,ix.assignee),start:csvDate(g(r,ix.start)),due:csvDate(g(r,ix.due)),
+      notes:g(r,ix.notes),section:g(r,ix.section),done:!!g(r,ix.done),
+      priority:g(r,ix.priority).toLowerCase(),est:parseFloat(g(r,ix.est))||0});});
+  return out;}
+let _csvParsed=null;
+function openImportCsv(){
+  _csvParsed=null;
+  $('#lpModal').innerHTML=`<div class="lp-t">${icon('download',15)} Импорт задач из CSV</div>
+   <div class="emptymini" style="text-align:left;line-height:1.55;padding:14px 4px">Подойдёт экспорт из Asana (проект → Export → CSV) или любой CSV с колонкой названий (Name / Название).<br>Пойму также: исполнителя, сроки, раздел, описание, приоритет и готовность.</div>
+   <input type="file" id="csvFile" accept=".csv,text/csv" style="margin:4px 0 10px;font-size:13px">
+   <div id="csvPrev"></div>`;
+  $('#lpScrim').classList.add('show');
+  $('#csvFile').onchange=e=>{const f=e.target.files&&e.target.files[0];if(!f)return;
+    const rd=new FileReader();rd.onload=()=>previewCsv(String(rd.result||''));rd.readAsText(f);};}
+function previewCsv(txt){
+  const list=mapCsv(parseCSV(txt));
+  const pv=$('#csvPrev');
+  if(!list||!list.length){pv.innerHTML='<div class="emptymini">Не нашёл колонку с названиями задач. Нужна колонка Name / Title / Название.</div>';return;}
+  _csvParsed=list;
+  const done=list.filter(x=>x.done).length,dated=list.filter(x=>x.due).length;
+  pv.innerHTML=`<div class="emptymini" style="text-align:left;padding:8px 4px">Нашёл <b>${list.length}</b> ${plural(list.length,'задачу','задачи','задач')}${done?' · '+done+' уже готово':''}${dated?' · '+dated+' со сроками':''}:</div>
+    <div style="font-size:12.5px;color:var(--mut);line-height:1.7;margin:2px 0 12px">${list.slice(0,5).map(x=>'• '+esc(x.title.slice(0,60))).join('<br>')}${list.length>5?'<br>…и ещё '+(list.length-5):''}</div>
+    <button class="btn primary" id="csvGo" style="width:100%">Импортировать ${list.length} ${plural(list.length,'задачу','задачи','задач')}</button>`;
+  $('#csvGo').onclick=doImportCsv;}
+function doImportCsv(){
+  const list=_csvParsed;if(!list)return;
+  const byName=n=>{if(!n)return null;n=n.toLowerCase();const m=S.members.find(x=>x.name.toLowerCase()===n)||S.members.find(x=>x.name.toLowerCase().startsWith(n.split(' ')[0])||n.startsWith(x.name.toLowerCase().split(' ')[0]));return m?m.id:null;};
+  const pm={low:'low','низкий':'low',med:'med',medium:'med','средний':'med',high:'high','высокий':'high',urgent:'urgent','срочный':'urgent'};
+  const secByName={};S.sections.forEach(x=>secByName[x.name.toLowerCase()]=x.id);
+  let n=0;
+  list.slice(0,300).forEach(x=>{
+    const t=newTask(x.title.slice(0,140));n++;
+    if(x.section){const k=x.section.toLowerCase();
+      if(!secByName[k]){const ns={id:uid('s'),name:x.section.slice(0,40)};S.sections.push(ns);secByName[k]=ns.id;}
+      t.sectionId=secByName[k];}
+    if(x.start)t.start=x.start;
+    if(x.due){t.end=x.due;if(!x.start)t.start=x.due<todayISO()?x.due:todayISO();}
+    if(parseD(t.start)>parseD(t.end))t.start=t.end;
+    if(x.notes)t.description=x.notes.slice(0,2000);
+    if(x.est)t.estimate=x.est;
+    if(pm[x.priority])t.priority=pm[x.priority];
+    const aid=byName(x.assignee);if(aid)t.assigneeId=aid;
+    if(x.done){t.status='done';t.statusTs=Date.now();t.doneTs=Date.now();if(t.estimate&&!t.spent)t.spent=t.estimate;}
+    else t.status='todo';});
+  logAct('📥','импорт CSV: '+n+' задач');save();
+  $('#lpScrim').classList.remove('show');setView('board');
+  toast('Импортировано '+n+' задач','📥','Отменить',()=>undo());}
 function openTrashBin(){
   const tr=(S.trash||[]);
   $('#lpModal').innerHTML=`<div class="lp-t">${icon('trash',15)} Корзина <span style="color:var(--mut2);font-weight:500">· хранится 30 дней</span></div>
@@ -5850,6 +5994,7 @@ projBtn.onclick=e=>{e.stopPropagation();
       +(isTeam?`<button data-act="makechild">📦 Вложить в проект…</button>`
       +`${cur&&cur.parentId?'<button data-act="unparent">⬆️ Вынести наверх</button>':''}`:'')
       +`<button data-act="report">${icon('doc',14)} Отчёт для клиента</button>`
+      +`<button data-act="importcsv">${icon('download',14)} Импорт задач (CSV)</button>`
       +(isTeam?`<button data-act="pemoji">😀 Сменить эмодзи</button>`
       +`<button data-act="renp">${icon('edit',14)} Переименовать</button>`
       +`<button data-act="trashbin">${icon('trash',14)} Корзина${S.trash&&S.trash.length?' · '+S.trash.length:''}</button>`
@@ -5874,6 +6019,7 @@ projMenu.onclick=e=>{const b=e.target.closest('button');if(!b)return;
   else if(b.dataset.act==='pemoji'){const cur=(projMeta(S.id)||{}).emoji||'📄';let em=(prompt('Эмодзи проекта:',cur)||'').trim();
     if(em){em=[...em][0];const e2=projMeta(S.id);if(e2)e2.emoji=em;S.emoji=em;saveReg();save();render();toast('Эмодзи обновлён: '+em,em);}}
   else if(b.dataset.act==='trashbin')openTrashBin();
+  else if(b.dataset.act==='importcsv')openImportCsv();
   else if(b.dataset.act==='archive')archiveProject(S.id,!(reg.list.find(p=>p.id===S.id)||{}).archived);
   else if(b.dataset.act==='delp')deleteProject(S.id);};
 
