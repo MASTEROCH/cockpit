@@ -1842,6 +1842,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
     <select class="fsel" id="fAssignee"><option value="">Все люди</option></select>
     <button class="fchip" id="fMine">Моё</button>
     <button class="fchip" id="fOver">Просрочено</button>
+    <button class="fchip" id="fQuick" title="Правило двух минут: полчаса и меньше">⚡ Быстрые</button>
     <div class="seg2" id="boardModeCtl" style="display:none">
       <button class="sgb on" data-bm="status">▦ Статусы</button>
       <button class="sgb" data-bm="people">👥 По людям</button>
@@ -2297,9 +2298,10 @@ function passFilter(t){
   if(filter.assignee && t.assigneeId!==filter.assignee)return false;
   if(filter.mine && t.assigneeId!==myId())return false;
   if(filter.overdue && !isOverdue(t))return false;
+  if(filter.quick && !isQuick(t))return false;
   return true;
 }
-function filterActive(){return filter.q||filter.assignee||filter.mine||filter.overdue;}
+function filterActive(){return filter.q||filter.assignee||filter.mine||filter.overdue||filter.quick;}
 
 /* ============================ RENDER ROUTER ============================ */
 let view='now';
@@ -2507,6 +2509,10 @@ function buildInsights(T){
     if(m.capacity&&load>m.capacity*1.15)out.push({ic:'🥵',title:`${m.name} перегружен`,sub:`${load}/${m.capacity}ч — жми: его задачи · разгрузка в «Команде»`,act:()=>{filter.assignee=m.id;setView('board');toast(`Доска: только задачи ${m.name}. Снять фильтр — «Все люди»`,'👤');}});});
   const rot=T.filter(t=>t.status!=='done'&&(t.status==='backlog'||t.status==='todo')&&(t.spent||0)===0&&t.createdTs&&(Date.now()-t.createdTs>10*dayMs));
   if(rot.length)out.push({ic:'🕸',title:`${rot.length} ${plural(rot.length,'задача застряла','задачи застряли','задач застряло')}`,sub:'больше 10 дней без движения — сделать, делегировать или удалить',act:()=>openTask(rot[0].id)});
+  const chr=T.filter(t=>t.status!=='done'&&(t.shifts||0)>=3);
+  if(chr.length)out.push({ic:'↻',title:`${chr.length} ${plural(chr.length,'задача хронически переезжает','задачи хронически переезжают','задач хронически переезжает')}`,sub:'срок двигался 3+ раза — разбей на части или отпусти честно',act:()=>openTask(chr[0].id)});
+  const qk=T.filter(t=>isQuick(t)&&(!t.assigneeId||t.assigneeId===me));
+  if(qk.length>=2)out.push({ic:'⚡',title:`${qk.length} ${plural(qk.length,'быстрая задача','быстрые задачи','быстрых задач')} — по полчаса и меньше`,sub:'есть свободные 15 минут — закрой мелочь, она давит фоном',act:()=>{filter={q:'',assignee:'',mine:false,overdue:false,quick:true};setView('board');}});
   {const uph=T.filter(t=>t.hill==='up'&&t.status==='progress'&&t.statusTs&&(Date.now()-t.statusTs)>2*dayMs)[0];
    if(uph)out.push({ic:'🧗',title:`«${uph.title.slice(0,32)}» стоит на подъёме`,sub:'разбор не идёт 2+ дня — помоги или созвон на 15 минут',act:()=>openTask(uph.id)});}
   {const stuck=T.filter(t=>t.statusTs&&t.status!=='done'&&t.status!=='backlog'&&(Date.now()-t.statusTs)>4*dayMs)
@@ -2674,7 +2680,7 @@ function renderNow(){
       <div class="nh-meta">${bare?'<button class="btn primary" id="npPlan" style="margin-top:4px">'+icon('sparkles',14)+' Вандо, спланируй за меня</button>':allDone?'<span class="ichip">создай следующую задачу или запланируй новую цель</span>':'<span class="ichip">создай задачу строкой сверху или ⌘K</span>'}</div></div>`;}
   const energy=localStorage.getItem('cockpit_energy_'+todayISO())||'';
   if(window.innerWidth<=680){renderNowMobile({el,greet,next,upNext,mine,pct,prog,ov,vel,ins,running,energy:localStorage.getItem('cockpit_energy_'+todayISO())||''});return;}
-  window._heroNext=next?{id:next.id,title:next.title,est:next.estimate,pid:nextPid}:null;
+  window._heroNext=next?{id:next.id,title:next.title,est:next.estimate,pid:nextPid,st:next.status}:null;
   el.innerHTML=`<div class="now-greet"><h1>${greet}${(n=>n&&n!=='Я'&&n!=='Новый участник'?', '+esc(n):'!')(meName())}</h1><span>${esc(S.projectName)} · пульс проекта
       <span class="energyrow" title="Заряд сегодня: подстрою следующий шаг"><button data-en="hi" class="${energy==='hi'?'on':''}" title="Полон сил — дай крупную задачу" aria-label="Полон сил">${icon('battery',15)}</button><button data-en="lo" class="${energy==='lo'?'on':''}" title="Мало сил — подкинь лёгкие" aria-label="Мало сил">${icon('battlow',15)}</button></span></span></div>
     ${whatsNewStrip()}
@@ -2707,6 +2713,7 @@ function renderNow(){
     celebrateAt(ev);render();toast('Готово','✅','Отменить',un);
     /* фокус-цепочка: после окна «Отменить» предлагаем следующий шаг — день как конвейер */
     setTimeout(()=>{const nx=window._heroNext;if(!nx||nx.id===dn.dataset.done)return;
+      if(nx.st==='backlog'){takeFromBacklog(nx.pid||S.id,nx.id);return;}
       toast('Дальше: «'+String(nx.title).slice(0,42)+'»'+(nx.est?' · '+nx.est+'ч':''),'⚡','Поехали',()=>{
         if(nx.pid!==S.id){switchProject(nx.pid);setTimeout(()=>startFocus(nx.id),160);}else startFocus(nx.id);});},3600);};
   ins.forEach((x,i)=>{const c=el.querySelector(`.insight[data-i="${i}"]`);if(c&&x.act)c.onclick=x.act;});
@@ -2867,7 +2874,7 @@ function renderNowMobile(ctx){
       upNext=poolAll.slice(1,4);
     }else{next=null;upNext=[];}
   }
-  window._heroNext=next?{id:next.id,title:next.title,est:next.estimate,pid:nextPid}:null;
+  window._heroNext=next?{id:next.id,title:next.title,est:next.estimate,pid:nextPid,st:next.status}:null;
   const badge=x=>multi?`<span class="mr-p">${x.emoji} ${esc(x.pname)}</span>`:'';
   const heroX=multi&&poolAll&&poolAll.length?poolAll[0]:null;
   const hero=next?`<div class="mhero ${isOverdue(next)?'over':''}" data-open="${next.id}">
@@ -2919,6 +2926,7 @@ function renderNowMobile(ctx){
     const un=markDone(nextPid,dn.dataset.done);
     celebrateAt(ev);haptic('ok');render();toast('Готово','✅','Отменить',un);
     setTimeout(()=>{const nx=window._heroNext;if(!nx||nx.id===dn.dataset.done)return;
+      if(nx.st==='backlog'){takeFromBacklog(nx.pid||S.id,nx.id);return;}
       toast('Дальше: «'+String(nx.title).slice(0,42)+'»'+(nx.est?' · '+nx.est+'ч':''),'⚡','Поехали',()=>{
         if(nx.pid!==S.id){switchProject(nx.pid);setTimeout(()=>startFocus(nx.id),160);}else startFocus(nx.id);});},3600);};
   {const np=$('#npPlan');if(np)np.onclick=openAiPlan;}
@@ -3539,7 +3547,7 @@ function renderDash(){
         <h3>Фокус на сегодня <span class="c">${focusU.length}</span></h3>
         ${focusU.length?focusU.map(t=>{const ov=isOverdue(t);const dl=daysLeft(t);
           return `<div class="trow" data-task="${t.id}"><button class="qdone" data-quickdone="${t.id}" title="Отметить готовым" style="--c:${stMap[t.status].c}"></button>
-            <span class="tn">${esc(t.title)}</span>${kidsTag(t)}${subTag(t)}${stuckChip(t)}${avatar(t.assigneeId)}
+            <span class="tn">${esc(t.title)}</span>${kidsTag(t)}${subTag(t)}${stuckChip(t)}${shiftChip(t)}${quickChip(t)}${avatar(t.assigneeId)}
             <span class="when ${ov?'over':''}">${ov?'просрочено '+(-dl)+'д':'до '+t.end.slice(8)+'.'+t.end.slice(5,7)}</span></div>`;}).join(''):'<div class="emptymini">На сегодня активных задач нет 🎉</div>'}
       </div>
       <div class="panel-c">
@@ -4182,6 +4190,17 @@ function markDone(pid,tid){let prev='todo',prevSpent,ttl='';
     if(d.activity.length>150)d.activity.length=150;
     localStorage.setItem(pkey(pid),JSON.stringify(d));if(cloudOn)cloudPush(d,true);}}
   return ()=>{editTaskInProject(pid,tid,t=>{t.status=prev==='done'?'todo':prev;t.spent=prevSpent;});render();toast('Возвращена в работу','↩');};}
+/* автодогрузка: момент триумфа — лучший момент для следующего шага (план чист → взять из бэклога) */
+function takeFromBacklog(pid,tid){
+  const d=pid===S.id?S:loadProj(pid);if(!d)return;
+  const t=(d.tasks||[]).find(x=>x.id===tid);if(!t)return;
+  toast('План чист 🎉 Из бэклога: «'+String(t.title).slice(0,40)+'»','🚀','Взять',()=>{
+    editTaskInProject(pid,tid,x=>{x.status='todo';x.statusTs=Date.now();histAdd(x,'статус → '+stMap.todo.n+' (из бэклога)');
+      if(pid===S.id&&!x.assigneeId){x.assigneeId=myId();x.assignedTs=Date.now();x.assignedBy=meName();}
+      if(!x.end||parseD(x.end)<parseD(todayISO()))x.end=todayISO();
+      if(parseD(x.start)>parseD(x.end))x.start=x.end;});
+    if(pid===S.id){render();openTask(tid);}
+    else{switchProject(pid);setTimeout(()=>openTask(tid),160);}});}
 function editTaskInProject(pid,tid,fn){
   if(pid===S.id){const t=task(tid);if(t){fn(t);awardForDone(S,t);save();}return;}
   const data=loadProj(pid);if(!data)return;const t=(data.tasks||[]).find(x=>x.id===tid);if(!t)return;fn(t);awardForDone(data,t);data.updatedAt=Date.now();localStorage.setItem(pkey(pid),JSON.stringify(data));if(cloudOn)cloudPush(data,true);}
@@ -4223,7 +4242,7 @@ function renderWeek(){
     colEl.ondragleave=()=>colEl.classList.remove('drop');
     colEl.ondrop=e=>{e.preventDefault();colEl.classList.remove('drop');const day=colEl.dataset.day;if(!weekDrag)return;
       if(day!=='over'&&day!=='later')editTaskInProject(weekDrag.pid,weekDrag.tid,t=>{const _o=t.end;t.end=day;if(parseD(t.start)>parseD(day))t.start=day;
-        if(_o&&_o!==day){const f=x=>x.slice(8)+'.'+x.slice(5,7);t.comments=t.comments||[];t.comments.push({ts:Date.now(),author:meName(),authorId:myId(),text:'📅 Срок: '+f(_o)+' → '+f(day)+' — перенос в «Моей неделе»'});}});
+        if(_o&&_o!==day){if(parseD(day)>parseD(_o))t.shifts=(t.shifts||0)+1;const f=x=>x.slice(8)+'.'+x.slice(5,7);t.comments=t.comments||[];t.comments.push({ts:Date.now(),author:meName(),authorId:myId(),text:'📅 Срок: '+f(_o)+' → '+f(day)+' — перенос в «Моей неделе»'});}});
       weekDrag=null;renderWeek();};});
   applyPingpong($('#week'));
 }
@@ -4542,7 +4561,7 @@ function renderBoard(){
           ${t.status!=='done'&&!t.isMilestone?`<button class="qdone cdone" title="Отметить готовым" style="--c:${stMap[t.status].c}"></button>`:''}
           ${prTag(t)}
           ${waitTag(t)}
-          ${kidsTag(t)}${subTag(t)}${t.files&&t.files.length?`<span class="subbadge" title="Файлы">📎 ${t.files.length}</span>`:``}${stuckChip(t)}
+          ${kidsTag(t)}${subTag(t)}${t.files&&t.files.length?`<span class="subbadge" title="Файлы">📎 ${t.files.length}</span>`:``}${stuckChip(t)}${shiftChip(t)}${quickChip(t)}
           ${t.estimate?`<span>⏱ ${t.estimate}ч</span>`:''}
           ${(t.comments||[]).length?`<span>💬 ${(t.comments||[]).length}</span>`:''}
           ${ov?`<span style="color:var(--bad);font-weight:700">⚠ просроч.</span>`:''}
@@ -4854,6 +4873,13 @@ function stuckChip(t){
   const d=Math.floor((Date.now()-t.statusTs)/dayMs);
   if(d<3)return '';
   return `<span class="stuck" title="В статусе «${stMap[t.status].n}» уже ${d} дн — узкое место?">⏳ ${d}д</span>`;}
+/* Basecamp-урок: хроника переносов — задача, которая вечно уезжает, просит честного разговора */
+function shiftChip(t){
+  if(t.status==='done'||(t.shifts||0)<3)return '';
+  return `<span class="stuck" style="color:var(--bad)" title="Срок переезжал уже ${t.shifts} раз — разбей на части или отпусти">↻ ${t.shifts}</span>`;}
+/* GTD-правило двух минут: мелочь закрывается в мёртвое время, а не гниёт в списке */
+function isQuick(t){return !t.isMilestone&&t.status!=='done'&&t.estimate>0&&t.estimate<=0.5;}
+function quickChip(t){return isQuick(t)?`<span class="stuck" style="color:var(--ok)" title="Быстрая — полчаса или меньше">⚡</span>`:'';}
 function kidsTag(t){const k=kids(t.id);if(!k.length)return '';const d=k.filter(x=>x.status==='done').length;return `<span class="subbadge${d===k.length?' all':''}" title="Подзадачи">🧩 ${d}/${k.length}</span>`;}
 let curTask=null;
 function openTask(id){
@@ -5015,6 +5041,7 @@ $('#dEnd').onchange=e=>{if(curTask){const _old=curTask.end;curTask.end=e.target.
 /* ---- причина переноса срока: видна всем (Asana-паттерн, запрос Роча) ---- */
 function logDeadlineShift(t,oldEnd,newEnd,reason){
   if(!t||oldEnd===newEnd)return;
+  if(parseD(newEnd)>parseD(oldEnd))t.shifts=(t.shifts||0)+1;
   const f=d=>d?d.slice(8)+'.'+d.slice(5,7):'—';
   t.comments=t.comments||[];
   t.comments.push({ts:Date.now(),author:meName(),authorId:myId(),text:'📅 Срок: '+f(oldEnd)+' → '+f(newEnd)+(reason?' — '+reason:' (без причины)')});
@@ -5212,12 +5239,14 @@ function syncFilterUI(){
   $('#fq').value=filter.q;
   $('#fMine').classList.toggle('on',filter.mine);
   $('#fOver').classList.toggle('on',filter.overdue);
+  $('#fQuick').classList.toggle('on',!!filter.quick);
   $('#fReset').style.display=filterActive()?'':'none';
 }
 $('#fq').oninput=e=>{filter.q=e.target.value;rerenderView();};
 $('#fAssignee').onchange=e=>{filter.assignee=e.target.value;rerenderView();};
 $('#fMine').onclick=()=>{filter.mine=!filter.mine;render();};
 $('#fOver').onclick=()=>{filter.overdue=!filter.overdue;render();};
+$('#fQuick').onclick=()=>{filter.quick=!filter.quick;render();};
 $('#fReset').onclick=()=>{filter={q:'',assignee:'',mine:false,overdue:false};render();};
 $('#boardModeCtl').onclick=e=>{const b=e.target.closest('.sgb');if(!b)return;boardMode=b.dataset.bm;if(boardMode!=='status'){boardSelOn=false;boardSel.clear();}$$('#boardModeCtl .sgb').forEach(x=>x.classList.toggle('on',x===b));renderBoard();};
 $('#bSelect').onclick=()=>{boardSelOn=!boardSelOn;if(!boardSelOn)boardSel.clear();renderBoard();};
@@ -5418,17 +5447,16 @@ function healOverdue(target,scope){
   let list=S.tasks.filter(isOverdue);
   if(scope&&scope.assignee)list=list.filter(t=>t.assigneeId===scope.assignee);
   if(!list.length){toast('Просрочек нет — чисто ✨','✨');return 0;}
-  const _olds=list.map(t=>({t,e:t.end}));
+  const _olds=list.map(t=>({t,s:t.start,e:t.end,sh:t.shifts}));
   let n,label;
   if(target==='today'){n=moveTasksTo(list,todayISO());label='на сегодня';}
   else if(target==='tomorrow'){n=moveTasksTo(list,fmtD(parseD(todayISO())+dayMs));label='на завтра';}
   else if(typeof target==='number'){n=shiftTasksBy(list,target);label='на +'+target+'д';}
   else{n=moveTasksTo(list,nextMondayISO());label='на следующую неделю';}
-  _olds.forEach(({t,e})=>{if(t.end!==e){const f=x=>x.slice(8)+'.'+x.slice(5,7);t.comments=t.comments||[];
+  _olds.forEach(({t,e})=>{if(t.end!==e){if(parseD(t.end)>parseD(e))t.shifts=(t.shifts||0)+1;const f=x=>x.slice(8)+'.'+x.slice(5,7);t.comments=t.comments||[];
     t.comments.push({ts:Date.now(),author:meName(),authorId:myId(),text:'📅 Срок: '+f(e)+' → '+f(t.end)+' — разбор просрочки'});}});
-  const undo=list.map(t=>({t,s:t.start,e:t.end}));
   logAct('📅','перенёс '+n+' '+plural(n,'просрочку','просрочки','просрочек')+' '+label);save();render();
-  toast('Перенёс '+n+' '+plural(n,'задачу','задачи','задач')+' '+label,'📅','Отменить',()=>{undo.forEach(u=>{u.t.start=u.s;u.t.end=u.e;});save();render();});
+  toast('Перенёс '+n+' '+plural(n,'задачу','задачи','задач')+' '+label,'📅','Отменить',()=>{_olds.forEach(u=>{u.t.start=u.s;u.t.end=u.e;if(u.sh===undefined)delete u.t.shifts;else u.t.shifts=u.sh;});save();render();});
   return n;}
 // «что горит» — просрочено + сегодня + срочное; фокус на самом важном
 function fireFocus(){

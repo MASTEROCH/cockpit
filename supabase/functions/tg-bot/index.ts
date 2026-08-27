@@ -464,6 +464,7 @@ async function sendSettings(chatId: number, link: Link) {
   await sayInline(chatId, `⚙️ <b>Уведомления</b>\nКаждому — только его личное. Жми, чтобы переключить:`,
     [row("morning", "☀️ Утренний бриф", "on"),
      row("evening", "🌇 Вечерний разбор", "on"),
+     row("friday", "🏁 Пятничный итог недели", "on"),
      row("intake", "📥 Новые заявки команды", owner ? "on" : "off"),
      row("pulse", "🤖 AI-пульс Вандо", "on"),
      [{ text: `🌍 Часовой пояс — UTC+${tz} (тап: UTC+${tzNext})`, callback_data: `set:tz:${tzNext}` }]]);
@@ -543,6 +544,7 @@ async function shiftMyTasks(email: string, targetISO: string): Promise<number> {
     for (const t of taskList(p)) {
       if (t.status === "done" || t.assigneeId !== me.id) continue;
       if ((t.end ?? "9999") > today) continue; // переносим только сегодняшнее/просроченное
+      if (t.end && targetISO > t.end) t.shifts = (t.shifts ?? 0) + 1; // хроника переносов (чип ↻ в вебе)
       t.end = targetISO;
       if ((t.start ?? targetISO) > targetISO) t.start = targetISO;
       touched = true; n++;
@@ -590,6 +592,46 @@ async function eveningReview() {
       } else {
         await say(l.chat_id, text + "\n🏁 Все дедлайны дня закрыты. Чистый вечер!");
       }
+    } catch { /* следующий */ }
+  }
+}
+
+// ---------- Пятничный итог: статус-митинг, сжатый до одного сообщения ----------
+// Дофамин в конце недели + лёгкое соревнование партнёров. Тишина, если закрыто 0.
+async function fridayDigest() {
+  const { data: links } = await sb.from("tg_links").select("*").eq("revoked", false);
+  for (const l of (links ?? []) as Link[]) {
+    try {
+      if (pref(l, "friday", "on") !== "on") continue;
+      const tz = tzOf(l);
+      const weekStart = new Date(todayISO(-6, tz) + "T00:00:00Z").getTime() - tz * 3600_000;
+      const { rows } = await myProjects(l.email);
+      const byName = new Map<string, number>();
+      let total = 0; const projLines: string[] = [];
+      for (const p of rows) {
+        const members = (p.data?.members ?? []) as Record<string, any>[];
+        let pd = 0;
+        for (const t of taskList(p)) {
+          if (t.isMilestone) continue;
+          if (t.status === "done" && t.doneTs && t.doneTs >= weekStart) {
+            pd++; total++;
+            const m = members.find((x) => x.id === t.assigneeId);
+            const nm = String(m?.name ?? "без исполнителя");
+            byName.set(nm, (byName.get(nm) ?? 0) + 1);
+          }
+        }
+        if (pd) projLines.push(`${p.emoji ?? "📄"} ${esc(p.name)} — <b>${pd}</b>`);
+      }
+      if (!total) continue; // тишина лучше пустого отчёта
+      const top = [...byName.entries()].sort((a, b) => b[1] - a[1]);
+      let text = `🏁 <b>Итоги недели</b>\n\n✅ Закрыто за 7 дней: <b>${total}</b>\n`;
+      if (projLines.length > 1) text += projLines.map((x) => "• " + x).join("\n") + "\n";
+      if (top.length > 1) {
+        text += `\n🏆 Топ недели: <b>${esc(top[0][0])}</b> — ${top[0][1]}\n`;
+        text += top.slice(1, 4).map(([n, c]) => `• ${esc(n)} — ${c}`).join("\n") + "\n";
+      }
+      text += `\nХороших выходных — в понедельник продолжаем 🚀`;
+      await say(l.chat_id, text);
     } catch { /* следующий */ }
   }
 }
@@ -705,6 +747,7 @@ Deno.serve(async (req) => {
       else if (ev.kind === "intake_decided") await notifyDecision(ev.record ?? {});
       else if (ev.kind === "morning_brief") await morningBrief();
       else if (ev.kind === "evening_review") await eveningReview();
+      else if (ev.kind === "friday_digest") await fridayDigest();
       else if (ev.kind === "ai_pulse") await aiPulse();
     } catch { /* не роняем */ }
     return new Response("ok");
