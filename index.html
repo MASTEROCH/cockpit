@@ -2508,7 +2508,7 @@ function buildInsights(T){
   const wom=T.filter(t=>t.waitingOn===me&&t.status!=='done');
   if(wom.length)out.push({ic:'⏳',title:`Висит на тебе: ${wom.length}`,sub:wom.slice(0,2).map(t=>t.title).join(' · '),act:()=>openTask(wom[0].id)});
   S.members.forEach(m=>{const load=T.filter(t=>t.assigneeId===m.id&&t.status!=='done').reduce((a,t)=>a+(t.estimate||0),0);
-    if(m.capacity&&load>m.capacity*1.15)out.push({ic:'🥵',title:`${m.name} перегружен`,sub:`${load}/${m.capacity}ч — жми, чтобы разгрузить автоматически`,act:()=>openRebalance()});});
+    if(m.capacity&&load>m.capacity*1.15)out.push({ic:'🥵',title:`${m.name} перегружен`,sub:`${load}/${m.capacity}ч — жми: его задачи · разгрузка в «Команде»`,act:()=>{filter.assignee=m.id;setView('board');toast(`Доска: только задачи ${m.name}. Снять фильтр — «Все люди»`,'👤');}});});
   const rot=T.filter(t=>t.status!=='done'&&(t.status==='backlog'||t.status==='todo')&&(t.spent||0)===0&&t.createdTs&&(Date.now()-t.createdTs>10*dayMs));
   if(rot.length)out.push({ic:'🕸',title:`${rot.length} ${plural(rot.length,'задача застряла','задачи застряли','задач застряло')}`,sub:'больше 10 дней без движения — сделать, делегировать или удалить',act:()=>openTask(rot[0].id)});
   {const uph=T.filter(t=>t.hill==='up'&&t.status==='progress'&&t.statusTs&&(Date.now()-t.statusTs)>2*dayMs)[0];
