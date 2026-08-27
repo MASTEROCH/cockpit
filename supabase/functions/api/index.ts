@@ -68,14 +68,17 @@ Deno.serve(async (req) => {
     if (b.op === "create") {
       const row = (rows ?? []).find((r) => r.id === b.project);
       if (!row) return json({ error: "project not found" }, 404);
-      if (!b.title) return json({ error: "title required" }, 400);
+      const title = String(b.title ?? "").trim();
+      if (!title) return json({ error: "title required" }, 400);
       const d = row.data; const members = (d.members ?? []) as Record<string, any>[];
-      const t: Record<string, any> = { id: uid("t"), title: String(b.title).slice(0, 140),
+      if ((d.tasks ?? []).length >= 5000) return json({ error: "project task limit reached" }, 409); // потолок против раздувания blob
+      const est = Number(b.estimate);
+      const t: Record<string, any> = { id: uid("t"), title: title.slice(0, 140),
         sectionId: d.sections?.[0]?.id ?? null, assigneeId: null, start: today(), end: today(),
-        status: "todo", estimate: +b.estimate || 0, spent: 0,
+        status: "todo", estimate: Number.isFinite(est) && est > 0 ? Math.min(est, 100000) : 0, spent: 0,
         priority: ["low", "med", "high", "urgent"].includes(b.priority) ? b.priority : "med",
         description: String(b.description ?? "").slice(0, 2000), comments: [], isMilestone: false, deps: [], parentId: null, createdTs: Date.now() };
-      if (b.end && /^\d{4}-\d\d-\d\d$/.test(b.end)) t.end = b.end;
+      if (b.end && /^\d{4}-\d\d-\d\d$/.test(b.end) && !isNaN(Date.parse(b.end))) { t.end = b.end; if (t.start > t.end) t.start = t.end; }
       if (b.assignee) { const m = members.find((x) => String(x.name).toLowerCase() === String(b.assignee).toLowerCase()); if (m) t.assigneeId = m.id; }
       d.tasks = d.tasks ?? []; d.tasks.push(t);
       d.activity = d.activity ?? []; d.activity.unshift({ ts: Date.now(), who: "API", icon: "🔌", text: `новая задача «${t.title}»` });
@@ -88,9 +91,12 @@ Deno.serve(async (req) => {
     if (b.op === "status") {
       if (!STATUSES.includes(b.status)) return json({ error: "status must be one of " + STATUSES.join("|") }, 400);
       const want = String(b.task ?? "").replace(/^#/, "").toUpperCase();
-      for (const row of rows ?? []) {
-        const t = (row.data?.tasks ?? []).find((x: Record<string, any>) => shortId(x.id) === want || x.id === b.task);
-        if (!t) continue;
+      // если задан project — ищем строго в нём (короткий #ID уникален лишь внутри проекта, не по воркспейсу)
+      const scoped = b.project ? (rows ?? []).filter((r) => r.id === b.project) : (rows ?? []);
+      if (b.project && !scoped.length) return json({ error: "project not found" }, 404);
+      const matches = scoped.flatMap((row) => (row.data?.tasks ?? []).filter((x: Record<string, any>) => shortId(x.id) === want || x.id === b.task).map((t: Record<string, any>) => ({ row, t })));
+      if (matches.length > 1) return json({ error: "ambiguous id — pass \"project\" to disambiguate" }, 409);
+      for (const { row, t } of matches) {
         t.status = b.status; t.statusTs = Date.now();
         if (b.status === "done") { t.doneTs = Date.now(); if (t.estimate && !t.spent) t.spent = t.estimate; }
         t.hist = t.hist ?? []; t.hist.push({ ts: Date.now(), who: "API", text: "статус → " + b.status });

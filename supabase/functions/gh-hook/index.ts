@@ -34,6 +34,8 @@ const ANY_RE = /#([a-z0-9]{4,6})/gi;
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("ok");
+  const clen = Number(req.headers.get("content-length") ?? "0");
+  if (clen > 5_000_000) return new Response("payload too large", { status: 413 }); // защита от буферизации гигантского тела до проверки подписи
   const body = await req.text();
   if (!(await validSig(body, req.headers.get("x-hub-signature-256")))) {
     return new Response("bad signature", { status: 401 });
@@ -47,12 +49,16 @@ Deno.serve(async (req) => {
   const commits = (payload.commits ?? []) as Record<string, any>[];
   if (!commits.length) return new Response("ok");
 
-  // короткий #ID из карточки → задача (по всем проектам; продукт одно-командный)
+  // короткий #ID из карточки → задача (по всем проектам; продукт одно-командный).
+  // ВНИМАНИЕ (multi-tenant): один общий секрет + карта по всей БД = при продаже
+  // разным клиентам нужен per-repo секрет и скоуп по workspace_id. Пока одно-командно — ок.
   const { data: rows } = await sb.from("projects").select("id,data");
-  const map = new Map<string, { row: Record<string, any>; t: Record<string, any> }>();
+  // массив на короткий id — при коллизии не трогаем НИКОГО (иначе закрыли бы чужую задачу)
+  const map = new Map<string, Array<{ row: Record<string, any>; t: Record<string, any> }>>();
   for (const row of rows ?? []) {
     for (const t of (row.data?.tasks ?? []) as Record<string, any>[]) {
-      map.set(String(t.id).slice(1, 6).toUpperCase(), { row, t });
+      const k = String(t.id).slice(1, 6).toUpperCase();
+      (map.get(k) ?? map.set(k, []).get(k)!).push({ row, t });
     }
   }
 
@@ -67,12 +73,15 @@ Deno.serve(async (req) => {
     for (const m of msg.matchAll(CLOSE_RE)) closeIds.add(m[1].toUpperCase());
     for (const m of msg.matchAll(ANY_RE)) allIds.add(m[1].toUpperCase());
     for (const id of allIds) {
-      const hit = map.get(id);
-      if (!hit) continue;
-      const { row, t } = hit;
-      const doClose = closeIds.has(id) && t.status !== "done";
+      const hits = map.get(id);
+      if (!hits || hits.length !== 1) continue; // нет задачи или коллизия короткого id — молчим, не трогаем чужое
+      const { row, t } = hits[0];
       t.comments = t.comments ?? [];
+      // идемпотентность: этот коммит уже отмечен в задаче — не дублируем при повторной доставке вебхука
+      if (t.comments.some((c2: Record<string, any>) => typeof c2.text === "string" && c2.text.includes(sha7) && c2.author === "GitHub")) continue;
+      const doClose = closeIds.has(id) && t.status !== "done";
       t.comments.push({ ts: Date.now(), author: "GitHub", text: (doClose ? "✅ Закрыта коммитом " : "🔗 Упомянута в коммите ") + sha7 + " (" + author + "): " + first + (c.url ? "\n" + c.url : "") });
+      if (t.comments.length > 200) t.comments = t.comments.slice(-200);
       if (doClose) {
         t.status = "done"; t.statusTs = Date.now(); t.doneTs = Date.now();
         if (t.estimate && !t.spent) t.spent = t.estimate;

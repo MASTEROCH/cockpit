@@ -15,10 +15,15 @@ const cors = { "access-control-allow-origin": "*", "access-control-allow-headers
 const json = (o: unknown, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { ...cors, "content-type": "application/json" } });
 const ST: Record<string, string> = { backlog: "Бэклог", todo: "К работе", progress: "В работе", review: "Проверка", done: "Готово" };
 
-function emailFromJwt(auth: string | null): string | null {
+// Проверяем ПОДПИСЬ токена через Auth (не доверяем сырому payload) — иначе
+// подделанный {"email":"…"} дал бы право выпускать гостевые ссылки.
+async function emailFromJwt(auth: string | null): Promise<string | null> {
   try {
-    const b = (auth ?? "").replace(/^Bearer\s+/i, "").split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
-    return (JSON.parse(decodeURIComponent(escape(atob(b)))).email || "").toLowerCase();
+    const tok = (auth ?? "").replace(/^Bearer\s+/i, "");
+    if (!tok || tok.split(".").length !== 3) return null;
+    const { data, error } = await sb.auth.getUser(tok);
+    if (error || !data?.user?.email) return null;
+    return data.user.email.toLowerCase();
   } catch { return null; }
 }
 
@@ -54,12 +59,15 @@ Deno.serve(async (req) => {
     try { b = await req.json(); } catch { return json({ error: "bad json" }, 400); }
 
     if (b.op === "create") {
-      const email = emailFromJwt(req.headers.get("authorization"));
+      const email = await emailFromJwt(req.headers.get("authorization"));
       if (!email) return json({ error: "нужна авторизация" }, 401);
-      const { data: member } = await sb.from("team").select("email").ilike("email", email).maybeSingle();
+      // строгое сравнение (не ilike — иначе email=«%» из подделанного payload матчит любого)
+      const { data: member } = await sb.from("team").select("workspace_id").eq("email", email).maybeSingle();
       if (!member) return json({ error: "только для команды" }, 403);
-      const { data: p } = await sb.from("projects").select("id,data").eq("id", b.project).maybeSingle();
-      if (!p || !(p.data?.tasks ?? []).some((x: Record<string, any>) => x.id === b.task)) return json({ error: "задача не найдена" }, 404);
+      const { data: p } = await sb.from("projects").select("id,data,workspace_id").eq("id", b.project).maybeSingle();
+      // проект ОБЯЗАН быть в воркспейсе автора — иначе член команды A мог бы шарить задачи команды B
+      if (!p || p.workspace_id !== member.workspace_id) return json({ error: "задача не найдена" }, 404);
+      if (!(p.data?.tasks ?? []).some((x: Record<string, any>) => x.id === b.task)) return json({ error: "задача не найдена" }, 404);
       // одна живая ссылка на задачу: повторный запрос возвращает её же
       const { data: old } = await sb.from("task_shares").select("token").eq("task_id", b.task).eq("revoked", false).maybeSingle();
       if (old) return json({ token: old.token });
@@ -77,6 +85,7 @@ Deno.serve(async (req) => {
       const { p, t } = hit;
       t.comments = t.comments ?? [];
       t.comments.push({ ts: Date.now(), author: name + " · гость", text });
+      if (t.comments.length > 200) t.comments = t.comments.slice(-200); // гость без авторизации — не даём раздуть blob
       p.data.activity = p.data.activity ?? [];
       p.data.activity.unshift({ ts: Date.now(), who: name + " · гость", icon: "🌐", text: `коммент в «${t.title}»` });
       if (p.data.activity.length > 150) p.data.activity.length = 150;

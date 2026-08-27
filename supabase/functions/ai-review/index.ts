@@ -55,12 +55,15 @@ const cors = {
 const json = (o: unknown, status = 200) =>
   new Response(JSON.stringify(o), { status, headers: { ...cors, "content-type": "application/json" } });
 
-function emailFromJwt(auth: string | null): string | null {
+// Проверяем ПОДПИСЬ токена через Auth, а не просто читаем payload:
+// иначе кто угодно подделал бы {"email":"партнёр@…"} и получил доступ к ИИ.
+async function emailFromJwt(auth: string | null): Promise<string | null> {
   try {
     const tok = (auth || "").replace(/^Bearer\s+/i, "");
-    const b = tok.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
-    const p = JSON.parse(decodeURIComponent(escape(atob(b))));
-    return (p.email || "").toLowerCase();
+    if (!tok || tok.split(".").length !== 3) return null;
+    const { data, error } = await sbs.auth.getUser(tok);
+    if (error || !data?.user?.email) return null;
+    return data.user.email.toLowerCase();
   } catch { return null; }
 }
 
@@ -105,7 +108,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
   try {
-    const email = emailFromJwt(req.headers.get("authorization"));
+    const email = await emailFromJwt(req.headers.get("authorization"));
     if (!email || !(await allowed(email))) return json({ error: "Доступ только для команды" }, 403);
 
     const key = Deno.env.get("ANTHROPIC_API_KEY");
