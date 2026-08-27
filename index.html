@@ -2192,6 +2192,7 @@ const ICONS={
  doc:'<path d="M14 2.5H6a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8.5z"/><path d="M14 2.5V8.5h6M9 13h6M9 17h4"/>',
  archive:'<rect x="2.5" y="4" width="19" height="5" rx="1.5"/><path d="M4.5 9v9a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V9M10 13h4"/>',
  trash:'<path d="M3.5 6.5h17M8.5 6.5V4.8a1.8 1.8 0 0 1 1.8-1.8h3.4a1.8 1.8 0 0 1 1.8 1.8v1.7M6 6.5l1 13a2 2 0 0 0 2 1.8h6a2 2 0 0 0 2-1.8l1-13M10 10.5v6M14 10.5v6"/>',
+ logout:'<path d="M9.5 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.5M16 16.5 20.5 12 16 7.5M20.5 12H9.5"/>',
  gear:'<circle cx="12" cy="12" r="7.6"/><circle cx="12" cy="12" r="2.9"/><path d="M12 4.4V8M12 16v3.6M4.4 12H8M16 12h3.6M6.6 6.6l2.5 2.5M14.9 14.9l2.5 2.5M17.4 6.6l-2.5 2.5M9.1 14.9l-2.5 2.5"/>',
 };
 function icon(n,s){s=s||18;return `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]||''}</svg>`;}
@@ -6078,7 +6079,7 @@ function renderMProjects(){
 function loadSb(){return new Promise((res,rej)=>{if(window.supabase)return res();const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js';s.onload=()=>res();s.onerror=rej;document.head.appendChild(s);});}   /* версия ПРИКОЛОЧЕНА: плавающий @2 однажды сменил дефолтный auth-flow и сломал вход */
 function updateCloudBadge(){const sd=$('#syncDot');if(sd)sd.classList.toggle('on',!!cloudOn);
   const b=$('#btnCloud');if(!b)return;b.classList.toggle('on',cloudOn);b.classList.toggle('off',!cloudOn);
-  b.innerHTML=cloudOn?icon('check'):icon('sync');
+  b.innerHTML=cloudOn?icon('logout'):icon('sync');
   b.title=cloudOn?'Синхронизировано с командой · нажми, чтобы выйти':'Войти и синхронизировать с командой';}
 /* ---- login gate (обязательный вход) ---- */
 function hideGate(){const g=$('#gate');if(g)g.classList.add('hide');}
