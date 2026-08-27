@@ -13,3 +13,13 @@ verify_jwt = false
 
 [functions.ai-review]
 verify_jwt = false
+
+# gh-hook — подпись HMAC GitHub; api — ключ wk_; task-share — токен ссылки.
+[functions.gh-hook]
+verify_jwt = false
+
+[functions.api]
+verify_jwt = false
+
+[functions.task-share]
+verify_jwt = false
