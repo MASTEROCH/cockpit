@@ -797,6 +797,13 @@ body.light .brand .logo{background:linear-gradient(157deg,#1b1d27,#08090d 72%)}
 .fsrow.ok .fsc{border-color:var(--ok)}
 .fsx{position:absolute;top:9px;right:9px;background:none;border:none;color:var(--mut2);cursor:pointer;font-size:13px;padding:4px}
 .fsx:hover{color:var(--txt)}
+.frow{display:flex;align-items:center;gap:9px;padding:7px 10px;border:1px solid var(--line);border-radius:10px;margin-bottom:6px;cursor:pointer;background:var(--bg2)}
+.frow:hover{border-color:var(--acc2)}
+.frow .fname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:600}
+.frow .fsz{font-size:11px;color:var(--mut2);flex:0 0 auto}
+.frow .fdel{background:none;border:none;color:var(--mut2);cursor:pointer;padding:2px 5px;border-radius:6px}
+.frow .fdel:hover{color:var(--bad)}
+#dFilesWrap.drop{outline:2px dashed var(--acc2);outline-offset:3px;border-radius:12px}
 @media (hover:none){.wadd{opacity:.55}}
 /* ROCH-канон: пинг-понг длинного текста — обрезанное медленно проезжает туда-обратно с паузами на краях */
 .pp-on{text-overflow:clip}
@@ -1876,6 +1883,11 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
     <div class="field"><label>Подзадачи <span id="dKidsCnt" style="color:var(--mut2);font-weight:600;text-transform:none"></span></label>
       <div id="dKids"></div>
       <div class="cmtadd"><input class="inp" id="dKidIn" placeholder="Новая подзадача… (Enter)"><button class="btn" id="dKidBtn">＋</button></div>
+    </div>
+    <div class="field" id="dFilesWrap" style="display:none"><label>Файлы <span id="dFilesCnt" style="color:var(--mut2);font-weight:600;text-transform:none"></span></label>
+      <div id="dFiles"></div>
+      <button class="btn" id="dFileBtn" style="width:100%;justify-content:center">📎 Прикрепить файл <span style="opacity:.6;font-weight:500">· или перетащи сюда</span></button>
+      <input type="file" id="dFileIn" multiple style="display:none">
     </div>
     <div class="field"><label>Список действий</label>
       <div id="dSubs"></div>
@@ -4496,7 +4508,7 @@ function renderBoard(){
           ${t.status!=='done'&&!t.isMilestone?`<button class="qdone cdone" title="Отметить готовым" style="--c:${stMap[t.status].c}"></button>`:''}
           ${prTag(t)}
           ${waitTag(t)}
-          ${kidsTag(t)}${subTag(t)}${stuckChip(t)}
+          ${kidsTag(t)}${subTag(t)}${t.files&&t.files.length?`<span class="subbadge" title="Файлы">📎 ${t.files.length}</span>`:``}${stuckChip(t)}
           ${t.estimate?`<span>⏱ ${t.estimate}ч</span>`:''}
           ${(t.comments||[]).length?`<span>💬 ${(t.comments||[]).length}</span>`:''}
           ${ov?`<span style="color:var(--bad);font-weight:700">⚠ просроч.</span>`:''}
@@ -4828,7 +4840,7 @@ function openTask(id){
   }}
   $('#dTitle').value=t.title;autoGrow($('#dTitle'));
   $('#dDesc').value=t.description;
-  $('#dStart').value=t.start;$('#dEnd').value=t.end;renderSnoozeRow();
+  $('#dStart').value=t.start;$('#dEnd').value=t.end;renderSnoozeRow();renderFiles();
   $('#dMile').checked=t.isMilestone;
   $('#dRepeat').value=t.repeat||'';
   {const a=$('#dApprove');if(a){a.classList.toggle('on',!!t.approval);}}
@@ -5018,6 +5030,12 @@ document.addEventListener('keydown',e=>{
   const j=e.key==='ArrowRight'?(i+1)%list.length:(i-1+list.length)%list.length;
   openTask(list[j].id);
 });
+{const fb=$('#dFileBtn'),fi=$('#dFileIn'),fw=$('#dFilesWrap');
+ if(fb&&fi){fb.onclick=()=>fi.click();fi.onchange=()=>{if(fi.files.length)uploadTaskFiles([...fi.files]);fi.value='';};}
+ if(fw){fw.addEventListener('dragover',e=>{e.preventDefault();fw.classList.add('drop');});
+  fw.addEventListener('dragleave',()=>fw.classList.remove('drop'));
+  fw.addEventListener('drop',e=>{e.preventDefault();fw.classList.remove('drop');
+    if(e.dataTransfer&&e.dataTransfer.files.length)uploadTaskFiles([...e.dataTransfer.files]);});}}
 $('#dApprove').onclick=()=>{if(!curTask)return;curTask.approval=!curTask.approval;
   $('#dApprove').classList.toggle('on',!!curTask.approval);save();renderApproveBar();
   toast(curTask.approval?'Согласование: у исполнителя появятся ✓ / ✗':'Метка согласования снята','🤝');};
@@ -5044,6 +5062,46 @@ $('#dCash').onclick=()=>{if(!curTask)return;curTask.cash=!curTask.cash;
   $('#dCash').classList.toggle('on',!!curTask.cash);save();
   toast(curTask.cash?'💰 Двигает деньги — подниму в приоритетах':'Метка денег снята','💰');};
 // быстрые сроки одним тапом
+/* 📎 файлы к задачам: приватный Storage, путь workspace/project/task; доступ по RLS is_member */
+let _wsIdCache=null;
+async function myWsCached(){if(_wsIdCache)return _wsIdCache;return _wsIdCache=await myWorkspaceId();}
+function fmtSize(b){return b>1048576?(b/1048576).toFixed(1)+' МБ':Math.max(1,Math.round(b/1024))+' КБ';}
+function renderFiles(){
+  const wrap=$('#dFilesWrap'),box=$('#dFiles');if(!wrap||!box)return;
+  const t=curTask;
+  if(!t||!cloudOn){wrap.style.display='none';return;}
+  wrap.style.display='';
+  const fs=t.files||[];
+  $('#dFilesCnt').textContent=fs.length?('· '+fs.length):'';
+  box.innerHTML=fs.map((f,i)=>`<div class="frow" data-fopen="${i}"><span class="fico">${/^image\//.test(f.type||'')?'🖼':'📄'}</span><span class="fname">${esc(f.name)}</span><span class="fsz">${fmtSize(f.size||0)}</span><button class="fdel" data-fdel="${i}" title="Удалить файл">✕</button></div>`).join('');
+  box.querySelectorAll('[data-fopen]').forEach(el=>el.onclick=async e=>{if(e.target.closest('[data-fdel]'))return;
+    const f=(curTask.files||[])[+el.dataset.fopen];if(!f)return;
+    try{const {data,error}=await sb.storage.from('task-files').createSignedUrl(f.path,3600);
+      if(error)throw error;window.open(data.signedUrl,'_blank');}catch(err){toast('Не открылся: '+(err.message||err),'⚠');}});
+  box.querySelectorAll('[data-fdel]').forEach(b=>b.onclick=async e=>{e.stopPropagation();
+    const i=+b.dataset.fdel;const f=(curTask.files||[])[i];if(!f)return;
+    if(!confirm('Удалить файл «'+f.name+'»?'))return;
+    try{await sb.storage.from('task-files').remove([f.path]);}catch(err){}
+    curTask.files.splice(i,1);save();renderFiles();toast('Файл удалён','🗑');});
+}
+async function uploadTaskFiles(fileList){
+  const t=curTask;if(!t)return;
+  if(!cloudOn||!sb){toast('Файлы живут в облаке — войди сначала','☁️');return;}
+  const ws=await myWsCached();
+  for(const f of fileList){
+    if(f.size>15*1048576){toast('«'+f.name+'» больше 15 МБ — не потянем','⚠');continue;}
+    const safe=f.name.replace(/[^\wа-яА-ЯёЁ.\-]+/g,'_').slice(-80);
+    const path=ws+'/'+S.id+'/'+t.id+'/'+Date.now()+'_'+safe;
+    toast('Загружаю «'+f.name+'»…','📎');
+    try{
+      const {error}=await sb.storage.from('task-files').upload(path,f,{contentType:f.type||'application/octet-stream'});
+      if(error)throw error;
+      t.files=t.files||[];t.files.push({name:f.name,path,size:f.size,type:f.type||'',ts:Date.now(),by:meName()});
+      logAct('📎','файл «'+f.name+'» к «'+t.title+'»');save();renderFiles();
+      toast('«'+f.name+'» прикреплён ✓','📎');
+    }catch(err){toast('Не загрузился: '+(err.message||err),'⚠');}
+  }
+}
 /* «Отложить до…» — спрятать из «Сейчас», не трогая срок (план не врёт) */
 function renderSnoozeRow(){
   const box=$('#dSnooze');if(!box||!curTask)return;
