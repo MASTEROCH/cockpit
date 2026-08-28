@@ -836,6 +836,8 @@ body.light .brand .logo{background:linear-gradient(157deg,#1b1d27,#08090d 72%)}
   .qdone:hover{transform:scale(1.12)}
   @keyframes landed{0%{box-shadow:0 0 0 2px var(--acc2),0 6px 22px rgba(167,139,250,.25);transform:scale(1.015)}100%{box-shadow:none;transform:none}}
   .card.justmoved{animation:landed .6s cubic-bezier(.2,.8,.2,1)}
+  @keyframes heroLand{0%,100%{box-shadow:none}30%{box-shadow:0 0 0 2px var(--acc2),0 10px 34px rgba(167,139,250,.3)}}
+  .now-hero.justland,.mhero.justland{animation:heroLand 1.4s cubic-bezier(.2,.8,.2,1)}
   .hdot{transition:transform .12s}.hdot:hover{transform:scale(1.25)}
   .frow,.trow,.wcard{transition:background .15s,border-color .15s}
 }
@@ -1058,6 +1060,9 @@ body.light .codebox{background:#0f1320}
 .pal-rs{font-size:12px;color:var(--mut2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:42%;flex:0 1 auto}
 .pal-rtag{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--mut2);background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:2px 7px;flex:0 0 auto}
 .pal-row.sel .pal-rtag{color:var(--acc2);border-color:rgba(167,139,250,.4)}
+.pal-cockpit{box-shadow:inset 2px 0 0 var(--acc2)}
+.pal-cockpit .pal-rtag{color:var(--acc2);border-color:rgba(167,139,250,.35);background:rgba(167,139,250,.08)}
+.pal-cockpit .pal-rt{font-weight:650}
 .pal-empty{padding:30px;text-align:center;color:var(--mut2);font-size:13.5px}
 .pal-foot{display:flex;align-items:center;gap:17px;padding:10px 16px;border-top:1px solid var(--line);font-size:11px;color:var(--mut2)}
 .pal-foot kbd{font-size:10px;border:1px solid var(--line2);border-radius:4px;padding:1px 5px;background:var(--bg);margin-right:3px}
@@ -1997,6 +2002,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
 
 <div class="modal-scrim" id="obScrim"><div class="modal" id="obModal"></div></div>
 <div class="modal-scrim" id="wizScrim"><div class="modal" id="wizModal"></div></div>
+<div class="modal-scrim" id="welScrim"><div class="modal" id="welModal"></div></div>
 <div class="modal-scrim" id="npScrim"><div class="modal" id="npModal"></div></div>
 <div class="modal-scrim" id="authScrim"><div class="modal" id="authModal"></div></div>
 
@@ -2021,7 +2027,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
 
 <div class="pal-scrim" id="palScrim">
   <div class="pal" id="pal">
-    <div class="pal-in"><span class="pal-ic" id="palIcon"></span><input id="palQ" placeholder="Поиск по WANDO — задачи, люди, проекты, команды…" autocomplete="off" spellcheck="false"><kbd>esc</kbd></div>
+    <div class="pal-in"><span class="pal-ic" id="palIcon"></span><input id="palQ" placeholder="Что хочешь сделать? — пиши задачу, ищи, командуй" autocomplete="off" spellcheck="false"><kbd>esc</kbd></div>
     <div class="pal-list" id="palList"></div>
     <div class="pal-foot"><span><kbd>↑</kbd><kbd>↓</kbd> выбор</span><span><kbd>↵</kbd> открыть</span><span><kbd>⌘K</kbd> палитра</span><span class="pal-foot-r">WANDO</span></div>
   </div>
@@ -5836,7 +5842,54 @@ function exitDemo(){
 /* ============================ SETUP WIZARD (первый запуск: проект → партнёр → Claude) ============================ */
 let wizStep=0, wizData={projName:'',tpl:'mvp',invites:[]};
 function openSetupWizard(){wizStep=0;wizData={projName:'',tpl:'mvp',invites:[]};renderWiz();$('#wizScrim').classList.add('show');}
-function closeWiz(){$('#wizScrim').classList.remove('show');}
+function closeWiz(){$('#wizScrim').classList.remove('show');localStorage.setItem('cockpit_welcomed','1');/* основатель прошёл мастер — приветствие присоединившегося ему не нужно */}
+
+/* ==== Приветствие ПРИСОЕДИНИВШЕГОСЯ: партнёр входит в готовый воркспейс и попадал
+       на доску холодным. Даём тёплую ориентацию за 30 секунд — один принцип + три
+       движения — на языке «хочу», а не «должен». Финал — высадка на «Сейчас». ==== */
+let welStep=0;
+function openJoinWelcome(){welStep=0;renderWel();$('#welScrim').classList.add('show');}
+function closeJoinWelcome(landOnNow){
+  localStorage.setItem('cockpit_welcomed','1');
+  $('#welScrim').classList.remove('show');
+  if(landOnNow){setView('now');setTimeout(()=>{const h=document.querySelector('.now-hero,.mhero');if(h){h.classList.add('justland');setTimeout(()=>h.classList.remove('justland'),1400);}},220);
+    toast('Твой следующий шаг — прямо здесь. Жми «Фокус» 👆','⚡');}
+}
+function renderWel(){
+  const dots=`<div class="wiz-steps">${[0,1].map(i=>`<span class="${i<welStep?'done':i===welStep?'on':''}"></span>`).join('')}</div>`;
+  const chip=(t,strong)=>`<span style="display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border-radius:999px;border:1px solid var(--line);font-size:12.5px;font-weight:${strong?700:600};${strong?'background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.4);color:var(--acc2)':'color:var(--mut)'}">${t}</span>`;
+  const arrow=`<span style="color:var(--mut2);font-size:15px">→</span>`;
+  let body;
+  if(welStep===0){
+    body=`<div class="ob-art">${logoMarkSVG(40)}</div><div class="ob-body">
+      <h2>Добро пожаловать в команду 🚀</h2>
+      <p>WANDO — это не список того, что ты <b>должен</b>. Это то, что ты <b>хочешь</b> сделать, и система, которая доводит до конца. Тебе не нужно ничего настраивать — проекты команды уже здесь.</p>
+      <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:18px">
+        ${chip('Сейчас')} ${arrow} ${chip('твой следующий шаг',1)} ${arrow} ${chip('Готово ✓')}
+      </div>
+      <p style="margin-top:14px;font-size:13px">Один взгляд на «Сейчас» — и ты знаешь, что делать. Без разбора завалов и поиска.</p>
+    </div>
+    <div class="ob-foot">${dots}<button class="wiz-skip" id="welSkip">Пропустить</button><div class="spacer"></div><button class="btn primary" id="welNext">Дальше →</button></div>`;
+  }else{
+    body=`<div class="ob-art" style="font-size:44px">⚡</div><div class="ob-body">
+      <h2>Три движения — и ты в потоке</h2>
+      <ul class="ob-list">
+        <li><span class="k">🎯</span><span>Открывай <b>«Сейчас»</b> — там всегда твой следующий шаг. Жми «Фокус» и делай.</span></li>
+        <li><span class="k">⌘K</span><span>Пиши задачу словами — строкой сверху или <b>⌘K</b>. «созвон завтра 2ч важно» — Вандо разберёт сам.</span></li>
+        <li><span class="k">✈️</span><span>Подключи <b>Telegram</b> — пульт в кармане: задачи голосом, бриф по утрам.</span></li>
+      </ul>
+    </div>
+    <div class="ob-foot">${dots}<button class="wiz-skip" id="welBack">← Назад</button><div class="spacer"></div><button class="btn primary" id="welGo">Поехали →</button></div>`;
+  }
+  $('#welModal').innerHTML=body;
+  if(welStep===0){
+    $('#welNext').onclick=()=>{welStep=1;renderWel();};
+    $('#welSkip').onclick=()=>closeJoinWelcome(true);
+  }else{
+    $('#welBack').onclick=()=>{welStep=0;renderWel();};
+    $('#welGo').onclick=()=>closeJoinWelcome(true);
+  }
+}
 function renderWiz(){
   const dots=`<div class="wiz-steps">${[0,1,2].map(i=>`<span class="${i<wizStep?'done':i===wizStep?'on':''}"></span>`).join('')}</div>`;
   let body='';
@@ -6416,7 +6469,7 @@ async function onLoggedIn(){cloudOn=true;closeAuth();hideGate();updateCloudBadge
     let m=S.members.find(x=>(x.email||'').toLowerCase()===myEmail);
     if(!m)for(const p of reg.list){const d=p.id===S.id?S:loadProj(p.id);
       const f=d&&(d.members||[]).find(x=>(x.email||'').toLowerCase()===myEmail);if(f){m=f;break;}}
-    if(m&&m.name&&m.name!=='Я'&&m.name!=='Новый участник')localStorage.setItem('cockpit_profile_done','1');}
+    if(m&&m.name&&m.name!=='Я'&&m.name!=='Новый участник'){localStorage.setItem('cockpit_profile_done','1');localStorage.setItem('cockpit_welcomed','1');/* уже участник с именем = освоился, приветствие не нужно */}}
   // профиль живёт в ОБЛАКЕ (workspace_meta) — новый девайс подхватывает молча, без анкеты
   if(!localStorage.getItem('cockpit_profile_done')){
     try{const {data:cp}=await sb.from('workspace_meta').select('v').eq('k','profile:'+myEmail).maybeSingle();
@@ -6427,10 +6480,11 @@ async function onLoggedIn(){cloudOn=true;closeAuth();hideGate();updateCloudBadge
         mm.name=v.name;mm.role=v.role||mm.role||'—';mm.color=v.color||mm.color;if(v.photo)mm.photo=v.photo;mm.email=myEmail;
         localStorage.setItem('cockpit_me',mm.id);
         localStorage.setItem('cockpit_profile',JSON.stringify(v));
-        localStorage.setItem('cockpit_profile_done','1');save();render();}
+        localStorage.setItem('cockpit_profile_done','1');localStorage.setItem('cockpit_welcomed','1');/* профиль уже в облаке = не новичок */save();render();}
     }catch(e){/* нет строки — покажем анкету один раз */}}
   if(!localStorage.getItem('cockpit_profile_done'))openProfileSetup();
   else if(!localStorage.getItem('cockpit_onboarded'))openSetupWizard();
+  else if(hasReal&&!localStorage.getItem('cockpit_welcomed'))openJoinWelcome(); // присоединившийся партнёр — тёплая ориентация
   else if(!window._tmaFirst&&localStorage.getItem('cockpit_brief_date')!==todayISO())openBrief();
   setTimeout(maybeTgGate,2200);
   shareCapture(); // «поделиться» из другого приложения → лист захвата (PWA share-target)
@@ -6489,6 +6543,7 @@ function saveProfileSetup(){
   logAct('🧑','настроил профиль');save();render();
   $('#profileScrim').classList.remove('show');toast('Профиль сохранён','✅');
   if(!localStorage.getItem('cockpit_onboarded'))openSetupWizard();
+  else if(!localStorage.getItem('cockpit_welcomed'))openJoinWelcome(); // присоединившийся заполнил профиль → ориентация
 }
 /* ==== MERGE-СИНК: трёхстороннее слияние вместо last-write-wins ==========
    base = последнее согласованное состояние (cockpit_b_<id>, пишется при
@@ -6730,6 +6785,35 @@ function exportAll(){try{
 function buildPaletteIndex(){
   const items=[];
   const dot=c=>`<span class="pal-dot" style="background:${c}"></span>`;
+  // --- Кокпит основателя: живой кросс-проектный срез. Открыл ⌘K откуда угодно —
+  //     и сразу видишь, что ХОЧЕШЬ сделать дальше, что горит и какой проект проседает. ---
+  const multi=reg.list.filter(p=>!p.archived).length>1;
+  const mine=myTasksAll();
+  if(mine.length){
+    mine.sort((a,b)=>relScore(b.t)-relScore(a.t));
+    const top=mine[0];
+    items.push({type:'Дальше',grp:'cockpit',icon:icon('zap',17),
+      title:top.t.title,sub:`${top.emoji} ${top.pname} · продолжить`,
+      kw:'следующий шаг дальше продолжить фокус хочу',
+      run:()=>{if(top.pid!==S.id){switchProject(top.pid);setTimeout(()=>openTask(top.t.id),140);}else openTask(top.t.id);}});
+  }
+  let fires=0,worstPid=null,worstN=-1;const risk=[];
+  reg.list.filter(p=>!p.archived).forEach(p=>{const d=p.id===S.id?S:loadProj(p.id);if(!d)return;
+    const ov=(d.tasks||[]).filter(isOverdue).length;fires+=ov;
+    if(ov>worstN){worstN=ov;worstPid=p.id;}
+    const red=d.health&&d.health.c==='r';
+    if((red||ov>0)&&multi)risk.push({p,ov,red,name:p.name,emoji:p.emoji||'📄'});});
+  if(fires>0){
+    items.push({type:'Горит',grp:'cockpit',icon:icon('zap',17),
+      title:`Горит: ${fires} ${plural(fires,'задача','задачи','задач')}`,sub:'разобрать просрочки и срочное',
+      kw:'горит просрочки аврал разобрать что горит фокус',
+      run:()=>{const wp=worstPid,jump=wp&&wp!==S.id;if(jump)switchProject(wp);setTimeout(()=>{filter={q:'',assignee:'',mine:false,overdue:true};setView('board');},jump?150:0);}});
+  }
+  risk.sort((a,b)=>((b.red?100:0)+b.ov)-((a.red?100:0)+a.ov)).slice(0,2).forEach(r=>{
+    items.push({type:'Риск',grp:'cockpit',icon:`<span class="pal-emoji">${esc(r.emoji)}</span>`,
+      title:r.name,sub:r.red?'🔴 горим — зайти':`🟠 ${r.ov} ${plural(r.ov,'просрочка','просрочки','просрочек')} — зайти`,
+      kw:r.name+' риск здоровье проект проседает',
+      run:()=>{if(r.p.id!==S.id)switchProject(r.p.id);else setView('board');}});});
   const NAV=[['now','zap','Сейчас'],['board','board','Доска'],['gantt','gantt','Гант'],['week','cal','Неделя'],['backlog','idea','Бэклог'],['team','users','Команда'],['intake','inbox','Приёмка'],['all','layers','Все проекты'],['dash','home','Обзор · детальная аналитика']];
   NAV.forEach(([v,ic,name])=>items.push({type:'Переход',icon:icon(ic,17),title:name,sub:'раздел',kw:name+' раздел перейти открыть',run:()=>setView(v)}));
   const ACT=[
@@ -6782,6 +6866,7 @@ function palScore(q,it){
   return -1;
 }
 const PAL_GROUPS=[
+  ['С чего начать', it=>it.grp==='cockpit'],
   ['Разделы', it=>it.type==='Переход'],
   ['AI и Claude', it=>it.grp==='AI'],
   ['Создать', it=>it.grp==='Создать'],
@@ -6791,7 +6876,7 @@ const PAL_GROUPS=[
   ['Проекты', it=>it.type==='Проект'],
   ['Настройки', it=>it.grp==='Настройки'],
 ];
-function palRowHTML(it,i){return `<div class="pal-row ${i===palSel?'sel':''}" data-i="${i}">
+function palRowHTML(it,i){return `<div class="pal-row ${it.grp==='cockpit'?'pal-cockpit ':''}${i===palSel?'sel':''}" data-i="${i}">
     <span class="pal-rico">${it.icon}</span><span class="pal-rt">${esc(it.title)}</span>
     ${it.sub?`<span class="pal-rs">${esc(it.sub)}</span>`:''}<span class="pal-rtag">${esc(it.type)}</span></div>`;}
 function renderPalette(){
@@ -6802,7 +6887,10 @@ function renderPalette(){
       html+=`<div class="pal-h">${h}</div>`+items.map(it=>{const i=palFiltered.length;palFiltered.push(it);return palRowHTML(it,i);}).join('');});
     $('#palIcon').innerHTML=icon('sparkles',17);
   }else{
-    const scored=palItems.map(it=>({it,s:palScore(q,it)+typeW(it.type)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s).slice(0,20).map(x=>x.it);
+    // фильтруем по ФАКТУ совпадения (palScore>0), а вес типа применяем лишь к порядку —
+    // иначе typeW проталкивал команды с нулевым совпадением выше порога (давний баг)
+    const scored=palItems.filter(it=>it.grp!=='cockpit').map(it=>({it,raw:palScore(q,it)})).filter(x=>x.raw>0)
+      .map(x=>({it:x.it,s:x.raw+typeW(x.it.type)})).sort((a,b)=>b.s-a.s).slice(0,20).map(x=>x.it);
     scored.push({type:'Создать',icon:icon('plus',17),title:'Создать задачу: «'+q+'»',sub:'умный разбор @кто · срок · Nч · !срочно',
       run:()=>{const p=parseQuick(q);const t=applyQuick(newTask(p.title||q),p);t.status='todo';save();render();setView('board');openTask(t.id);toast('Задача создана','🚀');}});
     palFiltered=scored;
