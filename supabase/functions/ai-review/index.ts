@@ -149,6 +149,9 @@ serve(async (req) => {
         .filter((m: any) => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string" && m.content.trim())
         .map((m: any) => ({ role: m.role, content: String(m.content).slice(0, 4000) }));
       if (!hist.length || hist[hist.length - 1].role !== "user") return json({ error: "Нет вопроса" }, 400);
+      // окно slice(-14) на длинном диалоге может начаться с assistant → роли не чередуются, Anthropic 400.
+      // Срезаем ведущие не-user реплики, чтобы messages всегда начинались с user.
+      while (hist.length > 1 && hist[0].role !== "user") hist.shift();
       hist[0] = { role: "user", content: `КОНТЕКСТ (не показывай его сырым, используй для ответов):\n${JSON.stringify(context ?? {}).slice(0, 60000)}\n\n---\n${hist[0].content}` };
       const wantStream = body.stream === true;
       const r = await fetch("https://api.anthropic.com/v1/messages", {

@@ -4979,13 +4979,19 @@ function isQuick(t){return !t.isMilestone&&t.status!=='done'&&t.estimate>0&&t.es
 function quickChip(t){return isQuick(t)?`<span class="stuck" style="color:var(--ok)" title="Быстрая — полчаса или меньше">⚡</span>`:'';}
 function kidsTag(t){const k=kids(t.id);if(!k.length)return '';const d=k.filter(x=>x.status==='done').length;return `<span class="subbadge${d===k.length?' all':''}" title="Подзадачи">🧩 ${d}/${k.length}</span>`;}
 let curTask=null;
+/* подвал карточки зависит от статуса — держим его в одном месте, чтобы не рассинхронился
+   при смене статуса через селект (иначе «✓ Готово» у готовой задачи внезапно ОТМЕНЯЛ бы её) */
+function refreshDrawerFooter(t){
+  const done=t.status==='done',mile=t.isMilestone;
+  const f=$('#dFocus');if(f)f.style.display=(done||mile)?'none':'';
+  const dn=$('#dDoneNext');if(dn){dn.style.display=mile?'none':'';dn.textContent=done?'↩ Вернуть в работу':'✓ Готово';dn.classList.toggle('primary',!done);}
+}
 function openTask(id){
   const t=task(id);if(!t)return;curTask=t;
   $('#dId').textContent='#'+t.id.slice(1,6).toUpperCase();
   $('#dDot').style.background=stMap[t.status].c;
-  {const done=t.status==='done',mile=t.isMilestone;const box=$('#dMoreBox');if(box)box.style.display='none';const ma=$('#dMoreActs');if(ma)ma.classList.remove('on');
-   const f=$('#dFocus');if(f)f.style.display=(done||mile)?'none':'';
-   const dn=$('#dDoneNext');if(dn){dn.style.display=mile?'none':'';dn.textContent=done?'↩ Вернуть в работу':'✓ Готово';dn.classList.toggle('primary',!done);}}
+  {const box=$('#dMoreBox');if(box)box.style.display='none';const ma=$('#dMoreActs');if(ma)ma.classList.remove('on');}
+  refreshDrawerFooter(t);
   {const co=$('#dCashOut');if(co){const show=!!t.cash;co.style.display=show?'':'none';
     if(show){const v=t.cashOutcome;
       co.innerHTML=`<div class="cashout"><span class="cq">💰 ${t.status==='done'?'Деньги дошли?':'Сколько двигает?'}</span>
@@ -5173,7 +5179,7 @@ $('#dEst').oninput=e=>{if(curTask)curTask.estimate=parseFloat(e.target.value)||0
 $('#dEst').onblur=()=>{if(curTask)save();};
 $('#dSpent').oninput=e=>{if(curTask)curTask.spent=parseFloat(e.target.value)||0;};
 $('#dSpent').onblur=()=>{if(curTask)save();};
-$('#dStatus').onchange=e=>{if(curTask){curTask.status=e.target.value;curTask.statusTs=Date.now();histAdd(curTask,'статус → '+stMap[curTask.status].n);if(curTask.status==='done'&&curTask.estimate&&!curTask.spent)curTask.spent=curTask.estimate;$('#dDot').style.background=stMap[curTask.status].c;logAct('🔀','«'+curTask.title+'» → '+stMap[curTask.status].n);const _v=awardForDone(S,curTask);save();render();if(_v)toast('+'+_v+' 🪙 за «'+curTask.title+'»','🪙');}};
+$('#dStatus').onchange=e=>{if(curTask){curTask.status=e.target.value;curTask.statusTs=Date.now();histAdd(curTask,'статус → '+stMap[curTask.status].n);if(curTask.status==='done'&&curTask.estimate&&!curTask.spent)curTask.spent=curTask.estimate;$('#dDot').style.background=stMap[curTask.status].c;refreshDrawerFooter(curTask);logAct('🔀','«'+curTask.title+'» → '+stMap[curTask.status].n);const _v=awardForDone(S,curTask);save();render();if(_v)toast('+'+_v+' 🪙 за «'+curTask.title+'»','🪙');}};
 /* гость-в-задачу: одна задача наружу, ссылка копируется в буфер */
 $('#dGuest').onclick=async()=>{if(!curTask)return;
   if(!cloudOn||!sb){toast('Гостевые ссылки работают в облаке — сначала войди','🌐');return;}
@@ -5258,6 +5264,12 @@ function parseCSV(txt){
     else if(c!=='\r')cell+=c;}
   if(cell!==''||row.length){row.push(cell);if(row.some(x=>x.trim()!==''))rows.push(row);}
   return rows;}
+/* «готово» из CSV: явная истинность. Иначе строка «false»/«нет»/«0» была бы truthy → все строки в done.
+   Для колонок вида «Completed At» пустое = не готово, дата = готово. */
+function csvDone(v){v=String(v||'').trim();if(!v)return false;
+  if(/^(true|1|yes|y|да|x|✓|done|complete|completed|завершена|готово|готова)$/i.test(v))return true;
+  if(/^(false|0|no|n|нет|—|-|not done)$/i.test(v))return false;
+  return !!csvDate(v);/* «Completed At»-таймстамп → готово */}
 function csvDate(v){
   if(!v)return null;v=String(v).trim();
   let m=v.match(/^(\d{4})-(\d\d)-(\d\d)/);if(m)return m[1]+'-'+m[2]+'-'+m[3];
@@ -5279,7 +5291,7 @@ function mapCsv(rows){
   const out=[];
   rows.slice(1).forEach(r=>{const title=g(r,ix.name);if(!title)return;
     out.push({title,assignee:g(r,ix.assignee),start:csvDate(g(r,ix.start)),due:csvDate(g(r,ix.due)),
-      notes:g(r,ix.notes),section:g(r,ix.section),done:!!g(r,ix.done),
+      notes:g(r,ix.notes),section:g(r,ix.section),done:csvDone(g(r,ix.done)),
       priority:g(r,ix.priority).toLowerCase(),est:parseFloat(g(r,ix.est))||0});});
   return out;}
 let _csvParsed=null;
@@ -5300,7 +5312,8 @@ function previewCsv(txt){
   const done=list.filter(x=>x.done).length,dated=list.filter(x=>x.due).length;
   pv.innerHTML=`<div class="emptymini" style="text-align:left;padding:8px 4px">Нашёл <b>${list.length}</b> ${plural(list.length,'задачу','задачи','задач')}${done?' · '+done+' уже готово':''}${dated?' · '+dated+' со сроками':''}:</div>
     <div style="font-size:12.5px;color:var(--mut);line-height:1.7;margin:2px 0 12px">${list.slice(0,5).map(x=>'• '+esc(x.title.slice(0,60))).join('<br>')}${list.length>5?'<br>…и ещё '+(list.length-5):''}</div>
-    <button class="btn primary" id="csvGo" style="width:100%">Импортировать ${list.length} ${plural(list.length,'задачу','задачи','задач')}</button>`;
+    ${list.length>300?`<div class="emptymini" style="text-align:left;padding:0 4px 8px;color:var(--warn)">⚠ За раз импортирую первые 300 — остальные ${list.length-300} останутся в файле</div>`:''}
+    <button class="btn primary" id="csvGo" style="width:100%">Импортировать ${Math.min(list.length,300)} ${plural(Math.min(list.length,300),'задачу','задачи','задач')}</button>`;
   $('#csvGo').onclick=doImportCsv;}
 function doImportCsv(){
   const list=_csvParsed;if(!list)return;

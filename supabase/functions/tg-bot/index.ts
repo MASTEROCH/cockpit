@@ -16,6 +16,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const BOT = Deno.env.get("TELEGRAM_BOT_TOKEN") ?? "";
+const BOT_ID = Number(BOT.split(":")[0]) || 0; // id бота = первая часть токена; для проверки авторства reply
 const SECRET = Deno.env.get("TG_WEBHOOK_SECRET") ?? "";
 const INTERNAL = Deno.env.get("WANDO_INTERNAL_SECRET") ?? "";
 // STT-провайдеры (каскад: какой ключ задан — тот и работает)
@@ -162,7 +163,9 @@ async function selfServe(chatId: number, name: string, email: string): Promise<s
   const { error: e1 } = await sb.from("workspaces").insert({ id: ws, name: (name || "Founder") + " HQ", plan: "solo", created_by: em });
   if (e1) return "⚠ Не получилось создать пространство: " + esc(e1.message);
   await sb.from("team").insert({ email: em, name: name || "Founder", workspace_id: ws });
-  await sb.from("tg_links").upsert({ chat_id: chatId, email: em, name, token_hash: "selfserve", revoked: false, workspace_id: ws });
+  // пишем ОБЕ колонки: читаем воркспейс из `workspace` (Link.workspace, select *), а изоляция — по workspace_id
+  { const { error: e2 } = await sb.from("tg_links").upsert({ chat_id: chatId, email: em, name, token_hash: "selfserve", revoked: false, workspace: ws, workspace_id: ws });
+    if (e2) return "⚠ Пространство создано, но привязка Telegram не сохранилась: " + esc(e2.message) + "\nПривяжись с сайта " + SITE; }
   const today = todayISO(0);
   const proj = { id: "p" + Math.random().toString(36).slice(2, 9), projectName: "Мой первый проект", emoji: "🚀", demo: false, parentId: null, updatedAt: Date.now(),
     members: [{ id: "m1", name: name || "Founder", email: em, role: "Founder", color: "#a78bfa", capacity: 30 }],
@@ -568,7 +571,7 @@ async function askStandup(init: Link, initChat: number): Promise<string> {
   const q = `🧍 <b>${esc(init.name ?? init.email)}</b> собирает <a href="https://${SITE}/?su=${initChat}">стендап</a>:\n\n1️⃣ что сделал вчера\n2️⃣ что делаешь сегодня\n3️⃣ что мешает\n\n<i>↩︎ ответь на ЭТО сообщение одним сообщением — я перешлю</i>`;
   let n = 0;
   for (const l of links) { await TG("sendMessage", { chat_id: l.chat_id, text: q, parse_mode: "HTML", disable_web_page_preview: true }); n++; }
-  return `🧍 Спросил ${n} ${n === 1 ? "человека" : "человек"} — ответы прилетят сюда по мере готовности.`;
+  return `🧍 Спросил ${n} ${plural(n, "человека", "человека", "человек")} — ответы прилетят сюда по мере готовности.`;
 }
 
 // вечерний разбор: закрыто сегодня + незакрытое с переносом одним тапом
@@ -1033,7 +1036,10 @@ Deno.serve(async (req) => {
 
     // --- ответ на сообщение бота о задаче → комментарий в задачу ---
     const rp = msg.reply_to_message;
-    if (rp && !text.startsWith("/")) {
+    // ВАЖНО: доверяем ссылкам-якорям (?t=…, ?su=…) ТОЛЬКО в сообщениях, которые отправил САМ бот.
+    // Иначе юзер сам пишет сообщение со ссылкой, отвечает на него — и гонит коммент в чужой воркспейс
+    // или пересылает текст в произвольный чат (su=<chatId>). Реплай на бота = якоря бот-авторские.
+    if (rp && rp.from?.id === BOT_ID && !text.startsWith("/")) {
       const ents = [...(rp.entities ?? []), ...(rp.caption_entities ?? [])] as Record<string, any>[];
       let ref: { pid: string; tid: string } | null = null;
       for (const e of ents) {
