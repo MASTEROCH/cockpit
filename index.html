@@ -2353,9 +2353,27 @@ function awardForDone(data,t){
   const m=(data.members||[]).find(x=>x.id===t.assigneeId);if(!m)return 0;
   const v=taskValue(t);m.points=(m.points||0)+v;t.pointsAwarded=t.assigneeId;
   const today=todayISO();
-  if(m.lastDone!==today){const y=fmtD(parseD(today)-86400000);m.streak=(m.lastDone===y?(m.streak||0)+1:1);m.lastDone=today;}
+  if(m.lastDone!==today){const y=fmtD(parseD(today)-86400000);m.streak=(m.lastDone===y?(m.streak||0)+1:1);m.lastDone=today;
+    const me2=myMemberIn(data);if(m.streak>=2&&me2&&me2.id===m.id)window._streakToast=m.streak;/* мой стрик вырос сегодня → празднуем в render() */}
   return v;}
 function effStreak(m){const t=todayISO(),y=fmtD(parseD(t)-86400000);return (m&&(m.lastDone===t||m.lastDone===y))?(m.streak||0):0;}
+/* ==== ИМПУЛЬС: личный стрик — ты против себя, гордость без проигравших.
+       Раньше был спрятан в «Команде»; выносим на «Сейчас». «Не разорви цепочку». ==== */
+function myStreak(){
+  let best=0,today=false;const t0=todayISO();
+  reg.list.filter(p=>!p.archived).forEach(p=>{const d=p.id===S.id?S:loadProj(p.id);if(!d)return;
+    const m=myMemberIn(d);if(!m)return;
+    const s=effStreak(m);if(s>best)best=s;
+    if(m.lastDone===t0)today=true;});
+  return {days:best,today};
+}
+function streakChip(){
+  const s=myStreak();if(s.days<2)return '';
+  const d=s.days,lbl=d+' '+plural(d,'день','дня','дней');
+  return s.today
+    ? `<span class="streak" title="Дней подряд ты закрываешь хотя бы одну — держи ритм 🙂">🔥 ${lbl} подряд</span>`
+    : `<span class="streak" title="Стрик жив со вчера — закрой одну, чтобы не разорвать цепочку">🔥 ${lbl} · не разорви</span>`;
+}
 const pKey=m=>((m.email||'').toLowerCase())||('n:'+(m.name||'').toLowerCase());
 function personScores(){
   const map={};
@@ -2385,6 +2403,9 @@ function applyAccent(){const a=S.accent,r=document.documentElement;
   if(a&&/^#[0-9a-f]{6}$/i.test(a)){r.style.setProperty('--acc2',a);r.style.setProperty('--acc',shade(a,20));r.style.setProperty('--acc3',shade(a,-28));}
   else{r.style.removeProperty('--acc2');r.style.removeProperty('--acc');r.style.removeProperty('--acc3');}}
 function render(){
+  if(window._streakToast){const d=window._streakToast;window._streakToast=null;
+    const mile=[3,7,14,30,50,100].includes(d);
+    setTimeout(()=>toast('🔥 '+d+' '+plural(d,'день','дня','дней')+' подряд — '+(mile?'это уже характер!':'держишь ритм'),'🔥'),260);}
   $('#cntIdeas').textContent=S.ideas.length;
   {const pl=$('#projLabel');if(pl){pl.textContent=S.projectName;pl._ppDone=0;pl.classList.remove('pp-on');}}
   $('#projEmoji').textContent=(reg.list.find(p=>p.id===S.id)||{}).emoji||'🚀';
@@ -2732,7 +2753,7 @@ function renderNow(){
   if(window.innerWidth<=680){renderNowMobile({el,greet,next,upNext,mine,pct,prog,ov,vel,ins,running,energy:localStorage.getItem('cockpit_energy_'+todayISO())||''});return;}
   window._heroNext=next?{id:next.id,title:next.title,est:next.estimate,pid:nextPid,st:next.status}:null;
   el.innerHTML=`<div class="now-greet"><h1>${greet}${(n=>n&&n!=='Я'&&n!=='Новый участник'?', '+esc(n):'!')(meName())}</h1><span>${esc(S.projectName)} · пульс проекта
-      <span class="energyrow" title="Заряд сегодня: подстрою следующий шаг"><button data-en="hi" class="${energy==='hi'?'on':''}" title="Полон сил — дай крупную задачу" aria-label="Полон сил">${icon('battery',15)}</button><button data-en="lo" class="${energy==='lo'?'on':''}" title="Мало сил — подкинь лёгкие" aria-label="Мало сил">${icon('battlow',15)}</button></span></span></div>
+      <span class="energyrow" title="Заряд сегодня: подстрою следующий шаг"><button data-en="hi" class="${energy==='hi'?'on':''}" title="Полон сил — дай крупную задачу" aria-label="Полон сил">${icon('battery',15)}</button><button data-en="lo" class="${energy==='lo'?'on':''}" title="Мало сил — подкинь лёгкие" aria-label="Мало сил">${icon('battlow',15)}</button></span>${streakChip()}</span></div>
     ${whatsNewStrip()}
     ${hero}
     ${firstStepsCard()}
@@ -2952,7 +2973,7 @@ function renderNowMobile(ctx){
     return `<div class="mrow" data-open="${t.id}" data-pid="${pid}"><span class="dot" style="background:${stMap[t.status].c}"></span><span class="mr-t">${prGlyph(t)}${esc(t.title)}</span>${x.pid?badge(x):''}${t.estimate?`<span class="mr-e">${t.estimate}ч</span>`:''}</div>`;}).join('');
   el.innerHTML=`
     <div class="mgreet"><h1>${greet.split(' ')[0]} ${greet.split(' ').slice(1).join(' ')}${(n=>n&&n!=='Я'&&n!=='Новый участник'?', '+esc(n.split(' ')[0]):'!')(meName())}</h1>
-      <span class="energyrow"><button data-en="hi" class="${energy==='hi'?'on':''}" title="Полон сил — дай крупную задачу" aria-label="Полон сил">${icon('battery',15)}</button><button data-en="lo" class="${energy==='lo'?'on':''}" title="Мало сил — подкинь лёгкие" aria-label="Мало сил">${icon('battlow',15)}</button></span></div>
+      <span class="energyrow"><button data-en="hi" class="${energy==='hi'?'on':''}" title="Полон сил — дай крупную задачу" aria-label="Полон сил">${icon('battery',15)}</button><button data-en="lo" class="${energy==='lo'?'on':''}" title="Мало сил — подкинь лёгкие" aria-label="Мало сил">${icon('battlow',15)}</button></span>${streakChip()}</div>
     ${whatsNewStrip()}
     ${hero}
     ${rows?`<div class="msec">Ещё сегодня · ${upNext.length}</div>${rows}`:''}

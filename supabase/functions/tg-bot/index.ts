@@ -34,6 +34,12 @@ const TG = (method: string, body: unknown) =>
   }).then((r) => r.json()).catch(() => null);
 
 const esc = (s: string) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+function plural(n: number, one: string, few: string, many: string): string {
+  const m10 = n % 10, m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return one;
+  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return few;
+  return many;
+}
 
 const KEYBOARD = {
   keyboard: [
@@ -232,9 +238,12 @@ async function briefFor(link: Link): Promise<string> {
   const isOwner = (w?.created_by ?? "").toLowerCase() === link.email.toLowerCase();
   const staleByName: Record<string, number> = {};
   const d3 = todayISO(-3, tz);
+  const yest = todayISO(-1, tz);
+  let streak = 0, streakToday = false; // Импульс: личный стрик закрытий следует за тобой в Telegram
   for (const p of rows) {
     const me = ((p.data?.members ?? []) as Record<string, any>[]).find((m) => (m.email ?? "").toLowerCase() === link.email.toLowerCase());
     if (!me) continue;
+    if (me.lastDone === today || me.lastDone === yest) { streak = Math.max(streak, Number(me.streak ?? 0)); if (me.lastDone === today) streakToday = true; }
     for (const t of taskList(p)) {
       if (t.status === "done") continue;
       if (isOwner && t.assigneeId && t.assigneeId !== me.id && (t.end ?? "9999") < d3) {
@@ -253,6 +262,11 @@ async function briefFor(link: Link): Promise<string> {
   if (!mineOver.length && !mineToday.length) out += "\n🎯 На тебе сегодня дедлайнов нет — можно строить.\n";
   const stale = Object.entries(staleByName).sort((a, b) => b[1] - a[1]).slice(0, 3);
   if (stale.length) out += `\n🕸 <b>Залежалось у команды (3+ дней):</b> ${stale.map(([n, c]) => `${esc(n)} — ${c}`).join(" · ")}\n<i>подсвети им, передай или порежь скоуп</i>\n`;
+  if (streak >= 2) {
+    const lbl = `${streak} ${plural(streak, "день", "дня", "дней")}`;
+    out += streakToday ? `\n🔥 <b>Стрик: ${lbl} подряд</b> — красавчик, держи ритм.\n`
+                       : `\n🔥 <b>Стрик: ${lbl}</b> — закрой хоть одну сегодня, чтобы не разорвать цепочку.\n`;
+  }
   return out;
 }
 
