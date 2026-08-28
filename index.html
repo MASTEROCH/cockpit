@@ -644,6 +644,7 @@ header{background:var(--sheen),rgba(18,21,31,.62)}
 @media (hover:none){.card::before,.kpi::before,.mcard::before,.tpl::before,.idea::before{display:none}}
 
 .empty{padding:56px 30px;text-align:center;color:var(--mut2)}
+.empty .es-cta{margin-top:16px}
 .empty .eico{font-size:48px;display:block;margin-bottom:13px;filter:drop-shadow(0 8px 18px rgba(0,0,0,.45));opacity:.92}
 .empty .etitle{font-size:16px;font-weight:800;color:var(--txt);margin-bottom:5px;letter-spacing:-.2px}
 .empty .esub{font-size:13px;max-width:330px;margin:0 auto;line-height:1.55}
@@ -2296,7 +2297,16 @@ function shade(hex,p){const n=parseInt(hex.slice(1),16);let r=(n>>16)+p*2.55,g=(
   return '#'+((r<<16)|(g<<8)|b).toString(16).padStart(6,'0');}
 function prGlyph(t){if(t.priority!=='high'&&t.priority!=='urgent')return '';return `<span class="flag" style="color:${prMap[t.priority].c}">⚑</span> `;}
 function prTag(t){if(t.priority!=='high'&&t.priority!=='urgent')return '';const p=prMap[t.priority];return `<span class="flag" style="color:${p.c}">⚑ ${p.n}</span>`;}
-function emptyState(ico,title,sub){return `<div class="empty"><span class="eico">${ico}</span><div class="etitle">${esc(title)}</div><div class="esub">${esc(sub)}</div></div>`;}
+/* пустое состояние никогда не тупик: опциональный CTA возвращает в поток (data-esact) */
+function emptyState(ico,title,sub,cta){return `<div class="empty"><span class="eico">${ico}</span><div class="etitle">${esc(title)}</div><div class="esub">${esc(sub)}</div>${cta?`<button class="btn primary es-cta" data-esact="${cta.act}">${esc(cta.label)}</button>`:''}</div>`;}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-esact]');if(!b)return;const a=b.dataset.esact;
+  if(a==='now'){if(window.closeInbox)closeInbox();setView('now');}
+  else if(a==='add'){if(window.innerWidth<=680)openCap();else{setView('board');const c=$('#cmd');if(c){c.focus();toast('Пиши: «созвон завтра 2ч важно» — разберу сам','⚡');}}}
+  else if(a==='idea'){setView('backlog');setTimeout(()=>{const i=$('#ideaIn');if(i)i.focus();},120);}
+  else if(a==='sync')openAuth();
+  else if(a==='connect')openConnect();
+  else if(a==='freset'){filter={q:'',assignee:'',mine:false,overdue:false,quick:false};render();}
+  else if(a==='plan')openAiPlan();});
 function logAct(icon,text){if(!S.activity)S.activity=[];S.activity.unshift({ts:Date.now(),who:meName(),icon,text});if(S.activity.length>150)S.activity.length=150;}
 function relTime(ts){const d=Math.floor((Date.now()-ts)/1000);
   if(d<45)return 'только что';if(d<3600)return Math.floor(d/60)+' мин';if(d<86400)return Math.floor(d/3600)+' ч';
@@ -3766,7 +3776,7 @@ function renderPortfolio(){
   mine.sort((a,b)=>parseD(a.t.end)-parseD(b.t.end));
   const allAct=[];projs.forEach(({meta,data})=>{(data.activity||[]).forEach(a=>allAct.push(Object.assign({},a,{pname:meta.name,emoji:meta.emoji})));});
   allAct.sort((a,b)=>b.ts-a.ts);
-  if(projs.length<=1){el.innerHTML=emptyState('🌐','Пока один проект','Создавай проекты под разные ниши и клиентов — здесь будет общий пульс всей компании, без переключений');return;}
+  if(projs.length<=1){el.innerHTML=emptyState('🌐','Пока один проект','Создавай проекты под разные ниши и клиентов — здесь будет общий пульс всей компании, без переключений',{label:'← В «Сейчас»',act:'now'});return;}
   el.innerHTML=`
    <div class="dhead"><h1>Все проекты</h1><span class="sub">${projs.length} проектов · общий пульс компании</span></div>
    <div class="kpis">
@@ -3986,7 +3996,7 @@ function cheatsheetHTML(){return `<div class="cheatbody">
 function bindCheat(scope){$$(scope+' .cmdex').forEach(b=>b.onclick=()=>{navigator.clipboard.writeText(b.dataset.copy);toast('Скопировано — вставь в Claude','📋');});}
 function renderIntake(){
   const el=$('#intake');if(!el)return;
-  if(!cloudOn){el.innerHTML=`<div class="dhead"><h1>Приёмка</h1></div>`+emptyState('🔌','Нужен вход в облако','Приёмка работает для команды. Нажми 🔄 в шапке и войди — задачи из бота и Claude будут прилетать сюда.');return;}
+  if(!cloudOn){el.innerHTML=`<div class="dhead"><h1>Приёмка</h1></div>`+emptyState('🔌','Нужен вход в облако','Приёмка работает для команды. Войди — задачи из бота и Claude будут прилетать сюда.',{label:'🔄 Войти в облако',act:'sync'});return;}
   const connectBtn=`<button class="btn" id="intakeConnect">${icon('plug',15)} Подключить Claude</button>`;
   if(!intakeReady){el.innerHTML=`<div class="dhead"><h1>Приёмка</h1><span class="spacer"></span>${connectBtn}</div>`
     +emptyState('🛠','Приёмник не активирован','Нужно один раз прогнать SQL в Supabase (supabase/intake.sql). Деплоить ничего не надо. После этого задачи из Claude появятся здесь.');
@@ -4027,7 +4037,7 @@ function renderIntake(){
           </div>
         </div>
       </div>`;}).join('')}</div>`
-    :emptyState('📭','Очередь пуста','Скажи своему Claude: «поставь в WANDO задачу…» — она прилетит сюда на подтверждение. Кнопка «Подключить Claude» выше — если ещё не настроил.'));
+    :emptyState('📭','Очередь пуста','Скажи своему Claude: «поставь в WANDO задачу…» — она прилетит сюда на подтверждение. Чисто? Возвращайся к делу.',{label:'⚡ К следующему шагу',act:'now'}));
   const cb=$('#intakeConnect');if(cb)cb.onclick=openConnect;
   bindCheat('#intake');
   $$('#intake [data-more]').forEach(b=>b.onclick=e=>{e.stopPropagation();const m=$(`#intake .inomenu[data-menu="${b.dataset.more}"]`);
@@ -4406,8 +4416,8 @@ function renderGantt(){
   const wrap=$('#gantt');
   const all=S.tasks.filter(t=>!t.parentId&&passFilter(t));   /* гант = структура: только корневые */
   if(!all.length){wrap.innerHTML=filterActive()
-    ? emptyState('🔍','Под фильтр ничего не попало','Сбрось фильтры сверху, чтобы увидеть все задачи проекта')
-    : emptyState('🗂️','Пока нет задач','Добавь через ＋ под разделом, командную строку или 🎙 голосом');return;}
+    ? emptyState('🔍','Под фильтр ничего не попало','Сбрось фильтры, чтобы увидеть все задачи проекта',{label:'Сбросить фильтры',act:'freset'})
+    : emptyState('🗂️','Пока нет задач','Опиши словами — командной строкой или голосом, Вандо разберёт сам',{label:'＋ Первая задача',act:'add'});return;}
   let min=Infinity,max=-Infinity;
   all.forEach(t=>{min=Math.min(min,parseD(t.start));max=Math.max(max,parseD(t.end));});
   min-=3*dayMs; max+=3*dayMs;
@@ -4644,7 +4654,7 @@ function renderBoard(){
       const over=S.members.map(m=>({m,n:S.tasks.filter(t=>t.status==='progress'&&!t.isMilestone&&t.assigneeId===m.id).length}))
         .filter(x=>x.n>3).sort((a,b)=>b.n-a.n)[0];
       if(over){const w=document.createElement('div');w.className='wiphint';
-        w.textContent='🥵 '+over.m.name+' тянет '+over.n+' сразу — так не делается ни одна';
+        w.textContent='🥵 '+over.m.name+' тянет '+over.n+' сразу — помоги закрыть или разгрузи';
         w.title='Больше 3 задач «В работе» на человека — всё стоит. Жми: только его задачи';
         w.onclick=()=>{filter.assignee=over.m.id;render();toast('Доска: только задачи '+over.m.name+'. Снять — «Все люди»','👤');};
         col.insertBefore(w,col.querySelector('.colb'));}}
@@ -4710,7 +4720,7 @@ function openBoardAdd(col,status){
 /* ============================ BACKLOG ============================ */
 function renderBacklog(){
   const c=$('#ideas');
-  if(!S.ideas.length){c.innerHTML=emptyState('💡','Здесь живут идеи','Кидай сюда гипотезы и фичи — голосуй ▲ и превращай лучшие в задачи');return;}
+  if(!S.ideas.length){c.innerHTML=emptyState('💡','Здесь живут идеи','Кидай сюда гипотезы и фичи — голосуй ▲ и превращай лучшие в задачи',{label:'＋ Первая идея',act:'idea'});return;}
   const sorted=[...S.ideas].sort((a,b)=>b.votes-a.votes);
   c.innerHTML=sorted.map(i=>`
     <div class="idea" data-id="${i.id}">
