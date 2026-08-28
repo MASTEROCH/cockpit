@@ -495,6 +495,13 @@ header{background:rgba(18,21,31,.62);backdrop-filter:var(--blur);-webkit-backdro
 .btn.primary{background:linear-gradient(180deg,rgba(181,153,255,.96),rgba(140,112,242,.93));border-color:transparent;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.38),0 8px 22px rgba(167,139,250,.42)}
 .tab.active{background:linear-gradient(180deg,rgba(255,255,255,.15),rgba(255,255,255,.05));box-shadow:var(--ghi),0 2px 8px rgba(0,0,0,.25)}
+/* «Сейчас» — дом: всегда полным цветом (инструменты приглушены до наведения), ⚡ акцентом, тонкий разделитель после */
+@media(min-width:821px){
+  .tabs .tab-home:not(.active){color:var(--txt)}
+  .tabs .tab-home svg{color:var(--acc2)}
+  .tabs .tab-home{position:relative;margin-right:9px}
+  .tabs .tab-home::after{content:"";position:absolute;right:-5px;top:22%;height:56%;width:1px;background:var(--line)}
+}
 .logo{box-shadow:0 0 22px rgba(167,139,250,.5),inset 0 1px 0 rgba(255,255,255,.4)}
 
 /* --- gantt geometry for taller (46px) rows --- */
@@ -1820,7 +1827,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
   </div>
 
   <div class="tabs" id="tabs">
-    <button class="tab active" data-v="now" data-icon="zap"><span>Сейчас</span></button>
+    <button class="tab tab-home active" data-v="now" data-icon="zap"><span>Сейчас</span></button>
     <button class="tab" data-v="all" data-icon="layers"><span>Всё</span></button>
     <button class="tab" data-v="gantt" data-icon="gantt"><span>Гант</span></button>
     <button class="tab" data-v="board" data-icon="board"><span>Доска</span></button>
