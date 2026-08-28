@@ -1873,7 +1873,6 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
 
   <div class="content">
     <div class="view active" id="v-now"><div class="now" id="now"></div></div>
-    <div class="view" id="v-dash"><div class="dash" id="dash"></div></div>
     <div class="view" id="v-all"><div class="dash" id="portfolio"></div></div>
     <div class="view" id="v-gantt"><div class="gantt" id="gantt"></div></div>
     <div class="view" id="v-board"><div class="board" id="board"></div></div>
@@ -2475,7 +2474,6 @@ function render(){
   updateInboxBadge();
   syncFilterUI();
   if(view==='now')renderNow();
-  else if(view==='dash')renderDash();
   else if(view==='all')renderPortfolio();
   else if(view==='gantt')renderGantt();
   else if(view==='board')renderBoard();
@@ -2512,7 +2510,7 @@ function applyPingpong(root){
   });}catch(e){}
 }
 function setView(v){view=v;if(typeof track==='function')track('view:'+v);
-  {const mvMap={board:'mprojects',gantt:'mprojects',week:'mprojects',backlog:'mprojects',team:'mprojects',all:'mprojects',dash:'mprojects'};
+  {const mvMap={board:'mprojects',gantt:'mprojects',week:'mprojects',backlog:'mprojects',team:'mprojects',all:'mprojects'};
    const hv=mvMap[v]||v;$$('.mnav [data-mv]').forEach(b=>b.classList.toggle('on',b.dataset.mv===hv));}if(v==='gantt')ganttNeedsScroll=true;$$('.tab').forEach(t=>t.classList.toggle('active',t.dataset.v===v));
   $$('.view').forEach(el=>el.classList.toggle('active',el.id==='v-'+v));render();}
 
@@ -3609,81 +3607,6 @@ function importBackup(){
 }
 
 /* ============================ DASHBOARD ============================ */
-function renderDash(){
-  const d=$('#dash');
-  const T=S.tasks.filter(t=>!t.isMilestone);
-  const done=T.filter(t=>t.status==='done').length;
-  const prog=S.tasks.filter(t=>t.status==='progress').length;
-  const overdue=S.tasks.filter(isOverdue);
-  const totalEst=T.reduce((a,t)=>a+(t.estimate||0),0);
-  const totalSpent=T.reduce((a,t)=>a+(t.spent||0),0);
-  const pctDone=T.length?Math.round(done/T.length*100):0;
-  const tISO=todayISO();
-  // focus today: overdue first, then in-range active
-  const inRange=t=>!t.isMilestone&&t.status!=='done'&&parseD(t.start)<=parseD(tISO)&&parseD(t.end)>=parseD(tISO);
-  const focus=[...overdue.filter(t=>!t.isMilestone),...S.tasks.filter(inRange)];
-  const focusU=[...new Map(focus.map(t=>[t.id,t])).values()];
-  // upcoming 7d
-  const soon=S.tasks.filter(t=>t.status!=='done'&&!isOverdue(t)&&daysLeft(t)>=0&&daysLeft(t)<=7).sort((a,b)=>parseD(a.end)-parseD(b.end));
-
-  const greet=(()=>{const h=new Date().getHours();return h<6?'Доброй ночи':h<12?'Доброе утро':h<18?'Добрый день':'Добрый вечер';})();
-  const dn=new Date();
-
-  d.innerHTML=`
-    <div class="dhead">
-      <h1>🛰 ${greet}, ${esc(meName())}</h1>
-      <span class="sub">${esc(S.projectName)} · ${dn.getUTCDate?dn.getDate():''} ${MONTHF[dn.getMonth()]} ${dn.getFullYear()}</span>
-      <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn" id="briefBtn">☀️ Бриф</button>
-        <button class="btn primary" id="aiBtn">${icon('sparkles',16)} AI-разбор</button>
-      </div>
-    </div>
-    <div class="kpis">
-      <div class="kpi"><div class="v">${T.length}</div><div class="l">Задач всего</div></div>
-      <div class="kpi"><div class="v" style="color:var(--warn)">${prog}</div><div class="l">В работе сейчас</div></div>
-      <div class="kpi"><div class="v" style="color:var(--ok)">${pctDone}%</div><div class="l">${done} из ${T.length} готово</div>
-        <div class="kpibar"><span style="width:${pctDone}%;background:linear-gradient(90deg,var(--ok),#10b981)"></span></div></div>
-      <div class="kpi"><div class="v" style="color:${overdue.length?'var(--bad)':'var(--mut)'}">${overdue.length}</div><div class="l">Просрочено</div></div>
-      <div class="kpi"><div class="v">${totalSpent}<span style="font-size:15px;color:var(--mut2)">/${totalEst}ч</span></div><div class="l">Факт / оценка</div>
-        <div class="kpibar"><span style="width:${totalEst?Math.min(100,totalSpent/totalEst*100):0}%;background:linear-gradient(90deg,var(--acc),var(--acc2))"></span></div></div>
-    </div>
-    <div class="dcols">
-      <div class="panel-c">
-        <h3>Фокус на сегодня <span class="c">${focusU.length}</span></h3>
-        ${focusU.length?focusU.map(t=>{const ov=isOverdue(t);const dl=daysLeft(t);
-          return `<div class="trow" data-task="${t.id}"><button class="qdone" data-quickdone="${t.id}" title="Отметить готовым" style="--c:${stMap[t.status].c}"></button>
-            <span class="tn">${esc(t.title)}</span>${kidsTag(t)}${subTag(t)}${stuckChip(t)}${shiftChip(t)}${quickChip(t)}${avatar(t.assigneeId)}
-            <span class="when ${ov?'over':''}">${ov?'просрочено '+(-dl)+'д':'до '+t.end.slice(8)+'.'+t.end.slice(5,7)}</span></div>`;}).join(''):'<div class="emptymini">На сегодня активных задач нет 🎉</div>'}
-      </div>
-      <div class="panel-c">
-        <h3>📅 Ближайшие дедлайны <span class="c">7 дней</span></h3>
-        ${soon.length?soon.map(t=>{const dl=daysLeft(t);
-          return `<div class="trow" data-task="${t.id}"><span class="dot" style="background:${stMap[t.status].c}"></span>
-            <span class="tn">${t.isMilestone?'🔹 ':''}${esc(t.title)}</span>${avatar(t.assigneeId)}
-            <span class="when ${dl<=2?'soon':''}">${dl===0?'сегодня':dl===1?'завтра':'через '+dl+'д'}</span></div>`;}).join(''):'<div class="emptymini">В ближайшую неделю дедлайнов нет.</div>'}
-      </div>
-    </div>
-    <div class="panel-c" style="margin-top:16px">
-      <h3>👥 Загрузка команды</h3>
-      <div class="tload">${S.members.map(m=>{
-        const mt=S.tasks.filter(t=>t.assigneeId===m.id&&t.status!=='done');
-        const load=mt.reduce((a,t)=>a+(t.estimate||0),0);const pct=m.capacity?Math.min(100,Math.round(load/m.capacity*100)):0;const over=load>m.capacity;
-        return `<div class="ld">${avatar(m.id)}<span class="nm">${esc(m.name)}</span>
-          <div class="meter"><span style="width:${pct}%;${over?'background:linear-gradient(90deg,#fb7185,#f87171)':''}"></span></div>
-          <span class="h" style="${over?'color:var(--bad)':''}">${load}/${m.capacity}ч</span></div>`;}).join('')}</div>
-    </div>
-    ${childrenOf(S.id).length?`<div class="panel-c" style="margin-top:16px"><h3>📦 Дочерние проекты <span class="c">${childrenOf(S.id).length}</span></h3>
-      <div class="plist">${childrenOf(S.id).map(k=>{const kd=loadProj(k.id)||{tasks:[]};const kts=(kd.tasks||[]).filter(t=>!t.isMilestone);const kdone=kts.filter(t=>t.status==='done').length;const kpct=kts.length?Math.round(kdone/kts.length*100):0;const kov=(kd.tasks||[]).filter(t=>!t.isMilestone&&t.status!=='done'&&parseD(t.end)<parseD(tISO)).length;
-        return `<div class="prow" data-open="${k.id}"><div class="pemoji">${k.emoji||'📄'}</div><div class="pmain"><div class="pn">${esc(k.name)}</div><div class="pbar"><span style="width:${kpct}%;${kov?'background:linear-gradient(90deg,#fb7185,#f87171)':''}"></span></div><div class="pmeta">${kts.length} задач · ${kdone} готово${kov?` · <b style="color:var(--bad)">${kov} просроч.</b>`:''}</div></div><div class="ppct">${kpct}%</div></div>`;}).join('')}</div>
-      <div style="font-size:11.5px;color:var(--mut2);margin-top:9px">Клик по проекту — провалиться внутрь и работать с его задачами.</div></div>`:''}
-    <div class="panel-c" style="margin-top:16px"><h3>🕑 Лента активности <span class="c">${(S.activity||[]).length}</span></h3>
-      <div class="actfeed">${(S.activity||[]).length?S.activity.slice(0,20).map(a=>`<div class="actrow"><span class="ai">${a.icon}</span><span class="atx"><b>${esc(a.who)}</b> ${esc(a.text)}</span><span class="att">${relTime(a.ts)}</span></div>`).join(''):'<div class="emptymini">Здесь появится история: кто что создал, передвинул, закрыл. Ничего не теряется — всё под контролем.</div>'}</div></div>`;
-  $$('#dash .trow').forEach(el=>el.onclick=()=>openTask(el.dataset.task));
-  $$('#dash .qdone').forEach(b=>b.onclick=e=>{e.stopPropagation();const t=task(b.dataset.quickdone);if(t){t.status='done';t.statusTs=Date.now();histAdd(t,'статус → Готово');if(t.estimate&&!t.spent)t.spent=t.estimate;logAct('✅','«'+t.title+'» → Готово');const _v=awardForDone(S,t);celebrateAt(e);save();render();toast(_v?('+'+_v+' 🪙 за «'+t.title+'»'):('Готово: «'+t.title+'» ✅'),_v?'🪙':'✅');}});
-  $$('#dash .prow[data-open]').forEach(el=>el.onclick=()=>switchProject(el.dataset.open));
-  const ab=$('#aiBtn');if(ab)ab.onclick=aiReview;
-  const bb=$('#briefBtn');if(bb)bb.onclick=openBrief;
-}
 
 /* ============================ AI-РАЗБОР ДОСКИ (Supabase Edge → Claude) ============================ */
 async function aiReview(){
@@ -5463,7 +5386,7 @@ $('#dDoneNext').onclick=()=>{if(!curTask)return;const t=curTask;
 
 /* ============================ TABS / TOPBAR / FILTERS ============================ */
 $('#tabs').onclick=e=>{const b=e.target.closest('.tab');if(b)setView(b.dataset.v);};
-$('#btnNew').onclick=()=>{const t=newTask();save();if(view==='dash'||view==='backlog'||view==='team')setView('gantt');render();openTask(t.id);};
+$('#btnNew').onclick=()=>{const t=newTask();save();if(view==='backlog'||view==='team')setView('gantt');render();openTask(t.id);};
 
 function syncFilterUI(){
   const sel=$('#fAssignee');
@@ -5600,7 +5523,6 @@ document.addEventListener('keydown',e=>{
   else if(e.key==='n'){e.preventDefault();$('#btnNew').click();}
   else if(e.key==='g')setView('gantt');
   else if(e.key==='b')setView('board');
-  else if(e.key==='o')setView('dash');
   else if(e.key==='i')setView('backlog');
   else if(e.key==='w')setView('week');
   else if(e.key==='t')setView('team');
@@ -6896,7 +6818,7 @@ function buildPaletteIndex(){
       title:r.name,sub:r.red?'🔴 горим — зайти':`🟠 ${r.ov} ${plural(r.ov,'просрочка','просрочки','просрочек')} — зайти`,
       kw:r.name+' риск здоровье проект проседает',
       run:()=>{if(r.p.id!==S.id)switchProject(r.p.id);else setView('board');}});});
-  const NAV=[['now','zap','Сейчас'],['board','board','Доска'],['gantt','gantt','Гант'],['week','cal','Неделя'],['backlog','idea','Бэклог'],['team','users','Команда'],['intake','inbox','Приёмка'],['all','layers','Все проекты'],['dash','home','Обзор · детальная аналитика']];
+  const NAV=[['now','zap','Сейчас'],['board','board','Доска'],['gantt','gantt','Гант'],['week','cal','Неделя'],['backlog','idea','Бэклог'],['team','users','Команда'],['intake','inbox','Приёмка'],['all','layers','Все проекты']];
   NAV.forEach(([v,ic,name])=>items.push({type:'Переход',icon:icon(ic,17),title:name,sub:'раздел',kw:name+' раздел перейти открыть',run:()=>setView(v)}));
   const ACT=[
     // grp: AI | Создать | Планирование | Команда | Делёжка | Настройки
