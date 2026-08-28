@@ -1063,6 +1063,9 @@ body.light .codebox{background:#0f1320}
 .pal-cockpit{box-shadow:inset 2px 0 0 var(--acc2)}
 .pal-cockpit .pal-rtag{color:var(--acc2);border-color:rgba(167,139,250,.35);background:rgba(167,139,250,.08)}
 .pal-cockpit .pal-rt{font-weight:650}
+.df .dfmore{padding:8px 12px;color:var(--mut2);font-weight:800;letter-spacing:1px}
+.df .dfmore.on{color:var(--txt);background:var(--bg2)}
+#dMoreBox{align-items:center}
 .pal-empty{padding:30px;text-align:center;color:var(--mut2);font-size:13.5px}
 .pal-foot{display:flex;align-items:center;gap:17px;padding:10px 16px;border-top:1px solid var(--line);font-size:11px;color:var(--mut2)}
 .pal-foot kbd{font-size:10px;border:1px solid var(--line2);border-radius:4px;padding:1px 5px;background:var(--bg);margin-right:3px}
@@ -1958,11 +1961,16 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
     </div>
   </div>
   <div class="df">
-    <button class="btn danger" id="dDelete">Удалить</button>
-    <button class="btn" id="dDup" title="Создать копию задачи">⧉ Дублировать</button>
-    <button class="btn" id="dGuest" title="Ссылка для человека вне команды — увидит и сможет комментировать только ЭТУ задачу">🌐 Гость</button>
+    <button class="btn dfmore" id="dMoreActs" title="Ещё: дублировать, гость, удалить" aria-label="Ещё">⋯</button>
+    <span id="dMoreBox" style="display:none;gap:8px">
+      <button class="btn" id="dDup" title="Создать копию задачи">⧉ Дублировать</button>
+      <button class="btn" id="dGuest" title="Ссылка для человека вне команды — увидит и сможет комментировать только ЭТУ задачу">🌐 Гость</button>
+      <button class="btn danger" id="dDelete">Удалить</button>
+    </span>
     <div class="spacer"></div>
     <button class="btn" id="dClose">Закрыть</button>
+    <button class="btn" id="dFocus" title="Начать работу над этой задачей — таймер фокуса">▶ Фокус</button>
+    <button class="btn primary" id="dDoneNext" title="Закрыть задачу — и сразу следующий шаг">✓ Готово</button>
   </div>
 </aside>
 
@@ -2366,6 +2374,14 @@ function myStreak(){
     const s=effStreak(m);if(s>best)best=s;
     if(m.lastDone===t0)today=true;});
   return {days:best,today};
+}
+/* следующий шаг после закрытия задачи — тот же движок, что у героя «Сейчас», но
+   вызывается из карточки: конвейер «готово → дальше» работает с ЛЮБОГО экрана */
+function nextStepAfter(excludeId){
+  const pool=myTasksAll().filter(x=>x.t.id!==excludeId);
+  if(!pool.length)return null;
+  pool.sort((a,b)=>relScore(b.t)-relScore(a.t));
+  const x=pool[0];return {id:x.t.id,pid:x.pid,title:x.t.title,est:x.t.estimate};
 }
 function streakChip(){
   const s=myStreak();if(s.days<2)return '';
@@ -4967,6 +4983,9 @@ function openTask(id){
   const t=task(id);if(!t)return;curTask=t;
   $('#dId').textContent='#'+t.id.slice(1,6).toUpperCase();
   $('#dDot').style.background=stMap[t.status].c;
+  {const done=t.status==='done',mile=t.isMilestone;const box=$('#dMoreBox');if(box)box.style.display='none';const ma=$('#dMoreActs');if(ma)ma.classList.remove('on');
+   const f=$('#dFocus');if(f)f.style.display=(done||mile)?'none':'';
+   const dn=$('#dDoneNext');if(dn){dn.style.display=mile?'none':'';dn.textContent=done?'↩ Вернуть в работу':'✓ Готово';dn.classList.toggle('primary',!done);}}
   {const co=$('#dCashOut');if(co){const show=!!t.cash;co.style.display=show?'':'none';
     if(show){const v=t.cashOutcome;
       co.innerHTML=`<div class="cashout"><span class="cq">💰 ${t.status==='done'?'Деньги дошли?':'Сколько двигает?'}</span>
@@ -5399,6 +5418,18 @@ $('#dDup').onclick=()=>{if(!curTask)return;const t=curTask;
   if(c.subtasks)c.subtasks=c.subtasks.map(s=>({...s,done:false}));
   const idx=S.tasks.indexOf(t);S.tasks.splice(idx+1,0,c);logAct('⧉','дубль «'+t.title+'»');save();render();openTask(c.id);toast('Создан дубль','⧉');};
 $('#dClose').onclick=closeDrawer;$('#scrim').onclick=()=>{closeDrawer();closeMember();closeInbox();};
+/* ⋯ — второстепенные действия прячем, подвал ведёт глаголами потока */
+$('#dMoreActs').onclick=()=>{const b=$('#dMoreBox');const open=b.style.display!=='none';b.style.display=open?'none':'inline-flex';$('#dMoreActs').classList.toggle('on',!open);};
+/* ▶ Фокус прямо из карточки — глагол желания там, где ты решаешь ДЕЛАТЬ */
+$('#dFocus').onclick=()=>{if(!curTask)return;const id=curTask.id;closeDrawer();startFocus(id);setView('now');toast('Фокус пошёл ⏱ Погнали','▶');};
+/* ✓ Готово → закрыл и сразу следующий шаг (конвейер с любого экрана) */
+$('#dDoneNext').onclick=()=>{if(!curTask)return;const t=curTask;
+  if(t.status==='done'){t.status='todo';t.statusTs=Date.now();delete t.doneTs;histAdd(t,'статус → '+stMap.todo.n);save();openTask(t.id);toast('Вернул в работу','↩');return;}
+  const un=markDone(S.id,t.id);closeDrawer();render();
+  toast('Готово: «'+t.title.slice(0,30)+'» ✅','✅','Отменить',un);
+  setTimeout(()=>{const nx=nextStepAfter(t.id);if(!nx)return;
+    toast('Дальше: «'+String(nx.title).slice(0,42)+'»'+(nx.est?' · '+nx.est+'ч':''),'⚡','Поехали',()=>{
+      if(nx.pid!==S.id){switchProject(nx.pid);setTimeout(()=>startFocus(nx.id),160);}else startFocus(nx.id);});},3600);};
 
 /* ============================ TABS / TOPBAR / FILTERS ============================ */
 $('#tabs').onclick=e=>{const b=e.target.closest('.tab');if(b)setView(b.dataset.v);};
