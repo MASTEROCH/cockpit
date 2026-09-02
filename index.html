@@ -6082,6 +6082,7 @@ projBtn.onclick=e=>{e.stopPropagation();
   projMenu.innerHTML=tops.map(p=>item(p,false)).join('')
     +`<div class="sep"></div>`
     +(isTeam?`<button data-act="newp">＋ Новый проект</button>`:'')
+    +`<button data-act="loaddemo">🎬 Демо «Testoran» <span style="color:var(--mut2);font-weight:500">— пример, не тронет твои проекты</span></button>`
     +`<button data-act="mgmt" style="color:var(--mut)">${icon('gear',14)} Управление проектом <span id="projChev" style="color:var(--mut2)">▸</span></button>`
     +`<div id="projMgmt" style="display:none;border-left:2px solid var(--line);margin:2px 0 4px 14px">`
       +(isTeam?`<button data-act="makechild">📦 Вложить в проект…</button>`
@@ -6107,6 +6108,7 @@ projMenu.onclick=e=>{const b=e.target.closest('button');if(!b)return;
   else if(b.dataset.act==='makechild')openParentChooser();
   else if(b.dataset.act==='unparent')setParent(S.id,null);
   else if(b.dataset.act==='newp')openNewProject();
+  else if(b.dataset.act==='loaddemo')loadDemo();
   else if(b.dataset.act==='report')openReport();
   else if(b.dataset.act==='renp'){const n=prompt('Название проекта:',S.projectName);if(n){S.projectName=n.trim();save();render();}}
   else if(b.dataset.act==='pemoji'){const cur=(projMeta(S.id)||{}).emoji||'📄';let em=(prompt('Эмодзи проекта:',cur)||'').trim();
