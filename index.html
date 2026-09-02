@@ -2747,7 +2747,7 @@ function renderNow(){
   const _ff=localStorage.getItem('cockpit_now_fold');const foldOpen=_ff!==null?_ff!=='0':done>0; /* пустой темп не занимает экран */
   // герой — по всем проектам (как на мобиле): единая ментальная модель
   let nextPid=S.id,heroX=null,upList=upNext.map(t=>({t,pid:S.id}));
-  const multi=reg.list.filter(p=>!p.archived).length>1;
+  const multi=visibleProjects().length>1;
   if(multi){const all=myTasksAll();
     if(all.length){const _en=localStorage.getItem('cockpit_energy_'+todayISO())||'';
       const enW=x=>_en==='lo'?((x.t.estimate&&x.t.estimate<=2)?1.6:0):_en==='hi'?((x.t.estimate>=4||x.t.priority==='high'||x.t.priority==='urgent')?1.2:0):0;
@@ -2966,7 +2966,7 @@ function renderNowMobile(ctx){
   const energy=ctx.energy;
   // герой и очередь — со всех проектов (мультипроект), иначе как есть
   let next=ctx.next,upNext=ctx.upNext,nextPid=S.id,poolAll=null;
-  const multi=reg.list.filter(p=>!p.archived).length>1;
+  const multi=visibleProjects().length>1;
   if(multi){
     poolAll=myTasksAll();
     if(poolAll.length){
@@ -3693,7 +3693,7 @@ $('#aiScrim').onclick=e=>{if(e.target===$('#aiScrim'))$('#aiScrim').classList.re
 /* ============================ PORTFOLIO (все проекты) ============================ */
 function renderPortfolio(){
   const el=$('#portfolio');
-  const projs=reg.list.filter(p=>!p.archived).map(p=>({meta:p,data:loadProj(p.id)})).filter(x=>x.data&&x.data.tasks);
+  const projs=visibleProjects().map(p=>({meta:p,data:loadProj(p.id)})).filter(x=>x.data&&x.data.tasks);
   const tISO=todayISO();
   const over=t=>!t.isMilestone&&t.status!=='done'&&parseD(t.end)<parseD(tISO);
   let gActive=0,gDone=0,gOver=0,gTasks=0;const mine=[];const myname=meName().toLowerCase();
@@ -4703,6 +4703,24 @@ async function myWorkspaceId(){
   try{const {data}=await sb.from('team').select('workspace_id').ilike('email',myEmail).maybeSingle();
     return (data&&data.workspace_id)||'main';}catch(e){return 'main';}
 }
+/* === Доступ по проектам (Этап 1): роли Владелец/Админ/Участник ===
+   Ограничивает видимость ТОЛЬКО у явного 'member'. Владелец/Админ/легаси видят ВСЁ
+   (обратная совместимость — пока никого не назначили участником, ничего не прячется). */
+function teamRoleOf(email){const r=(teamRows.find(t=>(t.email||'').toLowerCase()===(email||'').toLowerCase())||{}).role;return r||'';}
+function iSeeAllProjects(){if(!accessReady||!isTeam)return true;return teamRoleOf(myEmail)!=='member';}
+function canSeeProject(p){if(!p)return false;if(iSeeAllProjects())return true;const d=p.id===S.id?S:loadProj(p.id);return !d||d.open!==false||!!myMemberIn(d);}
+function visibleProjects(){return reg.list.filter(p=>!p.archived&&canSeeProject(p));}
+async function setTeamRole(email,role){
+  if(!cloudOn||!sb)return;
+  const {error}=await sb.from('team').update({role}).ilike('email',email);
+  if(error){toast('Не удалось сменить роль: '+(error.message||''),'⚠');return;}
+  toast(esc(email)+' → '+({owner:'Владелец 👑',admin:'Админ',member:'Участник'}[role]||role),'🔐');await loadAccess();
+}
+function setProjectOpen(open){
+  S.open=!!open;save();
+  toast(open?'Проект открыт всей команде':'Проект закрыт — видят только добавленные и админы','🔐');
+  renderAccessPanel();render();
+}
 async function addTeamMember(email,name){
   email=(email||'').trim().toLowerCase();
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){toast('Похоже, это не email','⚠');return;}
@@ -4748,11 +4766,16 @@ function renderAccessPanel(){
   if(!isTeam){el.innerHTML='';return;}
   el.innerHTML=`<div class="accpanel">
     <h3>🔐 Доступ и роли</h3>
-    <div class="accsub">Команда видит <b>все проекты</b> (включая личные друг друга) и решает Приёмку. Гость видит только выданные ему проекты.</div>
-    <div class="accsec">Команда · полный доступ</div>
-    ${teamRows.map(t=>`<div class="accrow"><span class="ae">${esc(t.email)}</span><span class="an">${esc(t.name||'')}</span>
-      <span class="arole full" title="Команда равноправна: видит все проекты воркспейса и решает Приёмку. Нужен точечный доступ — убери из команды и выдай гостевой на нужные проекты.">full</span>
-      ${(t.email||'').toLowerCase()!==myEmail?`<span class="ax" data-rmteam="${esc(t.email)}" title="Убрать из команды">✕</span>`:'<span class="an">(вы)</span>'}</div>`).join('')}
+    <div class="accsub">Роли решают видимость: <b>Владелец/Админ</b> видят все проекты, <b>Участник</b> — только открытые и те, куда добавлен. Гость видит один выданный проект.</div>
+    <div class="accsec">🗂 «${esc(S.projectName)}» · видимость</div>
+    <div class="accrow"><span class="ae">${S.open===false?'🔒 Закрыт':'🌐 Открыт всей команде'}</span>
+      <span class="an">${S.open===false?'видят админы и добавленные участники':'виден каждому в команде'}</span>
+      <button class="btn" id="accProjToggle" style="margin-left:auto">${S.open===false?'Открыть всем':'Закрыть'}</button></div>
+    <div class="accsec">Команда · роли</div>
+    ${teamRows.map(t=>{const rr=t.role==='owner'?'owner':t.role==='member'?'member':'admin';const me=(t.email||'').toLowerCase()===myEmail;
+      return `<div class="accrow"><span class="ae">${esc(t.email)}</span><span class="an">${esc(t.name||'')}${me?' (вы)':''}</span>
+      <select class="fsel" data-trole="${esc(t.email)}" title="Роль решает, что человек видит"><option value="owner" ${rr==='owner'?'selected':''}>👑 Владелец</option><option value="admin" ${rr==='admin'?'selected':''}>Админ</option><option value="member" ${rr==='member'?'selected':''}>Участник</option></select>
+      ${!me?`<span class="ax" data-rmteam="${esc(t.email)}" title="Убрать из команды">✕</span>`:''}</div>`;}).join('')}
     <div class="accadd"><input class="inp" id="accTeamEmail" type="email" placeholder="email нового члена команды">
       <input class="inp" id="accTeamName" placeholder="Имя" style="max-width:130px">
       <button class="btn primary" id="accTeamAdd">＋ В команду</button></div>
@@ -4766,6 +4789,8 @@ function renderAccessPanel(){
       <select class="fsel" id="accGuestRole"><option value="member">ведёт задачи</option><option value="viewer">только смотрит</option></select>
       <button class="btn" id="accGuestAdd">🔐 Выдать доступ</button></div>
   </div>`;
+  {const pt=$('#accProjToggle');if(pt)pt.onclick=()=>setProjectOpen(S.open===false);}
+  $$('#accessPanel [data-trole]').forEach(sel=>sel.onchange=()=>setTeamRole(sel.dataset.trole,sel.value));
   const ta=$('#accTeamAdd');if(ta)ta.onclick=()=>addTeamMember($('#accTeamEmail').value,$('#accTeamName').value);
   const ga=$('#accGuestAdd');if(ga)ga.onclick=()=>grantAccess($('#accGuestEmail').value,$('#accGuestRole').value);
   $$('#accessPanel [data-rmteam]').forEach(b=>b.onclick=()=>removeTeamMember(b.dataset.rmteam));
@@ -6009,6 +6034,8 @@ function buildTemplate(tpl){
 function createProject(name,tpl,parentId,emoji){
   save();const p=migrate(buildTemplate(tpl));if(name)p.projectName=name;p.parentId=parentId||null;
   if(emoji)p.emoji=emoji;
+  p.open=false; /* новый проект закрыт по умолчанию: видят создатель, админы и добавленные (доступ по проектам) */
+  if(myEmail&&!myMemberIn(p))p.members.push({id:uid('m'),name:meName(),email:myEmail,role:'—',capacity:30});
   reg.list.push({id:p.id,name:p.projectName,emoji:p.emoji||'📄',parentId:parentId||null});reg.active=p.id;saveReg();
   localStorage.setItem(pkey(p.id),JSON.stringify(p));S=p;resetUndo();if(cloudOn)cloudPush(p,true);
   collapsed={};filter={q:'',assignee:'',mine:false,overdue:false};ganttNeedsScroll=true;setView('board');toast('Проект создан: «'+p.projectName+'»','🚀');
@@ -6039,9 +6066,9 @@ function archiveProject(id,val){const e=reg.list.find(p=>p.id===id);if(!e)return
   if(val&&reg.active===id){const next=reg.list.find(p=>!p.archived);if(next){switchProject(next.id);toast('Проект в архиве','🗄');return;}}
   render();toast(val?'Проект в архиве':'Проект возвращён из архива',val?'🗄':'♻️');}
 projBtn.onclick=e=>{e.stopPropagation();
-  const active=reg.list.filter(p=>!p.archived), arch=reg.list.filter(p=>p.archived);
+  const active=visibleProjects(), arch=reg.list.filter(p=>p.archived&&canSeeProject(p));
   const cur=reg.list.find(p=>p.id===S.id);
-  const item=(p,ind)=>`<button class="${p.id===S.id?'cur':''}" data-switch="${p.id}"${ind?' style="padding-left:24px"':''}>${ind?'↳ ':''}${p.emoji||'📄'} ${esc(p.name)}${p.id===S.id?' ✓':''}</button>`+childrenOf(p.id).map(c=>item(c,true)).join('');
+  const item=(p,ind)=>`<button class="${p.id===S.id?'cur':''}" data-switch="${p.id}"${ind?' style="padding-left:24px"':''}>${ind?'↳ ':''}${p.emoji||'📄'} ${esc(p.name)}${p.id===S.id?' ✓':''}</button>`+childrenOf(p.id).filter(canSeeProject).map(c=>item(c,true)).join('');
   const tops=active.filter(p=>{const pr=p.parentId&&projMeta(p.parentId);return !pr||pr.archived;});
   projMenu.innerHTML=tops.map(p=>item(p,false)).join('')
     +`<div class="sep"></div>`
@@ -6802,7 +6829,7 @@ function buildPaletteIndex(){
       run:()=>{if(top.pid!==S.id){switchProject(top.pid);setTimeout(()=>openTask(top.t.id),140);}else openTask(top.t.id);}});
   }
   let fires=0,worstPid=null,worstN=-1;const risk=[];
-  reg.list.filter(p=>!p.archived).forEach(p=>{const d=p.id===S.id?S:loadProj(p.id);if(!d)return;
+  visibleProjects().forEach(p=>{const d=p.id===S.id?S:loadProj(p.id);if(!d)return;
     const ov=(d.tasks||[]).filter(isOverdue).length;fires+=ov;
     if(ov>worstN){worstN=ov;worstPid=p.id;}
     const red=d.health&&d.health.c==='r';
@@ -6848,9 +6875,9 @@ function buildPaletteIndex(){
     ['layers','Выгрузить в Markdown','человекочитаемый снимок всех проектов','Настройки',()=>exportMd()],
   ];
   ACT.forEach(([ic,name,sub,grp,run])=>items.push({type:'Команда',grp,icon:icon(ic,17),title:name,sub,kw:name+' '+sub,run}));
-  reg.list.filter(p=>!p.archived).forEach(p=>items.push({type:'Проект',icon:`<span class="pal-emoji">${esc(p.emoji||'📄')}</span>`,title:p.name,sub:p.id===S.id?'текущий':'переключиться',kw:p.name+' проект',run:()=>{if(p.id!==S.id)switchProject(p.id);else setView('board');}}));
+  visibleProjects().forEach(p=>items.push({type:'Проект',icon:`<span class="pal-emoji">${esc(p.emoji||'📄')}</span>`,title:p.name,sub:p.id===S.id?'текущий':'переключиться',kw:p.name+' проект',run:()=>{if(p.id!==S.id)switchProject(p.id);else setView('board');}}));
   S.members.forEach(m=>items.push({type:'Человек',icon:avatarOf(m,22),title:m.name,sub:m.role||'участник',kw:m.name+' '+(m.role||''),run:()=>openMember(m.id)}));
-  reg.list.filter(p=>!p.archived).forEach(p=>{const data=p.id===S.id?S:loadProj(p.id);if(!data)return;
+  visibleProjects().forEach(p=>{const data=p.id===S.id?S:loadProj(p.id);if(!data)return;
     (data.tasks||[]).forEach(t=>items.push({type:'Задача',icon:dot((stMap[t.status]||{}).c||'#888'),title:t.title,sub:`${p.emoji||'📄'} ${p.name}`,
       kw:(t.title+' '+p.name+' '+String(t.description||'').slice(0,120)+' '+(t.comments||[]).map(c=>c.text).join(' ').slice(0,240)),
       run:()=>{if(p.id!==S.id){switchProject(p.id);setTimeout(()=>openTask(t.id),140);}else openTask(t.id);}}));
