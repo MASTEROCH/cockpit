@@ -1799,16 +1799,6 @@ body.light .mseg{background:rgba(250,251,254,.97)}
 .rep-f .btn{flex:1;justify-content:center}
 @media (max-width:680px){.repsheet{width:100vw;max-height:92dvh;border-radius:22px 22px 0 0}}
 /* спекуляр-свет за курсором (только мышь; --gx/--gy ставит Tactile Engine JS) */
-@media (hover:hover) and (pointer:fine){
-  .panel-c,.prow,.cmdex{position:relative}
-  .card::after,.kpi::after,.mcard::after,.tpl::after,.idea::after,.panel-c::after,.prow::after,.cmdex::after{
-    content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;z-index:1;
-    transition:opacity .35s ease;
-    background:radial-gradient(230px circle at var(--gx,50%) var(--gy,50%),rgba(190,168,255,.13),rgba(255,255,255,.05) 42%,transparent 68%)}
-  .card:hover::after,.kpi:hover::after,.mcard:hover::after,.tpl:hover::after,.idea:hover::after,.panel-c:hover::after,.prow:hover::after,.cmdex:hover::after{opacity:1}
-  body.light .card::after,body.light .kpi::after,body.light .mcard::after,body.light .tpl::after,body.light .idea::after,body.light .panel-c::after,body.light .prow::after,body.light .cmdex::after{
-    background:radial-gradient(230px circle at var(--gx,50%) var(--gy,50%),rgba(124,88,246,.09),transparent 65%)}
-}
 /* фокус на вводе — мягкое свечение вместо жёсткого outline */
 input:focus-visible,textarea:focus-visible,select:focus-visible{
   outline:none;border-color:rgba(167,139,250,.55);
@@ -2917,8 +2907,6 @@ document.addEventListener('click',e=>{
     raf=requestAnimationFrame(()=>{raf=0;
       const t=pe.target,g=t&&t.closest?t.closest('.card,.kpi,.mcard,.tpl,.idea,.panel-c,.prow,.cmdex,.now-hero'):null;
       if(g){const r=g.getBoundingClientRect();
-        g.style.setProperty('--gx',Math.round(pe.clientX-r.left)+'px');
-        g.style.setProperty('--gy',Math.round(pe.clientY-r.top)+'px');
         if(g.classList.contains('now-hero')&&!g.classList.contains('done')){
           const rx=((pe.clientY-r.top)/r.height-.5)*-2.4,ry=((pe.clientX-r.left)/r.width-.5)*2.4;
           if(tilted&&tilted!==g)unTilt();
