@@ -2091,11 +2091,13 @@ const MONTHF=['Январь','Февраль','Март','Апрель','Май'
 const WD=['вс','пн','вт','ср','чт','пт','сб'];
 
 function seed(){
+  // Демо-проект = понятный каждому кейс: открытие ресторана «Testoran».
+  // Показательный: реальные этапы, роли, зависимости, веха, здоровый разброс статусов.
   const m=[
-    {id:'m1',name:'Roch',role:'Founder / Product',color:COLORS[1],capacity:30},
-    {id:'m2',name:'Анжелика',role:'Co-founder / Brand',color:COLORS[0],capacity:20},
-    {id:'m3',name:'Дмитрий',role:'Tech / AppHub',color:COLORS[2],capacity:25},
-    {id:'m4',name:'Dev',role:'Engineer',color:COLORS[3],capacity:40},
+    {id:'m1',name:'Roch',role:'Основатель / Управляющий',color:COLORS[1],capacity:30},
+    {id:'m2',name:'Анжелика',role:'Бренд и маркетинг',color:COLORS[0],capacity:20},
+    {id:'m3',name:'Дмитрий',role:'Шеф-повар',color:COLORS[2],capacity:35},
+    {id:'m4',name:'Марина',role:'Менеджер зала',color:COLORS[3],capacity:30},
   ];
   const t=(title,sec,as,s,e,st,est,extra={})=>Object.assign({
     id:uid('t'),title,sectionId:sec,assigneeId:as,start:s,end:e,status:st,
@@ -2103,27 +2105,34 @@ function seed(){
   },extra);
   const T={};
   const arr=[
-    T.dep=t('Развертывание проекта','s1','m1','2026-06-15','2026-06-16','done',6,{spent:6}),
-    T.gd=t('Геймдизайн','s1','m1','2026-06-15','2026-06-19','progress',24,{spent:14,priority:'high'}),
-    T.ux=t('Дизайн UX/UI','s1','m2','2026-06-17','2026-06-23','progress',30,{spent:8,priority:'high'}),
-    T.tx=t('Тексты','s1','m2','2026-06-18','2026-06-26','todo',16),
-    T.sd=t('Саунддизайн','s1','m4','2026-06-22','2026-06-24','backlog',10),
-    T.lg=t('Разработка логики','s1','m4','2026-06-18','2026-06-19','progress',12,{spent:5}),
-    T.vr=t('Верстка','s1','m3','2026-06-19','2026-06-26','todo',28,{priority:'high'}),
-    T.qa=t('Тестирование','s1','m3','2026-06-25','2026-06-30','backlog',14),
-    T.rl=t('Релиз','s1','m1','2026-07-01','2026-07-01','backlog',0,{isMilestone:true,priority:'urgent'}),
-    t('Лендинг + воронка','s2','m1','2026-06-22','2026-06-28','backlog',12),
+    // Кухня и меню
+    T.menu=t('Составить меню и рассчитать себестоимость','s1','m3','2026-08-25','2026-09-01','done',16,{spent:16}),
+    T.sup=t('Согласовать поставщиков продуктов','s1','m3','2026-09-02','2026-09-10','progress',14,{spent:6,priority:'high'}),
+    T.equip=t('Закупить и установить оборудование кухни','s1','m3','2026-09-05','2026-09-16','progress',20,{spent:8}),
+    T.taste=t('Дегустация для друзей и правки меню','s1','m3','2026-09-18','2026-09-22','todo',8),
+    // Зал и помещение
+    T.reno=t('Ремонт и зонирование зала','s2','m4','2026-08-28','2026-09-14','progress',40,{spent:22,priority:'high'}),
+    T.furn=t('Мебель, посуда, текстиль','s2','m4','2026-09-12','2026-09-19','todo',16),
+    T.pos=t('Поставить кассу (POS), Wi-Fi, эквайринг','s2','m4','2026-09-16','2026-09-20','backlog',8),
+    T.lic=t('Оформить разрешения и лицензии','s2','m1','2026-08-20','2026-08-30','todo',12,{priority:'high'}),
+    // Бренд и открытие
+    T.logo=t('Логотип, вывеска, фирменный стиль','s3','m2','2026-08-24','2026-09-02','done',12,{spent:12}),
+    T.menudes=t('Дизайн и печать меню','s3','m2','2026-09-14','2026-09-20','todo',8),
+    T.smm=t('Соцсети и анонс открытия','s3','m2','2026-09-10','2026-09-27','progress',14,{spent:5}),
+    T.soft=t('Мягкое открытие для друзей','s3','m1','2026-09-26','2026-09-26','backlog',0,{isMilestone:true,priority:'urgent'}),
+    T.open=t('🎉 Открытие Testoran','s3','m1','2026-09-30','2026-09-30','backlog',0,{isMilestone:true,priority:'urgent'}),
   ];
-  T.ux.deps=[T.gd.id]; T.vr.deps=[T.ux.id,T.lg.id]; T.qa.deps=[T.vr.id]; T.rl.deps=[T.qa.id];
+  T.menudes.deps=[T.menu.id]; T.taste.deps=[T.menu.id,T.equip.id];
+  T.soft.deps=[T.reno.id,T.equip.id,T.lic.id]; T.open.deps=[T.soft.id];
   return {
-    projectName:'Datum Empire', demo:true, ui:{zoom:38},
+    projectName:'Testoran', emoji:'🍽', demo:true, ui:{zoom:38},
     members:m,
-    sections:[{id:'s1',name:'Этапы работ'},{id:'s2',name:'Маркетинг и запуск'}],
+    sections:[{id:'s1',name:'Кухня и меню'},{id:'s2',name:'Зал и помещение'},{id:'s3',name:'Бренд и открытие'}],
     tasks:arr,
     ideas:[
-      {id:uid('i'),title:'Battle Pass: сезонная механика на 30 дней',note:'Монетизация — приоритет флагмана',votes:5,createdTs:Date.now()},
-      {id:uid('i'),title:'Telegram-бот: голосовые команды в WANDO',note:'Этот инструмент сам станет продуктом',votes:8,createdTs:Date.now()},
-      {id:uid('i'),title:'Реферальная петля при первом входе',note:'',votes:2,createdTs:Date.now()},
+      {id:uid('i'),title:'Бизнес-ланч по будням 12:00–16:00',note:'Загрузить зал в дневные часы',votes:6,createdTs:Date.now()},
+      {id:uid('i'),title:'Программа лояльности: карта гостя',note:'Возвращаемость и средний чек',votes:4,createdTs:Date.now()},
+      {id:uid('i'),title:'Подключить доставку через агрегаторы',note:'',votes:3,createdTs:Date.now()},
     ],
   };
 }
@@ -6109,7 +6118,7 @@ projMenu.onclick=e=>{const b=e.target.closest('button');if(!b)return;
 
 function loadDemo(){
   const p=migrate(seed());
-  reg.list.push({id:p.id,name:p.projectName,emoji:'🎬'});reg.active=p.id;saveReg();
+  reg.list.push({id:p.id,name:p.projectName,emoji:p.emoji||'🍽'});reg.active=p.id;saveReg();
   localStorage.setItem(pkey(p.id),JSON.stringify(p));S=p;resetUndo();if(cloudOn)cloudPush(p,true);
   collapsed={};filter={q:'',assignee:'',mine:false,overdue:false};ganttNeedsScroll=true;setView('board');toast('Демо-проект загружен','🎬');
 }
