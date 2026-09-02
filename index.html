@@ -2384,11 +2384,11 @@ function awardForDone(data,t){
   if(t.status==='done'&&!t.doneTs){t.doneTs=Date.now();if(t.repeat&&!t.isMilestone)spawnRepeat(data,t);}
   if(t.isMilestone||t.status!=='done'||t.pointsAwarded||!t.assigneeId)return 0;
   const m=(data.members||[]).find(x=>x.id===t.assigneeId);if(!m)return 0;
-  const v=taskValue(t);m.points=(m.points||0)+v;t.pointsAwarded=t.assigneeId;
+  t.pointsAwarded=t.assigneeId; /* гвард «награда один раз» — оставлен только для стрика (баллы убраны) */
   const today=todayISO();
   if(m.lastDone!==today){const y=fmtD(parseD(today)-86400000);m.streak=(m.lastDone===y?(m.streak||0)+1:1);m.lastDone=today;
     const me2=myMemberIn(data);if(m.streak>=2&&me2&&me2.id===m.id)window._streakToast=m.streak;/* мой стрик вырос сегодня → празднуем в render() */}
-  return v;}
+  return 0;}
 function effStreak(m){const t=todayISO(),y=fmtD(parseD(t)-86400000);return (m&&(m.lastDone===t||m.lastDone===y))?(m.streak||0):0;}
 /* ==== ИМПУЛЬС: личный стрик — ты против себя, гордость без проигравших.
        Раньше был спрятан в «Команде»; выносим на «Сейчас». «Не разорви цепочку». ==== */
@@ -4638,7 +4638,7 @@ function renderBoard(){
       const ids=cards.map(c=>c.dataset.id);ids.splice(idx,0,dragCard);ids.forEach((id,i)=>{const tt=task(id);if(tt)tt.rank=i;});
       if(st.k==='done'&&t.estimate&&!t.spent)t.spent=t.estimate;
       logAct(movedCol?'🔀':'↕',movedCol?('«'+t.title+'» → '+st.n):('порядок «'+t.title+'»'));
-      const _v=awardForDone(S,t);if(st.k==='done')celebrateAt(e);save();renderBoard();if(_v)toast('+'+_v+' 🪙 за «'+t.title+'»','🪙');};
+      awardForDone(S,t);if(st.k==='done')celebrateAt(e);save();renderBoard();if(st.k==='done')toast('Готово: «'+t.title+'» ✅','✅');};
     b.appendChild(col);
   });
   if(pendingBoardAdd){const c=[...document.querySelectorAll('#board .col')].find(x=>x.dataset.st===pendingBoardAdd);if(c)openBoardAdd(c,pendingBoardAdd);}
@@ -4828,37 +4828,25 @@ function renderTeam(){
       render();};
   }
   const g=$('#team');
-  const ps=personScores();const pmap={};ps.forEach(x=>pmap[(x.email||'').toLowerCase()||('n:'+(x.name||'').toLowerCase())]=x);
-  const scoreOf=m=>pmap[pKey(m)]||{points:m.points||0,streak:effStreak(m)};
   g.innerHTML=S.members.map(m=>{
     const mt=S.tasks.filter(t=>t.assigneeId===m.id&&t.status!=='done');
     const load=mt.reduce((a,t)=>a+(t.estimate||0),0);
     const pct=m.capacity?Math.min(100,Math.round(load/m.capacity*100)):0;
-    const over=load>m.capacity;const sc=scoreOf(m);
+    const over=load>m.capacity;
     const av=m.photo
       ? `<span class="av" style="width:46px;height:46px;background-image:url('${m.photo}');background-size:cover;background-position:center"></span>`
       : `<span class="av" style="width:46px;height:46px;font-size:17px;background:${m.color}">${initials(m.name)}</span>`;
     return `<div class="mcard click" data-m="${m.id}">
       <div class="top">${av}<div style="min-width:0;flex:1">
         <div class="nm">${esc(m.name)} ${m.id===myId()?'<span class="youbadge">вы</span>':''}</div>
-        <div class="rl">${esc(m.role)}</div></div><span class="coins" title="Баланс баллов · стрик дней подряд">${icon('coin',12)} ${sc.points}${sc.streak>1?` · 🔥${sc.streak}`:''}</span></div>
+        <div class="rl">${esc(m.role)}</div></div></div>
       <div class="meter"><span style="width:${pct}%;${over?'background:linear-gradient(90deg,#fb7185,#f87171)':''}"></span></div>
       <div class="mstat"><span>${mt.length} задач · ${load}ч</span><span style="${over?'color:var(--bad)':''}">${load}/${m.capacity}ч ${over?'⚠':''}</span></div>
     </div>`;}).join('')
     +`<button class="addmcard" id="addMember2">＋ Добавить участника</button>`;
-  const payer=ps.length>1?ps[ps.length-1]:null;
-  const av2=x=>x.photo?`<span class="av" style="background-image:url('${x.photo}');background-size:cover;background-position:center"></span>`:`<span class="av" style="background:${x.color}">${initials(x.name)}</span>`;
-  let last=null;try{last=JSON.parse(localStorage.getItem('cockpit_month_result'));}catch(e){}
-  $('#leaderboard').innerHTML=ps.length<2?'':`<div class="panel-c" style="margin-bottom:16px"><h3>${icon('trophy',15)} Баллы команды <span class="c">${MONTHF[new Date().getMonth()]}</span></h3>
-    <div class="lbrow-wrap">${ps.map((x,i)=>`<div class="lbrow"><span class="lbrank r${i+1}">${i+1}</span>${av2(x)}<span class="lbn">${esc(x.name)}</span>${x.streak>1?`<span class="streak">🔥 ${x.streak}</span>`:''}<span class="lbpts">${icon('coin',12)} ${x.points}</span></div>`).join('')}</div>
-    ${payer?`<div class="coffeeline">${icon('coffee',14)} Кофе пока с <b>${esc(payer.name)}</b> — у кого меньше всех баллов</div>`:''}
-    <div style="display:flex;gap:10px;align-items:center;margin-top:11px;flex-wrap:wrap">
-      <button class="btn" id="closeMonthBtn">${icon('coffee',14)} Закрыть месяц</button>
-      ${last?`<span style="font-size:11.5px;color:var(--mut2)">Прошлый раз кофе платил <b style="color:var(--mut)">${esc(last.payer)}</b></span>`:''}</div>
-    <div style="font-size:12px;color:var(--mut2);margin-top:10px;line-height:1.5">Старт у каждого — 1000 баллов. Закрыл задачу — заработал (× приоритет), перекинул свою на партнёра — потратил. 🔥 — стрик дней подряд. Итог месяца: кофе покупает тот, у кого меньше. Мотиватор, а не наказание — баллы никогда ничего не блокируют.</div></div>`;
+  const lb=$('#leaderboard');if(lb)lb.innerHTML='';
   $$('#team .mcard.click').forEach(el=>el.onclick=()=>openMember(el.dataset.m));
   $('#addMember2').onclick=addBlankMember;
-  const cm=$('#closeMonthBtn');if(cm)cm.onclick=closeMonth;
   loadGuests().then(renderAccessPanel);
 }
 function addBlankMember(){
@@ -5014,14 +5002,7 @@ function openTask(id){
     +`<button class="chip ${!t.assigneeId?'on':''}" data-as="">Не назначено</button>`;
   $$('#dAssignee .chip').forEach(c=>c.onclick=()=>{
     const newAs=c.dataset.as||null;
-    if(newAs&&newAs!==myId()&&newAs!==t.assigneeId&&t.assigneeId===myId()&&t.status!=='done'){
-      /* платит только владелец задачи, который её отдаёт; PM-диспетчеризация чужих — бесплатно */
-      const me=member(myId())||{};const cost=taskValue(t);
-      /* мягкая экономика: списываем сколько есть, но НИКОГДА не блокируем рабочий поток */
-      const pay=Math.min(me.points||0,cost);me.points=(me.points||0)-pay;
-      logAct('🪙',meName()+' −'+pay+' · перекинул «'+t.title+'» на '+((member(newAs)||{}).name||'?'));
-      toast(pay<cost?('«'+t.title+'» теперь у '+((member(newAs)||{}).name||'')+' · баллы на нуле — закрой пару задач 💪'):('−'+pay+' 🪙 · «'+t.title+'» теперь у '+((member(newAs)||{}).name||'')),'🪙');
-    }else{logAct('👤','«'+t.title+'» → '+(member(newAs)?member(newAs).name:'без исполнителя'));}
+    logAct('👤','«'+t.title+'» → '+(member(newAs)?member(newAs).name:'без исполнителя'));
     if(newAs!==t.assigneeId){t.assignedTs=Date.now();t.assignedBy=meName();histAdd(t,'исполнитель → '+(newAs?(((member(newAs)||{}).name)||'?'):'не назначено'));}
     t.assigneeId=newAs;save();if(newAs&&newAs!==myId())tgNotify('assign',t);openTask(id);render();});
   $('#dPrio').innerHTML=PRIOS.map(p=>`<button class="chip ${t.priority===p.k?'on':''}" data-pr="${p.k}" style="${t.priority===p.k?`background:${p.c}`:''}">${p.n}</button>`).join('');
@@ -5153,7 +5134,7 @@ $('#dEst').oninput=e=>{if(curTask)curTask.estimate=parseFloat(e.target.value)||0
 $('#dEst').onblur=()=>{if(curTask)save();};
 $('#dSpent').oninput=e=>{if(curTask)curTask.spent=parseFloat(e.target.value)||0;};
 $('#dSpent').onblur=()=>{if(curTask)save();};
-$('#dStatus').onchange=e=>{if(curTask){curTask.status=e.target.value;curTask.statusTs=Date.now();histAdd(curTask,'статус → '+stMap[curTask.status].n);if(curTask.status==='done'&&curTask.estimate&&!curTask.spent)curTask.spent=curTask.estimate;$('#dDot').style.background=stMap[curTask.status].c;refreshDrawerFooter(curTask);logAct('🔀','«'+curTask.title+'» → '+stMap[curTask.status].n);const _v=awardForDone(S,curTask);save();render();if(_v)toast('+'+_v+' 🪙 за «'+curTask.title+'»','🪙');}};
+$('#dStatus').onchange=e=>{if(curTask){curTask.status=e.target.value;curTask.statusTs=Date.now();histAdd(curTask,'статус → '+stMap[curTask.status].n);if(curTask.status==='done'&&curTask.estimate&&!curTask.spent)curTask.spent=curTask.estimate;$('#dDot').style.background=stMap[curTask.status].c;refreshDrawerFooter(curTask);logAct('🔀','«'+curTask.title+'» → '+stMap[curTask.status].n);awardForDone(S,curTask);save();render();}};
 /* гость-в-задачу: одна задача наружу, ссылка копируется в буфер */
 $('#dGuest').onclick=async()=>{if(!curTask)return;
   if(!cloudOn||!sb){toast('Гостевые ссылки работают в облаке — сначала войди','🌐');return;}
@@ -5868,6 +5849,15 @@ function resetWorkspace(){
   toast('Чистый лист ✨ Создаём первый настоящий проект','🧹');
   _wizReplace=S.id;openSetupWizard();
 }
+/* тумблер демо: одной кнопкой вкл/выкл. Убирает демо-проект, где бы он ни был (не только активный). */
+function hasDemoProject(){return reg.list.some(p=>{const d=p.id===S.id?S:loadProj(p.id);return d&&d.demo;});}
+function toggleDemo(){
+  const dp=reg.list.find(p=>{const d=p.id===S.id?S:loadProj(p.id);return d&&d.demo;});
+  if(!dp){loadDemo();return;}
+  if(dp.id===S.id){exitDemo();return;} // активное демо — существующий путь (переключит на другой проект/мастер)
+  localStorage.removeItem(pkey(dp.id));localStorage.removeItem('cockpit_seen_'+dp.id);if(cloudOn)cloudDelete(dp.id);
+  reg.list=reg.list.filter(p=>p.id!==dp.id);saveReg();render();toast('Демо убрано 🗑','🗑');
+}
 // выход из демо: удалить демо-проект; если больше ничего нет — мастер
 function exitDemo(){
   const id=S.id;const others=reg.list.filter(p=>p.id!==id);
@@ -6077,12 +6067,13 @@ function archiveProject(id,val){const e=reg.list.find(p=>p.id===id);if(!e)return
 projBtn.onclick=e=>{e.stopPropagation();
   const active=visibleProjects(), arch=reg.list.filter(p=>p.archived&&canSeeProject(p));
   const cur=reg.list.find(p=>p.id===S.id);
+  const hasDemo=hasDemoProject();
   const item=(p,ind)=>`<button class="${p.id===S.id?'cur':''}" data-switch="${p.id}"${ind?' style="padding-left:24px"':''}>${ind?'↳ ':''}${p.emoji||'📄'} ${esc(p.name)}${p.id===S.id?' ✓':''}</button>`+childrenOf(p.id).filter(canSeeProject).map(c=>item(c,true)).join('');
   const tops=active.filter(p=>{const pr=p.parentId&&projMeta(p.parentId);return !pr||pr.archived;});
   projMenu.innerHTML=tops.map(p=>item(p,false)).join('')
     +`<div class="sep"></div>`
     +(isTeam?`<button data-act="newp">＋ Новый проект</button>`:'')
-    +`<button data-act="loaddemo">🎬 Демо «Testoran» <span style="color:var(--mut2);font-weight:500">— пример, не тронет твои проекты</span></button>`
+    +`<button data-act="demotoggle">🎬 ${hasDemo?'Убрать демо «Testoran»':'Демо «Testoran»'} <span style="color:var(--mut2);font-weight:500">${hasDemo?'— вернуться к своим':'— пример, не тронет твои проекты'}</span></button>`
     +`<button data-act="mgmt" style="color:var(--mut)">${icon('gear',14)} Управление проектом <span id="projChev" style="color:var(--mut2)">▸</span></button>`
     +`<div id="projMgmt" style="display:none;border-left:2px solid var(--line);margin:2px 0 4px 14px">`
       +(isTeam?`<button data-act="makechild">📦 Вложить в проект…</button>`
@@ -6108,7 +6099,7 @@ projMenu.onclick=e=>{const b=e.target.closest('button');if(!b)return;
   else if(b.dataset.act==='makechild')openParentChooser();
   else if(b.dataset.act==='unparent')setParent(S.id,null);
   else if(b.dataset.act==='newp')openNewProject();
-  else if(b.dataset.act==='loaddemo')loadDemo();
+  else if(b.dataset.act==='demotoggle')toggleDemo();
   else if(b.dataset.act==='report')openReport();
   else if(b.dataset.act==='renp'){const n=prompt('Название проекта:',S.projectName);if(n){S.projectName=n.trim();save();render();}}
   else if(b.dataset.act==='pemoji'){const cur=(projMeta(S.id)||{}).emoji||'📄';let em=(prompt('Эмодзи проекта:',cur)||'').trim();
