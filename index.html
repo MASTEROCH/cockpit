@@ -303,7 +303,7 @@
   .grow .tt .pf{font-size:11px;margin-right:1px}
 
   /* demo banner */
-  .banner{display:flex;align-items:center;gap:10px;padding:8px 16px;background:linear-gradient(90deg,rgba(167,139,250,.16),rgba(56,189,248,.08));border-bottom:1px solid var(--line);font-size:12.5px;color:var(--mut);flex:0 0 auto}
+  .banner{display:flex;align-items:center;gap:9px;padding:6px 16px;background:rgba(167,139,250,.06);border-bottom:1px solid var(--line);font-size:12px;color:var(--mut);flex:0 0 auto}
   .banner b{color:var(--txt)}
   .banner .acts{margin-left:auto;display:flex;gap:8px;flex:0 0 auto}
   .banner .lnk{font-size:12px;font-weight:700;color:var(--acc2);background:none;border:none;padding:4px 6px}
@@ -2730,6 +2730,7 @@ function renderNow(){
   const ov=T.filter(isOverdue).length;
   const weekAgo=Date.now()-7*dayMs;
   const vel=(S.activity||[]).filter(a=>a.ts>weekAgo&&/Готово|✅/.test((a.text||'')+(a.icon||''))).length;
+  const back=T.filter(t=>t.status!=='done'&&t.status!=='progress').length;
   const mine=T.filter(t=>t.assigneeId===me&&t.status!=='done'&&!isSnoozed(t));
   const pool=mine.length?mine:T.filter(t=>t.status!=='done'&&!isSnoozed(t));
   const _energy=localStorage.getItem('cockpit_energy_'+todayISO())||'';
@@ -2775,7 +2776,7 @@ function renderNow(){
     hero=`<div class="now-hero done"><div class="nh-label">${bare?'Начнём?':'Чисто'}</div><div class="nh-title">${bare?'Не знаешь, с чего начать — норм':allDone?'Всё закрыто — красавчик':'Активных задач на тебе нет'}</div>
       <div class="nh-meta">${bare?'<button class="btn primary" id="npPlan" style="margin-top:4px">'+icon('sparkles',14)+' Вандо, спланируй за меня</button>':allDone?'<span class="ichip">создай следующую задачу или запланируй новую цель</span>':'<span class="ichip">создай задачу строкой сверху или ⌘K</span>'}</div></div>`;}
   const energy=localStorage.getItem('cockpit_energy_'+todayISO())||'';
-  if(window.innerWidth<=680){renderNowMobile({el,greet,next,upNext,mine,pct,prog,ov,vel,ins,running,energy:localStorage.getItem('cockpit_energy_'+todayISO())||''});return;}
+  if(window.innerWidth<=680){renderNowMobile({el,greet,next,upNext,mine,pct,prog,ov,vel,back,ins,running,energy:localStorage.getItem('cockpit_energy_'+todayISO())||''});return;}
   window._heroNext=next?{id:next.id,title:next.title,est:next.estimate,pid:nextPid,st:next.status}:null;
   el.innerHTML=`<div class="now-greet"><h1>${greet}${(n=>n&&n!=='Я'&&n!=='Новый участник'?', '+esc(n):'!')(meName())}</h1><span>${esc(S.projectName)} · пульс проекта
       <span class="energyrow" title="Заряд сегодня: подстрою следующий шаг"><button data-en="hi" class="${energy==='hi'?'on':''}" title="Полон сил — дай крупную задачу" aria-label="Полон сил">${icon('battery',15)}</button><button data-en="lo" class="${energy==='lo'?'on':''}" title="Мало сил — подкинь лёгкие" aria-label="Мало сил">${icon('battlow',15)}</button></span></span></div>
@@ -2787,7 +2788,7 @@ function renderNow(){
       <div class="pulse-card"><div class="pv">${pct}%</div><div class="pl">готово</div></div>
       <div class="pulse-card"><div class="pv">${prog}</div><div class="pl">в работе</div></div>
       <div class="pulse-card"><div class="pv" style="color:${ov?'var(--bad)':'var(--mut)'}">${ov}</div><div class="pl">просрочено</div></div>
-      <div class="pulse-card"><div class="pv">${vel}</div><div class="pl">закрыто за 7 дней</div></div>
+      <div class="pulse-card"><div class="pv">${back}</div><div class="pl">в очереди</div></div>
     </div>
     ${assistCard()}
     <details class="fold" id="nowFold" ${foldOpen?'open':''}><summary>Темп и сроки проекта</summary>${momentumSpark()}${milestoneRadar()}</details>
@@ -3009,7 +3010,7 @@ function renderNowMobile(ctx){
         <div class="pulse-card"><div class="pv">${ctx.pct}%</div><div class="pl">готово</div></div>
         <div class="pulse-card"><div class="pv">${ctx.prog}</div><div class="pl">в работе</div></div>
         <div class="pulse-card"><div class="pv" style="color:${ctx.ov?'var(--bad)':'var(--mut)'}">${ctx.ov}</div><div class="pl">просроч.</div></div>
-        <div class="pulse-card"><div class="pv">${ctx.vel}</div><div class="pl">за 7 дней</div></div></div>
+        <div class="pulse-card"><div class="pv">${ctx.back}</div><div class="pl">в очереди</div></div></div>
       ${claudeNowCard()}
       <div class="insights" style="margin-top:12px">${ins.slice(0,insExpanded?ins.length:3).map((x,i)=>`<div class="insight ${x.act?'click':''}" data-i="${i}"><span class="ii">${insIcon(x.ic)}</span><div class="ib"><div class="it">${esc(x.title)}</div>${x.sub?`<div class="is">${esc(x.sub)}</div>`:''}</div></div>`).join('')}${ins.length>3?`<button class="insmore" id="insMore">${insExpanded?'Свернуть ↑':'Ещё '+(ins.length-3)+' ↓'}</button>`:''}</div>
       ${momentumSpark()}</details>`;
@@ -3263,13 +3264,15 @@ function kbOpen(){const it=kbCur();if(!it)return;if(it.pid===S.id)openTask(it.ti
 function kbComment(){const it=kbCur();if(!it)return;const foc=()=>setTimeout(()=>{const c=$('#dCmtIn');if(c)c.focus();},130);
   if(it.pid===S.id){openTask(it.tid);foc();}else{switchProject(it.pid);setTimeout(()=>{openTask(it.tid);foc();},150);}}
 function kbDone(){const it=kbCur();if(!it)return;const r=it.el.getBoundingClientRect();const cx=r.left+r.width/2,cy=r.top+r.height/2;
-  if(it.pid===S.id){const t=task(it.tid);if(!t||t.status==='done')return;t.status='done';t.statusTs=Date.now();histAdd(t,'статус → Готово');if(t.estimate&&!t.spent)t.spent=t.estimate;
-    logAct('✅','«'+t.title+'» → Готово');const v=awardForDone(S,t);celebrate(cx,cy);save();render();toast(v?('+'+v+' 🪙'):'Готово ✅',v?'🪙':'✅');}
+  if(it.pid===S.id){const t=task(it.tid);if(!t||t.status==='done')return;const prevSt=t.status,prevSp=t.spent;t.status='done';t.statusTs=Date.now();histAdd(t,'статус → Готово');if(t.estimate&&!t.spent)t.spent=t.estimate;
+    logAct('✅','«'+t.title+'» → Готово');awardForDone(S,t);celebrate(cx,cy);save();render();toast('Готово ✅','✅','Отменить',()=>{t.status=prevSt;t.spent=prevSp;histAdd(t,'статус ↩');save();render();});}
   else{const un=markDone(it.pid,it.tid);celebrate(cx,cy);render();toast('Готово','✅','Отменить',un);}}
 function kbAssign(){const it=kbCur();if(!it||it.pid!==S.id){toast('Назначение — на доске или ганте','👤');return;}
   const t=task(it.tid);if(!t)return;const ms=S.members;if(!ms.length)return;
   const cur=ms.findIndex(m=>m.id===t.assigneeId);const nx=ms[(cur+1)%ms.length];
-  t.assigneeId=nx.id;logAct('👤','«'+t.title+'» → '+nx.name);save();if(nx.id!==myId())tgNotify('assign',t);render();toast('Назначено: '+nx.name+' (a — следующий)','👤');}
+  const prev=t.assigneeId;
+  t.assigneeId=nx.id;t.assignedTs=Date.now();t.assignedBy=meName();histAdd(t,'исполнитель → '+nx.name);logAct('👤','«'+t.title+'» → '+nx.name);save();if(nx.id!==myId())tgNotify('assign',t);render();
+  toast('Назначено: '+nx.name+' (a — следующий)','👤','Отменить',()=>{t.assigneeId=prev;histAdd(t,'исполнитель ↩ '+((member(prev)||{}).name||'не назначено'));save();render();toast('Возвращено: '+((member(prev)||{}).name||'без исполнителя'),'↩');});}
 
 /* ---- авто-расписание: раскидать активные задачи по загрузке и зависимостям ---- */
 function autoSchedule(){
@@ -4529,7 +4532,7 @@ function renderBulkBar(){
     <button class="btn" id="bbClear">Готово</button>`;
   bar.classList.add('show');
   $('#bbStatus').onchange=e=>{const v=e.target.value;if(!v)return;boardSel.forEach(id=>{const t=task(id);if(t){t.status=v;t.statusTs=Date.now();histAdd(t,'статус → '+stMap[v].n);if(v==='done'){if(t.estimate&&!t.spent)t.spent=t.estimate;awardForDone(S,t);}}});logAct('🔀','массово → '+stMap[v].n+' ('+boardSel.size+')');save();renderBoard();toast('Статус обновлён у '+n,'🔀');};
-  $('#bbAssign').onchange=e=>{const v=e.target.value;if(!v)return;const aid=v==='__none'?null:v;boardSel.forEach(id=>{const t=task(id);if(t&&t.assigneeId!==aid){t.assigneeId=aid;t.assignedTs=Date.now();t.assignedBy=meName();histAdd(t,'исполнитель → '+(aid?(((member(aid)||{}).name)||'?'):'не назначено'));}});logAct('👤','массово назначено ('+boardSel.size+')');save();renderBoard();toast('Исполнитель обновлён','👤');};
+  $('#bbAssign').onchange=e=>{const v=e.target.value;if(!v)return;const aid=v==='__none'?null:v;const prevMap={};boardSel.forEach(id=>{const t=task(id);if(t&&t.assigneeId!==aid){prevMap[id]=t.assigneeId;t.assigneeId=aid;t.assignedTs=Date.now();t.assignedBy=meName();histAdd(t,'исполнитель → '+(aid?(((member(aid)||{}).name)||'?'):'не назначено'));}});logAct('👤','массово назначено ('+boardSel.size+')');save();renderBoard();const n=Object.keys(prevMap).length;toast('Исполнитель обновлён'+(n?' · '+n:''),'👤',n?'Отменить':'',n?()=>{Object.entries(prevMap).forEach(([id,pa])=>{const t=task(id);if(t){t.assigneeId=pa;histAdd(t,'исполнитель ↩');}});save();renderBoard();toast('Назначение отменено','↩');}:null);};
   $('#bbDel').onclick=()=>{if(!confirm('Удалить выбранные ('+boardSel.size+')?'))return;const ids=new Set(boardSel);trashPush(S,S.tasks.filter(t=>ids.has(t.id)));S.tasks=S.tasks.filter(t=>!ids.has(t.id));S.tasks.forEach(t=>t.deps=t.deps.filter(d=>!ids.has(d)));logAct('🗑','массово удалено '+ids.size);boardSel.clear();save();renderBoard();toast('Удалено','🗑');};
   $('#bbClear').onclick=()=>{boardSel.clear();boardSelOn=false;renderBoard();};
 }
@@ -4602,7 +4605,7 @@ function renderBoard(){
           ${t.status!=='done'&&!t.isMilestone?`<button class="qdone cdone" title="Отметить готовым" style="--c:${stMap[t.status].c}"></button>`:''}
           ${prTag(t)}
           ${waitTag(t)}
-          ${kidsTag(t)}${subTag(t)}${t.files&&t.files.length?`<span class="subbadge" title="Файлы">📎 ${t.files.length}</span>`:``}${stuckChip(t)}${shiftChip(t)}${quickChip(t)}
+          ${kidsTag(t)}${subTag(t)}${t.files&&t.files.length?`<span class="subbadge" title="Файлы">📎 ${t.files.length}</span>`:``}${[stuckChip(t),shiftChip(t),quickChip(t)].filter(Boolean)[0]||''}
           ${t.estimate?`<span>⏱ ${t.estimate}ч</span>`:''}
           ${(t.comments||[]).length?`<span>💬 ${(t.comments||[]).length}</span>`:''}
           ${ov?`<span style="color:var(--bad);font-weight:700">⚠ просроч.</span>`:''}
@@ -4611,8 +4614,8 @@ function renderBoard(){
       card.onclick=()=>{if(boardSelOn)toggleBoardSel(t.id,card);else openTask(t.id);};
       {const pg=card.querySelector('.cping');if(pg)pg.onclick=ev=>{ev.stopPropagation();remindAssignee(t.id);};}
       const qd=card.querySelector('.cdone');if(qd)qd.onclick=ev=>{ev.stopPropagation();if(boardSelOn){toggleBoardSel(t.id,card);return;}
-        t.status='done';t.statusTs=Date.now();histAdd(t,'статус → Готово');if(t.estimate&&!t.spent)t.spent=t.estimate;logAct('✅','«'+t.title+'» → Готово');
-        const _v=awardForDone(S,t);celebrateAt(ev);save();renderBoard();toast(_v?('+'+_v+' 🪙 за «'+t.title+'»'):('Готово: «'+t.title+'» ✅'),_v?'🪙':'✅');};
+        const _pSt=t.status,_pSp=t.spent;t.status='done';t.statusTs=Date.now();histAdd(t,'статус → Готово');if(t.estimate&&!t.spent)t.spent=t.estimate;logAct('✅','«'+t.title+'» → Готово');
+        awardForDone(S,t);celebrateAt(ev);save();renderBoard();toast('Готово: «'+t.title+'» ✅','✅','Отменить',()=>{t.status=_pSt;t.spent=_pSp;histAdd(t,'статус ↩');save();renderBoard();});};
       card.querySelector('.cdel').onclick=ev=>{ev.stopPropagation();if(!confirm('Удалить задачу «'+t.title+'»?'))return;
         const idx=S.tasks.indexOf(t);trashPush(S,[t]);S.tasks=S.tasks.filter(x=>x.id!==t.id);S.tasks.forEach(x=>x.deps=x.deps.filter(d=>d!==t.id));
         logAct('🗑','удалил «'+t.title+'»');save();renderBoard();
@@ -6069,14 +6072,14 @@ projBtn.onclick=e=>{e.stopPropagation();
   projMenu.innerHTML=tops.map(p=>item(p,false)).join('')
     +`<div class="sep"></div>`
     +(isTeam?`<button data-act="newp">＋ Новый проект</button>`:'')
-    +`<button data-act="demotoggle">🎬 ${hasDemo?'Убрать демо «Testoran»':'Демо «Testoran»'} <span style="color:var(--mut2);font-weight:500">${hasDemo?'— вернуться к своим':'— пример, не тронет твои проекты'}</span></button>`
+    +`<button data-act="demotoggle">${icon('play',14)} ${hasDemo?'Убрать демо «Testoran»':'Демо «Testoran»'} <span style="color:var(--mut2);font-weight:500">${hasDemo?'— вернуться к своим':'— пример, не тронет твои проекты'}</span></button>`
     +`<button data-act="mgmt" style="color:var(--mut)">${icon('gear',14)} Управление проектом <span id="projChev" style="color:var(--mut2)">▸</span></button>`
     +`<div id="projMgmt" style="display:none;border-left:2px solid var(--line);margin:2px 0 4px 14px">`
-      +(isTeam?`<button data-act="makechild">📦 Вложить в проект…</button>`
-      +`${cur&&cur.parentId?'<button data-act="unparent">⬆️ Вынести наверх</button>':''}`:'')
+      +(isTeam?`<button data-act="makechild">${icon('layers',14)} Вложить в проект…</button>`
+      +`${cur&&cur.parentId?'<button data-act="unparent">'+icon('upload',14)+' Вынести наверх</button>':''}`:'')
       +`<button data-act="report">${icon('doc',14)} Отчёт для клиента</button>`
       +`<button data-act="importcsv">${icon('download',14)} Импорт задач (CSV)</button>`
-      +(isTeam?`<button data-act="pemoji">😀 Сменить эмодзи</button>`
+      +(isTeam?`<button data-act="pemoji">${icon('sparkles',14)} Сменить эмодзи</button>`
       +`<button data-act="renp">${icon('edit',14)} Переименовать</button>`
       +`<button data-act="trashbin">${icon('trash',14)} Корзина${S.trash&&S.trash.length?' · '+S.trash.length:''}</button>`
       +`<button data-act="archive">${cur&&cur.archived?icon('sync',14)+' Вернуть из архива':icon('archive',14)+' В архив'}</button>`
