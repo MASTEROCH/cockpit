@@ -30,14 +30,13 @@
     --acc:#d98bb8; --acc2:#a78bfa; --acc3:#6ea8d8;
     --ok:#34d399; --warn:#fbbf24; --bad:#f87171;
     --radius:14px; --row:42px;
-    --shadow:0 10px 40px rgba(0,0,0,.5);
+    --shadow:0 10px 28px rgba(0,0,0,.4);
     font-synthesis:none;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
   html,body{margin:0;height:100%}
   body{
-    background:radial-gradient(1200px 700px at 80% -10%, rgba(167,139,250,.05), transparent 60%),
-               radial-gradient(900px 600px at -5% 10%, rgba(217,139,184,.035), transparent 55%),
+    background:radial-gradient(1300px 760px at 80% -14%, rgba(167,139,250,.035), transparent 64%),
                var(--bg);
     color:var(--txt);
     font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter",Segoe UI,Roboto,sans-serif;
@@ -60,7 +59,7 @@
   .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.3px;font-size:15px;white-space:nowrap}
   .logo{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;
     background:conic-gradient(from 200deg,var(--acc),var(--acc2),var(--acc3),var(--acc));
-    box-shadow:0 0 18px rgba(167,139,250,.45);font-size:15px}
+    box-shadow:0 2px 8px rgba(0,0,0,.35);font-size:15px}
   .brand small{color:var(--mut2);font-weight:500;font-size:11px;margin-left:2px}
   .proj{color:var(--mut);font-weight:600;font-size:13px;padding:5px 11px;border:1px solid var(--line);border-radius:9px;background:var(--panel);cursor:text;max-width:190px}
   #projLabel{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;max-width:140px}
@@ -430,24 +429,22 @@
    LIQUID GLASS THEME — iOS 26/27 (layered translucency + specular)
    ==================================================================== */
 :root{
-  --txt:#f3f5fb; --mut:#aeb4c8; --mut2:#838aa6;
-  --line:#2b3142; --line2:#3a4153;
-  --radius:18px; --row:46px;
-  --glass:rgba(34,39,55,.55);
-  --glass-2:rgba(44,50,69,.62);
-  --gbrd:rgba(255,255,255,.10);
-  --ghi:inset 0 1px 0 rgba(255,255,255,.13);
-  --blur:saturate(1.7) blur(22px);
-  --blur-s:saturate(1.5) blur(14px);
-  --depth:0 14px 40px rgba(0,0,0,.42);
+  --txt:#f1f2f5; --mut:#a3a4ab; --mut2:#787981;
+  --line:#2a2a30; --line2:#37373d;
+  --radius:16px; --row:46px;
+  --glass:rgba(29,29,34,.64);
+  --glass-2:rgba(37,37,43,.68);
+  --gbrd:rgba(255,255,255,.08);
+  --ghi:inset 0 1px 0 rgba(255,255,255,.09);
+  --blur:saturate(1.15) blur(20px);
+  --blur-s:saturate(1.1) blur(13px);
+  --depth:0 10px 28px rgba(0,0,0,.32);
 }
 body{
   font-size:15px;
   color-scheme:dark;
   background:
-    radial-gradient(1100px 720px at 82% -10%, rgba(167,139,250,.17), transparent 60%),
-    radial-gradient(900px 650px at -8% 6%, rgba(244,114,182,.12), transparent 55%),
-    radial-gradient(820px 760px at 50% 122%, rgba(56,189,248,.11), transparent 60%),
+    radial-gradient(1300px 820px at 82% -14%, rgba(167,139,250,.05), transparent 64%),
     var(--bg);
 }
 
@@ -492,8 +489,8 @@ header{background:rgba(18,21,31,.62);backdrop-filter:var(--blur);-webkit-backdro
 .trow .tn{font-size:14px}
 
 /* --- specular accents --- */
-.btn.primary{background:linear-gradient(180deg,rgba(181,153,255,.96),rgba(140,112,242,.93));border-color:transparent;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.38),0 8px 22px rgba(167,139,250,.42)}
+.btn.primary{background:linear-gradient(180deg,#8f7cea,#7c69d9);border-color:transparent;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 4px 13px rgba(124,105,217,.22)}
 .tab.active{background:linear-gradient(180deg,rgba(255,255,255,.15),rgba(255,255,255,.05));box-shadow:var(--ghi),0 2px 8px rgba(0,0,0,.25)}
 /* «Сейчас» — дом: всегда полным цветом (инструменты приглушены до наведения), ⚡ акцентом, тонкий разделитель после */
 @media(min-width:821px){
@@ -502,7 +499,7 @@ header{background:rgba(18,21,31,.62);backdrop-filter:var(--blur);-webkit-backdro
   .tabs .tab-home{position:relative;margin-right:9px}
   .tabs .tab-home::after{content:"";position:absolute;right:-5px;top:22%;height:56%;width:1px;background:var(--line)}
 }
-.logo{box-shadow:0 0 22px rgba(167,139,250,.5),inset 0 1px 0 rgba(255,255,255,.4)}
+.logo{box-shadow:0 3px 10px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.22)}
 
 /* --- gantt geometry for taller (46px) rows --- */
 .bar{height:26px;top:10px;border-radius:9px;box-shadow:0 2px 9px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.22)}
@@ -1108,7 +1105,7 @@ body.light .cmdchips{background:rgba(255,255,255,.98);box-shadow:0 18px 50px rgb
 .now-hero.over{background:var(--sheen),linear-gradient(135deg,rgba(248,113,113,.07),transparent 60%),var(--glass)}
 .now-hero.done{background:var(--sheen),linear-gradient(135deg,rgba(52,211,153,.18),transparent 70%),var(--glass);border-color:rgba(52,211,153,.32)}
 .nh-label{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--acc2);margin-bottom:9px;position:relative;z-index:1}
-.now-hero.over .nh-label{color:var(--bad)}.now-hero.done .nh-label{color:var(--ok)}
+.now-hero.done .nh-label{color:var(--ok)}
 .nh-title{font-size:27px;font-weight:800;letter-spacing:-.5px;line-height:1.15;cursor:pointer;position:relative;z-index:1;margin-bottom:15px}
 .nh-title:hover{opacity:.85}
 .nh-meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;position:relative;z-index:1}
@@ -1157,6 +1154,8 @@ body.light .focusrun{background:rgba(255,255,255,.7)}
 .insights{display:grid;grid-template-columns:1fr 1fr;gap:11px}
 .insight{display:flex;align-items:center;gap:13px;background:var(--sheen),var(--glass);border:1px solid var(--gbrd);border-radius:16px;padding:14px 16px;box-shadow:var(--ghi)}
 .insight.click{cursor:pointer;transition:transform .16s var(--ease),border-color .16s}
+.insmore{align-self:flex-start;background:none;border:none;color:var(--mut2);font-size:12.5px;font-weight:600;cursor:pointer;padding:4px 6px;border-radius:8px}
+.insmore:hover{color:var(--txt);background:var(--bg2)}
 .insight.click:hover{transform:translateY(-2px);border-color:rgba(167,139,250,.4)}
 .insight .ii{font-size:23px;flex:0 0 auto}
 .insight .ib{flex:1;min-width:0}
@@ -1642,7 +1641,7 @@ body.light .mseg{background:rgba(250,251,254,.97)}
 .mhero.over{background:var(--sheen),linear-gradient(135deg,rgba(248,113,113,.07),transparent 60%),var(--glass)} /* просрочка — чипом, не рамкой (как на десктопе) */
 .mhero.done{border-color:rgba(52,211,153,.32)}
 .mh-label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--mut2);margin-bottom:10px}
-.mhero.over .mh-label{color:var(--bad)}
+.mhero.done .mh-label{color:var(--ok)}
 .mh-title{font-size:30px;font-weight:800;line-height:1.16;letter-spacing:-.5px;margin-bottom:10px}
 .mh-meta{font-size:13.5px;color:var(--mut);margin-bottom:20px}
 .mh-acts{display:flex;gap:10px}
@@ -2380,26 +2379,11 @@ function spawnRepeat(data,t){
   data.tasks.push(c);data.activity=data.activity||[];
   data.activity.unshift({ts:Date.now(),who:meName(),icon:'🔁',text:'повтор: «'+c.title+'» на '+(c.start?c.start.slice(8)+'.'+c.start.slice(5,7):'')});
 }
+/* при закрытии: отметить doneTs и, если задача повторяемая, породить следующую. Никаких баллов/стриков —
+   инструмент разгружает, а не мотивирует (фаундеры замотивированы сами). */
 function awardForDone(data,t){
   if(t.status==='done'&&!t.doneTs){t.doneTs=Date.now();if(t.repeat&&!t.isMilestone)spawnRepeat(data,t);}
-  if(t.isMilestone||t.status!=='done'||t.pointsAwarded||!t.assigneeId)return 0;
-  const m=(data.members||[]).find(x=>x.id===t.assigneeId);if(!m)return 0;
-  t.pointsAwarded=t.assigneeId; /* гвард «награда один раз» — оставлен только для стрика (баллы убраны) */
-  const today=todayISO();
-  if(m.lastDone!==today){const y=fmtD(parseD(today)-86400000);m.streak=(m.lastDone===y?(m.streak||0)+1:1);m.lastDone=today;
-    const me2=myMemberIn(data);if(m.streak>=2&&me2&&me2.id===m.id)window._streakToast=m.streak;/* мой стрик вырос сегодня → празднуем в render() */}
   return 0;}
-function effStreak(m){const t=todayISO(),y=fmtD(parseD(t)-86400000);return (m&&(m.lastDone===t||m.lastDone===y))?(m.streak||0):0;}
-/* ==== ИМПУЛЬС: личный стрик — ты против себя, гордость без проигравших.
-       Раньше был спрятан в «Команде»; выносим на «Сейчас». «Не разорви цепочку». ==== */
-function myStreak(){
-  let best=0,today=false;const t0=todayISO();
-  reg.list.filter(p=>!p.archived).forEach(p=>{const d=p.id===S.id?S:loadProj(p.id);if(!d)return;
-    const m=myMemberIn(d);if(!m)return;
-    const s=effStreak(m);if(s>best)best=s;
-    if(m.lastDone===t0)today=true;});
-  return {days:best,today};
-}
 /* следующий шаг после закрытия задачи — тот же движок, что у героя «Сейчас», но
    вызывается из карточки: конвейер «готово → дальше» работает с ЛЮБОГО экрана */
 function nextStepAfter(excludeId){
@@ -2407,13 +2391,6 @@ function nextStepAfter(excludeId){
   if(!pool.length)return null;
   pool.sort((a,b)=>relScore(b.t)-relScore(a.t));
   const x=pool[0];return {id:x.t.id,pid:x.pid,title:x.t.title,est:x.t.estimate};
-}
-function streakChip(){
-  const s=myStreak();if(s.days<2)return '';
-  const d=s.days,lbl=d+' '+plural(d,'день','дня','дней');
-  return s.today
-    ? `<span class="streak" title="Дней подряд ты закрываешь хотя бы одну — держи ритм 🙂">🔥 ${lbl} подряд</span>`
-    : `<span class="streak" title="Стрик жив со вчера — закрой одну, чтобы не разорвать цепочку">🔥 ${lbl} · не разорви</span>`;
 }
 const pKey=m=>((m.email||'').toLowerCase())||('n:'+(m.name||'').toLowerCase());
 function personScores(){
@@ -2444,9 +2421,6 @@ function applyAccent(){const a=S.accent,r=document.documentElement;
   if(a&&/^#[0-9a-f]{6}$/i.test(a)){r.style.setProperty('--acc2',a);r.style.setProperty('--acc',shade(a,20));r.style.setProperty('--acc3',shade(a,-28));}
   else{r.style.removeProperty('--acc2');r.style.removeProperty('--acc');r.style.removeProperty('--acc3');}}
 function render(){
-  if(window._streakToast){const d=window._streakToast;window._streakToast=null;
-    const mile=[3,7,14,30,50,100].includes(d);
-    setTimeout(()=>toast('🔥 '+d+' '+plural(d,'день','дня','дней')+' подряд — '+(mile?'это уже характер!':'держишь ритм'),'🔥'),260);}
   $('#cntIdeas').textContent=S.ideas.length;
   {const pl=$('#projLabel');if(pl){pl.textContent=S.projectName;pl._ppDone=0;pl.classList.remove('pp-on');}}
   $('#projEmoji').textContent=(reg.list.find(p=>p.id===S.id)||{}).emoji||'🚀';
@@ -2526,6 +2500,7 @@ function setView(v){view=v;if(typeof track==='function')track('view:'+v);
 /* ============================ СЕЙЧАС — MISSION CONTROL ============================ */
 let focus={tid:null,start:0,iv:null};
 let _nowSeenT=null;
+let insExpanded=false; /* «Что важно знать»: топ-3, остальное по запросу — не стена проблем */
 function fmtDur(s){const h=Math.floor(s/3600),m=Math.floor(s/60)%60,x=s%60;return (h?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(x).padStart(2,'0');}
 function updFocus(){
   const sec=Math.floor((Date.now()-focus.start)/1000);
@@ -2793,7 +2768,7 @@ function renderNow(){
   if(window.innerWidth<=680){renderNowMobile({el,greet,next,upNext,mine,pct,prog,ov,vel,ins,running,energy:localStorage.getItem('cockpit_energy_'+todayISO())||''});return;}
   window._heroNext=next?{id:next.id,title:next.title,est:next.estimate,pid:nextPid,st:next.status}:null;
   el.innerHTML=`<div class="now-greet"><h1>${greet}${(n=>n&&n!=='Я'&&n!=='Новый участник'?', '+esc(n):'!')(meName())}</h1><span>${esc(S.projectName)} · пульс проекта
-      <span class="energyrow" title="Заряд сегодня: подстрою следующий шаг"><button data-en="hi" class="${energy==='hi'?'on':''}" title="Полон сил — дай крупную задачу" aria-label="Полон сил">${icon('battery',15)}</button><button data-en="lo" class="${energy==='lo'?'on':''}" title="Мало сил — подкинь лёгкие" aria-label="Мало сил">${icon('battlow',15)}</button></span>${streakChip()}</span></div>
+      <span class="energyrow" title="Заряд сегодня: подстрою следующий шаг"><button data-en="hi" class="${energy==='hi'?'on':''}" title="Полон сил — дай крупную задачу" aria-label="Полон сил">${icon('battery',15)}</button><button data-en="lo" class="${energy==='lo'?'on':''}" title="Мало сил — подкинь лёгкие" aria-label="Мало сил">${icon('battlow',15)}</button></span></span></div>
     ${whatsNewStrip()}
     ${hero}
     ${firstStepsCard()}
@@ -2810,7 +2785,7 @@ function renderNow(){
     <div class="now-sec">${icon('sparkles',14)} Что важно знать <span>проактивно — пока другие тулзы молчат</span>
       <button class="btn" id="claudeBtn" style="margin-left:auto;padding:8px 13px;font-size:12.5px" title="ИИ посмотрит проект и подсветит риски">${icon('sparkles',13)} Разбор рисков</button>
       <button class="btn" id="aiPlanBtn" style="padding:8px 13px;font-size:12.5px" title="Опиши цель — получишь готовый план задач">${icon('sparkles',14)} Спланируй цель</button></div>
-    <div class="insights">${ins.map((x,i)=>`<div class="insight ${x.act?'click':''}" data-i="${i}"><span class="ii">${insIcon(x.ic)}</span><div class="ib"><div class="it">${esc(x.title)}</div>${x.sub?`<div class="is">${esc(x.sub)}</div>`:''}</div>${x.act?'<span class="ia">→</span>':''}</div>`).join('')}</div>`;
+    <div class="insights">${ins.slice(0,insExpanded?ins.length:3).map((x,i)=>`<div class="insight ${x.act?'click':''}" data-i="${i}"><span class="ii">${insIcon(x.ic)}</span><div class="ib"><div class="it">${esc(x.title)}</div>${x.sub?`<div class="is">${esc(x.sub)}</div>`:''}</div>${x.act?'<span class="ia">→</span>':''}</div>`).join('')}${ins.length>3?`<button class="insmore" id="insMore">${insExpanded?'Свернуть ↑':'Ещё '+(ins.length-3)+' ↓'}</button>`:''}</div>`;
   const openX=(pid,tid)=>{if(pid&&pid!==S.id){switchProject(pid);setTimeout(()=>openTask(tid),120);}else openTask(tid);};
   const ns=el.querySelector('.nh-title[data-open]');if(ns)ns.onclick=()=>openX(nextPid,ns.dataset.open);
   $$('#now .nh-up[data-open]').forEach(e=>e.onclick=()=>openX(e.dataset.pid,e.dataset.open));
@@ -2828,6 +2803,7 @@ function renderNow(){
       toast('Дальше: «'+String(nx.title).slice(0,42)+'»'+(nx.est?' · '+nx.est+'ч':''),'⚡','Поехали',()=>{
         if(nx.pid!==S.id){switchProject(nx.pid);setTimeout(()=>startFocus(nx.id),160);}else startFocus(nx.id);});},3600);};
   ins.forEach((x,i)=>{const c=el.querySelector(`.insight[data-i="${i}"]`);if(c&&x.act)c.onclick=x.act;});
+  {const im=$('#insMore');if(im)im.onclick=()=>{insExpanded=!insExpanded;renderNow();};}
   const ap=$('#aiPlanBtn');if(ap)ap.onclick=openAiPlan;
   $$('#now [data-fs]').forEach(b=>b.onclick=()=>{const a=b.dataset.fs;
     if(a==='skip'){localStorage.setItem('cockpit_fs_done','1');render();}
@@ -3013,7 +2989,7 @@ function renderNowMobile(ctx){
     return `<div class="mrow" data-open="${t.id}" data-pid="${pid}"><span class="dot" style="background:${stMap[t.status].c}"></span><span class="mr-t">${prGlyph(t)}${esc(t.title)}</span>${x.pid?badge(x):''}${t.estimate?`<span class="mr-e">${t.estimate}ч</span>`:''}</div>`;}).join('');
   el.innerHTML=`
     <div class="mgreet"><h1>${greet.split(' ')[0]} ${greet.split(' ').slice(1).join(' ')}${(n=>n&&n!=='Я'&&n!=='Новый участник'?', '+esc(n.split(' ')[0]):'!')(meName())}</h1>
-      <span class="energyrow"><button data-en="hi" class="${energy==='hi'?'on':''}" title="Полон сил — дай крупную задачу" aria-label="Полон сил">${icon('battery',15)}</button><button data-en="lo" class="${energy==='lo'?'on':''}" title="Мало сил — подкинь лёгкие" aria-label="Мало сил">${icon('battlow',15)}</button></span>${streakChip()}</div>
+      <span class="energyrow"><button data-en="hi" class="${energy==='hi'?'on':''}" title="Полон сил — дай крупную задачу" aria-label="Полон сил">${icon('battery',15)}</button><button data-en="lo" class="${energy==='lo'?'on':''}" title="Мало сил — подкинь лёгкие" aria-label="Мало сил">${icon('battlow',15)}</button></span></div>
     ${whatsNewStrip()}
     ${hero}
     ${rows?`<div class="msec">Ещё сегодня · ${upNext.length}</div>${rows}`:''}
@@ -3025,7 +3001,7 @@ function renderNowMobile(ctx){
         <div class="pulse-card"><div class="pv" style="color:${ctx.ov?'var(--bad)':'var(--mut)'}">${ctx.ov}</div><div class="pl">просроч.</div></div>
         <div class="pulse-card"><div class="pv">${ctx.vel}</div><div class="pl">за 7 дней</div></div></div>
       ${claudeNowCard()}
-      <div class="insights" style="margin-top:12px">${ins.map((x,i)=>`<div class="insight ${x.act?'click':''}" data-i="${i}"><span class="ii">${insIcon(x.ic)}</span><div class="ib"><div class="it">${esc(x.title)}</div>${x.sub?`<div class="is">${esc(x.sub)}</div>`:''}</div></div>`).join('')}</div>
+      <div class="insights" style="margin-top:12px">${ins.slice(0,insExpanded?ins.length:3).map((x,i)=>`<div class="insight ${x.act?'click':''}" data-i="${i}"><span class="ii">${insIcon(x.ic)}</span><div class="ib"><div class="it">${esc(x.title)}</div>${x.sub?`<div class="is">${esc(x.sub)}</div>`:''}</div></div>`).join('')}${ins.length>3?`<button class="insmore" id="insMore">${insExpanded?'Свернуть ↑':'Ещё '+(ins.length-3)+' ↓'}</button>`:''}</div>
       ${momentumSpark()}</details>`;
   const openX=(pid,tid)=>{if(pid&&pid!==S.id){switchProject(pid);setTimeout(()=>openTask(tid),120);}else openTask(tid);};
   const mh=el.querySelector('.mhero[data-open] .mh-title');if(mh)mh.onclick=()=>openX(nextPid,el.querySelector('.mhero').dataset.open);
@@ -3042,6 +3018,7 @@ function renderNowMobile(ctx){
         if(nx.pid!==S.id){switchProject(nx.pid);setTimeout(()=>startFocus(nx.id),160);}else startFocus(nx.id);});},3600);};
   {const np=$('#npPlan');if(np)np.onclick=openAiPlan;}
   ins.forEach((x,i)=>{const c=el.querySelector(`.insight[data-i="${i}"]`);if(c&&x.act)c.onclick=x.act;});
+  {const im=$('#insMore');if(im)im.onclick=()=>{insExpanded=!insExpanded;renderNow();};}
   const ht=$('#healToday');if(ht)ht.onclick=()=>healOverdue('today');
   const hw=$('#healWeek');if(hw)hw.onclick=()=>healOverdue('week');
   const ho=$('#healOpen');if(ho)ho.onclick=()=>{filter={q:'',assignee:'',mine:false,overdue:true};setView('board');};
