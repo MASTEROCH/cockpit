@@ -685,6 +685,8 @@ header{background:var(--sheen),rgba(18,21,31,.62)}
 body.light .pdemo{background:rgba(20,24,40,.05)}
 /* quick-delete on board cards */
 .card .cdel{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:7px;border:none;background:rgba(0,0,0,.28);color:var(--mut2);font-size:12px;line-height:1;display:grid;place-items:center;opacity:0;transition:.12s;z-index:4;padding:0}
+.cping{border:none;background:rgba(255,255,255,.06);border-radius:7px;padding:2px 6px;font-size:12px;line-height:1;cursor:pointer;opacity:.85;transition:.12s}
+.cping:hover{background:rgba(255,255,255,.12);opacity:1;transform:scale(1.08)}
 .card:hover .cdel{opacity:1}
 .card .cdel:hover{background:var(--bad);color:#fff}
 body.light .card .cdel{background:rgba(20,24,40,.1)}
@@ -4551,6 +4553,14 @@ function renderBoardPeople(){renderBulkBar();
 }
 function boardSwipes(){if(window.innerWidth>680)return;
   $$('#board .card[data-id]').forEach(c=>attachSwipe(c,c.dataset.id));}
+/* напомнить исполнителю в TG про срочную/просроченную задачу — один тап с карточки */
+function remindAssignee(id){const t=task(id);if(!t)return;const m=member(t.assigneeId);
+  if(!m||m.id===myId())return;
+  if(!cloudOn){toast('Войди в облако, чтобы напомнить в Telegram','🔔');return;}
+  if(!m.email){toast('У '+m.name+' не привязан Telegram','🔔');return;}
+  const why=isOverdue(t)?' — просрочено':(t.priority==='urgent'?' — срочно':'');
+  tgNotify('comment',t,'🔔 '+meName()+' напоминает: «'+t.title+'»'+why+' — глянь, когда сможешь');
+  toast('Напомнил '+m.name+' в Telegram 🔔','🔔');}
 function renderBoard(){
   setTimeout(()=>{if(window._justMoved){const el=document.querySelector(`.card[data-id="${window._justMoved}"]`);
     if(el){el.classList.add('justmoved');setTimeout(()=>el.classList.remove('justmoved'),650);}window._justMoved=null;}},30);
@@ -4588,9 +4598,10 @@ function renderBoard(){
           ${t.estimate?`<span>⏱ ${t.estimate}ч</span>`:''}
           ${(t.comments||[]).length?`<span>💬 ${(t.comments||[]).length}</span>`:''}
           ${ov?`<span style="color:var(--bad);font-weight:700">⚠ просроч.</span>`:''}
-          <span style="margin-left:auto">${avatar(t.assigneeId)}</span>
+          <span style="margin-left:auto;display:inline-flex;align-items:center;gap:6px">${(t.assigneeId&&t.assigneeId!==myId()&&(ov||t.priority==='urgent'))?`<button class="cping" data-ping="${t.id}" title="Напомнить исполнителю в Telegram — задача ${ov?'просрочена':'срочная'}">🔔</button>`:''}${avatar(t.assigneeId)}</span>
         </div>`;
       card.onclick=()=>{if(boardSelOn)toggleBoardSel(t.id,card);else openTask(t.id);};
+      {const pg=card.querySelector('.cping');if(pg)pg.onclick=ev=>{ev.stopPropagation();remindAssignee(t.id);};}
       const qd=card.querySelector('.cdone');if(qd)qd.onclick=ev=>{ev.stopPropagation();if(boardSelOn){toggleBoardSel(t.id,card);return;}
         t.status='done';t.statusTs=Date.now();histAdd(t,'статус → Готово');if(t.estimate&&!t.spent)t.spent=t.estimate;logAct('✅','«'+t.title+'» → Готово');
         const _v=awardForDone(S,t);celebrateAt(ev);save();renderBoard();toast(_v?('+'+_v+' 🪙 за «'+t.title+'»'):('Готово: «'+t.title+'» ✅'),_v?'🪙':'✅');};
