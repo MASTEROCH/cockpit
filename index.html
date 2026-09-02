@@ -1728,6 +1728,13 @@ body.light .mseg{background:rgba(250,251,254,.97)}
 .lpsheet .lp-t{font-weight:800;font-size:14px;padding:2px 4px 8px;border-bottom:1px solid var(--line);margin-bottom:2px}
 .lpsheet .btn{justify-content:flex-start;padding:13px 14px;font-size:14px}
 @media (max-width:680px){.lpsheet{width:100vw;border-radius:22px 22px 0 0;padding-bottom:calc(14px + env(safe-area-inset-bottom))}}
+#emojiModal{width:min(440px,94vw);padding:16px;display:flex;flex-direction:column}
+#emojiModal .lp-t{font-weight:800;font-size:15px;margin-bottom:2px}
+.emgrid{display:grid;grid-template-columns:repeat(8,1fr);gap:3px;max-height:300px;overflow-y:auto;padding:2px}
+.embtn{font-size:23px;padding:6px 0;border:none;background:none;border-radius:10px;cursor:pointer;line-height:1;transition:background .1s}
+.embtn:hover{background:var(--bg2)}
+.embtn.on{background:rgba(167,139,250,.18);outline:1.5px solid var(--acc2)}
+@media (max-width:680px){#emojiModal{width:100vw;border-radius:22px 22px 0 0;padding-bottom:calc(16px + env(safe-area-inset-bottom))}.emgrid{grid-template-columns:repeat(7,1fr)}.embtn{font-size:26px;padding:9px 0}}
 /* ---- 🧠 Вандо-наставник ---- */
 .mentorcard{display:flex;gap:12px;border:1px solid var(--gbrd);border-radius:16px;padding:14px 16px;margin:14px 0;
   background:linear-gradient(135deg,rgba(167,139,250,.05),transparent 70%),var(--bg2)}
@@ -2019,6 +2026,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
 <div class="modal-scrim" id="obScrim"><div class="modal" id="obModal"></div></div>
 <div class="modal-scrim" id="wizScrim"><div class="modal" id="wizModal"></div></div>
 <div class="modal-scrim" id="welScrim"><div class="modal" id="welModal"></div></div>
+<div class="modal-scrim" id="emojiScrim"><div class="modal" id="emojiModal"></div></div>
 <div class="modal-scrim" id="npScrim"><div class="modal" id="npModal"></div></div>
 <div class="modal-scrim" id="authScrim"><div class="modal" id="authModal"></div></div>
 
@@ -6090,8 +6098,8 @@ projMenu.onclick=e=>{const b=e.target.closest('button');if(!b)return;
   else if(b.dataset.act==='demotoggle')toggleDemo();
   else if(b.dataset.act==='report')openReport();
   else if(b.dataset.act==='renp'){const n=prompt('Название проекта:',S.projectName);if(n){S.projectName=n.trim();save();render();}}
-  else if(b.dataset.act==='pemoji'){const cur=(projMeta(S.id)||{}).emoji||'📄';let em=(prompt('Эмодзи проекта:',cur)||'').trim();
-    if(em){em=[...em][0];const e2=projMeta(S.id);if(e2)e2.emoji=em;S.emoji=em;saveReg();save();render();toast('Эмодзи обновлён: '+em,em);}}
+  else if(b.dataset.act==='pemoji'){const cur=(projMeta(S.id)||{}).emoji||'📄';
+    openEmojiPicker(cur,em=>{const e2=projMeta(S.id);if(e2)e2.emoji=em;S.emoji=em;saveReg();save();render();toast('Эмодзи обновлён: '+em,em);});}
   else if(b.dataset.act==='trashbin')openTrashBin();
   else if(b.dataset.act==='importcsv')openImportCsv();
   else if(b.dataset.act==='archive')archiveProject(S.id,!(reg.list.find(p=>p.id===S.id)||{}).archived);
@@ -6105,6 +6113,35 @@ function loadDemo(){
 }
 let npTpl='mvp';
 const EMOJI_POOL=['🚀','🌐','🎯','💰','📱','🛠','🎨','📣','🏪','🤝','📦','🔥','🧪','📚','🎬','⚡'];
+/* пикер эмодзи: сетка с поиском по-русски — вместо неудобного prompt/вставки */
+const EMOJI_PICK=[
+  {e:'🚀',k:'запуск ракета старт'},{e:'🎯',k:'цель'},{e:'💼',k:'бизнес работа'},{e:'📊',k:'аналитика график'},{e:'📈',k:'рост'},{e:'📁',k:'папка проект'},{e:'📦',k:'коробка продукт'},{e:'🗂',k:'архив'},{e:'🛠',k:'инструменты'},{e:'⚙️',k:'настройки шестерня'},{e:'🔧',k:'ремонт'},{e:'🧩',k:'модуль пазл'},{e:'🔬',k:'исследование'},{e:'🧪',k:'тест колба'},{e:'💡',k:'идея'},{e:'🔥',k:'огонь горит'},{e:'⚡',k:'быстро молния'},{e:'🎨',k:'дизайн'},{e:'✏️',k:'правка карандаш'},{e:'📝',k:'заметка'},{e:'📌',k:'закреп'},{e:'🏷',k:'тег'},
+  {e:'💰',k:'деньги'},{e:'💵',k:'доллар'},{e:'🏦',k:'банк'},{e:'💳',k:'карта'},{e:'🤝',k:'сделка партнёр'},{e:'📣',k:'маркетинг реклама'},{e:'🎁',k:'подарок'},{e:'🛒',k:'корзина покупка'},{e:'🏪',k:'магазин'},{e:'🏢',k:'офис компания'},
+  {e:'💻',k:'ноутбук код'},{e:'🖥',k:'компьютер'},{e:'📱',k:'телефон приложение'},{e:'🌐',k:'сайт веб'},{e:'🤖',k:'бот ии'},{e:'🛰',k:'спутник'},{e:'📡',k:'сигнал'},{e:'🔌',k:'интеграция'},
+  {e:'📧',k:'почта'},{e:'💬',k:'чат'},{e:'📞',k:'звонок'},{e:'📅',k:'календарь'},{e:'⏰',k:'время будильник'},
+  {e:'🍽',k:'ресторан еда'},{e:'🍕',k:'пицца'},{e:'🍔',k:'бургер'},{e:'☕',k:'кофе'},{e:'🍷',k:'вино'},{e:'🍺',k:'пиво'},{e:'🎂',k:'торт'},{e:'🥗',k:'салат'},{e:'🍣',k:'суши'},
+  {e:'🏠',k:'дом'},{e:'🏗',k:'стройка'},{e:'🏭',k:'завод'},{e:'🏥',k:'клиника медицина'},{e:'🏫',k:'школа'},{e:'🗼',k:'башня'},{e:'🌍',k:'мир земля'},{e:'🗺',k:'карта'},
+  {e:'🌱',k:'рост росток'},{e:'🌳',k:'дерево'},{e:'🌸',k:'цветок'},{e:'⭐',k:'звезда'},{e:'🌟',k:'звезда блеск'},{e:'🌈',k:'радуга'},{e:'☀️',k:'солнце'},{e:'🌙',k:'луна ночь'},{e:'🔮',k:'магия шар'},
+  {e:'✅',k:'готово галочка'},{e:'❤️',k:'сердце любовь'},{e:'💜',k:'фиолет сердце'},{e:'💙',k:'синий сердце'},{e:'💚',k:'зелёный сердце'},{e:'🧡',k:'оранж сердце'},{e:'⚠️',k:'внимание'},{e:'🔒',k:'замок безопасность'},{e:'🔑',k:'ключ'},{e:'🎉',k:'праздник'},{e:'🏆',k:'кубок победа'},{e:'🥇',k:'медаль'},{e:'🎓',k:'учёба диплом'},{e:'👑',k:'корона'},{e:'💎',k:'бриллиант'},
+  {e:'👤',k:'человек'},{e:'👥',k:'команда люди'},{e:'🦄',k:'единорог'},{e:'🐝',k:'пчела'},{e:'🦊',k:'лиса'},{e:'🐱',k:'кот'},{e:'🐶',k:'собака'},{e:'🦁',k:'лев'},
+  {e:'🇷🇺',k:'россия'},{e:'🇺🇸',k:'сша америка'},{e:'🇬🇧',k:'англия'},{e:'🇩🇪',k:'германия'},{e:'🇫🇷',k:'франция'},{e:'🇪🇸',k:'испания'},{e:'🇯🇵',k:'япония'},{e:'🇬🇪',k:'грузия'},{e:'🇰🇿',k:'казахстан'},{e:'🇺🇦',k:'украина'},
+];
+function openEmojiPicker(cur,cb){
+  const draw=q=>{q=(q||'').toLowerCase().trim();
+    const items=q?EMOJI_PICK.filter(x=>x.k.includes(q)):EMOJI_PICK;
+    $('#emGrid').innerHTML=items.length?items.map(x=>`<button class="embtn${x.e===cur?' on':''}" data-e="${x.e}" title="${x.k}">${x.e}</button>`).join(''):'<div class="emptymini" style="grid-column:1/-1">Ничего — попробуй «дом», «ракета», «деньги»…</div>';
+    $$('#emGrid .embtn').forEach(b=>b.onclick=()=>{$('#emojiScrim').classList.remove('show');cb(b.dataset.e);});};
+  $('#emojiModal').innerHTML=`<div class="lp-t">😀 Выбери эмодзи</div>
+    <input class="inp" id="emSearch" placeholder="Поиск: дом · ракета · деньги · кофе…" autocomplete="off" spellcheck="false" style="margin:2px 0 12px;font-size:16px">
+    <div class="emgrid" id="emGrid"></div>
+    <button class="lnk" id="emCustom" style="margin-top:12px;font-size:12.5px">Вставить свой эмодзи →</button>`;
+  draw('');
+  $('#emSearch').oninput=e=>draw(e.target.value);
+  $('#emCustom').onclick=()=>{let em=(prompt('Вставь свой эмодзи:')||'').trim();if(em){em=[...em][0];$('#emojiScrim').classList.remove('show');cb(em);}};
+  $('#emojiScrim').classList.add('show');
+  if(window.innerWidth>680)setTimeout(()=>{const s=$('#emSearch');if(s)s.focus();},60);
+}
+{const es=$('#emojiScrim');if(es)es.onclick=e=>{if(e.target===es)es.classList.remove('show');};}
 let npEmoji='';
 function freeEmoji(){const used=new Set(reg.list.map(p=>p.emoji));return EMOJI_POOL.find(e=>!used.has(e))||EMOJI_POOL[Math.floor(Math.random()*EMOJI_POOL.length)];}
 function openNewProject(){npTpl='mvp';npEmoji=freeEmoji();renderNP();$('#npScrim').classList.add('show');}
@@ -6128,10 +6165,14 @@ function renderNP(){
   $$('#npModal .tpl').forEach(el=>el.onclick=()=>{npTpl=el.dataset.tpl;
     $$('#npModal .tpl').forEach(x=>x.classList.toggle('on',x===el));
     if(!edited)nameEl.value=TPL_NAME[npTpl]||'Мой проект';});
-  $$('#npEmojis .chip').forEach(c=>c.onclick=()=>{let em=c.dataset.em;
-    if(em==='+'){em=(prompt('Вставь эмодзи:')||'').trim();if(!em)return;em=[...em][0];}
-    npEmoji=em;$$('#npEmojis .chip').forEach(x=>x.classList.toggle('on',x.dataset.em===npEmoji));
-    if(!$$('#npEmojis .chip').some(x=>x.dataset.em===npEmoji))c.classList.add('on');});
+  const setNpEmoji=em=>{npEmoji=em;const row=$('#npEmojis');if(!row)return;
+    const pool=EMOJI_POOL.includes(em)?EMOJI_POOL:[em,...EMOJI_POOL];
+    row.innerHTML=pool.map(e=>`<button class="chip ${e===npEmoji?'on':''}" data-em="${e}" style="font-size:16px;padding:6px 9px">${e}</button>`).join('')+`<button class="chip" data-em="+" title="Ещё эмодзи" style="font-size:14px;padding:6px 9px">＋ ещё</button>`;
+    wireNpEmojis();};
+  const wireNpEmojis=()=>$$('#npEmojis .chip').forEach(c=>c.onclick=()=>{
+    if(c.dataset.em==='+'){openEmojiPicker(npEmoji,setNpEmoji);return;}
+    setNpEmoji(c.dataset.em);});
+  wireNpEmojis();
   $('#npCancel').onclick=()=>$('#npScrim').classList.remove('show');
   $('#npCreate').onclick=()=>{const nm=(nameEl.value||'').trim()||TPL_NAME[npTpl]||'Мой проект';const par=($('#npParent')||{}).value||'';$('#npScrim').classList.remove('show');createProject(nm,npTpl,par||null,npEmoji);};
   setTimeout(()=>{nameEl.focus();nameEl.select();},60);
