@@ -708,7 +708,7 @@ body.light .card .cdel{background:rgba(20,24,40,.1)}
   background:radial-gradient(1100px 720px at 82% -10%, rgba(167,139,250,.18), transparent 60%),radial-gradient(900px 650px at -8% 6%, rgba(244,114,182,.13), transparent 55%),var(--bg)}
 .gate.hide{display:none}
 .gatecard{width:380px;max-width:100%;text-align:center;background:var(--sheen),var(--glass);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:1px solid var(--gbrd);border-radius:24px;box-shadow:var(--depth),var(--ghi);padding:34px 30px;animation:pop .25s}
-.gatelogo{width:56px;height:56px;border-radius:17px;margin:0 auto 16px;display:grid;place-items:center;font-size:28px;background:linear-gradient(157deg,#262834,#0b0c11 72%);border:1px solid rgba(255,255,255,.12);box-shadow:0 0 26px rgba(84,114,240,.4),inset 0 1px 0 rgba(255,255,255,.16)}
+.gatelogo{width:56px;height:56px;border-radius:17px;margin:0 auto 16px;display:grid;place-items:center;font-size:28px;background:linear-gradient(157deg,#262834,#0b0c11 72%);border:1px solid rgba(255,255,255,.12);box-shadow:0 6px 20px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.12)}
 .gatecard h1{font-size:26px;font-weight:800;margin:0 0 8px;letter-spacing:-.4px}
 .gatecard .gp{color:var(--mut);font-size:14px;line-height:1.55;margin-bottom:18px}
 .gatecard .gp b{color:var(--txt)}
@@ -1515,9 +1515,9 @@ body.light::before{background:
 @keyframes warnpulse{50%{box-shadow:0 0 0 6px rgba(251,191,36,.12)}}
 /* ---- Вандо: ИИ-маскот (канон: правый нижний угол) ---- */
 .vando-fab{position:fixed;right:18px;bottom:52px;z-index:45;width:56px;height:56px;border-radius:18px;border:1px solid rgba(255,255,255,.14);cursor:pointer;
-  background:linear-gradient(157deg,#262834,#0b0c11 72%);box-shadow:0 10px 30px rgba(0,0,0,.55),0 0 24px rgba(84,114,240,.35),inset 0 1px 0 rgba(255,255,255,.16);
+  background:linear-gradient(157deg,#22242e,#0b0c11 72%);box-shadow:0 8px 22px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.12);
   display:grid;place-items:center;transition:transform .18s var(--ease),box-shadow .2s}
-.vando-fab:hover{transform:translateY(-2px) scale(1.04);box-shadow:0 14px 36px rgba(0,0,0,.6),0 0 34px rgba(254,92,151,.35),inset 0 1px 0 rgba(255,255,255,.2)}
+.vando-fab:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 12px 30px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.16)}
 .vando-fab svg{transform-origin:50% 60%}
 .vando-fab:hover svg{animation:logopop .7s cubic-bezier(.16,1.4,.3,1)}
 .vando-panel{position:fixed;right:18px;bottom:120px;z-index:65;width:384px;max-width:calc(100vw - 24px);height:min(560px,72vh);display:none;flex-direction:column;overflow:hidden;
@@ -1584,8 +1584,8 @@ body.light .vando-panel{background:var(--sheen),rgba(255,255,255,.97)}
   .mnav button.on{color:var(--txt)}
   .mnav button.on i{opacity:1;color:var(--acc2);transform:scale(1.08)}
   .mnav .mplus{flex:0 0 auto;width:56px;height:56px;margin:0 6px;border-radius:19px;transform:translateY(-14px);
-    background:linear-gradient(135deg,#5472F0,#a78bfa 55%,#FE5C97);color:#fff;font-size:30px;font-weight:400;line-height:1;
-    box-shadow:0 12px 28px rgba(84,114,240,.5),inset 0 1px 0 rgba(255,255,255,.35);display:grid;place-items:center;padding:0}
+    background:linear-gradient(160deg,#8f7cea,#7c69d9);color:#fff;font-size:30px;font-weight:400;line-height:1;
+    box-shadow:0 8px 20px rgba(124,105,217,.28),inset 0 1px 0 rgba(255,255,255,.22);display:grid;place-items:center;padding:0}
   .mnav .mplus:active{transform:translateY(-14px) scale(.93)}
   .mnav i{position:relative}
   .mbadge{position:absolute;top:-5px;right:-9px;background:var(--bad);color:#fff;font-size:9px;font-weight:800;
@@ -2073,7 +2073,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
 /* ============================ STATE ============================ */
 const LS='cockpit_v1';
 const CURRENT_USER='m1';
-const COLORS=['#cf8fb4','#a190d6','#7aa3cd','#7cb59a','#c4ac79','#c98f8f','#7fb0b7','#ab90c8']; /* Neutral Graphite: различимо, не кричит */
+const COLORS=['#a892ac','#9490b0','#8298ac','#84a394','#ab9d84','#ab9092','#8aa2a6','#9a90a8']; /* приглушённые slate/dusty — различимо, но не пёстро (Apple-нейтраль) */
 const STATUSES=[
   {k:'backlog',  n:'Бэклог',     c:'#6b7186'},
   {k:'todo',     n:'К работе',   c:'#6ea8d8'},
