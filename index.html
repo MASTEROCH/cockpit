@@ -4016,6 +4016,7 @@ async function checkTgLink(){
   return tgLinked;
 }
 async function createTgBind(){
+  if(!cloudOn||!myEmail)throw new Error('Сначала войди в WANDO своей почтой — потом привязывай Telegram');
   const raw='cpk_'+b64url(crypto.getRandomValues(new Uint8Array(24)));
   const hash=await sha256hex(raw);
   const {error:e1}=await sb.from('intake_tokens').insert({email:myEmail,label:'Telegram',token_hash:hash,workspace:intakeWorkspace});
@@ -4089,6 +4090,7 @@ async function sha256hex(s){const buf=await crypto.subtle.digest('SHA-256',new T
 function b64url(bytes){let s=btoa(String.fromCharCode(...bytes));return s.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
 let _newKey=null;
 async function genKey(label){
+  if(!cloudOn||!myEmail){toast('Сначала войди в WANDO своей почтой','🔑');return;}
   const raw='cpk_'+b64url(crypto.getRandomValues(new Uint8Array(24)));
   const hash=await sha256hex(raw);
   const {error}=await sb.from('intake_tokens').insert({email:myEmail,label:label||'Claude',token_hash:hash,workspace:intakeWorkspace});
@@ -4735,9 +4737,9 @@ function setProjectOpen(open){
 async function addTeamMember(email,name){
   email=(email||'').trim().toLowerCase();
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){toast('Похоже, это не email','⚠');return;}
-  const {error}=await sb.from('team').insert({email,name:(name||'').trim()||email.split('@')[0],workspace_id:await myWorkspaceId()});
+  const {error}=await sb.from('team').insert({email,name:(name||'').trim()||email.split('@')[0],role:'member',workspace_id:await myWorkspaceId()});
   if(error){toast('Не удалось: '+(error.message||''),'⚠');return;}
-  toast(email+' — теперь в команде, видит всё ✅','👥');loadAccess();
+  toast(email+' — в команде (участник: открытые проекты + куда добавишь) ✅','👥');loadAccess();
 }
 /* карточка участника обещает «впиши email — он войдёт этой почтой» — держим слово:
    валидный новый email тихо попадает в team (доступ), а не только в JSON проекта */
@@ -4746,7 +4748,7 @@ async function syncMemberToTeam(email,name){
   if(!cloudOn||!sb||!accessReady||!isTeam)return;
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return;
   if(teamRows.find(t=>(t.email||'').toLowerCase()===email))return;
-  try{const {error}=await sb.from('team').insert({email,name:(name||'').trim()||email.split('@')[0],workspace_id:await myWorkspaceId()});
+  try{const {error}=await sb.from('team').insert({email,name:(name||'').trim()||email.split('@')[0],role:'member',workspace_id:await myWorkspaceId()});
     if(!error){toast(email+' теперь может войти этой почтой ✅','👥');loadAccess();}
   }catch(e){/* нет облака/таблицы — просто email в карточке */}
 }
@@ -5998,7 +6000,7 @@ function finishWizard(openConn){
   }
   localStorage.setItem('cockpit_onboarded','1');
   setView('now');
-  if(openConn){setTimeout(()=>{openTgGate();setTimeout(startTgBind,350);},320);}
+  if(openConn){setTimeout(()=>{openTgGate();if(cloudOn&&myEmail)setTimeout(startTgBind,350);},320);}
   else{setTimeout(()=>{const c=$('#cmd');if(c)c.focus();},220);toast('Готово! Кидай первую задачу строкой сверху ⌘','🚀');}
 }
 $('#wizScrim').onclick=e=>{if(e.target===$('#wizScrim'))closeWiz();};
