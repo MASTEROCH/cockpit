@@ -2991,6 +2991,7 @@ function renderNowMobile(ctx){
       <span class="energyrow"><button data-en="hi" class="${energy==='hi'?'on':''}" title="Полон сил — дай крупную задачу" aria-label="Полон сил">${icon('battery',15)}</button><button data-en="lo" class="${energy==='lo'?'on':''}" title="Мало сил — подкинь лёгкие" aria-label="Мало сил">${icon('battlow',15)}</button></span></div>
     ${whatsNewStrip()}
     ${hero}
+    ${firstStepsCard()}
     ${rows?`<div class="msec">Ещё сегодня · ${upNext.length}</div>${rows}`:''}
     ${assistCard()}
     <details class="fold" style="margin-top:14px"><summary>Подробности дня</summary>
@@ -3004,6 +3005,10 @@ function renderNowMobile(ctx){
       ${momentumSpark()}</details>`;
   const openX=(pid,tid)=>{if(pid&&pid!==S.id){switchProject(pid);setTimeout(()=>openTask(tid),120);}else openTask(tid);};
   const mh=el.querySelector('.mhero[data-open] .mh-title');if(mh)mh.onclick=()=>openX(nextPid,el.querySelector('.mhero').dataset.open);
+  $$('#now [data-fs]').forEach(b=>b.onclick=()=>{const a=b.dataset.fs;
+    if(a==='skip'){localStorage.setItem('cockpit_fs_done','1');render();}
+    else if(a==='tg'){if(!cloudOn)toast('Сначала войди в облако','🤖');else openTgGate();}
+    else if(a==='add'){openCap();}});
   $$('#now .mrow[data-open]').forEach(e=>{e.onclick=()=>openX(e.dataset.pid,e.dataset.open);attachSwipe(e,e.dataset.open,e.dataset.pid);});
   const fs=$('#focusStart');if(fs&&next)fs.onclick=()=>{if(nextPid!==S.id){switchProject(nextPid);setTimeout(()=>{startFocus(next.id);setView('now');},150);}else startFocus(next.id);};
   const fst=$('#focusStop');if(fst)fst.onclick=()=>stopFocus(false);
