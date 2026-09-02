@@ -4686,9 +4686,9 @@ function addIdea(){const v=$('#ideaIn').value.trim();if(!v)return;S.ideas.push({
 
 /* ============================ TEAM ============================ */
 /* ============================ ДОСТУП И РОЛИ (team / project_access) ============================ */
-let isTeam=true, accessReady=false, teamRows=[], guestRows=[]; // guestRows — гости ТЕКУЩЕГО проекта
+let isTeam=true, accessReady=false, teamRows=[], guestRows=[], myGrantSet=new Set(); // guestRows — гости ТЕКУЩЕГО проекта; myGrantSet — проекты, куда меня выдали (project_access)
 async function loadAccess(){
-  if(!cloudOn||!sb){isTeam=true;accessReady=false;return;}
+  if(!cloudOn||!sb){isTeam=true;accessReady=false;myGrantSet=new Set();return;}
   try{
     const {data,error}=await sb.from('team').select('email,name,role').order('created_at');
     if(error)throw error;
@@ -4696,8 +4696,11 @@ async function loadAccess(){
     isTeam=!!teamRows.find(t=>(t.email||'').toLowerCase()===myEmail);
     // таблица есть, но команда меня не знает и список видим (RLS) → значит я гость
     if(!teamRows.length)isTeam=false;
+    // мои личные выдачи по проектам — чтобы клиент показывал ровно то, что отдаёт RLS
+    try{const {data:g}=await sb.from('project_access').select('project_id').ilike('email',myEmail);
+      myGrantSet=new Set((g||[]).map(x=>x.project_id));}catch(_){myGrantSet=new Set();}
   }catch(e){ // таблицы ещё нет (миграция team.sql не применена) — старое поведение
-    accessReady=false;isTeam=true;teamRows=[];
+    accessReady=false;isTeam=true;teamRows=[];myGrantSet=new Set();
   }
   render();
 }
@@ -4716,7 +4719,7 @@ async function myWorkspaceId(){
    (обратная совместимость — пока никого не назначили участником, ничего не прячется). */
 function teamRoleOf(email){const r=(teamRows.find(t=>(t.email||'').toLowerCase()===(email||'').toLowerCase())||{}).role;return r||'';}
 function iSeeAllProjects(){if(!accessReady||!isTeam)return true;return teamRoleOf(myEmail)!=='member';}
-function canSeeProject(p){if(!p)return false;if(iSeeAllProjects())return true;const d=p.id===S.id?S:loadProj(p.id);return !d||d.open!==false||!!myMemberIn(d);}
+function canSeeProject(p){if(!p)return false;if(iSeeAllProjects())return true;const d=p.id===S.id?S:loadProj(p.id);return !d||d.open!==false||!!myMemberIn(d)||myGrantSet.has(p.id);}
 function visibleProjects(){return reg.list.filter(p=>!p.archived&&canSeeProject(p));}
 async function setTeamRole(email,role){
   if(!cloudOn||!sb)return;
@@ -4756,7 +4759,8 @@ async function removeTeamMember(email){
 async function grantAccess(email,role){
   email=(email||'').trim().toLowerCase();
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){toast('Похоже, это не email','⚠');return;}
-  if(teamRows.find(t=>(t.email||'').toLowerCase()===email)){toast('Он уже в команде — видит всё','👥');return;}
+  const tr=teamRoleOf(email);
+  if(tr&&tr!=='member'){toast(tr==='owner'?'Он Владелец — видит все проекты':'Он Админ — видит все проекты','👥');return;}
   const {error}=await sb.from('project_access').upsert({project_id:S.id,email,role:role||'member',granted_by:myEmail});
   if(error){toast('Не удалось: '+(error.message||''),'⚠');return;}
   toast(email+' → доступ к «'+S.projectName+'» ('+(role==='viewer'?'просмотр':'ведёт задачи')+')','🔐');
@@ -4772,21 +4776,24 @@ function renderAccessPanel(){
   if(!accessReady){el.innerHTML=`<div class="accpanel"><h3>🔐 Доступ и роли</h3>
     <div class="accsub">Чтобы управлять командой и гостями с сайта, один раз прогони <b>supabase/team.sql</b> (SQL Editor). После этого здесь появятся списки.</div></div>`;return;}
   if(!isTeam){el.innerHTML='';return;}
+  const elevated=iSeeAllProjects(); // владелец/админ/легаси — управляют командой и видимостью
+  const myRank=({owner:3,full:3,admin:2,member:1})[teamRoleOf(myEmail)]||3;
   el.innerHTML=`<div class="accpanel">
     <h3>🔐 Доступ и роли</h3>
     <div class="accsub">Роли решают видимость: <b>Владелец/Админ</b> видят все проекты, <b>Участник</b> — только открытые и те, куда добавлен. Гость видит один выданный проект.</div>
-    <div class="accsec">🗂 «${esc(S.projectName)}» · видимость</div>
+    ${elevated?`<div class="accsec">🗂 «${esc(S.projectName)}» · видимость</div>
     <div class="accrow"><span class="ae">${S.open===false?'🔒 Закрыт':'🌐 Открыт всей команде'}</span>
       <span class="an">${S.open===false?'видят админы и добавленные участники':'виден каждому в команде'}</span>
       <button class="btn" id="accProjToggle" style="margin-left:auto">${S.open===false?'Открыть всем':'Закрыть'}</button></div>
     <div class="accsec">Команда · роли</div>
     ${teamRows.map(t=>{const rr=t.role==='owner'?'owner':t.role==='member'?'member':'admin';const me=(t.email||'').toLowerCase()===myEmail;
+      const tRank=({owner:3,full:3,admin:2,member:1})[t.role]||3;const canEdit=myRank>tRank; // строго выше — иерархия
       return `<div class="accrow"><span class="ae">${esc(t.email)}</span><span class="an">${esc(t.name||'')}${me?' (вы)':''}</span>
-      <select class="fsel" data-trole="${esc(t.email)}" title="Роль решает, что человек видит"><option value="owner" ${rr==='owner'?'selected':''}>👑 Владелец</option><option value="admin" ${rr==='admin'?'selected':''}>Админ</option><option value="member" ${rr==='member'?'selected':''}>Участник</option></select>
-      ${!me?`<span class="ax" data-rmteam="${esc(t.email)}" title="Убрать из команды">✕</span>`:''}</div>`;}).join('')}
+      <select class="fsel" data-trole="${esc(t.email)}" ${canEdit?'':'disabled'} title="${canEdit?'Роль решает, что человек видит':'Менять роль может только тот, кто выше'}"><option value="owner" ${rr==='owner'?'selected':''}>👑 Владелец</option><option value="admin" ${rr==='admin'?'selected':''}>Админ</option><option value="member" ${rr==='member'?'selected':''}>Участник</option></select>
+      ${!me&&canEdit?`<span class="ax" data-rmteam="${esc(t.email)}" title="Убрать из команды">✕</span>`:''}</div>`;}).join('')}
     <div class="accadd"><input class="inp" id="accTeamEmail" type="email" placeholder="email нового члена команды">
       <input class="inp" id="accTeamName" placeholder="Имя" style="max-width:130px">
-      <button class="btn primary" id="accTeamAdd">＋ В команду</button></div>
+      <button class="btn primary" id="accTeamAdd">＋ В команду</button></div>`:''}
     <div class="accsec">Гости проекта «${esc(S.projectName)}»</div>
     <div class="accsub" style="margin:2px 0 8px">Гостевой доступ выдаётся на конкретный проект. Нужен другой — переключи проект наверху и вернись сюда.</div>
     ${guestRows.length?guestRows.map(g=>`<div class="accrow"><span class="ae">${esc(g.email)}</span>
