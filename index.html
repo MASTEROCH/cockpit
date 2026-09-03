@@ -1952,6 +1952,10 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
 .pick-meta{font-size:12px;color:var(--mut)}
 .pick-go{flex:none;color:var(--acc2);display:inline-flex}
 @media (max-width:680px){.picksheet{width:100%}}
+
+/* инлайн-иконки, заменившие эмодзи в тексте — по размеру и цвету строки */
+.iemo{display:inline-flex;align-items:center;justify-content:center;vertical-align:-.16em;line-height:1;margin:0 .5px}
+.iemo svg{width:1.05em;height:1.05em}
 </style>
 </head>
 <body>
@@ -2451,6 +2455,38 @@ function aico(n){return `<svg class="aico" viewBox="0 0 64 64" fill="none" strok
    проектов) намеренно НЕ в карте — остаются как есть. */
 const EMAP={'✅':'check','✔':'check','✔️':'check','✓':'check','☑':'check','🌙':'moon','⚡':'zap','⚡️':'zap','🔔':'bell','🗑':'trash','🗑️':'trash','👤':'users','👥':'users','🧑':'users','📅':'cal','🗓':'cal','🗓️':'cal','⏱':'clock','⏱️':'clock','🕘':'clock','🕐':'clock','⏰':'clock','➕':'plus','＋':'plus','✎':'edit','✏':'edit','✏️':'edit','📝':'edit','🔍':'search','🔎':'search','💡':'idea','🧩':'idea','📋':'doc','📄':'doc','📃':'doc','🔒':'lock','🔐':'lock','🔓':'lock','🤖':'bot','🔥':'flame','🎯':'target','📊':'chart','📈':'chart','🌐':'globe','☁':'cloud','☁️':'cloud','🔄':'sync','🔁':'sync','🏢':'building','💬':'chat','🎙':'mic','🎙️':'mic','🎤':'mic','📥':'inbox','📤':'send','🔌':'plug','🏆':'trophy','⭐':'star','🌟':'star','✨':'sparkles','🪄':'sparkles','⚠':'alert','⚠️':'alert','☕':'coffee','📁':'folder','🗂':'folder','🗂️':'folder','🤝':'users','🎨':'edit','🧠':'sparkles','⬆':'upload','⬇':'download','🚀':'rocket','🔗':'plug','⚙':'gear','⚙️':'gear','🔋':'battery'};
 function emi(e,s){if(e==null)return '';const k=(''+e).trim();const n=EMAP[k];return n?icon(n,s||15):e;}
+
+/* Пост-рендер замена UI-эмодзи на line-иконки прямо в DOM. Идентичность проектов,
+   💰 «деньги» и эмодзи-пикер — НЕ в карте / в исключениях, поэтому не трогаются. */
+const UIEMOJI={'⚠':'alert','✅':'check','✔':'check','☑':'check','👤':'users','👥':'users','🧑':'users','📅':'cal','🗓':'cal','🗑':'trash','⚡':'zap','🔔':'bell','🤝':'users','🎙':'mic','🎤':'mic','🤖':'bot','🧠':'sparkles','📋':'doc','📝':'edit','📎':'doc','🔐':'lock','🔒':'lock','🔑':'lock','📊':'chart','📈':'chart','💡':'idea','🧩':'idea','☁':'cloud','🔄':'sync','🔀':'sync','🌙':'moon','📥':'inbox','📤':'send','📁':'folder','🗂':'folder','🗄':'archive','✨':'sparkles','🪄':'sparkles','🎯':'target','🧭':'target','💬':'chat','🎨':'edit','🌐':'globe','☕':'coffee','🔌':'plug','🔗':'plug','🔧':'gear','⚙':'gear','🪙':'coin','👑':'trophy','🥇':'trophy','🏆':'trophy','🧹':'trash','🔥':'flame','🥵':'flame','⭐':'star','🌟':'star','🔎':'search','🕘':'clock','⏱':'clock','⏰':'clock','🎬':'play','🎉':'sparkles','📣':'send','🔋':'battery','🚩':'alert','📲':'plug','💾':'doc'};
+const UIEMOJI_RE=new RegExp('('+Object.keys(UIEMOJI).map(e=>e.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')\\uFE0F?','gu');
+const EMOJI_KEEP_SEL='[data-em],#npEmojis,#emojiGrid,#projEmoji,.pr-emoji,.pbadge,.pemoji,.pick-em,.pal-emoji,.mr-p,.eico,.emoji-pick,.fv-pchip,.nh-up-e,.pov-n,.tic,.rp-t,.rep-line,[data-keep-emoji]';
+function _emojifyText(node){
+  const v=node.nodeValue;if(!v)return;UIEMOJI_RE.lastIndex=0;if(!UIEMOJI_RE.test(v))return;
+  const p2=node.parentNode;if(!p2||p2.nodeType!==1)return;
+  const tag=p2.nodeName;if(tag==='SCRIPT'||tag==='STYLE'||tag==='TEXTAREA'||tag==='INPUT'||p2.isContentEditable)return;
+  if(p2.closest&&p2.closest(EMOJI_KEEP_SEL))return;
+  UIEMOJI_RE.lastIndex=0;const frag=document.createDocumentFragment();let last=0,m;
+  while((m=UIEMOJI_RE.exec(v))){const raw=m[0],base=m[1],name=UIEMOJI[base];
+    if(m.index>last)frag.appendChild(document.createTextNode(v.slice(last,m.index)));
+    const sp=document.createElement('span');sp.className='iemo';sp.innerHTML=icon(name,14);frag.appendChild(sp);last=m.index+raw.length;}
+  if(last<v.length)frag.appendChild(document.createTextNode(v.slice(last)));
+  p2.replaceChild(frag,node);
+}
+function emojifyDOM(root){
+  if(!root)root=document.body;if(root.nodeType===3){_emojifyText(root);return;}
+  if(root.nodeType!==1)return;
+  if(root.closest&&root.closest(EMOJI_KEEP_SEL))return;
+  const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null);const arr=[];let n;while((n=w.nextNode()))arr.push(n);
+  arr.forEach(_emojifyText);
+}
+let _emObs=null;
+function startEmojify(){try{emojifyDOM(document.body);}catch(e){}
+  _emObs=new MutationObserver(muts=>{const roots=[];
+    for(const m of muts){for(const nd of m.addedNodes){if(nd.nodeType===1||nd.nodeType===3)roots.push(nd);}}
+    if(!roots.length)return;_emObs.disconnect();
+    try{roots.forEach(r=>{try{emojifyDOM(r);}catch(e){}});}finally{_emObs.observe(document.body,{childList:true,subtree:true});}});
+  _emObs.observe(document.body,{childList:true,subtree:true});}
 const LOGO_PATHS='<path transform="translate(-239 -299)" d="M590.549 318.732C592.945 318.453 596.745 318.696 599.286 318.696C634.434 318.703 667.897 316.824 700.032 333.775C783.727 377.923 786.207 488.78 731.835 556.811C700.794 595.65 657.566 620.752 607.3 623.356C576.646 624.841 542.765 617.244 517.207 638.881C505.403 648.755 500.588 660.76 494.308 674.336C488.985 685.844 483.927 697.868 478.034 709.061C447.129 709.003 414.041 709.686 383.322 708.993C390.272 692.78 399.544 674.533 407.172 658.357C414.402 641.263 425.054 620.531 433.24 603.375L468.064 529.888C478.844 507.375 489.815 485.216 500.033 462.397C508.607 461.72 522.007 461.939 530.747 461.916C551.732 461.88 572.716 462.073 593.696 462.496C589.717 468.96 584.172 482.027 580.797 489.352C574.315 503.42 567.316 518.312 561.52 532.628C562.821 532.707 564.123 532.765 565.426 532.803C574.929 533.092 584.848 532.969 594.379 533.027C601.077 532.791 608.447 533.526 615.073 532.731C648.617 528.704 677.207 498.097 677.706 464.145C678.091 437.865 664.532 415.164 637.935 409.832C622.705 406.779 607.684 407.916 592.303 407.965C569.853 408.116 547.402 408.135 524.952 408.02C539.76 379.17 553.156 348.033 567.408 318.783C575.059 318.869 582.922 319.055 590.549 318.732Z"/><path transform="translate(-239 -299)" d="M436.648 318.711C438.535 318.361 446.366 318.402 448.541 318.408L474.9 318.684C498.905 318.824 523.676 318.103 547.68 318.994C534.009 349.063 519.82 378.173 505.694 407.974L452.824 407.966C437.639 407.999 418.311 406.719 404.007 410.92C374.633 419.548 349.545 452.473 349.489 483.221C349.376 496.888 354.815 510.016 364.561 519.599C378.937 533.945 398.3 532.85 417.331 532.946L446.601 533.036C439.517 549.455 431.978 565.674 423.991 581.673C417.562 595.433 410.688 609.303 404.066 623C374.725 623.045 349.066 625.26 321.887 611.554C233.151 566.808 241.2 449.578 300.225 384.017C338.665 341.322 379.901 322.449 436.648 318.711Z"/>';
 let _lgid=0;
 /* Настоящая марка WANDO v2 (лента-градиент с пином) — официальный PNG→webp,
@@ -7498,6 +7534,7 @@ const _share=(location.hash.match(/[#&]s=([^&]+)/)||[])[1];
 const _shareSnap=_share?decodeShare(_share):null;
 if(_shareSnap){renderSharePage(_shareSnap);}
 else{tmaBoot();cloudInit();}
+try{startEmojify();}catch(e){}
 // утренний бриф для локального режима (без облака) — один раз в день
 if(!_shareSnap)setTimeout(()=>{
   if(cloudOn)return;
