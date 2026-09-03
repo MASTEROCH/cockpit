@@ -4049,9 +4049,14 @@ function closeTgGate(){stopTgPoll();$('#tgScrim').classList.remove('show');}
 async function startTgBind(){
   if(_tgBinding)return;_tgBinding=true;
   const b=$('#tgGo');if(b){b.disabled=true;b.textContent='Создаю привязку…';}
+  // iOS Safari блокирует window.open, вызванный ПОСЛЕ await (теряется user-gesture).
+  // Поэтому вкладку открываем СИНХРОННО в жесте, а адрес бота подставляем, когда готов код.
+  let w=null;try{w=window.open('','_blank');}catch(_){}
   try{
     const code=await createTgBind();
-    window.open(`https://t.me/${TG_BOT}?start=bind_${code}`,'_blank');
+    const url=`https://t.me/${TG_BOT}?start=bind_${code}`;
+    if(w&&!w.closed){try{w.location.href=url;}catch(_){window.open(url,'_blank');}}
+    else{const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();}
     renderTgGate('waiting');
     let tries=0;stopTgPoll();
     _tgPoll=setInterval(async()=>{
@@ -4060,7 +4065,7 @@ async function startTgBind(){
         setTimeout(()=>{closeTgGate();render();},1600);}
       else if(tries>40){stopTgPoll();renderTgGate('timeout');}
     },2500);
-  }catch(e){toast('Не получилось: '+(e.message||e),'⚠');renderTgGate('start');}
+  }catch(e){if(w&&!w.closed){try{w.close();}catch(_){}}toast('Не получилось: '+(e.message||e),'⚠');renderTgGate('start');}
   _tgBinding=false;
 }
 function renderTgGate(state){
@@ -6507,8 +6512,23 @@ function webmailUrl(email){
   return null;
 }
   if(state==='sent'){const wm=webmailUrl(email);
-    g.innerHTML=`<div class="gatecard"><div class="gatelogo">✉️</div><h1>Письмо отправлено</h1><div class="gp">Открой ссылку из письма на <b>${esc(email||'')}</b> на этом устройстве — и вернёшься сюда уже внутри. Загляни в «Спам», если не видно.</div>${wm?`<button class="btn primary" id="gateMail" style="margin-top:14px;width:100%;justify-content:center">${wm[1]} ↗</button>`:''}<button class="btn" id="gateBack" style="margin-top:${wm?'8':'14'}px;width:100%;justify-content:center">← Другой email</button></div>`;
+    g.innerHTML=`<div class="gatecard"><div class="gatelogo">✉️</div><h1>Письмо отправлено</h1>
+      <div class="gp">На <b>${esc(email||'')}</b> пришло письмо с кодом и ссылкой. Загляни в «Спам», если не видно.</div>
+      <div class="gp" style="margin-top:8px;font-weight:600;color:var(--txt)">Введи код из письма — это надёжнее ссылки:</div>
+      <input class="inp gateinp" id="gateCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-значный код" style="margin-top:10px;text-align:center;letter-spacing:5px;font-size:19px;font-weight:800">
+      <button class="btn primary" id="gateVerify" style="width:100%;justify-content:center;margin-top:10px">Войти по коду</button>
+      <div class="gp" style="margin-top:12px;font-size:12px;color:var(--mut2)">Или открой ссылку из письма на этом устройстве.</div>
+      ${wm?`<button class="btn" id="gateMail" style="margin-top:8px;width:100%;justify-content:center">${wm[1]} ↗</button>`:''}
+      <button class="btn" id="gateBack" style="margin-top:8px;width:100%;justify-content:center">← Другой email</button></div>`;
     {const gm=$('#gateMail');if(gm)gm.onclick=()=>window.open(wm[0],'_blank');}
+    const verify=async()=>{const code=(($('#gateCode')||{}).value||'').replace(/\D/g,'');
+      if(code.length!==6){toast('Код — 6 цифр из письма','⚠');return;}
+      const bt=$('#gateVerify');if(bt){bt.textContent='Проверяю…';bt.disabled=true;}
+      try{const {error}=await sb.auth.verifyOtp({email,token:code,type:'email'});
+        if(error)throw error; /* вход подхватит onAuthStateChange */}
+      catch(e){toast('Код не подошёл — проверь и попробуй снова','⚠');const b2=$('#gateVerify');if(b2){b2.textContent='Войти по коду';b2.disabled=false;}}};
+    {const gv=$('#gateVerify');if(gv)gv.onclick=verify;}
+    {const gc=$('#gateCode');if(gc){gc.onkeydown=e=>{if(e.key==='Enter')verify();};setTimeout(()=>gc.focus(),80);}}
     $('#gateBack').onclick=()=>renderGate('login',email);return;}
   g.innerHTML=`<div class="gatecard"><div class="gatelogo">${logoMarkSVG(22)}</div><h1>WANDO</h1>
     <div class="gp">Внутренний рабочий инструмент команды. Доска откроется только после входа.</div>
