@@ -2038,6 +2038,14 @@ html{font-optical-sizing:auto}
 .nh-label,.nh-side-t,.fv-subh,.fv-badge,.pal-h,.msec,.now-sec,.panel-c h3,.hist-h h2+.hist-sub{letter-spacing:.09em}
 /* числа — единый моно-набор везде, где важна ровность */
 .kpi .v,.pulse-card .pv,.fv-clock,.fclock,.hr-meta,.pick-meta,.nh-up-e,.mr-e,.fv-prog{font-variant-numeric:tabular-nums;font-feature-settings:"tnum","kern"}
+
+/* ============ СЕРДЦЕБИЕНИЕ: завершение шага «Сейчас» ============ */
+.now-hero.nh-cleared,.mhero.nh-cleared{animation:heroCleared .42s var(--ease) forwards;pointer-events:none;z-index:2}
+@keyframes heroCleared{0%{transform:scale(1);opacity:1}38%{transform:scale(1.015)}
+  100%{transform:scale(.978) translateY(-8px);opacity:0;filter:blur(1px)}}
+.now-hero.nh-advance,.mhero.nh-advance{animation:heroAdvance .52s var(--spring)}
+@keyframes heroAdvance{0%{opacity:0;transform:translateY(12px) scale(.985)}100%{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.now-hero.nh-cleared,.mhero.nh-cleared,.now-hero.nh-advance,.mhero.nh-advance{animation:none}}
 </style>
 </head>
 <body>
@@ -2600,6 +2608,23 @@ function celebrate(x,y){
       {duration:850+Math.random()*600,easing:'cubic-bezier(.18,.7,.3,1)'}).onfinish=()=>d.remove();}
 }
 function celebrateAt(ev){if(ev&&ev.clientX)celebrate(ev.clientX,ev.clientY);else celebrate();}
+/* Сердцебиение цикла: завершил шаг — карточка празднует и «улетает», следующий плавно въезжает.
+   Apple-grade feedback вместо резкого re-render. */
+function heroComplete(pid,tid,ev,hap){
+  if(focus.tid===tid)stopFocus(true);
+  const heroEl=document.querySelector('#now .now-hero:not(.done), #now .mhero:not(.done)');
+  celebrateAt(ev);if(hap!==false)haptic('ok');
+  const un=markDone(pid,tid);
+  const advance=()=>{window._heroAdvance=1;render();toast('Готово','✅','Отменить',un);
+    setTimeout(()=>{const nx=window._heroNext;if(!nx||nx.id===tid)return;
+      if(nx.st==='backlog'){takeFromBacklog(nx.pid||S.id,nx.id);return;}
+      toast('Дальше: «'+String(nx.title).slice(0,42)+'»'+(nx.est?' · '+nx.est+'ч':''),'⚡','Поехали',()=>{
+        if(nx.pid!==S.id){switchProject(nx.pid);setTimeout(()=>startFocus(nx.id),160);}else startFocus(nx.id);});},3600);};
+  const reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;
+  if(heroEl&&!reduce){heroEl.classList.add('nh-cleared');setTimeout(advance,400);}else advance();
+}
+function applyHeroAdvance(el){if(!window._heroAdvance)return;window._heroAdvance=0;
+  const he=el.querySelector('.now-hero:not(.done),.mhero:not(.done)');if(he)he.classList.add('nh-advance');}
 let _actx=null;
 function playDing(){if(localStorage.getItem('cockpit_sound')==='0')return;
   try{_actx=_actx||new (window.AudioContext||window.webkitAudioContext)();const ctx=_actx,now=ctx.currentTime;
@@ -3254,6 +3279,7 @@ function renderNow(){
       <button class="btn" id="claudeBtn" style="margin-left:auto;padding:8px 13px;font-size:12.5px" title="ИИ посмотрит проект и подсветит риски">${icon('sparkles',13)} Разбор рисков</button>
       <button class="btn" id="aiPlanBtn" style="padding:8px 13px;font-size:12.5px" title="Опиши цель — получишь готовый план задач">${icon('sparkles',14)} Спланируй цель</button></div>
     <div class="insights">${ins.slice(0,insExpanded?ins.length:3).map((x,i)=>`<div class="insight ${x.act?'click':''}" data-i="${i}"><span class="ii">${insIcon(x.ic)}</span><div class="ib"><div class="it">${esc(x.title)}</div>${x.sub?`<div class="is">${esc(x.sub)}</div>`:''}</div>${x.act?'<span class="ia">→</span>':''}</div>`).join('')}${ins.length>3?`<button class="insmore" id="insMore">${insExpanded?'Свернуть ↑':'Ещё '+(ins.length-3)+' ↓'}</button>`:''}</div>`;
+  applyHeroAdvance(el);
   const openX=(pid,tid)=>{if(pid&&pid!==S.id){switchProject(pid);setTimeout(()=>openTask(tid),120);}else openTask(tid);};
   const ns=el.querySelector('.nh-title[data-open]');if(ns)ns.onclick=()=>openX(nextPid,ns.dataset.open);
   $$('#now .nh-up[data-open]').forEach(e=>e.onclick=()=>openX(e.dataset.pid,e.dataset.open));
@@ -3262,14 +3288,7 @@ function renderNow(){
   const fs=$('#focusStart');if(fs&&next)fs.onclick=()=>{if(nextPid!==S.id){switchProject(nextPid);setTimeout(()=>{startFocus(next.id);setView('now');},150);}else startFocus(next.id);};
   const fst=$('#focusStop');if(fst)fst.onclick=()=>stopFocus(false);
   if(running){if(!focus.iv)focus.iv=setInterval(updFocus,1000);updFocus();}
-  const dn=el.querySelector('[data-done]');if(dn)dn.onclick=(ev)=>{if(focus.tid===dn.dataset.done)stopFocus(true);
-    const un=markDone(nextPid,dn.dataset.done);
-    celebrateAt(ev);render();toast('Готово','✅','Отменить',un);
-    /* фокус-цепочка: после окна «Отменить» предлагаем следующий шаг — день как конвейер */
-    setTimeout(()=>{const nx=window._heroNext;if(!nx||nx.id===dn.dataset.done)return;
-      if(nx.st==='backlog'){takeFromBacklog(nx.pid||S.id,nx.id);return;}
-      toast('Дальше: «'+String(nx.title).slice(0,42)+'»'+(nx.est?' · '+nx.est+'ч':''),'⚡','Поехали',()=>{
-        if(nx.pid!==S.id){switchProject(nx.pid);setTimeout(()=>startFocus(nx.id),160);}else startFocus(nx.id);});},3600);};
+  const dn=el.querySelector('[data-done]');if(dn)dn.onclick=(ev)=>heroComplete(nextPid,dn.dataset.done,ev,false);
   ins.forEach((x,i)=>{const c=el.querySelector(`.insight[data-i="${i}"]`);if(c&&x.act)c.onclick=x.act;});
   {const im=$('#insMore');if(im)im.onclick=()=>{insExpanded=!insExpanded;renderNow();};}
   const ap=$('#aiPlanBtn');if(ap)ap.onclick=openAiPlan;
@@ -3497,6 +3516,7 @@ function renderNowMobile(ctx){
       ${claudeNowCard()}
       <div class="insights" style="margin-top:12px">${ins.slice(0,insExpanded?ins.length:3).map((x,i)=>`<div class="insight ${x.act?'click':''}" data-i="${i}"><span class="ii">${insIcon(x.ic)}</span><div class="ib"><div class="it">${esc(x.title)}</div>${x.sub?`<div class="is">${esc(x.sub)}</div>`:''}</div></div>`).join('')}${ins.length>3?`<button class="insmore" id="insMore">${insExpanded?'Свернуть ↑':'Ещё '+(ins.length-3)+' ↓'}</button>`:''}</div>
       ${momentumSpark()}</details>`;
+  applyHeroAdvance(el);
   const openX=(pid,tid)=>{if(pid&&pid!==S.id){switchProject(pid);setTimeout(()=>openTask(tid),120);}else openTask(tid);};
   const mh=el.querySelector('.mhero[data-open] .mh-title');if(mh)mh.onclick=()=>openX(nextPid,el.querySelector('.mhero').dataset.open);
   $$('#now [data-fs]').forEach(b=>b.onclick=()=>{const a=b.dataset.fs;
@@ -3507,13 +3527,7 @@ function renderNowMobile(ctx){
   const fs=$('#focusStart');if(fs&&next)fs.onclick=()=>{if(nextPid!==S.id){switchProject(nextPid);setTimeout(()=>{startFocus(next.id);setView('now');},150);}else startFocus(next.id);};
   const fst=$('#focusStop');if(fst)fst.onclick=()=>stopFocus(false);
   if(ctx.running){if(!focus.iv)focus.iv=setInterval(updFocus,1000);updFocus();}
-  const dn=el.querySelector('[data-done]');if(dn)dn.onclick=(ev)=>{if(focus.tid===dn.dataset.done)stopFocus(true);
-    const un=markDone(nextPid,dn.dataset.done);
-    celebrateAt(ev);haptic('ok');render();toast('Готово','✅','Отменить',un);
-    setTimeout(()=>{const nx=window._heroNext;if(!nx||nx.id===dn.dataset.done)return;
-      if(nx.st==='backlog'){takeFromBacklog(nx.pid||S.id,nx.id);return;}
-      toast('Дальше: «'+String(nx.title).slice(0,42)+'»'+(nx.est?' · '+nx.est+'ч':''),'⚡','Поехали',()=>{
-        if(nx.pid!==S.id){switchProject(nx.pid);setTimeout(()=>startFocus(nx.id),160);}else startFocus(nx.id);});},3600);};
+  const dn=el.querySelector('[data-done]');if(dn)dn.onclick=(ev)=>heroComplete(nextPid,dn.dataset.done,ev,true);
   {const np=$('#npPlan');if(np)np.onclick=openAiPlan;}
   ins.forEach((x,i)=>{const c=el.querySelector(`.insight[data-i="${i}"]`);if(c&&x.act)c.onclick=x.act;});
   {const im=$('#insMore');if(im)im.onclick=()=>{insExpanded=!insExpanded;renderNow();};}
@@ -4660,7 +4674,9 @@ function briefData(){
   const lastTs=+(localStorage.getItem('cockpit_brief_ts')||0);const tISO=todayISO();
   const overdue=t=>!t.isMilestone&&t.status!=='done'&&parseD(t.end)<parseD(tISO);
   const dueToday=t=>!t.isMilestone&&t.status!=='done'&&t.end===tISO;
-  const out={partner:[],today:[],onMe:[],iWait:[]};const myn=meName().toLowerCase();
+  const startToday=(()=>{const d=new Date();d.setHours(0,0,0,0);return d.getTime();})();
+  const closedToday=t=>t.status==='done'&&(t.doneTs||t.statusTs)&&(t.doneTs||t.statusTs)>=startToday;
+  const out={partner:[],today:[],onMe:[],iWait:[],closed:[],tomorrow:null};const myn=meName().toLowerCase();
   reg.list.filter(p=>!p.archived).forEach(p=>{
     const data=loadProj(p.id);if(!data)return;const me=myMemberIn(data);
     (data.activity||[]).forEach(a=>{if(a.ts>lastTs&&(a.who||'').toLowerCase()!==myn)out.partner.push(Object.assign({},a,{pname:p.name,emoji:p.emoji}));});
@@ -4669,9 +4685,13 @@ function briefData(){
       if(t.assigneeId===me.id&&(dueToday(t)||overdue(t)))out.today.push({t,pid:p.id,pname:p.name,emoji:p.emoji,ov:overdue(t)});
       if(t.waitingOn===me.id&&t.status!=='done')out.onMe.push({t,pid:p.id,pname:p.name,emoji:p.emoji});
       if(t.assigneeId===me.id&&t.waitingOn&&t.waitingOn!==me.id&&t.status!=='done')out.iWait.push({t,pid:p.id,pname:p.name,emoji:p.emoji,who:(member2(data,t.waitingOn)||{}).name});
+      if(t.assigneeId===me.id&&closedToday(t))out.closed.push({t,pid:p.id,pname:p.name,emoji:p.emoji});
     });
   });
   out.partner.sort((a,b)=>b.ts-a.ts);out.today.sort((a,b)=>(b.ov-a.ov));
+  out.closed.sort((a,b)=>((b.t.doneTs||b.t.statusTs||0)-(a.t.doneTs||a.t.statusTs||0)));
+  // завтра главное — тот же движок, что у героя «Сейчас», по всем проектам
+  try{const all=myTasksAll();if(all.length){all.sort((a,b)=>relScore(b.t)-relScore(a.t));out.tomorrow=all[0];}}catch(e){}
   return out;
 }
 function openBrief(){renderBrief();$('#briefScrim').classList.add('show');requestAnimationFrame(()=>applyPingpong($('#briefModal')));
@@ -4682,20 +4702,32 @@ function openBrief(){renderBrief();$('#briefScrim').classList.add('show');reques
 function closeBrief(){$('#briefScrim').classList.remove('show');localStorage.setItem('cockpit_brief_ts',Date.now());localStorage.setItem('cockpit_brief_date',todayISO());}
 function renderBrief(){
   const b=briefData();const h=new Date().getHours();const greet=h<6?'Доброй ночи':h<12?'Доброе утро':h<18?'Добрый день':'Добрый вечер';
+  const evening=h>=17||h<4;                       /* вечер → итог дня, а не план */
   const empty=!b.partner.length&&!b.today.length&&!b.onMe.length&&!b.iWait.length;
   const trow=x=>`<div class="trow" data-pid="${x.pid}" data-tid="${x.t.id}"><span class="dot" style="background:${stMap[x.t.status].c}"></span><span class="tn">${esc(x.t.title)}</span><span class="pbadge">${x.emoji||'📄'} ${esc(x.pname)}</span>${x.ov?'<span class="when over">просроч.</span>':''}</div>`;
+  const nm=(n=>n&&n!=='Я'&&n!=='Новый участник'?', '+esc(n.split(' ')[0]):'')(myDisplayName());
+  const closed=b.closed.length;
+  // вечерний «итог дня» — недостающая скоба цикла: что сдвинул + завтра главное
+  const reflectHTML=`
+     <h2>${icon('moon',18)} Итог дня</h2>
+     <p>${greet}${nm}. ${closed?`Сегодня закрыто — <b style="color:var(--ok)">${closed}</b> ${plural(closed,'задача','задачи','задач')}. Хороший темп.`:'Сегодня закрытых пока нет — и это ок. Отметь, что сдвинулось, и наметь завтра.'}</p>
+     ${closed?`<div class="airh">${icon('check',13)} Сделано сегодня — ${closed}</div>${b.closed.slice(0,6).map(trow).join('')}${closed>6?`<div class="emptymini" style="padding:6px 2px">…и ещё ${closed-6}</div>`:''}`:''}
+     ${b.tomorrow?`<div class="airh">${icon('sparkles',13)} Завтра главное</div>
+       <div class="trow bf-next" data-pid="${b.tomorrow.pid}" data-tid="${b.tomorrow.t.id}"><span class="dot" style="background:${stMap[b.tomorrow.t.status].c}"></span><span class="tn"><b>${esc(b.tomorrow.t.title)}</b></span><span class="pbadge">${b.tomorrow.emoji||'📄'} ${esc(b.tomorrow.pname)}</span></div>`:''}`;
+  const focusHTML=`
+     <h2>${icon('sun',18)} Бриф на сегодня</h2>
+     <p>${greet}${nm}. Коротко — что важно прямо сейчас.</p>
+     ${b.onMe.length?`<div class="airh">⏳ Висит на тебе — ${b.onMe.length}</div>${b.onMe.map(trow).join('')}`:''}
+     ${b.today.length?`<div class="airh">🔥 Сегодня / просрочено — ${b.today.length}</div>${b.today.map(trow).join('')}`:''}`;
   $('#briefModal').innerHTML=`
    <div class="ob-body" style="max-height:76dvh;overflow:auto">
-     <h2>${icon('sun',18)} Бриф на сегодня</h2>
-     <p>${greet}${(n=>n&&n!=='Я'&&n!=='Новый участник'?', '+esc(n.split(' ')[0]):'')(myDisplayName())}. Коротко — что важно прямо сейчас.</p>
-     ${b.onMe.length?`<div class="airh">⏳ Висит на тебе — ${b.onMe.length}</div>${b.onMe.map(trow).join('')}`:''}
-     ${b.today.length?`<div class="airh">🔥 Сегодня / просрочено — ${b.today.length}</div>${b.today.map(trow).join('')}`:''}
+     ${evening?reflectHTML:focusHTML}
      ${b.iWait.length?`<div class="airh">🤝 Ждёшь от партнёра — ${b.iWait.length}</div>${b.iWait.map(x=>`<div class="trow" data-pid="${x.pid}" data-tid="${x.t.id}"><span class="dot" style="background:${stMap[x.t.status].c}"></span><span class="tn">${esc(x.t.title)}</span><span class="pbadge">от ${esc(x.who||'?')}</span></div>`).join('')}`:''}
      ${b.partner.length?`<div class="airh">🔔 Что сделал партнёр — ${b.partner.length}</div><div class="actfeed" style="max-height:220px">${b.partner.slice(0,15).map(a=>`<div class="actrow"><span class="ai">${emi(a.icon,15)}</span><span class="atx"><b>${esc(a.who)}</b> ${esc(a.text)} <span class="pbadge">${a.emoji||'📄'} ${esc(a.pname)}</span></span><span class="att">${relTime(a.ts)}</span></div>`).join('')}</div>`:''}
-     ${empty?'<div class="emptymini" style="margin-top:14px">Чисто — ничего срочного. Можно спокойно планировать день 👌</div>':''}
+     ${!evening&&empty?'<div class="emptymini" style="margin-top:14px">Чисто — ничего срочного. Можно спокойно планировать день 👌</div>':''}
      <div id="briefClaude" style="margin-top:6px"></div>
    </div>
-   <div class="ob-foot"><button class="btn" id="briefAi">${icon('sparkles',14)} Совет от Claude</button><div class="spacer"></div><button class="btn primary" id="briefClose">За работу</button></div>`;
+   <div class="ob-foot"><button class="btn" id="briefAi">${icon('sparkles',14)} Совет от Claude</button><div class="spacer"></div><button class="btn primary" id="briefClose">${evening?'Хорошего вечера':'За работу'}</button></div>`;
   $('#briefClose').onclick=closeBrief;
   $('#briefAi').onclick=()=>fetchBriefAdvice($('#briefAi'));
   $$('#briefModal .trow').forEach(el=>el.onclick=()=>{const pid=el.dataset.pid,tid=el.dataset.tid;closeBrief();if(pid!==S.id)switchProject(pid);setTimeout(()=>openTask(tid),90);});
