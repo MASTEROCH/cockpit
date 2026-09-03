@@ -1726,6 +1726,9 @@ body.light .mseg{background:rgba(250,251,254,.97)}
 /* ---- 📱 long-press лист быстрых действий ---- */
 .lpsheet{width:min(420px,94vw);padding:14px;display:flex;flex-direction:column;gap:8px}
 .lpsheet .lp-t{font-weight:800;font-size:14px;padding:2px 4px 8px;border-bottom:1px solid var(--line);margin-bottom:2px}
+.lpsheet .lp-move{font-size:11.5px;color:var(--mut2);margin:6px 2px 3px;font-weight:600}
+.lpsheet .lp-cols{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.lpsheet .lp-cols .chip{font-size:12.5px;display:inline-flex;align-items:center;gap:6px}
 .lpsheet .btn{justify-content:flex-start;padding:13px 14px;font-size:14px}
 @media (max-width:680px){.lpsheet{width:100vw;border-radius:22px 22px 0 0;padding-bottom:calc(14px + env(safe-area-inset-bottom))}}
 #emojiModal{width:min(440px,94vw);padding:16px;display:flex;flex-direction:column}
@@ -2836,16 +2839,15 @@ function haptic(kind){try{const T=window.Telegram&&window.Telegram.WebApp;if(!T|
 function openLP(taskId,pid){
   const d=pid===S.id?S:loadProj(pid);const t=d&&(d.tasks||[]).find(x=>x.id===taskId);if(!t)return;
   $('#lpModal').innerHTML=`<div class="lp-t">${t.cash?'💰 ':''}${esc(t.title)}</div>
-   <button class="btn" data-lp="done">${icon('check',14)} Готово</button>
-   <button class="btn" data-lp="tomorrow">${icon('moon',14)} На завтра</button>
-   <button class="btn" data-lp="progress">${icon('play',12)} В работу</button>
+   <div class="lp-move">Переместить в колонку:</div>
+   <div class="lp-cols">${STATUSES.map(s=>`<button class="chip ${t.status===s.k?'on':''}" data-lpmove="${s.k}" style="${t.status===s.k?`background:${s.c};color:#fff`:''}"><span class="pal-dot" style="background:${s.c}"></span>${s.n}</button>`).join('')}</div>
+   <button class="btn" data-lp="tomorrow">${icon('moon',14)} Срок — на завтра</button>
    <button class="btn" data-lp="open">${icon('edit',14)} Открыть карточку</button>`;
   $('#lpScrim').classList.add('show');haptic('light');
+  $$('#lpModal [data-lpmove]').forEach(b=>b.onclick=()=>{const k=b.dataset.lpmove;closeLP();moveTaskStatus(pid,taskId,k);});
   $$('#lpModal [data-lp]').forEach(b=>b.onclick=()=>{const k=b.dataset.lp;closeLP();
-    if(k==='done'){const un=markDone(pid,taskId);render();toast('Готово','✅','Отменить',un);haptic('ok');}
-    else if(k==='tomorrow'){const tm=fmtD(parseD(todayISO())+dayMs);
+    if(k==='tomorrow'){const tm=fmtD(parseD(todayISO())+dayMs);
       editTaskInProject(pid,taskId,x=>{x.end=tm;if(parseD(x.start)>parseD(tm))x.start=tm;});render();toast('На завтра','🌙');}
-    else if(k==='progress'){editTaskInProject(pid,taskId,x=>{x.status='progress';});render();toast('В работе — фокус на ней','▶');}
     else openX(pid,taskId);});
 }
 function closeLP(){$('#lpScrim').classList.remove('show');}
@@ -2888,6 +2890,29 @@ function attachSwipe(el,taskId,pid){
         haptic('light');render();toast('🌙 На завтра','🌙');},160);}
     else{el.style.transform='';el.style.background='';}
   },{passive:true});
+}
+/* На доске свайп-вправо=Готово опасен (путается с попыткой перетащить → задача случайно уходит
+   в «Готово»). Поэтому на доске — ТОЛЬКО долгое нажатие → меню перемещения по колонкам. */
+function attachLongPress(el,taskId,pid){
+  let sx=0,sy=0,lpT=null,fired=false;
+  el.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;fired=false;
+    clearTimeout(lpT);lpT=setTimeout(()=>{fired=true;openLP(taskId,pid||S.id);},420);},{passive:true});
+  el.addEventListener('touchmove',e=>{const mx=e.touches[0].clientX-sx,my=e.touches[0].clientY-sy;
+    if(Math.abs(mx)>10||Math.abs(my)>10)clearTimeout(lpT);},{passive:true});
+  el.addEventListener('touchend',()=>{clearTimeout(lpT);
+    if(fired){el.addEventListener('click',ev=>{ev.stopPropagation();ev.preventDefault();},{capture:true,once:true});}},{passive:true});
+}
+/* сменить статус задачи (мобильное перемещение по колонкам) с отменой */
+function moveTaskStatus(pid,taskId,k){
+  let prevSt=null,prevSp=null,title='';
+  editTaskInProject(pid,taskId,t=>{prevSt=t.status;prevSp=t.spent;title=t.title;if(t.status===k)return;
+    t.status=k;t.statusTs=Date.now();histAdd(t,'статус → '+stMap[k].n);
+    if(k==='done'&&t.estimate&&!t.spent)t.spent=t.estimate;});
+  if(prevSt===k){render();return;}
+  if(k==='done'){const d=pid===S.id?S:loadProj(pid);const tt=d&&(d.tasks||[]).find(x=>x.id===taskId);if(tt)awardForDone(d,tt);celebrate();haptic('ok');}
+  render();
+  toast('«'+String(title).slice(0,22)+'» → '+stMap[k].n,k==='done'?'✅':'🔀','Отменить',()=>{
+    editTaskInProject(pid,taskId,t=>{t.status=prevSt;t.spent=prevSp;histAdd(t,'статус ↩');});render();});
 }
 /* === ROCH Tactile Engine ============================================
    1) глобальная хаптика в TMA: каждый тап по интерактиву = selection tick
@@ -4558,7 +4583,9 @@ function renderBoardPeople(){renderBulkBar();
   });
 }
 function boardSwipes(){if(window.innerWidth>680)return;
-  $$('#board .card[data-id]').forEach(c=>attachSwipe(c,c.dataset.id));}
+  $$('#board .card[data-id]').forEach(c=>attachLongPress(c,c.dataset.id));
+  if(!localStorage.getItem('cockpit_board_lp_tip')){localStorage.setItem('cockpit_board_lp_tip','1');
+    setTimeout(()=>{if(!document.querySelector('.scrim.show,#lpScrim.show,#drawer.show'))toast('Долго нажми задачу — перенести в другую колонку','👆');},700);}}
 /* напомнить исполнителю в TG про срочную/просроченную задачу — один тап с карточки */
 function remindAssignee(id){const t=task(id);if(!t)return;const m=member(t.assigneeId);
   if(!m||m.id===myId())return;
