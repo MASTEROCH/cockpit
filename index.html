@@ -1991,9 +1991,57 @@ body.light .kpi::before,body.light .panel-c::before,body.light .pulse-row::befor
 .kpi:hover{transform:translateY(-2px);border-color:var(--line2)}
 /* 7. Иконки-иллюстрации и line-иконки — чуть мягче край на тёмном */
 .iemo svg,.aico{shape-rendering:geometricPrecision}
+
+/* 9. СПЕКУЛЯР-СВЕТ за курсором — карточка ловит свет (--mx/--my ставит Tactile Engine) */
+.kpi,.panel-c,.card,.tpl,.idea,.prow{position:relative}
+.kpi::after,.panel-c::after,.card:not(.now-hero)::after,.tpl::after,.idea::after{
+  content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;
+  transition:opacity .4s var(--ease);z-index:0;
+  background:radial-gradient(240px 240px at var(--mx,50%) var(--my,50%),rgba(167,139,250,.13),transparent 60%)}
+.kpi:hover::after,.panel-c:hover::after,.card:hover::after,.tpl:hover::after,.idea:hover::after{opacity:1}
+.card>*,.tpl>*,.idea>*{position:relative;z-index:1}
+/* 10. Глубже стекло модалок + слоёная тень (ambient+key), благороднее подъём */
+.modal,.drawer{backdrop-filter:blur(30px) saturate(1.7);-webkit-backdrop-filter:blur(30px) saturate(1.7);
+  box-shadow:0 2px 6px rgba(0,0,0,.28),0 18px 50px rgba(0,0,0,.5),0 40px 90px rgba(0,0,0,.35),var(--ghi)}
+.modal-scrim{background:rgba(6,7,11,.62);backdrop-filter:blur(9px) saturate(1.2);-webkit-backdrop-filter:blur(9px) saturate(1.2)}
+body.light .modal,body.light .drawer{box-shadow:0 2px 6px rgba(30,34,52,.1),0 18px 50px rgba(30,34,52,.16),0 40px 90px rgba(30,34,52,.1),var(--ghi)}
+/* 11. Слоёная тень героя и главных модалей-листов */
+.now-hero{box-shadow:var(--ghi),0 2px 8px rgba(0,0,0,.3),0 24px 64px rgba(0,0,0,.42),0 0 0 1px rgba(167,139,250,.06)}
+
+/* ============ ФИРМЕННЫЙ БУТ-СПЛЭШ ============ */
+#bootVeil{position:fixed;inset:0;z-index:2147483600;display:grid;place-items:center;
+  background:radial-gradient(720px 520px at 50% 42%,rgba(167,139,250,.12),transparent 62%),var(--bg);
+  transition:opacity .55s var(--ease),visibility .55s}
+#bootVeil.gone{opacity:0;visibility:hidden;pointer-events:none}
+.bv-inner{display:flex;flex-direction:column;align-items:center;gap:17px;animation:bvIn .6s var(--ease)}
+.bv-logo{width:66px;height:66px;border-radius:19px;display:grid;place-items:center;
+  background:conic-gradient(from 200deg,var(--acc),var(--acc2),var(--acc3),var(--acc));
+  box-shadow:0 14px 44px rgba(167,139,250,.42),inset 0 1px 0 rgba(255,255,255,.32);
+  animation:bvFloat 1.5s var(--ease) infinite alternate}
+.bv-logo svg{width:38px;height:38px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))}
+.bv-word{font-size:20px;font-weight:850;letter-spacing:.2em;color:var(--txt);padding-left:.2em}
+.bv-bar{width:118px;height:3px;border-radius:3px;overflow:hidden;background:rgba(255,255,255,.07);position:relative}
+.bv-bar::after{content:'';position:absolute;top:0;bottom:0;width:42%;border-radius:3px;
+  background:linear-gradient(90deg,transparent,var(--acc2),transparent);animation:bvBar 1.05s var(--ease) infinite}
+@keyframes bvIn{from{opacity:0;transform:translateY(9px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes bvFloat{from{transform:translateY(0)}to{transform:translateY(-6px)}}
+@keyframes bvBar{0%{left:-42%}100%{left:100%}}
+body.light #bootVeil{background:radial-gradient(720px 520px at 50% 42%,rgba(167,139,250,.16),transparent 62%),var(--bg)}
+@media (prefers-reduced-motion:reduce){.bv-logo,.bv-bar::after,.bv-inner{animation:none}}
+
+/* ============ ТИПОГРАФИКА · РИТМ (аудит) ============ */
+html{font-optical-sizing:auto}
+/* заголовки-дисплеи: единый тайт-трекинг + балансировка строк (без «висячих» слов) */
+.now-greet h1,.mgreet h1,.nh-title,.mh-title,.fv-title,.dhead h1,.pick-h h2,.hist-h h2,.pr-title,h1,h2{text-wrap:balance}
+.nh-title,.mh-title,.fv-title{letter-spacing:-.02em}
+/* микро-лейблы капсом — единый ритм букв */
+.nh-label,.nh-side-t,.fv-subh,.fv-badge,.pal-h,.msec,.now-sec,.panel-c h3,.hist-h h2+.hist-sub{letter-spacing:.09em}
+/* числа — единый моно-набор везде, где важна ровность */
+.kpi .v,.pulse-card .pv,.fv-clock,.fclock,.hr-meta,.pick-meta,.nh-up-e,.mr-e,.fv-prog{font-variant-numeric:tabular-nums;font-feature-settings:"tnum","kern"}
 </style>
 </head>
 <body>
+<div id="bootVeil"><div class="bv-inner"><div class="bv-logo" id="bootVeilLogo"></div><div class="bv-word">WANDO</div><div class="bv-bar"></div></div></div>
 <div class="gate" id="gate"><div class="gatecard"><div class="gatelogo" id="gateBootLogo"></div><h1>WANDO</h1><div class="gp">Загрузка…</div></div></div>
 
 <header>
@@ -3350,6 +3398,9 @@ document.addEventListener('click',e=>{
     raf=requestAnimationFrame(()=>{raf=0;
       const t=pe.target,g=t&&t.closest?t.closest('.card,.kpi,.mcard,.tpl,.idea,.panel-c,.prow,.cmdex,.now-hero'):null;
       if(g){const r=g.getBoundingClientRect();
+        /* спекуляр-свет: карточка ловит свет за курсором (--mx/--my → ::after) */
+        g.style.setProperty('--mx',(((pe.clientX-r.left)/r.width)*100).toFixed(1)+'%');
+        g.style.setProperty('--my',(((pe.clientY-r.top)/r.height)*100).toFixed(1)+'%');
         if(g.classList.contains('now-hero')&&!g.classList.contains('done')){
           const rx=((pe.clientY-r.top)/r.height-.5)*-2.4,ry=((pe.clientX-r.left)/r.width-.5)*2.4;
           if(tilted&&tilted!==g)unTilt();
@@ -7560,6 +7611,7 @@ $('#palScrim').onclick=e=>{if(e.target===$('#palScrim'))closePalette();};
 /* ============================ INIT ============================ */
 $$('[data-icon]').forEach(el=>el.insertAdjacentHTML('afterbegin',icon(el.dataset.icon)));
 {const bl=$('#brandLogo');if(bl)bl.innerHTML=logoMarkSVG(15);const gbl=$('#gateBootLogo');if(gbl)gbl.innerHTML=logoMarkSVG(22);}
+{const bvl=$('#bootVeilLogo');if(bvl)bvl.innerHTML=logoMarkSVG(24);const veil=$('#bootVeil');if(veil){const rm=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;const hide=()=>{veil.classList.add('gone');setTimeout(()=>{try{veil.remove();}catch(e){}},600);};setTimeout(hide, rm?150:(tmaInitData()?450:720));}}
 setFavicon();
 applyTheme();
 $('#sbLegend').innerHTML=legendHTML();
