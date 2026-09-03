@@ -42,6 +42,7 @@ function plural(n: number, one: string, few: string, many: string): string {
   return many;
 }
 
+const APP_URL = "https://" + SITE;
 const KEYBOARD = {
   keyboard: [
     [{ text: "🔥 Что горит" }, { text: "📊 Статус" }, { text: "🧭 Мои задачи" }],
@@ -1077,9 +1078,13 @@ Deno.serve(async (req) => {
         await say(chatId, await bindByCode(chatId, name, payload.slice(5)));
         return new Response("ok");
       }
+      // Меню-кнопка (☰ слева от поля ввода) открывает WANDO как Mini App → авто-вход по initData.
+      // Ставим и глобально (для всех), и на этот чат — чтобы точно появилась. try/catch: не роняем бота.
+      try { await TG("setChatMenuButton", { menu_button: { type: "web_app", text: "WANDO", web_app: { url: APP_URL } } }); } catch (_) { /* домен Mini App, возможно, надо задать в BotFather */ }
+      try { await TG("setChatMenuButton", { chat_id: chatId, menu_button: { type: "web_app", text: "WANDO", web_app: { url: APP_URL } } }); } catch (_) { /* не критично */ }
       const link = await getLink(chatId);
       await say(chatId, link
-        ? `С возвращением, <b>${esc(link.name ?? link.email)}</b>! Пиши задачу — текстом или голосом 🎙`
+        ? `С возвращением, <b>${esc(link.name ?? link.email)}</b>! 🎙 Пиши задачу текстом или голосом.\n\n👉 Кнопка <b>WANDO</b> слева от поля ввода (☰) открывает доску — вход подхватится сам, без почты.`
         : `Привет! Я — вход в <b>WANDO</b> (что делать).\n\n<b>Новый здесь?</b> Просто пришли свой email — создам тебе личное пространство за 5 секунд 🚀\n\nУже в команде? Открой <b>${SITE}</b> → «Подключить Telegram» (1 тап), либо ключом: <code>/key cpk_…</code>\n\n/help — подробнее`);
     } else if (/^\/help|^❓/.test(text)) {
       await say(chatId, HELP);
