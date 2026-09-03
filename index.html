@@ -1913,7 +1913,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
   <div class="db">
     <div id="dCrumb" class="crumbrow" style="display:none"></div>
     <div id="dApproveBar"></div>
-    <textarea class="dtitle" id="dTitle" rows="1" placeholder="Название задачи"></textarea>
+    <textarea class="dtitle" id="dTitle" rows="1" placeholder="О чём задача? Напиши суть…"></textarea>
     <div class="field"><label style="display:flex;align-items:center">Кто делает<button class="lnk" id="dPing" style="margin-left:auto;display:none;text-transform:none;letter-spacing:0">🔔 Пингнуть в TG</button></label><div class="seg" id="dAssignee"></div></div>
     <div class="field"><label>Срок</label>
       <div class="row">
@@ -4295,7 +4295,9 @@ function renderWeek(){
   $$('#week .qdone').forEach(b=>b.onclick=e=>{e.stopPropagation();const a=b.dataset.wd.split('|');const un=markDone(a[0],a[1]);toast('Готово','✅','Отменить',()=>{un();renderWeek();});renderWeek();});
   $$('#week [data-wadd]').forEach(b=>b.onclick=e=>{e.stopPropagation();const d=b.dataset.wadd;
     const t=newTask('',null);t.status='todo';t.start=d;t.end=d;if(!t.assigneeId)t.assigneeId=myId()||null;
-    save();renderWeek();openTask(t.id);});
+    save();renderWeek();openTask(t.id);
+    // сразу курсор в заголовок — иначе не очевидно, что надо вписать суть задачи
+    setTimeout(()=>{const ti=$('#dTitle');if(ti){ti.focus();}},140);});
   $$('#week .wcol').forEach(colEl=>{
     colEl.ondragover=e=>{e.preventDefault();colEl.classList.add('drop');};
     colEl.ondragleave=()=>colEl.classList.remove('drop');
@@ -6520,30 +6522,18 @@ function webmailUrl(email){
 }
   if(state==='sent'){const wm=webmailUrl(email);
     g.innerHTML=`<div class="gatecard"><div class="gatelogo">✉️</div><h1>Письмо отправлено</h1>
-      <div class="gp">На <b>${esc(email||'')}</b> пришло письмо с кодом и ссылкой. Загляни в «Спам», если не видно.</div>
-      <div class="gp" style="margin-top:8px;font-weight:600;color:var(--txt)">Введи код из письма — это надёжнее ссылки:</div>
-      <input class="inp gateinp" id="gateCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-значный код" style="margin-top:10px;text-align:center;letter-spacing:5px;font-size:19px;font-weight:800">
-      <button class="btn primary" id="gateVerify" style="width:100%;justify-content:center;margin-top:10px">Войти по коду</button>
-      <div class="gp" style="margin-top:12px;font-size:12px;color:var(--mut2)">Или открой ссылку из письма на этом устройстве.</div>
-      ${wm?`<button class="btn" id="gateMail" style="margin-top:8px;width:100%;justify-content:center">${wm[1]} ↗</button>`:''}
-      <button class="btn" id="gateBack" style="margin-top:8px;width:100%;justify-content:center">← Другой email</button></div>`;
+      <div class="gp">Открой <b>ссылку для входа</b> из письма на <b>${esc(email||'')}</b> — на этом же устройстве, и вернёшься сюда уже внутри. Загляни в «Спам», если письма нет.</div>
+      ${wm?`<button class="btn primary" id="gateMail" style="margin-top:14px;width:100%;justify-content:center">${wm[1]} ↗</button>`:''}
+      <button class="btn" id="gateBack" style="margin-top:${wm?'8':'14'}px;width:100%;justify-content:center">← Другой email</button></div>`;
     {const gm=$('#gateMail');if(gm)gm.onclick=()=>window.open(wm[0],'_blank');}
-    const verify=async()=>{const code=(($('#gateCode')||{}).value||'').replace(/\D/g,'');
-      if(code.length!==6){toast('Код — 6 цифр из письма','⚠');return;}
-      const bt=$('#gateVerify');if(bt){bt.textContent='Проверяю…';bt.disabled=true;}
-      try{const {error}=await sb.auth.verifyOtp({email,token:code,type:'email'});
-        if(error)throw error; /* вход подхватит onAuthStateChange */}
-      catch(e){toast('Код не подошёл — проверь и попробуй снова','⚠');const b2=$('#gateVerify');if(b2){b2.textContent='Войти по коду';b2.disabled=false;}}};
-    {const gv=$('#gateVerify');if(gv)gv.onclick=verify;}
-    {const gc=$('#gateCode');if(gc){gc.onkeydown=e=>{if(e.key==='Enter')verify();};setTimeout(()=>gc.focus(),80);}}
     $('#gateBack').onclick=()=>renderGate('login',email);return;}
   const inTMA=!!tmaInitData();
   g.innerHTML=`<div class="gatecard"><div class="gatelogo">${logoMarkSVG(22)}</div><h1>WANDO</h1>
     <div class="gp">Внутренний рабочий инструмент команды. Доска откроется только после входа.</div>
     ${inTMA?`<div class="gp" style="margin-top:10px;background:rgba(167,139,250,.10);border:1px solid var(--line);border-radius:12px;padding:11px 13px;font-size:12.5px;text-align:left">📱 <b>Первый вход из Telegram — один раз:</b><br>1. Открой <b>cock-pit.com</b> в обычном браузере (Safari/Chrome).<br>2. Войди по ссылке из письма → нажми <b>«Подключить Telegram»</b>.<br>Дальше кнопка <b>☰ WANDO</b> в боте открывает доску <b>сразу</b>, без входа.</div>`:''}
     <input class="inp gateinp" id="gateEmail" type="email" placeholder="ваш email" autocomplete="email" value="${esc(email||'')}">
-    <button class="btn primary" id="gateSend" style="width:100%;justify-content:center;margin-top:10px">Прислать письмо для входа</button>
-    <div class="gatefoot">Доступ только для участников команды.<br>Вход по ссылке или коду из письма, без пароля.</div></div>`;
+    <button class="btn primary" id="gateSend" style="width:100%;justify-content:center;margin-top:10px">Прислать ссылку для входа</button>
+    <div class="gatefoot">Доступ только для участников команды.<br>Вход и регистрация — по ссылке из письма, без пароля.</div></div>`;
   const send=()=>{const em=($('#gateEmail').value||'').trim();if(!em){toast('Введи email','⚠');return;}gateSend(em);};
   $('#gateSend').onclick=send;$('#gateEmail').onkeydown=e=>{if(e.key==='Enter')send();};
   setTimeout(()=>{const i=$('#gateEmail');if(i)i.focus();},60);
