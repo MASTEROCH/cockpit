@@ -6537,11 +6537,13 @@ function webmailUrl(email){
     {const gv=$('#gateVerify');if(gv)gv.onclick=verify;}
     {const gc=$('#gateCode');if(gc){gc.onkeydown=e=>{if(e.key==='Enter')verify();};setTimeout(()=>gc.focus(),80);}}
     $('#gateBack').onclick=()=>renderGate('login',email);return;}
+  const inTMA=!!tmaInitData();
   g.innerHTML=`<div class="gatecard"><div class="gatelogo">${logoMarkSVG(22)}</div><h1>WANDO</h1>
     <div class="gp">Внутренний рабочий инструмент команды. Доска откроется только после входа.</div>
+    ${inTMA?`<div class="gp" style="margin-top:10px;background:rgba(167,139,250,.10);border:1px solid var(--line);border-radius:12px;padding:11px 13px;font-size:12.5px;text-align:left">📱 <b>Первый вход из Telegram — один раз:</b><br>1. Открой <b>cock-pit.com</b> в обычном браузере (Safari/Chrome).<br>2. Войди по ссылке из письма → нажми <b>«Подключить Telegram»</b>.<br>Дальше кнопка <b>☰ WANDO</b> в боте открывает доску <b>сразу</b>, без входа.</div>`:''}
     <input class="inp gateinp" id="gateEmail" type="email" placeholder="ваш email" autocomplete="email" value="${esc(email||'')}">
-    <button class="btn primary" id="gateSend" style="width:100%;justify-content:center;margin-top:10px">Прислать ссылку для входа</button>
-    <div class="gatefoot">Доступ только для участников команды.<br>Вход и регистрация — по одной ссылке, без пароля.</div></div>`;
+    <button class="btn primary" id="gateSend" style="width:100%;justify-content:center;margin-top:10px">Прислать письмо для входа</button>
+    <div class="gatefoot">Доступ только для участников команды.<br>Вход по ссылке или коду из письма, без пароля.</div></div>`;
   const send=()=>{const em=($('#gateEmail').value||'').trim();if(!em){toast('Введи email','⚠');return;}gateSend(em);};
   $('#gateSend').onclick=send;$('#gateEmail').onkeydown=e=>{if(e.key==='Enter')send();};
   setTimeout(()=>{const i=$('#gateEmail');if(i)i.focus();},60);
