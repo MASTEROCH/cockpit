@@ -2700,11 +2700,16 @@ function relScore(t){const prW={urgent:4,high:3,med:2,low:1}[t.priority]||2;cons
    Показываем только то, что реально повлияло на выбор — никакой мистики. */
 function whyNext(t,energy){
   const r=[];const dl=daysLeft(t);
+  // сколько задач разблокирует закрытие этой (зависимости живут внутри проекта, id уникальны)
+  let unb=0;for(const p of reg.list){if(p.archived)continue;const d=p.id===S.id?S:loadProj(p.id);if(!d)continue;
+    (d.tasks||[]).forEach(x=>{if(x.status!=='done'&&!x.isMilestone&&(x.deps||[]).includes(t.id))unb++;});}
+  // сильнейшие причины — вперёд: деньги · разблокировка · срок · приоритет
+  if(t.cash)r.push('💰 двигает деньги'+(t.amount?' ~'+fmtMoney(t.amount):''));
+  if(unb)r.push('🔓 разблокирует '+unb+' '+plural(unb,'задачу','задачи','задач'));
   if(dl<0)r.push('просрочено '+(-dl)+' '+plural(-dl,'день','дня','дней'));
   else if(dl===0)r.push('дедлайн сегодня');
   else if(dl===1)r.push('дедлайн завтра');
   else if(dl<=3)r.push('срок через '+dl+' '+plural(dl,'день','дня','дней'));
-  if(t.cash)r.push('💰 двигает деньги'+(t.amount?' ~'+fmtMoney(t.amount):''));
   if(t.priority==='urgent')r.push('срочный приоритет');
   else if(t.priority==='high')r.push('высокий приоритет');
   if(energy==='lo'&&t.estimate&&t.estimate<=2)r.push('лёгкая — под сегодняшний заряд');
