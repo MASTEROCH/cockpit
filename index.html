@@ -2046,6 +2046,14 @@ html{font-optical-sizing:auto}
 .now-hero.nh-advance,.mhero.nh-advance{animation:heroAdvance .52s var(--spring)}
 @keyframes heroAdvance{0%{opacity:0;transform:translateY(12px) scale(.985)}100%{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.now-hero.nh-cleared,.mhero.nh-cleared,.now-hero.nh-advance,.mhero.nh-advance{animation:none}}
+
+/* ============ Telegram-свайп: раскрывающееся действие под строкой ============ */
+.mrow-act{position:absolute;top:0;bottom:0;display:flex;align-items:center;gap:6px;
+  font-weight:800;font-size:13.5px;opacity:0;pointer-events:none;z-index:2;white-space:nowrap;
+  transition:opacity .1s ease}
+.mrow-act svg{width:15px;height:15px}
+.mrow-act.done{left:15px;color:var(--ok)}
+.mrow-act.morrow{right:15px;color:var(--acc2)}
 </style>
 </head>
 <body>
@@ -3351,29 +3359,43 @@ $('#lpScrim').onclick=e=>{if(e.target===$('#lpScrim'))closeLP();};
 $('#histScrim').onclick=e=>{if(e.target===$('#histScrim'))closeHistory();};
 $('#pickScrim').onclick=e=>{if(e.target===$('#pickScrim'))closePick();};
 function attachSwipe(el,taskId,pid){
-  let sx=0,sy=0,dx=0,swiping=false,lpT=null,lpFired=false;
-  el.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;dx=0;swiping=false;lpFired=false;
+  /* Telegram-grade свайп: действие раскрывается из-под строки (контр-сдвиг ярлыка),
+     пороговый хаптик-тик, confirm-scale, плавный вылет. Вправо=Готово, влево=На завтра. */
+  let sx=0,sy=0,dx=0,swiping=false,lpT=null,lpFired=false,crossed=false,act=null;
+  const THR=76;
+  const getAct=()=>{if(act&&act.parentNode)return act;el.style.position='relative';el.style.overflow='hidden';
+    act=document.createElement('span');act.className='mrow-act';el.appendChild(act);return act;};
+  el.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;dx=0;swiping=false;lpFired=false;crossed=false;
     clearTimeout(lpT);lpT=setTimeout(()=>{if(!swiping){lpFired=true;openLP(taskId,pid||S.id);}},450);},{passive:true});
   el.addEventListener('touchmove',e=>{
     const mx=e.touches[0].clientX-sx,my=e.touches[0].clientY-sy;
     if(Math.abs(mx)>10||Math.abs(my)>10)clearTimeout(lpT);
-    if(!swiping&&Math.abs(mx)>14&&Math.abs(mx)>Math.abs(my)*1.4)swiping=true;
-    if(!swiping)return;dx=mx;
-    el.style.transform='translateX('+dx+'px)';el.style.transition='none';
-    el.style.background=dx>50?'rgba(52,211,153,.18)':dx<-50?'rgba(167,139,250,.15)':'';
+    if(!swiping&&Math.abs(mx)>14&&Math.abs(mx)>Math.abs(my)*1.4){swiping=true;getAct();}
+    if(!swiping)return;
+    dx=Math.abs(mx)>THR?(mx>0?THR:-THR)+(mx-(mx>0?THR:-THR))*0.35:mx; /* мягкая резина за порогом */
+    el.style.transition='none';el.style.transform='translateX('+dx+'px)';
+    el.style.background=dx>36?'rgba(52,211,153,.15)':dx<-36?'rgba(167,139,250,.14)':'';
+    const a=getAct(),over=Math.abs(mx)>=THR,p=Math.min(1,Math.abs(dx)/THR);
+    if(mx>0){a.className='mrow-act done'+(over?' ready':'');a.innerHTML=icon('check',15)+'Готово';}
+    else{a.className='mrow-act morrow'+(over?' ready':'');a.innerHTML=icon('moon',15)+'На завтра';}
+    a.style.opacity=Math.abs(dx)>8?String(p):'0';
+    a.style.transform='translateX('+(-dx)+'px)'+(over?' scale(1.12)':'');
+    if(over&&!crossed){crossed=true;haptic('sel');}
+    else if(!over&&crossed)crossed=false;
   },{passive:true});
   el.addEventListener('touchend',()=>{
     clearTimeout(lpT);
     if(lpFired){el.addEventListener('click',ev=>{ev.stopPropagation();ev.preventDefault();},{capture:true,once:true});}
-    el.style.transition='transform .22s var(--ease), background .22s';
-    if(swiping&&dx>80){el.style.transform='translateX(110%)';
+    if(act)act.style.opacity='0';
+    el.style.transition='transform .24s var(--ease), background .24s';
+    if(swiping&&crossed&&dx>0){el.style.transform='translateX(112%)';
       setTimeout(()=>{const un=markDone(pid||S.id,taskId);
-        celebrate();haptic('ok');render();toast('Готово','✅','Отменить',un);},160);}
-    else if(swiping&&dx<-80){el.style.transform='translateX(-110%)';
+        celebrate();haptic('ok');render();toast('Готово','✅','Отменить',un);},150);}
+    else if(swiping&&crossed&&dx<0){el.style.transform='translateX(-112%)';
       setTimeout(()=>{const tm=fmtD(parseD(todayISO())+dayMs);
         editTaskInProject(pid||S.id,taskId,t=>{t.end=tm;if(parseD(t.start)>parseD(tm))t.start=tm;});
-        haptic('light');render();toast('🌙 На завтра','🌙');},160);}
-    else{el.style.transform='';el.style.background='';}
+        haptic('light');render();toast('На завтра','🌙');},150);}
+    else{el.style.transform='';el.style.background='';if(act){act.style.transform='';}}
   },{passive:true});
 }
 /* На доске свайп-вправо=Готово опасен (путается с попыткой перетащить → задача случайно уходит
