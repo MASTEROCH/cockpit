@@ -4678,6 +4678,9 @@ function renderBoard(){
   });
   if(pendingBoardAdd){const c=[...document.querySelectorAll('#board .col')].find(x=>x.dataset.st===pendingBoardAdd);if(c)openBoardAdd(c,pendingBoardAdd);}
   renderBulkBar();boardSwipes();
+  // мобайл: доска стартует на «К работе» (не на «Бэклог» за экраном) — иначе новая задача «пропадает».
+  // Скроллер — .view (#v-board) с overflow:auto, а не сам #board (у него min-width:max-content).
+  if(window.innerWidth<=680){const sc=$('#v-board');requestAnimationFrame(()=>{const tc=$('#board .col[data-st="todo"]');if(sc&&tc)sc.scrollLeft=Math.max(0,tc.offsetLeft-10);});}
 }
 function openBoardAdd(col,status){
   pendingBoardAdd=status;
