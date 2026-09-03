@@ -1806,6 +1806,112 @@ body.light .mseg{background:rgba(250,251,254,.97)}
 input:focus-visible,textarea:focus-visible,select:focus-visible{
   outline:none;border-color:rgba(167,139,250,.55);
   box-shadow:0 0 0 3px rgba(167,139,250,.16),0 8px 30px rgba(167,139,250,.10)}
+
+/* ===== РЕЖИМ ФОКУСА — «делай одно, всё остальное убрано» ===== */
+.focusview{position:fixed;inset:0;z-index:120;display:flex;align-items:flex-start;justify-content:center;
+  overflow-y:auto;padding:max(28px,env(safe-area-inset-top)) 20px calc(30px + env(safe-area-inset-bottom));
+  background:radial-gradient(900px 620px at 50% -8%, rgba(167,139,250,.16), transparent 62%),
+             radial-gradient(700px 520px at 90% 108%, rgba(110,168,216,.09), transparent 60%),
+             color-mix(in srgb, var(--bg) 88%, #000);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  animation:fvIn .34s var(--ease)}
+.focusview[hidden]{display:none}
+@keyframes fvIn{from{opacity:0}to{opacity:1}}
+.focusbody{width:100%;max-width:560px;display:flex;flex-direction:column;gap:18px;animation:fbIn .42s var(--ease)}
+@keyframes fbIn{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+.fv-top{display:flex;align-items:center;gap:10px}
+.fv-badge{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--acc2);
+  display:inline-flex;align-items:center;gap:7px}
+.fv-badge .bdot{width:7px;height:7px;border-radius:50%;background:var(--acc2);box-shadow:0 0 0 0 rgba(167,139,250,.5);animation:fbreath 2.6s var(--ease) infinite}
+@keyframes fbreath{0%,100%{box-shadow:0 0 0 0 rgba(167,139,250,.45);opacity:1}50%{box-shadow:0 0 0 9px rgba(167,139,250,0);opacity:.65}}
+.fv-prog{margin-left:auto;font-size:12px;color:var(--mut);font-variant-numeric:tabular-nums}
+.fv-x{width:38px;height:38px;border-radius:12px;border:1px solid var(--line2);background:var(--panel);color:var(--mut);
+  font-size:17px;display:grid;place-items:center;cursor:pointer;transition:.16s var(--ease)}
+.fv-x:hover{color:var(--txt);border-color:var(--acc2);transform:translateY(-1px)}
+.fv-pchip{font-size:12.5px;color:var(--mut);display:inline-flex;align-items:center;gap:6px}
+.fv-timer{display:flex;align-items:center;gap:16px;padding:4px 2px}
+.fv-ring{position:relative;width:74px;height:74px;flex:none}
+.fv-ring svg{transform:rotate(-90deg);display:block}
+.fv-ring .rtrack{stroke:var(--line2);fill:none}
+.fv-ring .rfill{stroke:var(--acc2);fill:none;stroke-linecap:round;transition:stroke-dashoffset .9s linear}
+.fv-ring .rplay{position:absolute;inset:0;display:grid;place-items:center;font-size:22px;color:var(--acc2);cursor:pointer;user-select:none}
+.fv-clock{font-size:40px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}
+.fv-clock small{display:block;font-size:12px;font-weight:600;letter-spacing:0;color:var(--mut2);margin-top:5px}
+.fv-title{font-size:29px;font-weight:800;letter-spacing:-.02em;line-height:1.14;color:var(--txt)}
+.fv-crumb{font-size:12.5px;color:var(--mut2);margin-top:6px}
+.fv-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.fv-meta .ichip{font-size:12px}
+.fv-why{margin-top:14px;padding:13px 15px;border-radius:14px;border:1px solid var(--line);
+  background:linear-gradient(180deg, color-mix(in srgb, var(--acc2) 8%, transparent), transparent);
+  font-size:13.5px;color:var(--mut);line-height:1.5}
+.fv-why b{color:var(--acc2);font-weight:700}
+.fv-subs{display:flex;flex-direction:column;gap:2px;margin-top:6px}
+.fv-subh{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--mut2);margin:6px 2px 4px}
+.fv-sub{display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:12px;cursor:pointer;
+  border:1px solid transparent;transition:.15s var(--ease)}
+.fv-sub:hover{background:var(--panel);border-color:var(--line)}
+.fv-cb{width:22px;height:22px;flex:none;border-radius:7px;border:2px solid var(--line2);display:grid;place-items:center;
+  font-size:13px;color:#fff;transition:.15s var(--ease)}
+.fv-sub.done .fv-cb{background:var(--ok);border-color:var(--ok)}
+.fv-sub.done .fv-st{color:var(--mut2);text-decoration:line-through}
+.fv-st{font-size:14.5px;color:var(--txt);flex:1}
+.fv-addsub{display:flex;gap:8px;margin-top:6px}
+.fv-addsub input{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:11px 13px;color:var(--txt);font-size:14px}
+.fv-addsub button{border:1px solid var(--line2);background:var(--panel);color:var(--mut);border-radius:11px;padding:0 15px;font-size:18px;cursor:pointer}
+.fv-addsub button:hover{color:var(--acc2);border-color:var(--acc2)}
+.fv-acts{display:flex;flex-direction:column;gap:10px;margin-top:8px;position:sticky;bottom:0;
+  padding-top:12px;background:linear-gradient(180deg, transparent, color-mix(in srgb, var(--bg) 88%, #000) 34%)}
+.fv-done{width:100%;border:none;border-radius:15px;padding:17px;font-size:16px;font-weight:800;color:#fff;cursor:pointer;
+  background:linear-gradient(135deg,var(--acc2),var(--acc3));box-shadow:0 12px 30px rgba(167,139,250,.32);
+  transition:.16s var(--ease)}
+.fv-done:hover{transform:translateY(-2px);box-shadow:0 16px 38px rgba(167,139,250,.42)}
+.fv-done:active{transform:translateY(0) scale(.99)}
+.fv-sec{display:flex;gap:10px}
+.fv-sec button{flex:1;border:1px solid var(--line2);background:var(--panel);color:var(--mut);border-radius:13px;
+  padding:13px;font-size:13.5px;font-weight:600;cursor:pointer;transition:.15s var(--ease)}
+.fv-sec button:hover{color:var(--txt);border-color:var(--acc2)}
+.fv-empty{text-align:center;padding:40px 10px}
+.fv-empty .fe-em{font-size:52px}
+.fv-empty h2{font-size:24px;font-weight:800;margin:14px 0 6px}
+.fv-empty p{color:var(--mut);font-size:14px;margin:0 0 22px}
+@media (max-width:680px){
+  .fv-title{font-size:25px}.fv-clock{font-size:34px}
+  .fv-ring{width:62px;height:62px}
+}
+
+/* ===== ИСТОРИЯ ПРОЕКТА — все закрытые задачи, фильтры, возврат ===== */
+.histsheet{width:660px}
+.hist-h{display:flex;align-items:flex-start;gap:12px;padding:20px 22px 14px}
+.hist-h h2{margin:0;font-size:19px;font-weight:800;letter-spacing:-.01em;display:flex;align-items:center;gap:9px}
+.hist-sub{display:block;color:var(--mut);font-size:12.5px;margin-top:3px}
+.hist-x{margin-left:auto;width:36px;height:36px;flex:none;border-radius:11px;border:1px solid var(--line2);background:var(--panel);color:var(--mut);font-size:16px;cursor:pointer;transition:.15s var(--ease)}
+.hist-x:hover{color:var(--txt);border-color:var(--acc2)}
+.hist-filters{display:flex;flex-wrap:wrap;gap:9px;padding:0 22px 14px;border-bottom:1px solid var(--line);align-items:center}
+.hist-chips{display:flex;gap:6px;flex-wrap:wrap}
+.hist-chips button{border:1px solid var(--line2);background:transparent;color:var(--mut);border-radius:999px;padding:7px 13px;font-size:12.5px;font-weight:600;cursor:pointer;transition:.14s var(--ease)}
+.hist-chips button:hover{color:var(--txt);border-color:var(--acc2)}
+.hist-chips button.on{background:var(--acc2);border-color:var(--acc2);color:#fff}
+.hist-filters select,.hist-filters input{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 11px;color:var(--txt);font-size:13px}
+.hist-filters input{flex:1;min-width:120px}
+.hist-list{max-height:min(56vh,540px);overflow-y:auto;padding:8px 14px 16px}
+.hist-row{display:flex;align-items:center;gap:12px;padding:12px 10px;border-radius:12px;border:1px solid transparent;transition:.14s var(--ease)}
+.hist-row+.hist-row{border-top:1px solid var(--line)}
+.hist-row:hover{background:var(--panel);border-color:var(--line);border-top-color:var(--line)}
+.hr-check{width:22px;height:22px;flex:none;border-radius:7px;background:color-mix(in srgb,var(--ok) 22%,transparent);color:var(--ok);display:grid;place-items:center;font-size:13px;font-weight:800}
+.hr-main{flex:1;min-width:0}
+.hr-title{font-size:14.5px;font-weight:600;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hr-meta{font-size:12px;color:var(--mut);margin-top:3px;display:flex;flex-wrap:wrap;gap:5px 12px}
+.hr-meta .hm-av{display:inline-flex;align-items:center;gap:5px}
+.hr-meta .hm-b{display:inline;white-space:nowrap}
+.hr-meta .hm-e{font-style:normal;margin-right:5px;font-size:11px}
+.hr-restore{flex:none;border:1px solid var(--line2);background:var(--panel);color:var(--mut);border-radius:10px;padding:8px 12px;font-size:12.5px;font-weight:600;cursor:pointer;transition:.14s var(--ease)}
+.hr-restore:hover{color:var(--acc2);border-color:var(--acc2);transform:translateY(-1px)}
+.hist-empty{text-align:center;color:var(--mut);padding:44px 20px;font-size:14px}
+.hist-empty .he-em{font-size:40px;display:block;margin-bottom:10px;opacity:.7}
+@media (max-width:680px){
+  .histsheet{width:100%}
+  .hr-restore{padding:8px 10px}
+}
 </style>
 </head>
 <body>
@@ -1837,7 +1943,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
     <button class="tab" data-v="team" data-icon="users"><span>Команда</span></button>
     <button class="tab" data-v="intake" data-icon="inbox"><span>Приёмка</span> <span class="cnt" id="cntIntake" style="display:none">0</span></button>
   </div>
-  <button class="iconbtn" id="btnUndo" title="Отменить (⌘Z / Ctrl+Z)" style="font-size:16px">↩</button><button class="iconbtn" id="btnRedo" title="Вернуть (⌘⇧Z / Ctrl+Shift+Z)" style="font-size:16px">↪</button><button class="iconbtn" id="btnSearch" data-icon="search" title="Поиск и команды (⌘K)"></button>
+  <button class="iconbtn" id="btnUndo" title="Отменить (⌘Z / Ctrl+Z)" style="font-size:16px">↩</button><button class="iconbtn" id="btnRedo" title="Вернуть (⌘⇧Z / Ctrl+Shift+Z)" style="font-size:16px">↪</button><button class="iconbtn" id="btnHist" data-icon="clock" title="История проекта — все закрытые задачи, с фильтрами и возвратом"></button><button class="iconbtn" id="btnSearch" data-icon="search" title="Поиск и команды (⌘K)"></button>
   <button class="iconbtn" id="btnNew" data-icon="plus" title="Новая задача"></button>
   <button class="iconbtn inbox" id="btnInbox" data-icon="bell" title="Инбокс — что нового для тебя"><span class="ibadge" id="inboxDot" style="display:none">0</span></button>
   <button class="iconbtn" id="btnTheme" title="Светлая / тёмная тема"></button>
@@ -2069,6 +2175,8 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
 <div class="modal-scrim" id="repScrim"><div class="modal repsheet" id="repModal"></div></div>
 <div class="modal-scrim" id="lpScrim"><div class="modal lpsheet" id="lpModal"></div></div>
 <div class="modal-scrim" id="hkScrim"><div class="modal hksheet" id="hkModal"></div></div>
+<div id="focusView" class="focusview" hidden><div id="focusBody" class="focusbody"></div></div>
+<div class="modal-scrim" id="histScrim"><div class="modal histsheet" id="histModal"></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -2194,6 +2302,18 @@ function myId(){
 function isOwner(){return (S.members[0]||{}).id===myId();}
 function canEditMember(m){return !!m&&(m.id===myId()||isOwner());}
 const meName=()=>(member(myId())||{}).name||'Я';
+/* КТО Я на самом деле — в Mini App личность даёт Telegram (всегда реальный человек, открывший app),
+   иначе — участник по e-mail входа, иначе локальный профиль. Чинит «Добрый вечер, чужое-имя»
+   на устройстве со старым cockpit_me. */
+function tmaUser(){try{const T=window.Telegram&&window.Telegram.WebApp;const u=T&&T.initDataUnsafe&&T.initDataUnsafe.user;return u&&u.id?u:null;}catch(e){return null;}}
+function myDisplayName(){
+  const u=tmaUser();if(u&&u.first_name)return (u.first_name+(u.last_name?' '+u.last_name:'')).trim();
+  if(myEmail){const m=S.members.find(x=>(x.email||'').toLowerCase()===myEmail);
+    if(m&&m.name&&m.name!=='Я'&&m.name!=='Новый участник')return m.name;
+    return myEmail.split('@')[0];}
+  return meName();
+}
+function myPhoto(){const u=tmaUser();if(u&&u.photo_url)return u.photo_url;const m=member(myId());return (m&&m.photo)||'';}
 const DEFAULT_CFG={url:'https://tonmsmxzmycimybzywqp.supabase.co',anon:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRvbm1zbXh6bXljaW15Ynp5d3FwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTE5NDksImV4cCI6MjA5NzQyNzk0OX0.c9ER6paD6GzUS_z40b2nv3d5jwEiREy9xXASAprrldM'};
 let CFG=null;try{CFG=JSON.parse(localStorage.getItem('cockpit_cfg'));}catch(e){}
 if(!CFG||!CFG.url)CFG=DEFAULT_CFG;
@@ -2428,9 +2548,9 @@ function render(){
   {const pl=$('#projLabel');if(pl){pl.textContent=S.projectName;pl._ppDone=0;pl.classList.remove('pp-on');}}
   $('#projEmoji').textContent=(reg.list.find(p=>p.id===S.id)||{}).emoji||'🚀';
   applyAccent();
-  {const _m=member(myId()),pb=$('#btnProfile');if(pb){
-    if(_m&&_m.photo){pb.innerHTML='';pb.style.backgroundColor='transparent';pb.style.backgroundImage=`url('${_m.photo}')`;}
-    else{pb.style.backgroundImage='none';pb.style.backgroundColor=(_m&&_m.color)||'var(--acc2)';pb.innerHTML=initials((_m&&_m.name)||'Я');}
+  {const _m=member(myId()),pb=$('#btnProfile'),_ph=myPhoto();if(pb){
+    if(_ph){pb.innerHTML='';pb.style.backgroundColor='transparent';pb.style.backgroundImage=`url('${_ph}')`;}
+    else{pb.style.backgroundImage='none';pb.style.backgroundColor=(_m&&_m.color)||'var(--acc2)';pb.innerHTML=initials(myDisplayName()||'Я');}
   }}
   // toolbar visibility
   const showTool=(view==='gantt'||view==='board');
@@ -2501,27 +2621,179 @@ function setView(v){view=v;if(typeof track==='function')track('view:'+v);
   $$('.view').forEach(el=>el.classList.toggle('active',el.id==='v-'+v));render();}
 
 /* ============================ СЕЙЧАС — MISSION CONTROL ============================ */
-let focus={tid:null,start:0,iv:null};
+let focus={tid:null,pid:null,start:0,iv:null,paused:false,acc:0};
+const FOCUS_RING=25*60; /* цель сессии 25 мин — «помидор»; кольцо заполняется до неё, дальше держится полным */
 let _nowSeenT=null;
 let insExpanded=false; /* «Что важно знать»: топ-3, остальное по запросу — не стена проблем */
 function fmtDur(s){const h=Math.floor(s/3600),m=Math.floor(s/60)%60,x=s%60;return (h?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(x).padStart(2,'0');}
+function focusSec(){return Math.floor(focus.acc+(focus.paused?0:(Date.now()-focus.start)/1000));}
 function updFocus(){
-  const sec=Math.floor((Date.now()-focus.start)/1000);
-  if(focus.tid)document.title='⏱ '+fmtDur(sec)+' — WANDO';   /* время фокуса видно прямо на вкладке */
-  const el=$('#focusClock');if(!el)return;                    /* интервал живёт и вне вкладки «Сейчас» — ради заголовка */
+  const sec=focusSec();
+  if(focus.tid)document.title=(focus.paused?'⏸ ':'⏱ ')+fmtDur(sec)+' — WANDO';   /* время фокуса видно прямо на вкладке */
+  const el=$('#focusClock');
   const t=focus.tid&&task(focus.tid);
   const tot=t?Math.round(((t.spent||0)+sec/3600)*10)/10:0;
-  el.textContent=fmtDur(sec)+(tot?' · всего '+tot+'ч':'');}
-function startFocus(tid){if(focus.tid)stopFocus(true);const t=task(tid);if(!t)return;focus.tid=tid;focus.start=Date.now();
-  try{localStorage.setItem('cockpit_focus',JSON.stringify({tid,start:focus.start,pid:S.id}));}catch(e){}
+  if(el)el.textContent=fmtDur(sec)+(tot?' · всего '+tot+'ч':'');
+  /* большой таймер фокус-режима + кольцо */
+  const fc=$('#fvClock');if(fc){fc.firstChild&&(fc.childNodes[0].nodeValue=fmtDur(sec));
+    const sm=fc.querySelector('small');if(sm)sm.textContent=(focus.paused?'на паузе':'идёт фокус')+(tot?' · всего '+tot+'ч':'');}
+  const rf=$('#fvRingFill');if(rf){const C=2*Math.PI*32;const p=Math.min(1,sec/FOCUS_RING);rf.style.strokeDashoffset=String(C*(1-p));}
+}
+/* тик кольца каждую секунду, даже когда #focusClock (в «Сейчас») отсутствует, — фокус-режим живёт своим таймером */
+function startFocus(tid,pid){pid=pid||S.id;if(focus.tid&&focus.tid!==tid)stopFocus(true);
+  const t=pid===S.id?task(tid):((loadProj(pid)||{}).tasks||[]).find(x=>x.id===tid);if(!t)return;
+  focus.tid=tid;focus.pid=pid;focus.start=Date.now();focus.paused=false;focus.acc=0;
+  try{localStorage.setItem('cockpit_focus',JSON.stringify({tid,start:focus.start,pid}));}catch(e){}
   if(t.status==='backlog'||t.status==='todo'){t.status='progress';logAct('▶️','начал «'+t.title+'»');}save();
-  clearInterval(focus.iv);focus.iv=setInterval(updFocus,1000);if(view==='now')renderNow();}
-function stopFocus(silent){if(!focus.tid)return;clearInterval(focus.iv);focus.iv=null;
+  clearInterval(focus.iv);focus.iv=setInterval(updFocus,1000);
+  openFocusMode();}
+function pauseFocus(){if(!focus.tid)return;if(focus.paused){focus.start=Date.now();focus.paused=false;}
+  else{focus.acc=focusSec();focus.paused=true;}updFocus();renderFocusMode();}
+function stopFocus(silent){if(!focus.tid)return;const sec=focusSec();clearInterval(focus.iv);focus.iv=null;
   try{localStorage.removeItem('cockpit_focus');}catch(e){}
   document.title='WANDO — Founder Mission Control';
-  const mins=(Date.now()-focus.start)/60000;const t=task(focus.tid);
-  if(t&&mins>=0.5){t.spent=Math.round(((t.spent||0)+mins/60)*10)/10;logAct('⏱','фокус '+Math.round(mins)+'м · «'+t.title+'»');save();}
-  focus.tid=null;if(!silent&&view==='now')renderNow();}
+  const mins=sec/60;const t=focus.pid&&focus.pid!==S.id?((loadProj(focus.pid)||{}).tasks||[]).find(x=>x.id===focus.tid):task(focus.tid);
+  if(t&&mins>=0.5){t.spent=Math.round(((t.spent||0)+mins/60)*10)/10;logAct('⏱','фокус '+Math.round(mins)+'м · «'+t.title+'»');
+    if(focus.pid&&focus.pid!==S.id){const d=loadProj(focus.pid);if(d){localStorage.setItem(pkey(focus.pid),JSON.stringify(d));if(cloudOn)cloudPush(d,true);}}else save();}
+  focus.tid=null;focus.pid=null;focus.paused=false;focus.acc=0;
+  if(!silent&&view==='now')renderNow();}
+/* ===== ФОКУС-РЕЖИМ: полноэкранная поверхность «делай это сейчас» ===== */
+function focusTask(){if(!focus.tid)return null;const pid=focus.pid||S.id;
+  const d=pid===S.id?S:loadProj(pid);return d&&(d.tasks||[]).find(x=>x.id===focus.tid)||null;}
+function openFocusMode(){const fv=$('#focusView');if(!fv)return;fv.hidden=false;document.body.classList.add('focusing');renderFocusMode();haptic('light');}
+function collapseFocus(){const fv=$('#focusView');if(fv)fv.hidden=true;document.body.classList.remove('focusing');if(view==='now')renderNow();}
+function exitFocus(){stopFocus(true);const fv=$('#focusView');if(fv)fv.hidden=true;document.body.classList.remove('focusing');if(view==='now')renderNow();}
+function focusOrder(){ /* очередь фокуса = движок «Сейчас», по всем видимым проектам */
+  const en=localStorage.getItem('cockpit_energy_'+todayISO())||'';
+  const enW=x=>en==='lo'?((x.t.estimate&&x.t.estimate<=2)?1.6:0):en==='hi'?((x.t.estimate>=4||x.t.priority==='high'||x.t.priority==='urgent')?1.2:0):0;
+  return myTasksAll().filter(x=>x.t.status!=='done').sort((a,b)=>(relScore(b.t)+enW(b))-(relScore(a.t)+enW(a)));}
+function focusUnblocks(tid,pid){ /* сколько задач разблокирует закрытие этой — усиливает «почему» */
+  const d=pid===S.id?S:loadProj(pid);if(!d)return 0;
+  return (d.tasks||[]).filter(x=>x.status!=='done'&&(x.deps||[]).includes(tid)).length;}
+function renderFocusMode(){
+  const fv=$('#focusView'),body=$('#focusBody');if(!fv||body==null||fv.hidden)return;
+  const pid=focus.pid||S.id;const t=focusTask();
+  if(!t){ /* задача закрыта/исчезла — предложим следующую или закроем */
+    const q=focusOrder();
+    if(q.length){startFocus(q[0].t.id,q[0].pid);return;}
+    body.innerHTML=`<div class="fv-empty"><div class="fe-em">🎉</div><h2>Всё на сегодня закрыто</h2><p>Красавчик. План чист — можно выдохнуть или взять цель из бэклога.</p><button class="fv-done" id="fvExit">Выйти из фокуса</button></div>`;
+    $('#fvExit').onclick=exitFocus;return;}
+  const proj=reg.list.find(p=>p.id===pid)||{};
+  const order=focusOrder();const idx=order.findIndex(x=>x.t.id===t.id);
+  const dl=daysLeft(t);const ov=isOverdue(t);const unb=focusUnblocks(t.id,pid);
+  const subs=t.subtasks||[];const sdone=subs.filter(x=>x.done).length;
+  const why=whyNext(t,localStorage.getItem('cockpit_energy_'+todayISO())||'');
+  const C=2*Math.PI*32;const sec=focusSec();const p=Math.min(1,sec/FOCUS_RING);
+  const cp=crumbPath(t);
+  body.innerHTML=`
+    <div class="fv-top">
+      <span class="fv-badge"><span class="bdot"></span>Режим фокуса</span>
+      ${order.length>1?`<span class="fv-prog">${idx>=0?idx+1:1} из ${order.length} сегодня</span>`:''}
+      <button class="fv-x" id="fvMin" title="Свернуть — таймер продолжит идти">✕</button>
+    </div>
+    <div class="fv-pchip">${proj.emoji||'🗂'} ${esc(proj.projectName||S.projectName||'Проект')}</div>
+    <div class="fv-timer">
+      <div class="fv-ring">
+        <svg width="74" height="74" viewBox="0 0 74 74"><circle class="rtrack" cx="37" cy="37" r="32" stroke-width="5"/>
+          <circle id="fvRingFill" class="rfill" cx="37" cy="37" r="32" stroke-width="5" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-p)}"/></svg>
+        <div class="rplay" id="fvPause" title="${focus.paused?'Продолжить':'Пауза'}">${focus.paused?'▶':'❚❚'}</div>
+      </div>
+      <div class="fv-clock" id="fvClock">${fmtDur(sec)}<small>${focus.paused?'на паузе':'идёт фокус'}${t.spent?' · всего '+t.spent+'ч':''}</small></div>
+    </div>
+    <div>
+      <div class="fv-title" id="fvOpen">${prGlyph(t)}${esc(t.title)}</div>
+      ${cp.length?`<div class="fv-crumb">↳ ${cp.map(esc).join(' ▸ ')}</div>`:''}
+      <div class="fv-meta">
+        <span class="ichip ${ov?'bad':''}" style="${ov?'':'border-color:'+stMap[t.status].c}">${ov?'просрочено '+(-dl)+'д':dl===0?'дедлайн сегодня':dl===1?'дедлайн завтра':dl>0?'через '+dl+'д':'без срока'}</span>
+        ${t.estimate?`<span class="ichip">${t.spent||0}/${t.estimate}ч</span>`:''}
+        ${unb?`<span class="ichip" style="border-color:var(--acc2);color:var(--acc2)">🔓 разблокирует ${unb}</span>`:''}
+      </div>
+      <div class="fv-why"><b>почему сейчас:</b> ${why.join(' · ')}</div>
+    </div>
+    <div>
+      <div class="fv-subh">Шаги${subs.length?` · ${sdone}/${subs.length}`:''}</div>
+      <div class="fv-subs">${subs.map(s=>`<div class="fv-sub ${s.done?'done':''}" data-sub="${s.id}"><span class="fv-cb">${s.done?'✓':''}</span><span class="fv-st">${esc(s.text||'')}</span></div>`).join('')||'<div class="fv-crumb" style="padding:4px 2px 8px">Разбей задачу на маленькие шаги — так проще начать.</div>'}</div>
+      <div class="fv-addsub"><input id="fvSubIn" placeholder="Добавить шаг и Enter" maxlength="120"><button id="fvSubAdd" title="Добавить">＋</button></div>
+    </div>
+    <div class="fv-acts">
+      <button class="fv-done" id="fvDone">✓ Готово${order.length>1?' — и дальше':''}</button>
+      <div class="fv-sec">
+        <button id="fvSnooze">🌙 На завтра</button>
+        <button id="fvStop">Завершить фокус</button>
+      </div>
+    </div>`;
+  const openX=()=>{collapseFocus();if(pid!==S.id){switchProject(pid);setTimeout(()=>openTask(t.id),140);}else openTask(t.id);};
+  $('#fvOpen').onclick=openX;
+  $('#fvMin').onclick=collapseFocus;
+  $('#fvStop').onclick=exitFocus;
+  $('#fvPause').onclick=pauseFocus;
+  $$('#focusBody .fv-sub').forEach(el=>el.onclick=()=>focusToggleSub(el.dataset.sub));
+  const si=$('#fvSubIn'),sa=$('#fvSubAdd');
+  const addS=()=>{const v=(si.value||'').trim();if(!v)return;editTaskInProject(pid,t.id,x=>{x.subtasks=x.subtasks||[];x.subtasks.push({id:uid('sb'),text:v,done:false});});si.value='';renderFocusMode();$('#fvSubIn')&&$('#fvSubIn').focus();};
+  if(sa)sa.onclick=addS;if(si)si.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();addS();}};
+  $('#fvSnooze').onclick=()=>{const tm=fmtD(parseD(todayISO())+dayMs);editTaskInProject(pid,t.id,x=>{x.end=tm;if(parseD(x.start)>parseD(tm))x.start=tm;});haptic('sel');
+    toast('Отложено на завтра','🌙');focusNext(t.id);};
+  $('#fvDone').onclick=(ev)=>{if(focus.tid===t.id){/* засчитать время */}stopFocus(true);const un=markDone(pid,t.id);
+    celebrate();haptic('ok');toast('Готово','✅','Отменить',()=>{un();if(!$('#focusView').hidden)renderFocusMode();});
+    focusNext(t.id);};
+}
+function focusToggleSub(sid){const pid=focus.pid||S.id;const t=focusTask();if(!t)return;
+  editTaskInProject(pid,t.id,x=>{const s=(x.subtasks||[]).find(y=>y.id===sid);if(s)s.done=!s.done;});haptic('sel');renderFocusMode();}
+function focusNext(prevId){ /* конвейер: закрыл шаг → следующий сразу в этой же поверхности, поток не рвётся */
+  const q=focusOrder().filter(x=>x.t.id!==prevId);
+  if(!q.length){focus.tid=null;renderFocusMode();return;}
+  setTimeout(()=>{if($('#focusView').hidden)return;startFocus(q[0].t.id,q[0].pid);},520);}
+/* ===== ИСТОРИЯ ПРОЕКТА — все закрытые задачи, свои в каждом проекте ===== */
+let histFilter={range:'all',person:'',q:''};
+function histCloseTs(t){return t.doneTs||t.statusTs||t.createdTs||0;}
+function fmtDT(ts){if(!ts)return '—';const d=new Date(ts);const p=n=>String(n).padStart(2,'0');
+  return p(d.getDate())+'.'+p(d.getMonth()+1)+'.'+String(d.getFullYear()).slice(2)+' '+p(d.getHours())+':'+p(d.getMinutes());}
+function openHistory(){if(view==='intake'||view==='team'){}$('#histScrim').classList.add('show');renderHistory();}
+function closeHistory(){$('#histScrim').classList.remove('show');}
+function renderHistory(){
+  const box=$('#histModal');if(!box)return;
+  const done=S.tasks.filter(t=>t.status==='done'&&!t.isMilestone);
+  const members=S.members||[];
+  const RANGES=[['today','Сегодня'],['7','7 дней'],['30','30 дней'],['all','Всё время']];
+  const now=Date.now();const st=new Date();st.setHours(0,0,0,0);const startToday=st.getTime();
+  const inRange=ts=>{if(histFilter.range==='all')return true;if(histFilter.range==='today')return ts>=startToday;
+    return ts>=now-(+histFilter.range)*dayMs;};
+  const rows=done.filter(t=>inRange(histCloseTs(t)))
+    .filter(t=>!histFilter.person||t.assigneeId===histFilter.person)
+    .filter(t=>!histFilter.q||(t.title||'').toLowerCase().includes(histFilter.q.toLowerCase()))
+    .sort((a,b)=>histCloseTs(b)-histCloseTs(a));
+  box.innerHTML=`
+    <div class="hist-h"><div><h2>${icon('clock',19)} История · ${esc(S.projectName)}</h2>
+      <span class="hist-sub">${done.length} закрытых за всё время${rows.length!==done.length?' · показано '+rows.length:''}</span></div>
+      <button class="hist-x" id="histX" title="Закрыть">✕</button></div>
+    <div class="hist-filters">
+      <div class="hist-chips">${RANGES.map(r=>`<button data-hr="${r[0]}" class="${histFilter.range===r[0]?'on':''}">${r[1]}</button>`).join('')}</div>
+      <select id="histPerson"><option value="">Все люди</option>${members.map(m=>`<option value="${m.id}" ${histFilter.person===m.id?'selected':''}>${esc(m.name)}</option>`).join('')}</select>
+      <input id="histQ" placeholder="Поиск по названию…" value="${esc(histFilter.q)}">
+    </div>
+    <div class="hist-list">${rows.length?rows.map(t=>{const m=member(t.assigneeId);
+      return `<div class="hist-row"><span class="hr-check">✓</span>
+        <div class="hr-main"><div class="hr-title" data-hopen="${t.id}" title="Открыть карточку">${prGlyph(t)}${esc(t.title)}</div>
+          <div class="hr-meta">${m?`<span class="hm-av">${avatar(t.assigneeId)} ${esc(m.name)}</span>`:'<span>без исполнителя</span>'}
+            <span class="hm-b"><i class="hm-e">🟢</i>открыта ${fmtDT(t.createdTs)}</span><span class="hm-b"><i class="hm-e">✅</i>закрыта ${fmtDT(histCloseTs(t))}</span>${t.spent?`<span class="hm-b"><i class="hm-e">⏱</i>${t.spent}ч</span>`:''}</div></div>
+        <button class="hr-restore" data-hrestore="${t.id}">↩ Вернуть</button></div>`;}).join('')
+      :`<div class="hist-empty"><span class="he-em">🗂</span>${done.length?'Ничего не найдено — смягчи фильтры':'Пока нет закрытых задач. Закрой первую — и она появится здесь с датами и возвратом.'}</div>`}</div>`;
+  $('#histX').onclick=closeHistory;
+  $$('#histModal .hist-chips button').forEach(b=>b.onclick=()=>{histFilter.range=b.dataset.hr;renderHistory();});
+  $('#histPerson').onchange=e=>{histFilter.person=e.target.value;renderHistory();};
+  const q=$('#histQ');if(q)q.oninput=e=>{histFilter.q=e.target.value;const pos=e.target.selectionStart;renderHistory();
+    const nq=$('#histQ');if(nq){nq.focus();try{nq.setSelectionRange(pos,pos);}catch(_){}}};
+  $$('#histModal [data-hrestore]').forEach(b=>b.onclick=()=>restoreFromHistory(b.dataset.hrestore));
+  $$('#histModal [data-hopen]').forEach(b=>b.onclick=()=>{closeHistory();openTask(b.dataset.hopen);});
+}
+function restoreFromHistory(id){
+  const t=task(id);if(!t)return;
+  editTaskInProject(S.id,id,x=>{x.status='todo';delete x.doneTs;x.statusTs=Date.now();
+    if((!x.end)||parseD(x.end)<parseD(todayISO()))x.end=todayISO();if(x.start&&parseD(x.start)>parseD(x.end))x.start=x.end;
+    histAdd(x,'↩ восстановлено из истории');});
+  logAct('↩️','из истории: «'+t.title+'» снова в работе');save();render();renderHistory();
+  toast('Вернул в работу: «'+String(t.title).slice(0,34)+'»','↩');
+}
 function plural(n,one,few,many){const m=n%100,d=n%10;if(m>=11&&m<=14)return many;if(d===1)return one;if(d>=2&&d<=4)return few;return many;}
 /* Asana-урок: светофор проекта — недельный статус одной строкой, виден в «Всё» и в отчёте */
 const HEALTH={g:['#34d399','по плану'],y:['#fbbf24','есть риски'],r:['#f87171','горим']};
@@ -2771,7 +3043,7 @@ function renderNow(){
   const energy=localStorage.getItem('cockpit_energy_'+todayISO())||'';
   if(window.innerWidth<=680){renderNowMobile({el,greet,next,upNext,mine,pct,prog,ov,vel,back,ins,running,energy:localStorage.getItem('cockpit_energy_'+todayISO())||''});return;}
   window._heroNext=next?{id:next.id,title:next.title,est:next.estimate,pid:nextPid,st:next.status}:null;
-  el.innerHTML=`<div class="now-greet"><h1>${greet}${(n=>n&&n!=='Я'&&n!=='Новый участник'?', '+esc(n):'!')(meName())}</h1><span>${esc(S.projectName)} · пульс проекта
+  el.innerHTML=`<div class="now-greet"><h1>${greet}${(n=>n&&n!=='Я'&&n!=='Новый участник'?', '+esc(n):'!')(myDisplayName())}</h1><span>${esc(S.projectName)} · пульс проекта
       <span class="energyrow" title="Заряд сегодня: подстрою следующий шаг"><button data-en="hi" class="${energy==='hi'?'on':''}" title="Полон сил — дай крупную задачу" aria-label="Полон сил">${icon('battery',15)}</button><button data-en="lo" class="${energy==='lo'?'on':''}" title="Мало сил — подкинь лёгкие" aria-label="Мало сил">${icon('battlow',15)}</button></span></span></div>
     ${whatsNewStrip()}
     ${hero}
@@ -2865,6 +3137,7 @@ function openHotkeys(){
 function closeHotkeys(){$('#hkScrim').classList.remove('show');}
 $('#hkScrim').onclick=e=>{if(e.target===$('#hkScrim'))closeHotkeys();};
 $('#lpScrim').onclick=e=>{if(e.target===$('#lpScrim'))closeLP();};
+$('#histScrim').onclick=e=>{if(e.target===$('#histScrim'))closeHistory();};
 function attachSwipe(el,taskId,pid){
   let sx=0,sy=0,dx=0,swiping=false,lpT=null,lpFired=false;
   el.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;dx=0;swiping=false;lpFired=false;
@@ -3012,7 +3285,7 @@ function renderNowMobile(ctx){
   const rows=upNext.map(x=>{const t=x.t||x;const pid=x.pid||S.id;
     return `<div class="mrow" data-open="${t.id}" data-pid="${pid}"><span class="dot" style="background:${stMap[t.status].c}"></span><span class="mr-t">${prGlyph(t)}${esc(t.title)}</span>${x.pid?badge(x):''}${t.estimate?`<span class="mr-e">${t.estimate}ч</span>`:''}</div>`;}).join('');
   el.innerHTML=`
-    <div class="mgreet"><h1>${greet.split(' ')[0]} ${greet.split(' ').slice(1).join(' ')}${(n=>n&&n!=='Я'&&n!=='Новый участник'?', '+esc(n.split(' ')[0]):'!')(meName())}</h1>
+    <div class="mgreet"><h1>${greet.split(' ')[0]} ${greet.split(' ').slice(1).join(' ')}${(n=>n&&n!=='Я'&&n!=='Новый участник'?', '+esc(n.split(' ')[0]):'!')(myDisplayName())}</h1>
       <span class="energyrow"><button data-en="hi" class="${energy==='hi'?'on':''}" title="Полон сил — дай крупную задачу" aria-label="Полон сил">${icon('battery',15)}</button><button data-en="lo" class="${energy==='lo'?'on':''}" title="Мало сил — подкинь лёгкие" aria-label="Мало сил">${icon('battlow',15)}</button></span></div>
     ${whatsNewStrip()}
     ${hero}
@@ -4218,7 +4491,7 @@ function renderBrief(){
   $('#briefModal').innerHTML=`
    <div class="ob-body" style="max-height:76dvh;overflow:auto">
      <h2>${icon('sun',18)} Бриф на сегодня</h2>
-     <p>${greet}${(n=>n&&n!=='Я'&&n!=='Новый участник'?', '+esc(n.split(' ')[0]):'')(meName())}. Коротко — что важно прямо сейчас.</p>
+     <p>${greet}${(n=>n&&n!=='Я'&&n!=='Новый участник'?', '+esc(n.split(' ')[0]):'')(myDisplayName())}. Коротко — что важно прямо сейчас.</p>
      ${b.onMe.length?`<div class="airh">⏳ Висит на тебе — ${b.onMe.length}</div>${b.onMe.map(trow).join('')}`:''}
      ${b.today.length?`<div class="airh">🔥 Сегодня / просрочено — ${b.today.length}</div>${b.today.map(trow).join('')}`:''}
      ${b.iWait.length?`<div class="airh">🤝 Ждёшь от партнёра — ${b.iWait.length}</div>${b.iWait.map(x=>`<div class="trow" data-pid="${x.pid}" data-tid="${x.t.id}"><span class="dot" style="background:${stMap[x.t.status].c}"></span><span class="tn">${esc(x.t.title)}</span><span class="pbadge">от ${esc(x.who||'?')}</span></div>`).join('')}`:''}
@@ -5580,9 +5853,11 @@ document.addEventListener('keydown',e=>{
   if((e.metaKey||e.ctrlKey)&&e.shiftKey&&e.code==='KeyZ'&&!typing){e.preventDefault();redo();return;}
   if((e.metaKey||e.ctrlKey)&&!e.shiftKey&&e.code==='KeyZ'&&!typing){e.preventDefault();undo();return;}
   if(e.key==='Escape'){
+    if($('#focusView')&&!$('#focusView').hidden)return collapseFocus();
     if($('#present').classList.contains('show'))return closePresent();
     if($('#palScrim').classList.contains('show'))return closePalette();
-    if($('#hkScrim').classList.contains('show'))closeHotkeys();
+    if($('#histScrim').classList.contains('show'))closeHistory();
+    else if($('#hkScrim').classList.contains('show'))closeHotkeys();
     else if($('#lpScrim').classList.contains('show'))closeLP();
     else if($('#repScrim').classList.contains('show'))closeEmpireRep();
     else if($('#obScrim').classList.contains('show'))closeOb();
@@ -5841,7 +6116,7 @@ let bannerDismissed=false;
 $('#bannerHide').onclick=()=>{bannerDismissed=true;$('#banner').classList.add('hide');};
 $('#bannerFresh').onclick=()=>{if(confirm('Удалить демо-проект и начать по-настоящему?'))exitDemo();};
 $('#btnHelp').onclick=()=>openOnboarding(0);
-{const u=$('#btnUndo');if(u)u.onclick=()=>undo();const r=$('#btnRedo');if(r)r.onclick=()=>redo();}
+{const u=$('#btnUndo');if(u)u.onclick=()=>undo();const r=$('#btnRedo');if(r)r.onclick=()=>redo();const h=$('#btnHist');if(h)h.onclick=()=>openHistory();}
 function applyTheme(){const t=localStorage.getItem('cockpit_theme')||'dark';document.body.classList.toggle('light',t==='light');const b=$('#btnTheme');if(b)b.innerHTML=t==='light'?icon('moon'):icon('sun');}
 $('#btnTheme').onclick=()=>{const cur=localStorage.getItem('cockpit_theme')||'dark';localStorage.setItem('cockpit_theme',cur==='light'?'dark':'light');applyTheme();toast(cur==='light'?'Тёмная тема':'Светлая тема','🎨');};
 
@@ -6147,7 +6422,7 @@ projBtn.onclick=e=>{e.stopPropagation();
   const tops=active.filter(p=>{const pr=p.parentId&&projMeta(p.parentId);return !pr||pr.archived;});
   projMenu.innerHTML=tops.map(p=>item(p,false)).join('')
     +`<div class="sep"></div>`
-    +(isTeam?`<button data-act="newp">＋ Новый проект</button>`:'')
+    +(canCreateProject()?`<button data-act="newp">＋ Новый проект</button>`:'')
     +`<button data-act="demotoggle">${icon('play',14)} ${hasDemo?'Убрать демо «Testoran»':'Демо «Testoran»'} <span style="color:var(--mut2);font-weight:500">${hasDemo?'— вернуться к своим':'— пример, не тронет твои проекты'}</span></button>`
     +`<button data-act="mgmt" style="color:var(--mut)">${icon('gear',14)} Управление проектом <span id="projChev" style="color:var(--mut2)">▸</span></button>`
     +`<div id="projMgmt" style="display:none;border-left:2px solid var(--line);margin:2px 0 4px 14px">`
@@ -6223,7 +6498,10 @@ function openEmojiPicker(cur,cb){
 {const es=$('#emojiScrim');if(es)es.onclick=e=>{if(e.target===es)es.classList.remove('show');};}
 let npEmoji='';
 function freeEmoji(){const used=new Set(reg.list.map(p=>p.emoji));return EMOJI_POOL.find(e=>!used.has(e))||EMOJI_POOL[Math.floor(Math.random()*EMOJI_POOL.length)];}
-function openNewProject(){npTpl='mvp';npEmoji=freeEmoji();renderNP();$('#npScrim').classList.add('show');}
+function canCreateProject(){return iSeeAllProjects();} /* владелец/админ (или локальный соло) — участник команды не создаёт проекты */
+function openNewProject(){
+  if(!canCreateProject()){toast('Создавать проекты может владелец или админ. Попроси доступ — или тебя добавят в готовый проект.','🔒');return;}
+  npTpl='mvp';npEmoji=freeEmoji();renderNP();$('#npScrim').classList.add('show');}
 function renderNP(){
   $('#npModal').innerHTML=`
     <div class="ob-body" style="padding-top:24px">
@@ -6567,6 +6845,7 @@ function tmaBoot(){
     try{T.setHeaderColor('#0f121b');T.setBackgroundColor('#0d0f17');}catch(e){}
     if(window._tmaFirst)setTimeout(()=>{try{toast('Внизу — вкладки, по центру «+» — новая задача текстом или голосом','👋');}catch(e){}},1400);
     T.BackButton.onClick(()=>{ // системный «назад» закрывает верхний слой
+      if($('#focusView')&&!$('#focusView').hidden){collapseFocus();return;}
       const layers=[['#lpScrim',closeLP],['#repScrim',closeEmpireRep],['#capScrim',closeCap],['#vandoPanel',()=>vandoToggle(false)],['#drawer',()=>closeDrawer&&closeDrawer()]];
       for(const [sel,fn] of layers){const el=$(sel);if(el&&el.classList.contains('show')){fn();return;}}
       if(view!=='now')setView('now');});
@@ -6982,9 +7261,10 @@ function buildPaletteIndex(){
     ['sparkles','AI-План проекта','Claude разобьёт цель на задачи','AI',()=>openAiPlan()],
     ['sparkles','AI-разбор доски','Claude посмотрит риски','AI',()=>aiReview()],
     ['cal','Бриф на сегодня','что важно прямо сейчас','AI',()=>openBrief()],
+    ['clock','История проекта','все закрытые задачи · фильтры · возврат','Планирование',()=>openHistory()],
     ['plus','Новая задача','создать пустую','Создать',()=>{$('#btnNew').click();}],
     ['idea','Добавить идею в бэклог','паркинг идей','Создать',()=>{setView('backlog');setTimeout(()=>{const i=$('#ideaIn');if(i)i.focus();},120);}],
-    ...(isTeam?[['layers','Новый проект','создать проект','Создать',()=>openNewProject()]]:[]),
+    ...(canCreateProject()?[['layers','Новый проект','создать проект','Создать',()=>openNewProject()]]:[]),
     ['cal','Перенести все просрочки','актуализировать сроки на неделю','Планирование',()=>healOverdue('week')],
     ['zap','Что горит сейчас','просрочки, дедлайны, срочное','Планирование',()=>fireFocus()],
     ['cal','Авто-расписание','раскидать сроки по загрузке','Планирование',()=>autoSchedule()],
@@ -7111,7 +7391,8 @@ if(!_shareSnap)setTimeout(()=>{
 // восстановление фокус-сессии после перезагрузки — таймер больше не теряется
 try{const _fs=JSON.parse(localStorage.getItem('cockpit_focus'));
   if(_fs&&_fs.tid&&_fs.pid===S.id&&task(_fs.tid)&&task(_fs.tid).status!=='done'){
-    focus.tid=_fs.tid;focus.start=_fs.start;clearInterval(focus.iv);focus.iv=setInterval(updFocus,1000);if(view==='now')renderNow();}
+    focus.tid=_fs.tid;focus.pid=_fs.pid;focus.start=_fs.start;focus.paused=false;focus.acc=0;
+    clearInterval(focus.iv);focus.iv=setInterval(updFocus,1000);if(view==='now')renderNow();} /* остаётся свёрнутым — оверлей по тапу «Фокус» */
   else if(_fs)localStorage.removeItem('cockpit_focus');
 }catch(e){}
 // PWA: разовая подсказка «на домашний экран» (мобила, не standalone, с 3-го визита)
