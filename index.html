@@ -2054,6 +2054,14 @@ html{font-optical-sizing:auto}
 .mrow-act svg{width:15px;height:15px}
 .mrow-act.done{left:15px;color:var(--ok)}
 .mrow-act.morrow{right:15px;color:var(--acc2)}
+
+/* крестик брифа — всегда доступен (iPhone: модалка обязана закрываться) */
+#briefModal{position:relative}
+.brief-x{position:absolute;top:12px;right:12px;z-index:5;width:36px;height:36px;border-radius:11px;
+  border:1px solid var(--line2);background:var(--panel);color:var(--mut);font-size:16px;line-height:1;
+  display:grid;place-items:center;cursor:pointer;transition:.15s var(--ease)}
+.brief-x:hover{color:var(--txt);border-color:var(--acc2)}
+#briefModal .ob-body{padding-right:46px}
 </style>
 </head>
 <body>
@@ -4747,6 +4755,7 @@ function renderBrief(){
      ${b.onMe.length?`<div class="airh">⏳ Висит на тебе — ${b.onMe.length}</div>${b.onMe.map(trow).join('')}`:''}
      ${b.today.length?`<div class="airh">🔥 Сегодня / просрочено — ${b.today.length}</div>${b.today.map(trow).join('')}`:''}`;
   $('#briefModal').innerHTML=`
+   <button class="brief-x" id="briefX" title="Закрыть" aria-label="Закрыть">✕</button>
    <div class="ob-body" style="max-height:76dvh;overflow:auto">
      ${evening?reflectHTML:focusHTML}
      ${b.iWait.length?`<div class="airh">🤝 Ждёшь от партнёра — ${b.iWait.length}</div>${b.iWait.map(x=>`<div class="trow" data-pid="${x.pid}" data-tid="${x.t.id}"><span class="dot" style="background:${stMap[x.t.status].c}"></span><span class="tn">${esc(x.t.title)}</span><span class="pbadge">от ${esc(x.who||'?')}</span></div>`).join('')}`:''}
@@ -4756,6 +4765,7 @@ function renderBrief(){
    </div>
    <div class="ob-foot"><button class="btn" id="briefAi">${icon('sparkles',14)} Совет от Claude</button><div class="spacer"></div><button class="btn primary" id="briefClose">${evening?'Хорошего вечера':'За работу'}</button></div>`;
   $('#briefClose').onclick=closeBrief;
+  {const bx=$('#briefX');if(bx)bx.onclick=closeBrief;}
   $('#briefAi').onclick=()=>fetchBriefAdvice($('#briefAi'));
   $$('#briefModal .trow').forEach(el=>el.onclick=()=>{const pid=el.dataset.pid,tid=el.dataset.tid;closeBrief();if(pid!==S.id)switchProject(pid);setTimeout(()=>openTask(tid),90);});
 }
@@ -7214,7 +7224,8 @@ async function onLoggedIn(){cloudOn=true;closeAuth();hideGate();updateCloudBadge
   if(!localStorage.getItem('cockpit_profile_done'))openProfileSetup();
   else if(!localStorage.getItem('cockpit_onboarded'))openSetupWizard();
   else if(hasReal&&!localStorage.getItem('cockpit_welcomed'))openJoinWelcome(); // присоединившийся партнёр — тёплая ориентация
-  else if(!window._tmaFirst&&localStorage.getItem('cockpit_brief_date')!==todayISO())openBrief();
+  else if(!window._tmaFirst&&!tmaInitData()&&localStorage.getItem('cockpit_brief_date')!==todayISO())openBrief();
+  /* в Mini App бриф авто-НЕ всплывает: модалка на открытии мешает (и показу клиента) — только по кнопке */
   setTimeout(maybeTgGate,2200);
   shareCapture(); // «поделиться» из другого приложения → лист захвата (PWA share-target)
   // deep-link из TG: ?t=PID:TID → открыть задачу (якоря в сообщениях бота)
