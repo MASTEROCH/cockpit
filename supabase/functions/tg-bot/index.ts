@@ -350,6 +350,7 @@ async function acceptIntake(intakeId: string, by: Link, projectId?: string): Pro
   const { error } = await sb.from("projects").update({ data: d, updated_at: new Date().toISOString(), updated_by: null }).eq("id", proj.id);
   if (error) return "⚠ Не удалось создать задачу: " + esc(error.message);
   await sb.from("intake").update({ status: "accepted", decided_by: by.email, decided_at: new Date().toISOString(), target_project: proj.id, result_task_id: task.id }).eq("id", intakeId);
+  try { await notifyTaskLanded(proj, task, by.name ?? by.email, [by.email, row.by_email]); } catch (_) { /* уведомление не должно ронять принятие */ }
   return `✅ Добавлено в ${proj.emoji ?? "📄"} <b>${esc(proj.name)}</b>: «<a href="https://${SITE}/?t=${proj.id}:${task.id}">${esc(task.title)}</a>»${chips(p)}\n<i>↩︎ ответь на это сообщение — текст станет комментом к задаче</i>`;
 }
 
@@ -444,12 +445,27 @@ async function notifyNewIntake(rec: Record<string, any>) {
   const { data: w } = await sb.from("workspaces").select("created_by").eq("id", ws).maybeSingle();
   const owner = (w?.created_by ?? "").toLowerCase();
   const all = await teamLinks(rec.by_email, ws);
-  // шум — точечно: владелец воркспейса разбирает приёмку, остальные подписываются сами (⚙️)
-  let targets = all.filter((l) => pref(l, "intake", l.email.toLowerCase() === owner ? "on" : "off") === "on");
-  if (!targets.length) targets = all; // некому разбирать — лучше шум, чем потерянная заявка
+  // Приёмку РАЗБИРАЕТ владелец (и тот, кто сам включил intake в ⚙️). НЕ вся команда:
+  // раньше пустой список падал в `targets = all` → заявка летела ВСЕМ (утечка). Больше нет.
+  const targets = all.filter((l) => pref(l, "intake", l.email.toLowerCase() === owner ? "on" : "off") === "on");
   for (const l of targets) {
-    await sayInline(l.chat_id, `📥 <b>Новая заявка</b> от <b>${esc(rec.by_name ?? rec.by_email)}</b>${rec.source ? " · " + esc(rec.source) : ""}\n«${esc(p.title || rec.text)}»${chips(p)}${tl}`,
+    await sayInline(l.chat_id, `📥 <b>Заявка в приёмку</b> от <b>${esc(rec.by_name ?? rec.by_email)}</b>${rec.source ? " · " + esc(rec.source) : ""}\n«${esc(p.title || rec.text)}»${chips(p)}${tl}\n<i>разобрать — принять в проект или отклонить</i>`,
       [[{ text: "✓ Добавить", callback_data: "acc:" + rec.id }, { text: "✕ Отклонить", callback_data: "rej:" + rec.id }]]);
+  }
+}
+// Когда задача РЕАЛЬНО упала в проект — уведомляем участников ИМЕННО этого проекта
+// (кто добавил, что, куда). Не всю команду, не по чужим проектам.
+async function notifyTaskLanded(proj: Record<string, any>, task: Record<string, any>, byName: string, except: string[]) {
+  const emails = new Set<string>();
+  (((proj.data ?? {}).members) ?? []).forEach((m: Record<string, any>) => { if (m?.email) emails.add(String(m.email).toLowerCase()); });
+  const { data: pa } = await sb.from("project_access").select("email").eq("project_id", proj.id);
+  (pa ?? []).forEach((r: Record<string, any>) => emails.add(String(r.email ?? "").toLowerCase()));
+  except.forEach((e) => emails.delete((e ?? "").toLowerCase()));
+  if (!emails.size) return;
+  const { data: links } = await sb.from("tg_links").select("*").eq("revoked", false);
+  const targets = ((links ?? []) as Link[]).filter((l) => emails.has(l.email.toLowerCase()) && pref(l, "intake", "on") === "on");
+  for (const l of targets) {
+    await say(l.chat_id, `🆕 <b>${esc(byName)}</b> добавил задачу в ${proj.emoji ?? "📄"} <b>${esc(proj.name ?? "")}</b>:\n«${esc(task.title)}»`);
   }
 }
 async function notifyDecision(rec: Record<string, any>) {

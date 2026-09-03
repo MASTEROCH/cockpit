@@ -4046,6 +4046,13 @@ async function createTgBind(){
 }
 function stopTgPoll(){if(_tgPoll){clearInterval(_tgPoll);_tgPoll=null;}}
 function closeTgGate(){stopTgPoll();$('#tgScrim').classList.remove('show');}
+// iOS замораживает JS в фоновой вкладке — пока человек в Telegram, поллинг привязки стоит.
+// При возврате на вкладку сразу перепроверяем: галочка «подключено» долетит, даже если поллинг проспал/истёк.
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState!=='visible')return;
+  const sc=$('#tgScrim');if(!sc||!sc.classList.contains('show')||tgLinked)return;
+  checkTgLink().then(ok=>{if(ok){stopTgPoll();renderTgGate('done');try{celebrate();}catch(_){}setTimeout(()=>{closeTgGate();render();},1600);}});
+});
 async function startTgBind(){
   if(_tgBinding)return;_tgBinding=true;
   const b=$('#tgGo');if(b){b.disabled=true;b.textContent='Создаю привязку…';}
@@ -6810,6 +6817,11 @@ const _pt={};
 let rtSubbed=false, pendingRemote={};
 function cloudPush(p,now){
   if(!cloudOn||!sb||!p)return;
+  // АНТИ-ФАНТОМ: пустой дефолтный проект («Мой проект»/«Новый проект»/без имени, без задач и идей)
+  // в облако НЕ публикуем — иначе каждое свежее устройство/Mini App плодит пустышку у всех.
+  // Как только в проекте появится содержимое или своё имя — он засинкается нормально.
+  if(!(p.tasks||[]).length && !(p.ideas||[]).length && !p.demo &&
+     /^(Мой проект|Новый проект)?$/.test((p.projectName||'').trim())) return;
   p.updatedAt=Date.now();
   const row={id:p.id,name:p.projectName,emoji:(reg.list.find(x=>x.id===p.id)||{}).emoji||'📄',data:p,updated_by:me,updated_at:new Date().toISOString()};
   const doit=async()=>{try{const snap=JSON.stringify(row.data);await sb.from('projects').upsert(row);saveBase(p.id,snap);}catch(e){console.warn('cloud push',e);}};
