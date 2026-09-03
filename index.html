@@ -1956,6 +1956,41 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
 /* инлайн-иконки, заменившие эмодзи в тексте — по размеру и цвету строки */
 .iemo{display:inline-flex;align-items:center;justify-content:center;vertical-align:-.16em;line-height:1;margin:0 .5px}
 .iemo svg{width:1.05em;height:1.05em}
+
+/* ============ PREMIUM LAYER — тихая роскошь / мировой топ ============ */
+/* 1. Плёночное зерно: убивает бандинг градиентов, даёт материал «дорогой печати» */
+body::after{content:'';position:fixed;inset:0;z-index:2147483000;pointer-events:none;opacity:.028;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:140px 140px}
+body.light::after{opacity:.05;mix-blend-mode:multiply}
+/* 2. Типографика: сглаживание, оптическая читаемость, моно-цифры, брендовое выделение */
+html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
+body{font-feature-settings:"kern","liga","calt";font-kerning:normal}
+h1,h2,h3,.nh-title,.mh-title,.fv-title,.kpi .v,.pulse-card .pv,.pv,.hero-num,[class*=clock]{font-variant-numeric:tabular-nums}
+::selection{background:rgba(167,139,250,.32);color:#fff;text-shadow:none}
+::-moz-selection{background:rgba(167,139,250,.32);color:#fff}
+/* 3. Свет по верхней кромке — «стекло под источником сверху», ключевой премиум-приём */
+.kpi,.panel-c,.pulse-row,.fold,.insight,.assist-card,.now-sec+.insights .insight,.mrow,.pick-row,.hist-row,.pulse-card{position:relative}
+.kpi::before,.panel-c::before,.pulse-row::before,.now-hero::before{
+  content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.055),inset 0 0 0 1px rgba(255,255,255,.012);z-index:0}
+body.light .kpi::before,body.light .panel-c::before,body.light .pulse-row::before,body.light .now-hero::before{box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
+.kpi>*,.panel-c>*,.pulse-row>*{position:relative;z-index:1}
+/* 4. Отточенный скролл — тоньше, спокойнее, живёт при наведении */
+::-webkit-scrollbar{height:9px;width:9px}
+::-webkit-scrollbar-thumb{background:rgba(150,155,175,.18);border-radius:20px;border:2px solid transparent;background-clip:padding-box;transition:background .2s}
+::-webkit-scrollbar-thumb:hover{background:rgba(160,165,190,.34);background-clip:padding-box}
+*{scrollbar-width:thin;scrollbar-color:rgba(150,155,175,.24) transparent}
+/* 5. Кнопки — верхний внутренний блик + благородный подъём */
+.btn.primary{box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 4px 14px rgba(167,139,250,.26),0 1px 3px rgba(0,0,0,.3)}
+.btn.primary:hover{filter:brightness(1.05);box-shadow:inset 0 1px 0 rgba(255,255,255,.26),0 8px 22px rgba(167,139,250,.34),0 1px 3px rgba(0,0,0,.3);transform:translateY(-1px)}
+.btn.primary:active{transform:translateY(0) scale(.99)}
+.btn{transition:transform .15s var(--ease),box-shadow .2s,background .15s,border-color .15s}
+.btn:not(.primary):active{transform:translateY(0) scale(.99)}
+/* 6. Спокойный подъём карточек-метрик при наведении */
+.kpi{transition:transform .18s var(--ease),border-color .18s,box-shadow .2s}
+.kpi:hover{transform:translateY(-2px);border-color:var(--line2)}
+/* 7. Иконки-иллюстрации и line-иконки — чуть мягче край на тёмном */
+.iemo svg,.aico{shape-rendering:geometricPrecision}
 </style>
 </head>
 <body>
@@ -2935,7 +2970,7 @@ function buildInsights(T){
   const wom=T.filter(t=>t.waitingOn===me&&t.status!=='done');
   if(wom.length)out.push({ic:'⏳',title:`Висит на тебе: ${wom.length}`,sub:wom.slice(0,2).map(t=>t.title).join(' · '),act:()=>openTask(wom[0].id)});
   S.members.forEach(m=>{const load=T.filter(t=>t.assigneeId===m.id&&t.status!=='done').reduce((a,t)=>a+(t.estimate||0),0);
-    if(m.capacity&&load>m.capacity*1.15)out.push({ic:'🥵',title:`${m.name} перегружен`,sub:`${load}/${m.capacity}ч — жми: его задачи · разгрузка в «Команде»`,act:()=>{filter.assignee=m.id;setView('board');toast(`Доска: только задачи ${m.name}. Снять фильтр — «Все люди»`,'👤');}});});
+    if(m.capacity&&load>m.capacity*1.15)out.push({ic:'🥵',title:`Перегрузка · ${m.name}`,sub:`${load}/${m.capacity}ч — жми: открыть задачи · разгрузка в «Команде»`,act:()=>{filter.assignee=m.id;setView('board');toast(`Доска: только задачи ${m.name}. Снять фильтр — «Все люди»`,'👤');}});});
   const rot=T.filter(t=>t.status!=='done'&&(t.status==='backlog'||t.status==='todo')&&(t.spent||0)===0&&t.createdTs&&(Date.now()-t.createdTs>10*dayMs));
   if(rot.length)out.push({ic:'🕸',title:`${rot.length} ${plural(rot.length,'задача застряла','задачи застряли','задач застряло')}`,sub:'больше 10 дней без движения — сделать, делегировать или удалить',act:()=>openTask(rot[0].id)});
   const chr=T.filter(t=>t.status!=='done'&&(t.shifts||0)>=3);
@@ -5011,7 +5046,7 @@ function renderBoard(){
         .filter(x=>x.n>3).sort((a,b)=>b.n-a.n)[0];
       if(over){const w=document.createElement('div');w.className='wiphint';
         w.textContent='🥵 '+over.m.name+' тянет '+over.n+' сразу — помоги закрыть или разгрузи';
-        w.title='Больше 3 задач «В работе» на человека — всё стоит. Жми: только его задачи';
+        w.title='Больше 3 задач «В работе» на человека — всё стоит. Жми: открыть эти задачи';
         w.onclick=()=>{filter.assignee=over.m.id;render();toast('Доска: только задачи '+over.m.name+'. Снять — «Все люди»','👤');};
         col.insertBefore(w,col.querySelector('.colb'));}}
     const bodyEl=col.querySelector('.colb');
@@ -5351,7 +5386,7 @@ function openMember(id){
     <div class="field"><label>Цвет метки</label><div class="colorrow" id="mColors">${COLORS.map(c=>`<span class="cdot ${m.color===c?'on':''}" data-c="${c}" style="background:${c}"></span>`).join('')}</div></div>`:''}
     <div class="field"><label>Задачи · ${all.length}</label>
       ${all.length?`<div class="mtasklist">${all.map(t=>`<div class="mtask" data-t="${t.id}"><span class="dot" style="background:${stMap[t.status].c}"></span><span class="tn">${prGlyph(t)}${t.isMilestone?'🔹 ':''}${esc(t.title)}</span>${t.estimate?`<span style="font-size:11px;color:var(--mut2)">${t.estimate}ч</span>`:''}</div>`).join('')}</div>
-        <button class="btn" id="mGoTasks" style="width:100%;margin-top:9px">Открыть его задачи на доске →</button>`
+        <button class="btn" id="mGoTasks" style="width:100%;margin-top:9px">Открыть задачи на доске →</button>`
        :'<div class="readonly-note">Пока нет задач. Назначь через карточку задачи или командную строку.</div>'}</div>
     ${!can?'<div class="readonly-note">🔒 Это профиль другого участника. Менять его имя/фото/настройки может только владелец пространства. Но <b>его задачи вы двигать можете</b> — откройте любую выше и меняйте сроки, статус или исполнителя.</div>':''}`;
   if(can){
