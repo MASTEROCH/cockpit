@@ -1074,13 +1074,18 @@ body.light .codebox{background:#0f1320}
 .df .dfmore.on{color:var(--txt);background:var(--bg2)}
 #dMoreBox{align-items:center}
 .pal-empty{padding:30px;text-align:center;color:var(--mut2);font-size:13.5px}
+.pal-tip{padding:12px 14px 4px;color:var(--mut2);font-size:12px;text-align:center;border-top:1px solid var(--line);margin-top:8px}
+.pal-tip b{color:var(--mut);font-weight:700}
 .pal-foot{display:flex;align-items:center;gap:17px;padding:10px 16px;border-top:1px solid var(--line);font-size:11px;color:var(--mut2)}
 .pal-foot kbd{font-size:10px;border:1px solid var(--line2);border-radius:4px;padding:1px 5px;background:var(--bg);margin-right:3px}
 .pal-foot-r{margin-left:auto;font-weight:800;letter-spacing:.3px;opacity:.55}
 body.light .pal{background:var(--sheen),rgba(255,255,255,.97)}
 
 /* live NLP chips под командной строкой */
-.cmd .cmdk{font-size:10px;color:var(--mut2);border:1px solid var(--line2);border-radius:5px;padding:2px 6px;background:var(--bg);cursor:pointer;transition:.14s;flex:0 0 auto}
+.cmd .cmdk{font-size:11px;font-weight:700;color:var(--acc2);border:1px solid rgba(167,139,250,.42);border-radius:9px;padding:5px 11px;background:rgba(167,139,250,.11);cursor:pointer;transition:.15s var(--ease);flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.cmd .cmdk:hover{background:rgba(167,139,250,.2);border-color:var(--acc2);transform:translateY(-1px);box-shadow:0 4px 14px rgba(167,139,250,.22)}
+.cmd .cmdk .kk{font-size:10px;font-weight:800;color:#fff;background:var(--acc2);border-radius:5px;padding:1px 5px;letter-spacing:.02em}
+.cmd .cmdk svg{width:13px;height:13px}
 .cmd .cmdk:hover{color:var(--acc2);border-color:var(--acc2)}
 .cmdchips{position:absolute;top:46px;left:0;right:0;z-index:41;display:none;align-items:center;gap:7px;flex-wrap:wrap;
   background:rgba(17,20,31,.97);backdrop-filter:blur(28px) saturate(1.5);-webkit-backdrop-filter:blur(28px) saturate(1.5);
@@ -1926,7 +1931,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
     <div class="cmd" id="cmdBox">
       <button class="mic" id="micBtn" data-icon="mic" title="Голосовой ввод"></button>
       <input id="cmd" placeholder="Напиши задачу или команду…  ⌘K — поиск" autocomplete="off" />
-      <kbd class="cmdk" id="cmdkBtn" title="Всё в одном месте: поиск, команды, переходы (⌘K)">Меню ⌘K</kbd>
+      <kbd class="cmdk" id="cmdkBtn" title="Всё в одном месте: поиск, команды, переходы (⌘K)" data-icon="search">Меню <span class="kk">⌘K</span></kbd>
       <kbd>↵</kbd>
     </div>
     <div class="cmdchips" id="cmdChips"></div>
@@ -7324,8 +7329,18 @@ function renderPalette(){
   const q=($('#palQ').value||'').trim();
   palFiltered=[];let html='';
   if(!q){
-    PAL_GROUPS.forEach(([h,f])=>{const items=palItems.filter(f);if(!items.length)return;
-      html+=`<div class="pal-h">${h}</div>`+items.map(it=>{const i=palFiltered.length;palFiltered.push(it);return palRowHTML(it,i);}).join('');});
+    /* Пустой экран палитры — НЕ стена команд. Курируем: с чего начать · разделы · частое.
+       Всё остальное (проекты, люди, задачи, редкие команды) — по вводу. «Глаза не разбегаются». */
+    const push=it=>{const i=palFiltered.length;palFiltered.push(it);return palRowHTML(it,i);};
+    const sect=(h,items)=>{if(!items.length)return;html+=`<div class="pal-h">${h}</div>`+items.map(push).join('');};
+    sect('С чего начать', palItems.filter(it=>it.grp==='cockpit'));
+    sect('Разделы', palItems.filter(it=>it.type==='Переход'));
+    // курированное «частое» — по названиям, порядок фиксированный, не весь список
+    const FAV=['Новая задача','История проекта','Бриф на сегодня','Спланируй','Что горит','Разбор рисков','Ссылка-снимок','Презентация · синк'];
+    const fav=FAV.map(n=>palItems.find(it=>it.title.toLowerCase().startsWith(n.toLowerCase())||it.title.toLowerCase().includes(n.toLowerCase()))).filter(Boolean)
+      .filter((it,i,a)=>a.indexOf(it)===i);
+    sect('Частые действия', fav);
+    html+=`<div class="pal-tip">Печатай — найду <b>задачи</b>, <b>людей</b>, <b>проекты</b> и все команды</div>`;
     $('#palIcon').innerHTML=icon('sparkles',17);
   }else{
     // фильтруем по ФАКТУ совпадения (palScore>0), а вес типа применяем лишь к порядку —
