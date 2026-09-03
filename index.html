@@ -6577,6 +6577,15 @@ function tmaBoot(){
   }catch(e){}};
   document.head.appendChild(sc);
 }
+// Zero-friction дверь: вошёл почтой внутри Mini App → тихо связываем Telegram,
+// чтобы в следующий раз ☰ WANDO логинил сам (без «Подключить Telegram»). Тихо, benign при ошибке.
+async function tmaAutoLink(){
+  const init=tmaInitData();if(!init||!sb||tgLinked)return;
+  try{const token=await aiToken();if(!token)return;
+    const r=await fetch(fnUrl()+'/tma-link',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+token,'apikey':CFG.anon},body:JSON.stringify({initData:init})});
+    const d=await r.json().catch(()=>({}));if(d&&d.ok){tgLinked=true;}
+  }catch(_){/* не критично — вход почтой уже прошёл */}
+}
 async function tmaLogin(){
   const init=tmaInitData();if(!init||!sb)return false;
   try{
@@ -6606,6 +6615,7 @@ async function cloudInit(){
   }catch(e){if(!cloudOn)showGate();}
 }
 async function onLoggedIn(){cloudOn=true;closeAuth();hideGate();updateCloudBadge();await cloudSync();subscribeRealtime();loadIntake();loadAccess();
+  if(tmaInitData())tmaAutoLink(); // вошёл почтой в Mini App → связываем Telegram на будущее
   // есть настоящие проекты в облаке → человек онбоожен ПО ОПРЕДЕЛЕНИЮ
   // (флаги localStorage теряются на новом девайсе/в TMA — не мучаем мастером)
   const hasReal=reg.list.filter(p=>!p.archived).some(p=>{const d=p.id===S.id?S:loadProj(p.id);
