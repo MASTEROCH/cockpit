@@ -2003,7 +2003,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
     </div>
   </div>
   <div class="toolbar hide" id="toolbar">
-    <div class="search"><span>🔍</span><input id="fq" placeholder="Поиск задач…" autocomplete="off"></div>
+    <div class="search"><span data-icon="search"></span><input id="fq" placeholder="Поиск задач…" autocomplete="off"></div>
     <select class="fsel" id="fAssignee"><option value="">Все люди</option></select>
     <button class="fchip" id="fMine">Моё</button>
     <button class="fchip" id="fOver">Просрочено</button>
@@ -4983,7 +4983,7 @@ function renderBoard(){
       const card=document.createElement('div');card.className='card'+(boardSel.has(t.id)?' selected':'');card.draggable=!boardSelOn;card.dataset.id=t.id;
       const ov=isOverdue(t);const blk=isBlocked(t);
       card.innerHTML=`<button class="cdel" title="Удалить задачу">${icon('x',13)}</button>
-        <div class="ct">${t.approval?'🤝 ':''}${t.cash?'💰 ':''}${t.isMilestone?'🔹 ':''}${t.repeat?'🔁 ':''}${blk?'🔒 ':''}${esc(t.title)}</div>
+        <div class="ct">${t.approval?icon('users',12)+' ':''}${t.cash?'💰 ':''}${t.isMilestone?'🔹 ':''}${t.repeat?icon('sync',12)+' ':''}${blk?icon('lock',12)+' ':''}${esc(t.title)}</div>
         <div class="cm">
           ${t.status!=='done'&&!t.isMilestone?`<button class="qdone cdone" title="Отметить готовым" style="--c:${stMap[t.status].c}"></button>`:''}
           ${prTag(t)}
