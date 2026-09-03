@@ -1937,6 +1937,21 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
   .histsheet{width:100%}
   .hr-restore{padding:8px 10px}
 }
+
+/* ===== ВЫБОР ПРОЕКТА (с какого начать) ===== */
+.picksheet{width:520px}
+.pick-h{display:flex;align-items:flex-start;gap:12px;padding:20px 22px 12px}
+.pick-h h2{margin:0;font-size:18px;font-weight:800;letter-spacing:-.01em}
+.pick-sub{display:block;color:var(--mut);font-size:12.5px;margin-top:4px;max-width:360px;line-height:1.45}
+.pick-list{display:flex;flex-direction:column;gap:8px;padding:6px 16px 18px}
+.pick-row{display:flex;align-items:center;gap:13px;padding:13px 14px;border-radius:14px;border:1px solid var(--line);background:var(--panel);cursor:pointer;transition:.15s var(--ease);text-align:left;color:var(--txt)}
+.pick-row:hover{border-color:var(--acc2);transform:translateY(-1px);box-shadow:0 8px 22px rgba(167,139,250,.16)}
+.pick-em{font-size:26px;flex:none;line-height:1}
+.pick-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.pick-n{font-size:15px;font-weight:700}
+.pick-meta{font-size:12px;color:var(--mut)}
+.pick-go{flex:none;color:var(--acc2);display:inline-flex}
+@media (max-width:680px){.picksheet{width:100%}}
 </style>
 </head>
 <body>
@@ -2202,6 +2217,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
 <div class="modal-scrim" id="hkScrim"><div class="modal hksheet" id="hkModal"></div></div>
 <div id="focusView" class="focusview" hidden><div id="focusBody" class="focusbody"></div></div>
 <div class="modal-scrim" id="histScrim"><div class="modal histsheet" id="histModal"></div></div>
+<div class="modal-scrim" id="pickScrim"><div class="modal picksheet" id="pickModal"></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -2401,6 +2417,19 @@ const ICONS={
  upload:'<path d="M12 14.5v-11M7.5 8 12 3.5 16.5 8M4.5 20.5h15"/>',
  alert:'<path d="M12 3.2 2.8 19.5h18.4z"/><path d="M12 9.8v4.4M12 17h.01"/>',
  gear:'<circle cx="12" cy="12" r="7.6"/><circle cx="12" cy="12" r="2.9"/><path d="M12 4.4V8M12 16v3.6M4.4 12H8M16 12h3.6M6.6 6.6l2.5 2.5M14.9 14.9l2.5 2.5M17.4 6.6l-2.5 2.5M9.1 14.9l-2.5 2.5"/>',
+ fire:'<path d="M12 3c.5 3 3.5 4.2 3.5 8a3.5 3.5 0 0 1-7 0c0-1.2.5-2 1-2.6.2 1.4 1 2 1.7 2 .8 0 1.3-.7 1.3-1.7C13.5 6.7 12 5.5 12 3z"/><path d="M12 3c.5 3 3.5 4.2 3.5 8A3.5 3.5 0 0 1 12 21a5.5 5.5 0 0 1-5.5-5.5c0-4 3-5.5 3.5-9 .8 1.8 2.4 2.6 3 4"/>',
+ target:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/>',
+ chart:'<path d="M4 20V11M9.3 20V5M14.6 20v-6M20 20V8"/><path d="M3 20.5h18"/>',
+ cloud:'<path d="M6.5 18a4 4 0 0 1-.3-8 5 5 0 0 1 9.6-1.4A3.8 3.8 0 0 1 18 18H6.5z"/>',
+ lock:'<rect x="4.8" y="10.5" width="14.4" height="9.5" rx="2.2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/>',
+ globe:'<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.8 2.6 2.8 14.4 0 17M12 3.5c-2.8 2.6-2.8 14.4 0 17"/>',
+ bot:'<rect x="4.8" y="8.5" width="14.4" height="10.4" rx="2.6"/><circle cx="9.3" cy="13.6" r="1.1" fill="currentColor" stroke="none"/><circle cx="14.7" cy="13.6" r="1.1" fill="currentColor" stroke="none"/><path d="M12 8.5V5.4M12 3.6a1.4 1.4 0 1 0 0 .1zM3.4 13v2.6M20.6 13v2.6"/>',
+ building:'<rect x="5.2" y="3.6" width="13.6" height="16.8" rx="1.4"/><path d="M9 7.4h2M13 7.4h2M9 11h2M13 11h2M9 14.6h2M13 14.6h2M9.5 20.4v-3h5v3"/>',
+ chat:'<path d="M4 5.5h16v10H9.5L5 19.5v-4H4z"/>',
+ folder:'<path d="M3.2 6.4a2 2 0 0 1 2-2h3.8l2 2h7.8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5.2a2 2 0 0 1-2-2z"/>',
+ star:'<path d="M12 3.6l2.5 5.3 5.5.7-4 3.9 1 5.6-5-2.8-5 2.8 1-5.6-4-3.9 5.5-.7z"/>',
+ rocket:'<path d="M12 3c3.5 1.6 5.5 5 5.5 9l-2.5 2.5h-6L6.5 12C6.5 8 8.5 4.6 12 3z"/><circle cx="12" cy="9.5" r="1.6"/><path d="M9 15c-2 .8-2.5 3-2.5 5 2 0 4.2-.5 5-2.5M15 15c2 .8 2.5 3 2.5 5-2 0-4.2-.5-5-2.5"/>',
+ flame:'<path d="M12 3s5 3.5 5 9a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5.3 1.6 1.2 2.3 2 2.3 1 0 1.5-1 1.2-2.3C11.8 6.5 12 4.5 12 3z"/>',
 };
 function icon(n,s){s=s||18;return `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]||''}</svg>`;}
 /* Анимированные SVG-иллюстрации для пустых состояний — двухцветные line-иконки
@@ -2417,6 +2446,11 @@ const AICONS={
  check:'<circle class="ai-f" cx="32" cy="32" r="18" stroke="var(--mut)"/><path class="ai-draw ai-acc" d="M23 33l6 6 12-14" stroke="var(--acc2)"/>'
 };
 function aico(n){return `<svg class="aico" viewBox="0 0 64 64" fill="none" stroke-width="2.6" stroke-linecap="round">${AICONS[n]||AICONS.check}</svg>`;}
+/* Карта эмодзи → line-иконка. Сохранённые эмодзи (activity, data) НЕ трогаем —
+   маппим только на РЕНДЕРЕ (тосты, лента, лейблы). Смысловые (💰 деньги, эмодзи
+   проектов) намеренно НЕ в карте — остаются как есть. */
+const EMAP={'✅':'check','✔':'check','✔️':'check','✓':'check','☑':'check','🌙':'moon','⚡':'zap','⚡️':'zap','🔔':'bell','🗑':'trash','🗑️':'trash','👤':'users','👥':'users','🧑':'users','📅':'cal','🗓':'cal','🗓️':'cal','⏱':'clock','⏱️':'clock','🕘':'clock','🕐':'clock','⏰':'clock','➕':'plus','＋':'plus','✎':'edit','✏':'edit','✏️':'edit','📝':'edit','🔍':'search','🔎':'search','💡':'idea','🧩':'idea','📋':'doc','📄':'doc','📃':'doc','🔒':'lock','🔐':'lock','🔓':'lock','🤖':'bot','🔥':'flame','🎯':'target','📊':'chart','📈':'chart','🌐':'globe','☁':'cloud','☁️':'cloud','🔄':'sync','🔁':'sync','🏢':'building','💬':'chat','🎙':'mic','🎙️':'mic','🎤':'mic','📥':'inbox','📤':'send','🔌':'plug','🏆':'trophy','⭐':'star','🌟':'star','✨':'sparkles','🪄':'sparkles','⚠':'alert','⚠️':'alert','☕':'coffee','📁':'folder','🗂':'folder','🗂️':'folder','🤝':'users','🎨':'edit','🧠':'sparkles','⬆':'upload','⬇':'download','🚀':'rocket','🔗':'plug','⚙':'gear','⚙️':'gear','🔋':'battery'};
+function emi(e,s){if(e==null)return '';const k=(''+e).trim();const n=EMAP[k];return n?icon(n,s||15):e;}
 const LOGO_PATHS='<path transform="translate(-239 -299)" d="M590.549 318.732C592.945 318.453 596.745 318.696 599.286 318.696C634.434 318.703 667.897 316.824 700.032 333.775C783.727 377.923 786.207 488.78 731.835 556.811C700.794 595.65 657.566 620.752 607.3 623.356C576.646 624.841 542.765 617.244 517.207 638.881C505.403 648.755 500.588 660.76 494.308 674.336C488.985 685.844 483.927 697.868 478.034 709.061C447.129 709.003 414.041 709.686 383.322 708.993C390.272 692.78 399.544 674.533 407.172 658.357C414.402 641.263 425.054 620.531 433.24 603.375L468.064 529.888C478.844 507.375 489.815 485.216 500.033 462.397C508.607 461.72 522.007 461.939 530.747 461.916C551.732 461.88 572.716 462.073 593.696 462.496C589.717 468.96 584.172 482.027 580.797 489.352C574.315 503.42 567.316 518.312 561.52 532.628C562.821 532.707 564.123 532.765 565.426 532.803C574.929 533.092 584.848 532.969 594.379 533.027C601.077 532.791 608.447 533.526 615.073 532.731C648.617 528.704 677.207 498.097 677.706 464.145C678.091 437.865 664.532 415.164 637.935 409.832C622.705 406.779 607.684 407.916 592.303 407.965C569.853 408.116 547.402 408.135 524.952 408.02C539.76 379.17 553.156 348.033 567.408 318.783C575.059 318.869 582.922 319.055 590.549 318.732Z"/><path transform="translate(-239 -299)" d="M436.648 318.711C438.535 318.361 446.366 318.402 448.541 318.408L474.9 318.684C498.905 318.824 523.676 318.103 547.68 318.994C534.009 349.063 519.82 378.173 505.694 407.974L452.824 407.966C437.639 407.999 418.311 406.719 404.007 410.92C374.633 419.548 349.545 452.473 349.489 483.221C349.376 496.888 354.815 510.016 364.561 519.599C378.937 533.945 398.3 532.85 417.331 532.946L446.601 533.036C439.517 549.455 431.978 565.674 423.991 581.673C417.562 595.433 410.688 609.303 404.066 623C374.725 623.045 349.066 625.26 321.887 611.554C233.151 566.808 241.2 449.578 300.225 384.017C338.665 341.322 379.901 322.449 436.648 318.711Z"/>';
 let _lgid=0;
 /* Настоящая марка WANDO v2 (лента-градиент с пином) — официальный PNG→webp,
@@ -2431,7 +2465,7 @@ function logoSVG(s,fill){return logoMarkSVG(s,(fill&&fill!=='grad')?fill:null);}
 function faviconURI(){const svg=`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#12151F"/><image x="10" y="26" width="80" height="48" xlink:href="${LOGO_COLOR}"/></svg>`;return 'data:image/svg+xml,'+encodeURIComponent(svg);}
 function setFavicon(){try{let l=document.querySelector('link[rel="icon"]');if(!l){l=document.createElement('link');l.rel='icon';document.head.appendChild(l);}l.type='image/svg+xml';l.href=faviconURI();}catch(e){}}
 function toast(msg,ic='✓',actLabel,actFn){const t=$('#toast');
-  t.innerHTML=`<span class="ic">${ic}</span>${esc(msg)}`+(actLabel?`<button class="tact">${esc(actLabel)}</button>`:'');
+  t.innerHTML=`<span class="ic">${emi(ic,16)}</span>${esc(msg)}`+(actLabel?`<button class="tact">${esc(actLabel)}</button>`:'');
   t.classList.add('show');clearTimeout(toast._);toast._=setTimeout(()=>t.classList.remove('show'),actLabel?5500:2400);
   if(actLabel){t.querySelector('.tact').onclick=()=>{t.classList.remove('show');actFn&&actFn();};}}
 function celebrate(x,y){
@@ -3177,6 +3211,7 @@ function closeHotkeys(){$('#hkScrim').classList.remove('show');}
 $('#hkScrim').onclick=e=>{if(e.target===$('#hkScrim'))closeHotkeys();};
 $('#lpScrim').onclick=e=>{if(e.target===$('#lpScrim'))closeLP();};
 $('#histScrim').onclick=e=>{if(e.target===$('#histScrim'))closeHistory();};
+$('#pickScrim').onclick=e=>{if(e.target===$('#pickScrim'))closePick();};
 function attachSwipe(el,taskId,pid){
   let sx=0,sy=0,dx=0,swiping=false,lpT=null,lpFired=false;
   el.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;dx=0;swiping=false;lpFired=false;
@@ -3481,7 +3516,7 @@ function whatsNewStrip(){
   const top=acts.slice(0,3);
   return `<div class="whatsnew"><span class="wi">👀</span><div class="wb">
     <div class="wt">Было без тебя<button class="wmore" id="wnMore">всё в инбоксе →</button></div>
-    <div class="wl">${top.map(a=>`<span class="wln">${a.icon||'•'} <b>${esc(a.who||'партнёр')}</b> ${esc(a.text||'')} <span style="color:var(--mut2)">· ${relTime(a.ts)}</span></span>`).join('')}${acts.length>3?`<span class="wln" style="color:var(--mut2)">…и ещё ${acts.length-3}</span>`:''}</div>
+    <div class="wl">${top.map(a=>`<span class="wln">${emi(a.icon,14)||'•'} <b>${esc(a.who||'партнёр')}</b> ${esc(a.text||'')} <span style="color:var(--mut2)">· ${relTime(a.ts)}</span></span>`).join('')}${acts.length>3?`<span class="wln" style="color:var(--mut2)">…и ещё ${acts.length-3}</span>`:''}</div>
   </div></div>`;
 }
 
@@ -4071,7 +4106,7 @@ function renderPortfolio(){
          <div class="ppct">${p}%</div></div>`;}).join('')}</div>
    </div>
    <div class="panel-c" style="margin-top:16px"><h3>🕑 История компании <span class="c">${allAct.length}</span></h3>
-     <div class="actfeed">${allAct.length?allAct.slice(0,50).map(a=>`<div class="actrow"><span class="ai">${a.icon}</span><span class="atx"><b>${esc(a.who)}</b> ${esc(a.text)} <span class="pbadge" style="margin-left:5px;vertical-align:middle">${a.emoji||'📄'} ${esc(a.pname)}</span></span><span class="att">${relTime(a.ts)}</span></div>`).join(''):'<div class="emptymini">История появится по мере работы команды</div>'}</div></div>`;
+     <div class="actfeed">${allAct.length?allAct.slice(0,50).map(a=>`<div class="actrow"><span class="ai">${emi(a.icon,15)}</span><span class="atx"><b>${esc(a.who)}</b> ${esc(a.text)} <span class="pbadge" style="margin-left:5px;vertical-align:middle">${a.emoji||'📄'} ${esc(a.pname)}</span></span><span class="att">${relTime(a.ts)}</span></div>`).join(''):'<div class="emptymini">История появится по мере работы команды</div>'}</div></div>`;
   {const br=$('#btnRep');if(br)br.onclick=openEmpireRep;}
   $$('#portfolio [data-health]').forEach(el=>el.onclick=e=>{e.stopPropagation();cycleHealth(el.dataset.health);});
   $$('#portfolio .prow').forEach(e=>e.onclick=()=>{const id=e.dataset.open;if(id===S.id)setView('board');else switchProject(id);});
@@ -4534,7 +4569,7 @@ function renderBrief(){
      ${b.onMe.length?`<div class="airh">⏳ Висит на тебе — ${b.onMe.length}</div>${b.onMe.map(trow).join('')}`:''}
      ${b.today.length?`<div class="airh">🔥 Сегодня / просрочено — ${b.today.length}</div>${b.today.map(trow).join('')}`:''}
      ${b.iWait.length?`<div class="airh">🤝 Ждёшь от партнёра — ${b.iWait.length}</div>${b.iWait.map(x=>`<div class="trow" data-pid="${x.pid}" data-tid="${x.t.id}"><span class="dot" style="background:${stMap[x.t.status].c}"></span><span class="tn">${esc(x.t.title)}</span><span class="pbadge">от ${esc(x.who||'?')}</span></div>`).join('')}`:''}
-     ${b.partner.length?`<div class="airh">🔔 Что сделал партнёр — ${b.partner.length}</div><div class="actfeed" style="max-height:220px">${b.partner.slice(0,15).map(a=>`<div class="actrow"><span class="ai">${a.icon}</span><span class="atx"><b>${esc(a.who)}</b> ${esc(a.text)} <span class="pbadge">${a.emoji||'📄'} ${esc(a.pname)}</span></span><span class="att">${relTime(a.ts)}</span></div>`).join('')}</div>`:''}
+     ${b.partner.length?`<div class="airh">🔔 Что сделал партнёр — ${b.partner.length}</div><div class="actfeed" style="max-height:220px">${b.partner.slice(0,15).map(a=>`<div class="actrow"><span class="ai">${emi(a.icon,15)}</span><span class="atx"><b>${esc(a.who)}</b> ${esc(a.text)} <span class="pbadge">${a.emoji||'📄'} ${esc(a.pname)}</span></span><span class="att">${relTime(a.ts)}</span></div>`).join('')}</div>`:''}
      ${empty?'<div class="emptymini" style="margin-top:14px">Чисто — ничего срочного. Можно спокойно планировать день 👌</div>':''}
      <div id="briefClaude" style="margin-top:6px"></div>
    </div>
@@ -5895,7 +5930,8 @@ document.addEventListener('keydown',e=>{
     if($('#focusView')&&!$('#focusView').hidden)return collapseFocus();
     if($('#present').classList.contains('show'))return closePresent();
     if($('#palScrim').classList.contains('show'))return closePalette();
-    if($('#histScrim').classList.contains('show'))closeHistory();
+    if($('#pickScrim').classList.contains('show'))closePick();
+    else if($('#histScrim').classList.contains('show'))closeHistory();
     else if($('#hkScrim').classList.contains('show'))closeHotkeys();
     else if($('#lpScrim').classList.contains('show'))closeLP();
     else if($('#repScrim').classList.contains('show'))closeEmpireRep();
@@ -6153,7 +6189,7 @@ function runCmd(raw){
 /* ============================ ONBOARDING + DEMO ============================ */
 let bannerDismissed=false;
 $('#bannerHide').onclick=()=>{bannerDismissed=true;$('#banner').classList.add('hide');};
-$('#bannerFresh').onclick=()=>{if(confirm('Удалить демо-проект и начать по-настоящему?'))exitDemo();};
+$('#bannerFresh').onclick=()=>startReal();
 $('#btnHelp').onclick=()=>openOnboarding(0);
 {const u=$('#btnUndo');if(u)u.onclick=()=>undo();const r=$('#btnRedo');if(r)r.onclick=()=>redo();const h=$('#btnHist');if(h)h.onclick=()=>openHistory();}
 function applyTheme(){const t=localStorage.getItem('cockpit_theme')||'dark';document.body.classList.toggle('light',t==='light');const b=$('#btnTheme');if(b)b.innerHTML=t==='light'?icon('moon'):icon('sun');}
@@ -6255,6 +6291,44 @@ function exitDemo(){
     collapsed={};filter={q:'',assignee:'',mine:false,overdue:false};render();toast('Демо удалено — работаем по-настоящему 🚀','🗑');}
   else{freshPlaceholder();render();setView('now');_wizReplace=S.id;openSetupWizard();}
 }
+/* «Начать по-настоящему»: не всегда чистый лист.
+   Добавлен в проект(ы) — веди туда (1 → сразу, много → выбор); никуда — чистый лист. */
+function realProjectsMine(){const demoId=S.demo?S.id:null;
+  return reg.list.filter(p=>!p.archived&&p.id!==demoId).map(p=>{const d=p.id===S.id?S:loadProj(p.id);return d?{p,d}:null;})
+    .filter(Boolean).filter(x=>!x.d.demo&&myMemberIn(x.d));}
+function startReal(){
+  const mine=realProjectsMine();
+  if(!mine.length){ if(confirm('Удалить демо и начать с чистого листа?'))exitDemo();return;}
+  if(mine.length===1){goRealProject(mine[0].p.id,mine[0].d.projectName);return;}
+  openProjectChooser(mine);
+}
+function dropDemo(){const id=S.demo?S.id:null;if(!id)return;
+  localStorage.removeItem(pkey(id));localStorage.removeItem('cockpit_seen_'+id);if(cloudOn)cloudDelete(id);
+  reg.list=reg.list.filter(p=>p.id!==id);if(reg.active===id)reg.active=(reg.list[0]||{}).id;saveReg();}
+function goRealProject(pid,name){
+  bannerDismissed=true;$('#banner').classList.add('hide');closePick();
+  dropDemo();
+  const d=loadProj(pid);if(!d){render();return;}
+  S=migrate(d);reg.active=pid;saveReg();resetUndo();collapsed={};filter={q:'',assignee:'',mine:false,overdue:false,quick:false};
+  render();setView('now');toast('Твой проект: '+(name||S.projectName||'проект'),'🚀');
+}
+function openProjectChooser(list){
+  const box=$('#pickModal');if(!box)return;
+  const rows=list.map(x=>{
+    const d=x.d;const tot=(d.tasks||[]).filter(t=>!t.isMilestone).length;const done=(d.tasks||[]).filter(t=>t.status==='done').length;
+    return `<button class="pick-row" data-pid="${x.p.id}"><span class="pick-em">${d.emoji||x.p.emoji||'📄'}</span>`
+      +`<span class="pick-main"><span class="pick-n">${esc(d.projectName||x.p.name||'Проект')}</span>`
+      +`<span class="pick-meta">${tot} ${plural(tot,'задача','задачи','задач')}${tot?' · '+done+' готово':''} · ${(d.members||[]).length} в команде</span></span>`
+      +`<span class="pick-go">${icon('play',15)}</span></button>`;
+  }).join('');
+  box.innerHTML=`<div class="pick-h"><div><h2>С какого проекта начать?</h2>`
+    +`<span class="pick-sub">Ты добавлен в ${list.length} ${plural(list.length,'проект','проекта','проектов')} — выбери, где работать сейчас</span></div>`
+    +`<button class="hist-x" id="pickX" title="Закрыть">✕</button></div><div class="pick-list">${rows}</div>`;
+  $('#pickScrim').classList.add('show');
+  $('#pickX').onclick=closePick;
+  $$('#pickModal .pick-row').forEach(b=>b.onclick=()=>{const x=list.find(y=>y.p.id===b.dataset.pid);goRealProject(b.dataset.pid,x&&x.d.projectName);});
+}
+function closePick(){$('#pickScrim').classList.remove('show');}
 
 /* ============================ SETUP WIZARD (первый запуск: проект → партнёр → Claude) ============================ */
 let wizStep=0, wizData={projName:'',tpl:'mvp',invites:[]};
