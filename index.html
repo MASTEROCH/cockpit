@@ -4809,9 +4809,14 @@ async function syncMemberToTeam(email,name){
 }
 async function removeTeamMember(email){
   if(email===myEmail){toast('Себя убрать нельзя 🙂','⚠');return;}
-  if(!confirm('Убрать '+email+' из команды? Он потеряет доступ ко ВСЕМ проектам.'))return;
-  await sb.from('team').delete().eq('email',email);
-  toast('Убран из команды','🗑');loadAccess();
+  if(!confirm('Отозвать доступ у '+email+'?\n\nОн потеряет доступ ко ВСЕМ проектам, Telegram-связка отзовётся, и ему придёт уведомление, что доступ обновлён владельцем.'))return;
+  const token=await aiToken();if(!token){toast('Нужен вход','⚠');return;}
+  try{const r=await fetch(fnUrl()+'/revoke-access',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+token,'apikey':CFG.anon},body:JSON.stringify({email})});
+    const d=await r.json().catch(()=>({}));
+    if(r.status===403){toast('Убрать можно только строго ниже себя по доступу','⚠');return;}
+    if(!r.ok||!d.ok){toast('Не удалось: '+(d.error||('HTTP '+r.status)),'⚠');return;}
+    toast('Доступ отозван'+(d.notified?' · уведомлён в Telegram':''),'🔒');loadAccess();
+  }catch(e){toast('Ошибка: '+(e.message||e),'⚠');}
 }
 async function grantAccess(email,role){
   email=(email||'').trim().toLowerCase();
@@ -4853,7 +4858,7 @@ function renderAccessPanel(){
       const tRank=({owner:3,full:3,admin:2,member:1})[t.role]||3;const canEdit=myRank>tRank; // строго выше — иерархия
       return `<div class="accrow"><span class="ae">${esc(t.email)}</span><span class="an">${esc(t.name||'')}${me?' (вы)':''}</span>
       <select class="fsel" data-trole="${esc(t.email)}" ${canEdit?'':'disabled'} title="${canEdit?'Роль решает, что человек видит':'Менять роль может только тот, кто выше'}"><option value="owner" ${rr==='owner'?'selected':''}>👑 Владелец</option><option value="admin" ${rr==='admin'?'selected':''}>Админ</option><option value="member" ${rr==='member'?'selected':''}>Участник</option></select>
-      ${!me&&canEdit?`<span class="ax" data-rmteam="${esc(t.email)}" title="Убрать из команды">✕</span>`:''}</div>`;}).join('')}
+      ${!me&&canEdit?`<span class="ax" data-rmteam="${esc(t.email)}" title="Отозвать доступ и уведомить в Telegram">✕</span>`:''}</div>`;}).join('')}
     <div class="accadd"><input class="inp" id="accTeamEmail" type="email" placeholder="email нового члена команды">
       <input class="inp" id="accTeamName" placeholder="Имя" style="max-width:130px">
       <button class="btn primary" id="accTeamAdd">＋ В команду</button></div>`:''}
