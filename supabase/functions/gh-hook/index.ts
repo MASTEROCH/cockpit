@@ -7,19 +7,25 @@
 // Подключение (один раз, на каждый нужный репозиторий):
 //   GitHub → repo → Settings → Webhooks → Add webhook
 //   Payload URL: https://tonmsmxzmycimybzywqp.supabase.co/functions/v1/gh-hook
-//   Content type: application/json · Secret: значение GH_WEBHOOK_SECRET
+//   Content type: application/json
+//   Secret: свой секрет проекта (Настройки → «Секрет вебхука») ИЛИ общий GH_WEBHOOK_SECRET
 //   Events: Just the push event
-// Секреты функции: GH_WEBHOOK_SECRET (придумай длинную строку, та же в GitHub).
+// Секреты функции: GH_WEBHOOK_SECRET — общий запасной ключ, когда у проекта нет своего.
 // ВАЖНО: «Verify JWT» — ВЫКЛ (подпись HMAC проверяем сами).
+//
+// МУЛЬТИТЕНАНТНОСТЬ. Привяжи репозиторий к проекту (Настройки → «Репозиторий GitHub»,
+// в виде owner/repo) — задачи будут искаться ТОЛЬКО в нём, а не по всей базе. Задай там же
+// «Секрет вебхука» — и общий ключ для этого репозитория перестанет действовать. Без
+// привязки работает прежний режим «искать везде»: он безопасен, пока в базе одна компания.
 // ============================================================================
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const sb = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
 const SECRET = Deno.env.get("GH_WEBHOOK_SECRET") ?? "";
 
-async function validSig(body: string, header: string | null): Promise<boolean> {
-  if (!SECRET || !header?.startsWith("sha256=")) return false;
-  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(SECRET), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+async function validSig(body: string, header: string | null, secret: string): Promise<boolean> {
+  if (!secret || !header?.startsWith("sha256=")) return false;
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(body));
   const hex = [...new Uint8Array(mac)].map((b) => b.toString(16).padStart(2, "0")).join("");
   const got = header.slice(7).toLowerCase();
@@ -37,38 +43,49 @@ Deno.serve(async (req) => {
   const clen = Number(req.headers.get("content-length") ?? "0");
   if (clen > 5_000_000) return new Response("payload too large", { status: 413 }); // защита от буферизации гигантского тела до проверки подписи
   const body = await req.text();
-  if (!(await validSig(body, req.headers.get("x-hub-signature-256")))) {
-    return new Response("bad signature", { status: 401 });
-  }
-  const event = req.headers.get("x-github-event") ?? "";
-  if (event === "ping") return new Response(JSON.stringify({ ok: true, pong: true }), { headers: { "content-type": "application/json" } });
-  if (event !== "push") return new Response("ok");
+  const sigHdr = req.headers.get("x-hub-signature-256");
 
+  // Тело разбираем ДО проверки подписи — но берём из него ровно одно: имя
+  // репозитория, чтобы выбрать, каким ключом проверять. Ничему в payload до
+  // проверки не верим, размер тела ограничен выше.
   let payload: Record<string, any>;
   try { payload = JSON.parse(body); } catch { return new Response("ok"); }
+  const repoFull = String(payload.repository?.full_name ?? "").trim().toLowerCase();
+
+  const { data: rows } = await sb.from("projects").select("id,data");
+  // Проект, к которому привязан репозиторий (data.repo = "owner/name").
+  const repoRow = repoFull
+    ? (rows ?? []).find((r) => String(r.data?.repo ?? "").trim().toLowerCase() === repoFull) ?? null
+    : null;
+
+  // Секрет проекта важнее общего. Общий секрет на всю базу означает, что при
+  // продаже второму клиенту его коммит «closes #A1B2C» может закрыть ЧУЖУЮ
+  // задачу с тем же коротким id. Как только у проекта задан свой секрет, общий
+  // для этого репозитория перестаёт действовать — иначе дыра остаётся открытой.
+  const perRepo = String(repoRow?.data?.repoSecret ?? "").trim();
+  if (!(await validSig(body, sigHdr, perRepo || SECRET))) {
+    return new Response("bad signature", { status: 401 });
+  }
+
+  const event = req.headers.get("x-github-event") ?? "";
+  if (event === "ping") return new Response(JSON.stringify({ ok: true, pong: true, bound: !!repoRow }), { headers: { "content-type": "application/json" } });
+  if (event !== "push") return new Response("ok");
+
   const commits = (payload.commits ?? []) as Record<string, any>[];
   if (!commits.length) return new Response("ok");
 
-  // короткий #ID из карточки → задача (по всем проектам; продукт одно-командный).
-  // ВНИМАНИЕ (multi-tenant): один общий секрет + карта по всей БД = при продаже
-  // разным клиентам нужен per-repo секрет и скоуп по workspace_id. Пока одно-командно — ок.
-  const { data: rows } = await sb.from("projects").select("id,data");
+  // Скоуп поиска задачи: если репозиторий привязан к проекту — только его задачи.
+  // Непривязанный репозиторий работает по-старому (совместимость), и это ровно тот
+  // режим, который небезопасен при нескольких компаниях в базе: привязка — лечение.
+  const scope = repoRow ? [repoRow] : (rows ?? []);
   // массив на короткий id — при коллизии не трогаем НИКОГО (иначе закрыли бы чужую задачу)
   const map = new Map<string, Array<{ row: Record<string, any>; t: Record<string, any> }>>();
-  for (const row of rows ?? []) {
+  for (const row of scope) {
     for (const t of (row.data?.tasks ?? []) as Record<string, any>[]) {
       const k = String(t.id).slice(1, 6).toUpperCase();
       (map.get(k) ?? map.set(k, []).get(k)!).push({ row, t });
     }
   }
-
-  // Проект, к которому привязан этот репозиторий (data.repo = "owner/name").
-  // Нужен, чтобы в журнал легли ВСЕ коммиты, а не только те, где назван #ID:
-  // иначе «что реально сделано» видно только по задачам, которые и так помнили.
-  const repoFull = String(payload.repository?.full_name ?? "").trim().toLowerCase();
-  const repoRow = repoFull
-    ? (rows ?? []).find((r) => String(r.data?.repo ?? "").trim().toLowerCase() === repoFull) ?? null
-    : null;
 
   const changed = new Set<Record<string, any>>();
   let closed = 0, mentioned = 0, logged = 0;

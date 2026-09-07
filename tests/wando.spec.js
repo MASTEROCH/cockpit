@@ -12,6 +12,13 @@ const BOOT = `localStorage.clear();S=migrate(seed());S.demo=false;
   me=(S.members[0]||{}).id;localStorage.setItem('cockpit_me',me);myEmail='romi4rv23@gmail.com';cloudOn=true;isTeam=true;
   hideGate();showGate=function(){};render();`;
 
+// Мобильный «Сегодня» — отдельная вёрстка (MOBILE_REDESIGN.md): .mhero вместо .now-hero.
+// Один и тот же смысл проверяем в обеих, а не дублируем тест.
+const M = w => w <= 680;
+const HERO = w => (M(w) ? '.mhero' : '.now-hero');
+const H_TITLE = w => (M(w) ? '.mhero .mh-title' : '.now-hero .nh-title');
+const H_LABEL = w => (M(w) ? '.mhero .mh-label' : '.now-hero .nh-label');
+
 async function boot(page, extra = '') {
   await page.goto(FILE);
   await page.evaluate(c => { (0, eval)(c); }, BOOT + extra);
@@ -43,9 +50,9 @@ test.describe('Персона A · новичок', () => {
     expect(act.icon).toBe('✅');
   });
 
-  test('все задачи закрыты → «красавчик», без повторного наставника', async ({ page }) => {
+  test('все задачи закрыты → «красавчик», без повторного наставника', async ({ page, viewport }) => {
     await boot(page, `S.tasks.forEach(t=>{t.status='done'});setView('now');`);
-    await expect(page.locator('.now-hero .nh-title')).toContainText('красавчик');
+    await expect(page.locator(H_TITLE(viewport.width))).toContainText('красавчик');
     await expect(page.locator('#npPlan')).toHaveCount(0);
   });
 });
@@ -63,23 +70,24 @@ test.describe('Персона B · день PM', () => {
     await expect(page.locator('#repScrim')).toHaveClass(/show/);
   });
 
-  test('фокус-таймер показывает накопленный итог на кнопке', async ({ page }) => {
+  test('фокус-таймер показывает накопленный итог на кнопке', async ({ page, viewport }) => {
     await boot(page, `S.tasks.forEach(t=>{t.status='todo';t.assigneeId=me;t.end=todayISO();t.estimate=1;t.priority='med';});
       setView('now');const hero=document.querySelector('[data-done]');task(hero.dataset.done).spent=2.3;render();`);
-    await expect(page.locator('#focusStart')).toContainText('уже 2.3ч');
+    // мобильная кнопка короче: «▶ Фокус · 2.3ч» против «Фокус · уже 2.3ч»
+    await expect(page.locator('#focusStart')).toContainText(M(viewport.width) ? '2.3ч' : 'уже 2.3ч');
   });
 });
 
 test.describe('Персона C · империя', () => {
-  test('герой берётся из чужого проекта с меткой «вся империя»', async ({ page }) => {
+  test('герой берётся из чужого проекта с меткой «вся империя»', async ({ page, viewport }) => {
     await boot(page, `
       localStorage.setItem(pkey('p2'),JSON.stringify({id:'p2',projectName:'ROCH Audit',emoji:'🎯',
         tasks:[{id:'t1',title:'Горящий оффер',sectionId:'s1',assigneeId:'m1',start:todayISO(),end:fmtD(parseD(todayISO())-3*dayMs),status:'todo',estimate:2,spent:0,priority:'urgent',cash:true,comments:[],deps:[],isMilestone:false}],
         members:[{id:'m1',name:'Roch',email:'romi4rv23@gmail.com'}],sections:[{id:'s1',name:'x'}],ideas:[]}));
       reg.list.push({id:'p2',name:'ROCH Audit',emoji:'🎯'});
       S.tasks.forEach(t=>{t.assigneeId=null;});setView('now');`);
-    await expect(page.locator('.now-hero .nh-label')).toContainText('все проекты');
-    await expect(page.locator('.now-hero .nh-title')).toContainText('Горящий оффер');
+    await expect(page.locator(H_LABEL(viewport.width))).toContainText('все проекты');
+    await expect(page.locator(H_TITLE(viewport.width))).toContainText('Горящий оффер');
   });
 
   test('⌘K находит задачу по слову из коммента', async ({ page }) => {
@@ -99,18 +107,17 @@ test.describe('Мобайл', () => {
     await expect(page.locator('#mseg button', { hasText: '‹ Проекты' })).toBeVisible();
   });
 
-  test('long-press на задаче открывает лист действий', async ({ page }) => {
-    await boot(page, `S.tasks.forEach(t=>{t.status='todo';t.assigneeId=me;t.end=todayISO();});setView('now');`);
-    const row = page.locator('#now .mrow').first();
-    const box = await row.boundingBox();
-    await page.touchscreen.tap(box.x + 10, box.y + 10).catch(() => {});
-    await page.evaluate(() => { // тап-эмуляция long-press: touchstart без движения 500мс
-      const el = document.querySelector('#now .mrow');
+  // long-press живёт на карточке ДОСКИ; «Сегодня» по спеке редизайна работает свайпом
+  test('long-press на карточке доски открывает лист действий', async ({ page }) => {
+    await boot(page, `S.tasks.forEach(t=>{t.status='todo';t.assigneeId=me;t.end=todayISO();});setView('board');`);
+    await page.evaluate(() => { // эмуляция long-press: touchstart без движения 420мс
+      const el = document.querySelector('#board .card[data-id]');
       const ev = new Event('touchstart'); ev.touches = [{ clientX: 100, clientY: 100 }];
       el.dispatchEvent(ev);
     });
     await page.waitForTimeout(600);
     await expect(page.locator('#lpScrim')).toHaveClass(/show/);
-    await expect(page.locator('#lpModal [data-lp="done"]')).toBeVisible();
+    // «Готово» в листе — чип смены статуса, а не отдельное действие
+    await expect(page.locator('#lpModal [data-lpmove="done"]')).toBeVisible();
   });
 });

@@ -13,17 +13,37 @@ async function allowed(email: string): Promise<boolean> {
     return !!data;
   } catch { return ALLOW.includes(email); }
 }
-// Ф5: ИИ — только оплаченным планам (main/founder_forever всегда ок)
+// Ф5: ИИ — только оплаченным планам (main/founder_forever всегда ок).
+// ПОКА биллинг не включён (BILLING_ENFORCED не задан) сбой инфраструктуры не запирает
+// продукт: у команды из двух человек цена ложного отказа выше цены ложного доступа.
+// ПОСЛЕ включения подписки — наоборот: неизвестность = «нет доступа», иначе любая
+// ошибка БД раздаёт платную функцию бесплатно и без потолка токенов.
+// Переключается ОДНОЙ переменной окружения функции, без правки кода.
+const BILLING_ENFORCED = /^(1|true|yes|on)$/i.test(Deno.env.get("BILLING_ENFORCED") ?? "");
+// «таблицы ещё нет» — единственная ошибка, которую и после запуска трактуем мягко:
+// это состояние недоразвёрнутой схемы, а не отказ проверки.
+const MISSING_TABLE = new Set(["42P01", "PGRST205", "PGRST202"]);
+const isMissingTable = (e: unknown) => MISSING_TABLE.has(String((e as { code?: string } | null)?.code ?? ""));
+const softAllow = (where: string, e: unknown): boolean => {
+  console.error("billing-gate", where, e);
+  return !BILLING_ENFORCED;
+};
 async function planOk(email: string): Promise<boolean> {
   try {
-    const { data: t } = await sbs.from("team").select("workspace_id").ilike("email", email).maybeSingle();
+    const { data: t, error: te } = await sbs.from("team").select("workspace_id").ilike("email", email).maybeSingle();
+    if (te) return isMissingTable(te) ? !BILLING_ENFORCED : softAllow("team", te);
     const ws = t?.workspace_id ?? "main";
-    const { data: w } = await sbs.from("workspaces").select("plan,stars_until").eq("id", ws).maybeSingle();
-    if (!w) return true; // таблицы нет (до Ф1) — не ломаем
-    if (w.plan === "founder_forever" || w.plan === "team") return true;
-    if (w.plan === "founder") return !w.stars_until || new Date(w.stars_until).getTime() > Date.now();
+    const { data: w, error: we } = await sbs.from("workspaces").select("plan,stars_until").eq("id", ws).maybeSingle();
+    if (we) return isMissingTable(we) ? !BILLING_ENFORCED : softAllow("workspaces", we);
+    if (!w) return !BILLING_ENFORCED; // записи о подписке нет — до запуска пускаем, после нет
+    if (w.plan === "founder_forever") return true; // команда Роча — вне биллинга навсегда
+    // team стал ПЛАТНЫМ тарифом с местами: срок обязателен, иначе одна оплата
+    // открывала бы доступ бессрочно
+    if (w.plan === "founder" || w.plan === "team") {
+      return !!w.stars_until && new Date(w.stars_until).getTime() > Date.now();
+    }
     return false; // solo: ИИ в тарифе Founder
-  } catch { return true; }
+  } catch (e) { return softAllow("planOk", e); }
 }
 // ---- Ф5: лимиты ИИ — токены не выжигаются бездумно ----
 const AI_DAY_LIMIT = 40;      // вызовов Вандо на человека в день
@@ -43,9 +63,16 @@ async function aiQuota(email: string): Promise<string | null> {
       const total = (rows ?? []).reduce((a: number, r: Record<string, number>) => a + (r.calls ?? 0), 0);
       if (total >= AI_WS_DAY_LIMIT) return `Команда исчерпала дневной лимит Вандо (${AI_WS_DAY_LIMIT}). Завтра снова в бою.`;
     }
+    // ГОНКА: read-modify-write теряет инкременты при параллельных вызовах — лимит
+    // протекает. Чинится атомарной SQL-функцией (ai_usage_bump), а это миграция:
+    // включать её отдельно и осознанно, вместе с BILLING_ENFORCED.
     await sbs.from("ai_usage").upsert({ email, day, calls: used + 1 });
     return null;
-  } catch { return null; } // таблицы нет — не ломаем ИИ
+  } catch (e) {
+    console.error("ai-quota", e);
+    // Под включённым биллингом несчитанный лимит — это открытый кран токенов.
+    return BILLING_ENFORCED ? "Не смог проверить лимит Вандо. Попробуй ещё раз через минуту." : null;
+  }
 }
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -147,12 +174,29 @@ serve(async (req) => {
 
     const body = await req.json();
     const { project, mode, goal, messages, context } = body;
-    if (mode !== "notify" && !(await planOk(email))) {
+    const FREE_MODES = mode === "notify" || mode === "billing";
+    if (!FREE_MODES && !(await planOk(email))) {
       return json({ error: "Вандо-ИИ доступен в тарифе Founder ⭐ — открой /plan у @wando_tasks_bot" }, 402);
     }
-    if (mode !== "notify") {
+    if (!FREE_MODES) {
       const q = await aiQuota(email);
       if (q) return json({ error: q }, 429);
+    }
+
+    // --- billing: что за тариф, сколько мест, сколько стоит продление ---
+    // Намеренно ДО гейта planOk: экран тарифа обязан открываться именно тому,
+    // у кого доступа нет, иначе платить некому и незачем.
+    if (mode === "billing") {
+      const { data: t } = await sbs.from("team").select("workspace_id").ilike("email", email).maybeSingle();
+      const ws = t?.workspace_id ?? "main";
+      const { data: w } = await sbs.from("workspaces").select("plan,stars_until").eq("id", ws).maybeSingle();
+      const { count } = await sbs.from("team").select("email", { count: "exact", head: true }).eq("workspace_id", ws);
+      const seats = Math.max(1, count ?? 1);
+      const plan = String(w?.plan ?? "solo");
+      const until = w?.stars_until ?? null;
+      const active = plan === "founder_forever" ||
+        ((plan === "founder" || plan === "team") && !!until && new Date(until).getTime() > Date.now());
+      return json({ plan, until, seats, active, enforced: BILLING_ENFORCED, provisioned: !!w });
     }
 
     // --- notify: пуш члену команды в TG о назначении/комменте (без Anthropic) ---

@@ -842,6 +842,22 @@ body.light .brand .logo{background:linear-gradient(157deg,#1b1d27,#08090d 72%)}
 .wpoff h4{margin:0 0 7px;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--mut2);font-weight:800}
 .wpoff .wpo{font-size:12.5px;color:var(--mut);line-height:1.5;padding:3px 0}
 .modal.wide{width:660px}
+/* Тариф — экран оплаты */
+a.btn,a.btn:hover,a.btn:visited{text-decoration:none;color:inherit}
+a.btn.primary,a.btn.primary:visited{color:#fff}
+.bh{font-size:23px;font-weight:800;line-height:1.25;letter-spacing:-.3px;margin:2px 0 16px}
+.bcard{background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:12px}
+.bnow{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--mut);margin-bottom:12px;flex-wrap:wrap}
+.bpill{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:3px 9px;border-radius:20px}
+.bline{display:flex;align-items:baseline;gap:10px;font-size:14.5px;line-height:1.6;color:var(--mut);padding:3px 0}
+.bline b{color:var(--txt);font-weight:700}
+.bmoney{color:var(--ok);font-weight:800;font-variant-numeric:tabular-nums}
+.btotal{display:flex;align-items:baseline;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:15px}
+.btotal .bsum{margin-left:auto;font-size:24px;font-weight:800;letter-spacing:-.5px}
+.bstars{font-size:12px;color:var(--mut2)}
+.btag{text-align:center;font-size:13.5px;line-height:1.6;color:var(--mut2);margin:16px 0 2px}
+.bwhat{display:flex;gap:9px;font-size:13px;color:var(--mut);line-height:1.5;padding:4px 0}
+.bwhat span:first-child{color:var(--ok);flex:0 0 auto}
 /* Код против плана */
 .dfk{display:flex;gap:9px;margin:14px 0 4px;flex-wrap:wrap}
 .dfk div{flex:1;min-width:96px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
@@ -2357,6 +2373,7 @@ html{font-optical-sizing:auto}
 <div class="modal-scrim" id="planScrim"><div class="modal" id="planModal"></div></div>
 <div class="modal-scrim" id="wplanScrim"><div class="modal wide" id="wplanModal"></div></div>
 <div class="modal-scrim" id="driftScrim"><div class="modal wide" id="driftModal"></div></div>
+<div class="modal-scrim" id="billScrim"><div class="modal" id="billModal"></div></div>
 <div class="modal-scrim" id="setScrim"><div class="modal" id="setModal"></div></div>
 <div class="modal-scrim" id="balScrim"><div class="modal" id="balModal"></div></div>
 <div class="present" id="present"></div>
@@ -2670,6 +2687,10 @@ function logoSVG(s,fill){return logoMarkSVG(s,(fill&&fill!=='grad')?fill:null);}
 function faviconURI(){const svg=`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#12151F"/><image x="10" y="26" width="80" height="48" xlink:href="${LOGO_COLOR}"/></svg>`;return 'data:image/svg+xml,'+encodeURIComponent(svg);}
 function setFavicon(){try{let l=document.querySelector('link[rel="icon"]');if(!l){l=document.createElement('link');l.rel='icon';document.head.appendChild(l);}l.type='image/svg+xml';l.href=faviconURI();}catch(e){}}
 function toast(msg,ic='✓',actLabel,actFn){const t=$('#toast');
+  /* Тост с действием — единственный шанс отменить сделанное. Подсказка без действия
+     не имеет права его затирать: на мобиле «Готово · Отменить» исчезал через 0.7с,
+     потому что сверху ложилась подсказка про long-press, и откат пропадал молча. */
+  if(!actLabel&&t.classList.contains('show')&&t.querySelector('.tact'))return;
   t.innerHTML=`<span class="ic">${emi(ic,16)}</span>${esc(msg)}`+(actLabel?`<button class="tact">${esc(actLabel)}</button>`:'');
   t.classList.add('show');clearTimeout(toast._);toast._=setTimeout(()=>t.classList.remove('show'),actLabel?5500:2400);
   if(actLabel){t.querySelector('.tact').onclick=()=>{t.classList.remove('show');actFn&&actFn();};}}
@@ -2816,11 +2837,27 @@ function nextStepAfter(excludeId){
   const x=pool[0];return {id:x.t.id,pid:x.pid,title:x.t.title,est:x.t.estimate};
 }
 const pKey=m=>((m.email||'').toLowerCase())||('n:'+(m.name||'').toLowerCase());
+/* Серия человека: сколько дней подряд он закрывал хотя бы одну задачу.
+   Считается из doneTs, а не из поля участника — экономика баллов вырезана,
+   и поле streak на участнике не заводилось: раньше здесь звалась удалённая
+   вместе с ней effStreak(), и personScores() падал с ReferenceError. */
+function dayKey(ts){const d=new Date(ts);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function streakOf(data,m){
+  const days={};
+  (data.tasks||[]).forEach(t=>{if(t.status!=='done'||t.assigneeId!==m.id)return;
+    const ts=t.doneTs||t.statusTs;if(ts)days[dayKey(ts)]=1;});
+  let cur=Date.now();
+  // сегодня ещё может быть пустым — серия жива до конца завтрашнего дня, дальше сгорает
+  if(!days[dayKey(cur)]){cur-=dayMs;if(!days[dayKey(cur)])return 0;}
+  let n=0;while(days[dayKey(cur)]){n++;cur-=dayMs;}
+  return n;
+}
 function personScores(){
   const map={};
   reg.list.filter(p=>!p.archived).forEach(p=>{const d=loadProj(p.id);if(!d)return;
     (d.members||[]).forEach(m=>{const k=pKey(m);if(!map[k])map[k]={name:m.name,email:m.email||'',color:m.color,photo:m.photo||'',points:0,streak:0};
-      map[k].points+=(m.points||0);map[k].streak=Math.max(map[k].streak,effStreak(m));if(m.photo&&!map[k].photo){map[k].photo=m.photo;}if(m.name&&map[k].name==='—')map[k].name=m.name;});});
+      map[k].points+=(m.points||0);map[k].streak=Math.max(map[k].streak,streakOf(d,m));if(m.photo&&!map[k].photo){map[k].photo=m.photo;}if(m.name&&map[k].name==='—')map[k].name=m.name;});});
   // склейка дублей-тёзок: в одном проекте участник с email, в другом — без (разные заполнения)
   {const byName={};Object.entries(map).forEach(([k,v])=>{const n=(v.name||'').toLowerCase().trim();if(n)(byName[n]=byName[n]||[]).push(k);});
    Object.values(byName).forEach(keys=>{if(keys.length<2)return;
@@ -3654,7 +3691,11 @@ function firstStepsCard(){
 }
 /* иерархия «Сейчас»: герой — один, помощник — один. Приоритет: просрочки > наставник > деньги.
    Остальные подсказки не пропадают — всплывут в следующие дни, когда актуальная закроется. */
-function assistCard(){return selfHealCard()||mentorCard()||cashPulse();}
+/* Деньги — не «подсказка», а причина, по которой трекер вообще открывают.
+   Раньше цепочка была ИЛИ: одна просроченная задача (то есть всегда) съедала слот,
+   и денежный сигнал не показывался в проде никогда. Теперь деньги идут первыми,
+   совет по гигиене плана остаётся под ними. */
+function assistCard(){return cashPulse()+(selfHealCard()||mentorCard());}
 function selfHealCard(){
   const ov=S.tasks.filter(isOverdue);if(!ov.length)return '';
   const names=ov.slice(0,3).map(t=>t.title).join(' · ');
@@ -4136,9 +4177,11 @@ function renderSettings(){
      <div class="set-item"><span>Цвет проекта «${esc(S.projectName)}»</span><button class="btn" id="setAccent">🎨 Выбрать</button></div>
      <div class="set-sec">Команда и Claude</div>
      <div class="set-item"><span>Вы в команде</span><select class="inp" id="setWho" style="width:auto;min-width:130px">${S.members.map(m=>`<option value="${m.id}" ${m.id===myId()?'selected':''}>${esc(m.name)}</option>`).join('')}</select></div>
+     <div class="set-item"><span>Тариф и оплата</span><button class="btn" id="setBill">⭐ Открыть</button></div>
      <div class="set-item"><span>Telegram-бот (голос, пуши, бриф)</span><button class="btn" id="setTg">${icon('send',14)} Подключить</button></div>
      <div class="set-item"><span>Подключить Claude (MCP)</span><button class="btn" id="setConnect">🔌 Открыть</button></div>
      <div class="set-item"><span>Репозиторий GitHub<br><span style="font-size:11px;color:var(--mut2)">коммиты сверяются с планом</span></span><input class="inp" id="setRepo" style="width:auto;min-width:165px" placeholder="owner/repo" value="${esc(S.repo||'')}"></div>
+     ${S.repo?`<div class="set-item"><span>Секрет вебхука<br><span style="font-size:11px;color:var(--mut2)">свой на этот репозиторий — чужой коммит не тронет твои задачи</span></span><input class="inp" id="setRepoSec" type="password" style="width:auto;min-width:165px" placeholder="свой секрет" value="${esc(S.repoSecret||'')}"></div>`:''}
      <div class="set-item"><span>Архив всех проектов (JSON)</span><button class="btn" id="setExport">📦 Выгрузить</button></div>
      <div class="set-item"><span>Фид для Google/Apple Calendar</span><button class="btn" id="setIcs">📅 Ссылка</button></div>
      <div class="set-item"><span>Выгрузка в Markdown</span><button class="btn" id="setMd">📝 Скачать</button></div>
@@ -4152,6 +4195,11 @@ function renderSettings(){
   $('#setPhoto').onclick=()=>settingsPhoto(me);
   const pd=$('#setPhotoDel');if(pd)pd.onclick=()=>{delete me.photo;save();render();renderSettings();};
   $$('#setColors .cdot').forEach(d=>d.onclick=()=>{me.color=d.dataset.c;save();render();renderSettings();});
+  {const sb2=$('#setBill');if(sb2)sb2.onclick=()=>{$('#setScrim').classList.remove('show');openBilling();};}
+  {const rs=$('#setRepoSec');if(rs)rs.onblur=()=>{const v=rs.value.trim();
+    if(v===(S.repoSecret||''))return;
+    if(v)S.repoSecret=v;else delete S.repoSecret;save();
+    toast(v?'Секрет сохранён — впиши его же в вебхук на GitHub':'Секрет снят — работает общий','🔐');};}
   {const rp=$('#setRepo');if(rp)rp.onblur=()=>{const v=repoNorm(rp.value);
     if(v===(S.repo||'')){rp.value=v;return;}
     if(v)S.repo=v;else delete S.repo;save();rp.value=v;
@@ -4252,8 +4300,9 @@ function normalizeAI(res){
 function renderAIError(msg){
   $('#aiModal').innerHTML=`<div class="ob-body" style="padding:30px 26px"><h2>${icon('sparkles',17)} AI-разбор</h2>
     <p style="color:var(--bad)">${esc(msg)}</p>
-    <p style="font-size:12.5px;margin-top:10px">Похоже, функция ещё не задеплоена или не задан ключ. Это настраивается один раз — см. инструкцию.</p></div>
-    <div class="ob-foot"><div class="spacer"></div><button class="btn primary" id="aiClose">Закрыть</button></div>`;
+    <p style="font-size:12.5px;margin-top:10px">${isPaywall(msg)?'Это тариф, а не поломка — Вандо открывается на Founder или Team.':'Похоже, функция ещё не задеплоена или не задан ключ. Это настраивается один раз — см. инструкцию.'}</p></div>
+    <div class="ob-foot"><div class="spacer"></div>${isPaywall(msg)?'<button class="btn" id="aiPlanOpen">Посмотреть тариф</button>':''}<button class="btn primary" id="aiClose">Закрыть</button></div>`;
+  {const b=$('#aiPlanOpen');if(b)b.onclick=()=>{$('#aiScrim').classList.remove('show');openBilling();};}
   $('#aiClose').onclick=()=>$('#aiScrim').classList.remove('show');
 }
 function aiSugHTML(s,i){
@@ -5146,7 +5195,9 @@ function renderDrift(){
          <li>Впиши репозиторий в Настройках — поле «Репозиторий GitHub», в виде <b>owner/repo</b>.</li>
          <li>В репозитории: Settings → Webhooks → Add webhook, событие <b>Just the push event</b>, Content type <b>application/json</b>.</li>
          <li>Payload URL:<div class="dfhook">${esc(GH_HOOK_URL)}</div></li>
-         <li>Secret — то же значение, что в секрете функции <b>GH_WEBHOOK_SECRET</b>.</li>
+         <li>Secret — придумай свой и впиши его же в Настройках, в поле «Секрет вебхука».
+           Пока поле пустое, действует общий <b>GH_WEBHOOK_SECRET</b> функции; свой секрет
+           надёжнее: с ним чужой коммит не сможет закрыть твою задачу.</li>
        </ol>
        <div style="font-size:12.5px;color:var(--mut2);margin-top:14px">Дальше ничего делать не нужно: «closes #A1B2C» в коммите закроет задачу, остальные коммиты просто лягут в журнал.</div>
      </div>
@@ -5253,6 +5304,75 @@ function pulseBlock(projs){
       <div class="pusc" style="color:${PU_BAND[r.p.band][0]}">${r.p.score}</div></div>`).join('')}
   </div>`;
 }
+
+
+/* ==================== ТАРИФ ====================
+   Цены продублированы в supabase/functions/tg-bot (const PRICE) — там считается
+   инвойс. Расхождение цены между приложением и ботом человек замечает мгновенно
+   и перестаёт доверять счёту: меняешь здесь — меняй и там. */
+const PRICE={soloStars:1900,baseUsd:49.99,seatUsd:9.99,includedSeats:5,starsPerUsd:100};
+const teamUsd=seats=>PRICE.baseUsd+Math.max(0,seats-PRICE.includedSeats)*PRICE.seatUsd;
+const toStars=usd=>Math.max(1,Math.round(usd*PRICE.starsPerUsd));
+let billState=null;
+function openBilling(){$('#billScrim').classList.add('show');renderBilling();loadBilling();}
+function closeBilling(){$('#billScrim').classList.remove('show');}
+$('#billScrim').onclick=e=>{if(e.target===$('#billScrim'))closeBilling();};
+async function loadBilling(){
+  if(!cloudOn||!sb){billState={offline:true};renderBilling();return;}
+  const token=await aiToken();if(!token){billState={offline:true};renderBilling();return;}
+  try{
+    const r=await fetch(CFG.url+'/functions/v1/ai-review',{method:'POST',
+      headers:{'content-type':'application/json',authorization:'Bearer '+token},
+      body:JSON.stringify({mode:'billing'})});
+    const res=await r.json();
+    billState=r.ok?res:{offline:true};
+  }catch(e){billState={offline:true};}
+  renderBilling();
+}
+function renderBilling(){
+  const m=$('#billModal'),b=billState;
+  const seats=b&&b.seats?b.seats:Math.max(1,(S.members||[]).length);
+  const extra=Math.max(0,seats-PRICE.includedSeats);
+  const usd=teamUsd(seats),solo=seats<2;
+  const total=solo?PRICE.soloStars/PRICE.starsPerUsd:usd;
+  const stars=solo?PRICE.soloStars:toStars(usd);
+  const PL={solo:['Solo','var(--mut2)'],founder:['Founder','var(--acc2)'],team:['Team','var(--ok)'],founder_forever:['Founder ∞','var(--ok)']};
+  const pl=PL[(b&&b.plan)||'solo']||PL.solo;
+  const until=b&&b.until?String(b.until).slice(0,10):null;
+  const forever=b&&b.plan==='founder_forever';
+  const now=!b?'<span style="color:var(--mut2)">смотрю тариф…</span>'
+    :b.offline?'<span style="color:var(--mut2)">без облака — тариф не виден</span>'
+    :`<span class="bpill" style="background:${pl[1]}22;color:${pl[1]}">${pl[0]}</span>
+       <span>${forever?'всё включено, навсегда':b.active&&until?('активен до '+until.slice(8)+'.'+until.slice(5,7)+'.'+until.slice(0,4)):'не оплачен'}</span>
+       <span style="margin-left:auto">${seats} ${plural(seats,'место','места','мест')} в команде</span>`;
+  m.innerHTML=`<div class="ob-body">
+     <div class="wpsrc">${icon('sparkles',12)} Тариф</div>
+     <div class="bh">Ты нанимаешь систему,<br>а не покупаешь трекер</div>
+     <div class="bnow">${now}</div>
+     ${forever?'':`<div class="bcard">
+       ${solo
+         ? `<div class="bline"><b>Founder</b> — одному, всё открыто</div>
+            <div class="bline"><span class="bmoney">${stars}⭐</span> в месяц <span class="bstars">≈ $${total.toFixed(0)}</span></div>
+            <div class="bline" style="font-size:12.5px;color:var(--mut2)">Появится второй человек — тариф сам станет Team, по местам.</div>`
+         : `<div class="bline"><span class="bmoney">$${PRICE.baseUsd}</span> в месяц за команду до ${PRICE.includedSeats} человек.</div>
+            ${extra?`<div class="bline">Плюс <span class="bmoney">$${PRICE.seatUsd}</span> за каждое дополнительное место — сейчас их ${extra}.</div>`
+                   :`<div class="bline" style="font-size:13px;color:var(--mut2)">Плюс $${PRICE.seatUsd} за каждое место сверх пяти — пока не нужно.</div>`}`}
+       <div class="btotal"><span>За 30 дней</span><span class="bsum bmoney">$${total.toFixed(2)}</span></div>
+       <div class="bstars" style="text-align:right">${stars}⭐ — оплата Telegram Stars</div>
+     </div>`}
+     <div class="bcard" style="background:none">
+       <div class="bwhat"><span>✓</span><span>Вандо-ИИ: умная неделя, разбор рисков, планирование цели</span></div>
+       <div class="bwhat"><span>✓</span><span>Пульс компании и отчёты по всем проектам</span></div>
+       <div class="bwhat"><span>✓</span><span>Наставник-планирование и проекты без лимита</span></div>
+     </div>
+     <div class="btag">Верни себе фокус.<br>Освободи мозг для бизнеса.</div>
+   </div>
+   <div class="ob-foot"><button class="btn" id="blClose">Закрыть</button><div class="spacer"></div>
+     ${forever?'':`<a class="btn primary" id="blPay" href="https://t.me/${TG_BOT}?start=plan" target="_blank" rel="noopener">Оплатить в Telegram</a>`}</div>`;
+  $('#blClose').onclick=closeBilling;
+}
+/* отказ по тарифу — не тупик: из него должен быть один шаг в оплату */
+function isPaywall(msg){return /тариф|Founder|\/plan|402/i.test(String(msg||''));}
 
 /* ============================ CLIENT REPORT (статус-сводка) ============================ */
 function fmtRu(iso){return iso.slice(8)+'.'+iso.slice(5,7);}
@@ -5544,8 +5664,14 @@ function renderBoardPeople(){renderBulkBar();
 }
 function boardSwipes(){if(window.innerWidth>680)return;
   $$('#board .card[data-id]').forEach(c=>attachLongPress(c,c.dataset.id));
-  if(!localStorage.getItem('cockpit_board_lp_tip')){localStorage.setItem('cockpit_board_lp_tip','1');
-    setTimeout(()=>{if(!document.querySelector('.scrim.show,#lpScrim.show,#drawer.show'))toast('Долго нажми задачу — перенести в другую колонку','👆');},700);}}
+  if(!localStorage.getItem('cockpit_board_lp_tip')){
+    // флаг ставим ТОЛЬКО когда подсказку реально показали — иначе подавленная
+    // подсказка сгорает молча и человек не узнает про long-press никогда
+    setTimeout(()=>{
+      if(document.querySelector('.scrim.show,#lpScrim.show,#drawer.show'))return;
+      const tt=$('#toast');if(tt&&tt.classList.contains('show'))return;
+      localStorage.setItem('cockpit_board_lp_tip','1');
+      toast('Долго нажми задачу — перенести в другую колонку','👆');},700);}}
 /* напомнить исполнителю в TG про срочную/просроченную задачу — один тап с карточки */
 function remindAssignee(id){const t=task(id);if(!t)return;const m=member(t.assigneeId);
   if(!m||m.id===myId())return;
@@ -8041,6 +8167,7 @@ function buildPaletteIndex(){
     ['cal','Умная неделя','Вандо разложит задачи всех проектов по дням','AI',()=>{setView('week');setTimeout(()=>runWeekPlan(),140);}],
     ['sync','Код против плана','коммиты против задач: что реально сделано','Планирование',()=>openDrift()],
     ['zap','Пульс компании','какой проект сейчас умирает','Планирование',()=>{setView('all');setTimeout(()=>{const el=$('#portfolio .puhead');if(el)el.scrollIntoView({block:'center',behavior:'smooth'});},180);}],
+    ['sparkles','Тариф и оплата','что открыто, сколько мест, сколько стоит','Настройки',()=>openBilling()],
     ['board','Сбросить порядок задач','вернуть авто-сортировку','Планирование',()=>{S.tasks.forEach(t=>{delete t.rank;});save();render();toast('Авто-сортировка ↕','↕');}],
     ['users','Разгрузить команду','выровнять загрузку','Команда',()=>openRebalance()],
     ['users','Аналитика команды','выработка и cycle-time','Команда',()=>openAnalytics()],

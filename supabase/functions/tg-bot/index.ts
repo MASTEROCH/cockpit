@@ -182,6 +182,62 @@ async function selfServe(chatId: number, name: string, email: string): Promise<s
 
 // ---------- воркспейсы (multi-tenant Ф3) ----------
 const _wsCache: Record<string, string> = {};
+// ============ ПРАЙС — одно место правды ============
+// Те же числа продублированы в index.html (const PRICE) для экрана «Тариф».
+// Меняешь здесь — меняй и там; расхождение прайса между ботом и приложением
+// человек замечает мгновенно и перестаёт доверять счёту.
+const PRICE = {
+  soloStars: 1900,        // Founder на одного, ~$19/мес
+  baseUsd: 49.99,         // Team: команда до 5 человек
+  seatUsd: 9.99,          // каждое место сверх пяти
+  includedSeats: 5,
+  starsPerUsd: 100,       // 1900⭐ ≈ $19 — курс, по которому считался Founder
+};
+const toStars = (usd: number) => Math.max(1, Math.round(usd * PRICE.starsPerUsd));
+const teamUsd = (seats: number) => PRICE.baseUsd + Math.max(0, seats - PRICE.includedSeats) * PRICE.seatUsd;
+/* Мест в воркспейсе = строк в team. Считаем в момент оплаты и в момент показа цены:
+   команда растёт между этими моментами, и «доплатить за место» человек должен видеть
+   сам, а не узнавать из отказа. */
+async function seatsOf(ws: string): Promise<number> {
+  const { count } = await sb.from("team").select("email", { count: "exact", head: true }).eq("workspace_id", ws);
+  return Math.max(1, count ?? 1);
+}
+
+/* Экран тарифа — одна точка входа: команда /plan, кнопка ⭐ и deep-link из приложения.
+   Разные входы в оплату обязаны показывать одну и ту же цену. */
+async function sendPlan(chatId: number): Promise<void> {
+  const link = await getLink(chatId);
+  if (!link) { await say(chatId, "Сначала создай пространство: пришли свой email 🚀"); return; }
+  const ws = await wsByEmail(link.email);
+  const { data: w } = await sb.from("workspaces").select("plan,stars_until").eq("id", ws).maybeSingle();
+  const plan = w?.plan ?? "solo";
+  if (plan === "founder_forever") { await say(chatId, "💜 У тебя вечный <b>Founder</b> — всё включено, навсегда."); return; }
+  const until = w?.stars_until ? new Date(w.stars_until) : null;
+  const active = !!(until && until.getTime() > Date.now());
+  // Тариф выбирает не человек из списка, а размер его команды: один — Founder,
+  // больше — Team с оплатой за места. Список из двух кнопок здесь только
+  // добавил бы решение, которое мы и так можем принять за него.
+  const seats = await seatsOf(ws);
+  const team = seats > 1;
+  const usd = team ? teamUsd(seats) : 0;
+  const amount = team ? toStars(usd) : PRICE.soloStars;
+  const extra = Math.max(0, seats - PRICE.includedSeats);
+  const priceLine = team
+    ? `<b>Team</b> — $${PRICE.baseUsd} за команду до ${PRICE.includedSeats}${extra ? ` + $${PRICE.seatUsd} × ${extra} ${plural(extra, "место", "места", "мест")}` : ""} = <b>$${usd.toFixed(2)}</b> (${amount}⭐) за 30 дней.\nСейчас в команде: ${seats} ${plural(seats, "человек", "человека", "человек")}.`
+    : `<b>Founder ⭐</b> — ${PRICE.soloStars}⭐ (~$${(PRICE.soloStars / PRICE.starsPerUsd).toFixed(0)}) за 30 дней.`;
+  const head = active
+    ? `⭐ <b>${plan === "team" ? "Team" : "Founder"} активен</b> до ${until!.toISOString().slice(0, 10)}.\n\n${priceLine}\n\nПродлить — оплата добавится к оплаченному сроку:`
+    : `План: <b>${plan === "solo" ? "Solo (бесплатно)" : plan}</b>.\n\nЧто открывается: Вандо-ИИ и пульс, наставник-планирование, 📊 отчёты империи, проекты без лимита.\n\n${priceLine}`;
+  await say(chatId, head);
+  await TG("sendInvoice", { chat_id: chatId,
+    title: team ? `WANDO Team · 30 дней · ${seats} ${plural(seats, "место", "места", "мест")}` : "WANDO Founder · 30 дней",
+    description: team
+      ? `Вандо-ИИ, наставник, отчёты, безлимит проектов — на всю команду (${seats})`
+      : "Вандо-ИИ, наставник, отчёты, безлимит проектов",
+    payload: (team ? "team:" : "founder:") + ws, currency: "XTR",
+    prices: [{ label: team ? `Team / 30 дней / ${seats}` : "Founder / 30 дней", amount }] });
+}
+
 async function wsByEmail(email: string): Promise<string> {
   const k = (email || "").toLowerCase();
   if (_wsCache[k]) return _wsCache[k];
@@ -905,13 +961,20 @@ Deno.serve(async (req) => {
   }
   {
     const sp = update.message?.successful_payment;
-    if (sp?.invoice_payload?.startsWith?.("founder:")) {
-      const ws = sp.invoice_payload.slice(8);
+    const pay = String(sp?.invoice_payload ?? "");
+    const plan = pay.startsWith("team:") ? "team" : pay.startsWith("founder:") ? "founder" : null;
+    if (plan) {
+      const ws = pay.slice(pay.indexOf(":") + 1);
       const { data: w } = await sb.from("workspaces").select("stars_until").eq("id", ws).maybeSingle();
+      // продление считается от КОНЦА оплаченного периода, а не от «сейчас»:
+      // иначе человек, заплативший заранее, теряет остаток оплаченного
       const base = Math.max(Date.now(), w?.stars_until ? new Date(w.stars_until).getTime() : 0);
       const until = new Date(base + 31 * 86400_000).toISOString();
-      await sb.from("workspaces").update({ plan: "founder", stars_until: until }).eq("id", ws);
-      await say(update.message.chat.id, `⭐ <b>Founder активен!</b> До ${until.slice(0, 10)}.\nВандо-ИИ, наставник и отчёты — открыты. Погнали 🚀`);
+      await sb.from("workspaces").update({ plan, stars_until: until }).eq("id", ws);
+      const seats = plan === "team" ? await seatsOf(ws) : 1;
+      await say(update.message.chat.id, plan === "team"
+        ? `⭐ <b>Team активен!</b> До ${until.slice(0, 10)} · ${seats} ${plural(seats, "место", "места", "мест")}.\nВандо-ИИ, наставник и отчёты открыты всей команде 🚀`
+        : `⭐ <b>Founder активен!</b> До ${until.slice(0, 10)}.\nВандо-ИИ, наставник и отчёты — открыты. Погнали 🚀`);
       return new Response("ok");
     }
   }
@@ -1090,6 +1153,7 @@ Deno.serve(async (req) => {
 
     if (/^\/start/.test(text)) {
       const payload = text.replace(/^\/start\s*/, "").trim();
+      if (payload === "plan") { await sendPlan(chatId); return new Response("ok"); }
       if (/^bind_[A-Za-z0-9_-]{10,}$/.test(payload)) {
         await say(chatId, await bindByCode(chatId, name, payload.slice(5)));
         return new Response("ok");
@@ -1105,21 +1169,7 @@ Deno.serve(async (req) => {
     } else if (/^\/help|^❓/.test(text)) {
       await say(chatId, HELP);
     } else if (/^\/plan|^⭐/.test(text)) {
-      const link = await getLink(chatId);
-      if (!link) { await say(chatId, "Сначала создай пространство: пришли свой email 🚀"); return new Response("ok"); }
-      const ws = await wsByEmail(link.email);
-      const { data: w } = await sb.from("workspaces").select("plan,stars_until").eq("id", ws).maybeSingle();
-      const plan = w?.plan ?? "solo";
-      if (plan === "founder_forever") { await say(chatId, "💜 У тебя вечный <b>Founder</b> — всё включено, навсегда."); return new Response("ok"); }
-      const until = w?.stars_until ? new Date(w.stars_until) : null;
-      const active = until && until.getTime() > Date.now();
-      const head = active
-        ? `⭐ <b>Founder активен</b> до ${until!.toISOString().slice(0, 10)}.\nПродлить ещё на 30 дней:`
-        : `План: <b>${plan === "solo" ? "Solo (бесплатно)" : plan}</b>.\n\n<b>Founder ⭐</b> — Вандо-ИИ и пульс, наставник-планирование, 📊 отчёты империи, проекты без лимита.`;
-      await say(chatId, head);
-      await TG("sendInvoice", { chat_id: chatId, title: "WANDO Founder · 30 дней",
-        description: "Вандо-ИИ, наставник, отчёты, безлимит проектов",
-        payload: "founder:" + ws, currency: "XTR", prices: [{ label: "Founder / 30 дней", amount: 1900 }] });
+      await sendPlan(chatId);
       return new Response("ok");
     } else if (/^\/key\b/.test(text)) {
       const raw = text.replace(/^\/key\s*/, "").trim();
