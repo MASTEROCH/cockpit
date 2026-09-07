@@ -51,9 +51,18 @@ const AI_WS_DAY_LIMIT = 200;  // страховка: на весь ворксп�
 async function aiQuota(email: string): Promise<string | null> {
   try {
     const day = new Date().toISOString().slice(0, 10);
-    const { data } = await sbs.from("ai_usage").select("calls").eq("email", email).eq("day", day).maybeSingle();
-    const used = data?.calls ?? 0;
-    if (used >= AI_DAY_LIMIT) return `Дневной лимит Вандо исчерпан (${AI_DAY_LIMIT} запросов). Продолжим завтра 🙂`;
+    // Считаем ОДНИМ запросом (ai_usage_bump): read-modify-write терял инкременты
+    // при параллельных вызовах, и лимит протекал тем сильнее, чем активнее человек.
+    let used: number;
+    const { data: bumped, error: bumpErr } = await sbs.rpc("ai_usage_bump", { p_email: email, p_day: day });
+    if (bumpErr) {
+      // функции ещё нет (недоразвёрнутая схема) — старый путь, чтобы лимит не отвалился целиком
+      console.error("ai_usage_bump", bumpErr);
+      const { data } = await sbs.from("ai_usage").select("calls").eq("email", email).eq("day", day).maybeSingle();
+      used = (data?.calls ?? 0) + 1;
+      await sbs.from("ai_usage").upsert({ email, day, calls: used });
+    } else used = Number(bumped ?? 1);
+    if (used > AI_DAY_LIMIT) return `Дневной лимит Вандо исчерпан (${AI_DAY_LIMIT} запросов). Продолжим завтра 🙂`;
     const { data: t } = await sbs.from("team").select("workspace_id").ilike("email", email).maybeSingle();
     const ws = t?.workspace_id ?? "main";
     const { data: mates } = await sbs.from("team").select("email").eq("workspace_id", ws);
@@ -63,11 +72,7 @@ async function aiQuota(email: string): Promise<string | null> {
       const total = (rows ?? []).reduce((a: number, r: Record<string, number>) => a + (r.calls ?? 0), 0);
       if (total >= AI_WS_DAY_LIMIT) return `Команда исчерпала дневной лимит Вандо (${AI_WS_DAY_LIMIT}). Завтра снова в бою.`;
     }
-    // ГОНКА: read-modify-write теряет инкременты при параллельных вызовах — лимит
-    // протекает. Чинится атомарной SQL-функцией (ai_usage_bump), а это миграция:
-    // включать её отдельно и осознанно, вместе с BILLING_ENFORCED.
-    await sbs.from("ai_usage").upsert({ email, day, calls: used + 1 });
-    return null;
+    return null; // счёт уже увеличен атомарно выше
   } catch (e) {
     console.error("ai-quota", e);
     // Под включённым биллингом несчитанный лимит — это открытый кран токенов.
