@@ -1,0 +1,53 @@
+{
+  "_meta": {
+    "note": "Ключ — сама русская строка из index.html. Нет ключа — экран остаётся русским, ничего не ломается. Фразы переводятся целиком: {email} и подобные подставляются ПОСЛЕ перевода, поэтому порядок слов свободный.",
+    "surfaces_done": ["вход и гейт"],
+    "surfaces_todo": ["навигация", "статусы и приоритеты", "настройки", "тариф", "тосты", "шаблоны", "пустые состояния"]
+  },
+
+  "_plural": {
+    "день|дня|дней": ["day", "days"],
+    "задача|задачи|задач": ["task", "tasks"],
+    "место|места|мест": ["seat", "seats"],
+    "человек|человека|человек": ["person", "people"],
+    "проект просит|проекта просят|проектов просят": ["project needs", "projects need"],
+    "просроченная задача|просроченные задачи|просроченных задач": ["overdue task", "overdue tasks"],
+    "задача висит|задачи висят|задач висят": ["task has been sitting", "tasks have been sitting"],
+    "задача просрочена|задачи просрочены|задач просрочено": ["task is overdue", "tasks are overdue"]
+  },
+
+  "Проверяю вход…": "Checking your session…",
+
+  "Письмо отправлено": "Check your email",
+  "На <b>{email}</b>. Введи <b>6 цифр</b> из письма — или открой ссылку из него на этом устройстве. Загляни в «Спам», если письма нет.": "Sent to <b>{email}</b>. Enter the <b>6 digits</b> from the email — or open the link in it on this device. Check spam if it hasn't arrived.",
+  "Код из письма": "Code from the email",
+  "Войти": "Sign in",
+  "Прислать ещё раз": "Send again",
+  "Другой email": "Use another email",
+  "Открыть Gmail": "Open Gmail",
+  "Открыть Яндекс.Почту": "Open Yandex Mail",
+  "Открыть Mail.ru": "Open Mail.ru",
+  "Открыть iCloud Mail": "Open iCloud Mail",
+  "Открыть Outlook": "Open Outlook",
+
+  "Внутренний рабочий инструмент команды. Доска откроется только после входа.": "The team's internal workspace. Sign in to open the board.",
+  "📱 <b>Первый вход — один раз, прямо здесь.</b><br>Введи email, вернись сюда с кодом из письма. Telegram привяжется сам, и дальше кнопка <b>☰ WANDO</b> будет открывать доску сразу.": "📱 <b>First sign-in — once, right here.</b><br>Enter your email, come back with the code from it. Telegram links itself, and from then on the <b>☰ WANDO</b> button opens the board straight away.",
+  "ваш email": "your email",
+  "Прислать код для входа": "Send me a sign-in code",
+  "Доступ только для участников команды.<br>Вход и регистрация — по коду из письма, без пароля.": "Team members only.<br>Sign-in and sign-up use a code from your email — no password.",
+
+  "Введи email": "Enter your email",
+  "Нужно 6 цифр": "6 digits, please",
+  "Проверяю…": "Checking…",
+  "Отправляю…": "Sending…",
+  "Отправил новое письмо": "New email sent",
+  "Секунду, подключаюсь к серверу…": "One moment, connecting…",
+  "Код истёк — пришли новый": "That code expired — send a new one",
+  "Код не подошёл. Проверь последнее письмо.": "That code didn't work. Check the latest email.",
+  "Не вышло: ": "Didn't work: ",
+  "Ошибка входа: ": "Sign-in error: ",
+
+  "Язык": "Language",
+  "Русский": "Русский",
+  "English": "English"
+}

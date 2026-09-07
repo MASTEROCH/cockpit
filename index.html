@@ -3140,7 +3140,54 @@ function restoreFromHistory(id){
   logAct('↩️','из истории: «'+t.title+'» снова в работе');save();render();renderHistory();
   toast('Вернул в работу: «'+String(t.title).slice(0,34)+'»','↩');
 }
-function plural(n,one,few,many){const m=n%100,d=n%10;if(m>=11&&m<=14)return many;if(d===1)return one;if(d>=2&&d<=4)return few;return many;}
+/* ==================== ЯЗЫК ====================
+   Словарь ключуется САМОЙ русской строкой: 1500 строк уже написаны по-русски,
+   и выдумывать им коды — значит переписать весь файл ради красоты. Нет перевода —
+   возвращается исходник, поэтому неполный словарь не ломает экран, а лишь
+   оставляет его русским.
+   Словарь лежит отдельным файлом (i18n/en.json) и грузится только когда выбран
+   не русский: незачем возить 90 КБ переводов тем, кто их не откроет. */
+let LANG=(()=>{try{return localStorage.getItem('cockpit_lang')||'ru';}catch(e){return 'ru';}})();
+let DICT=null, DICT_MISS=Object.create(null);
+const LANGS={ru:'Русский',en:'English'};
+async function loadLang(l){
+  if(l==='ru'){DICT=null;return true;}
+  try{const r=await fetch('i18n/'+l+'.json',{cache:'no-cache'});if(!r.ok)throw 0;DICT=await r.json();return true;}
+  catch(e){DICT=null;return false;} // словаря нет (или file://) — молча остаёмся на русском
+}
+function t(x,vars){
+  let out=x;
+  if(DICT){const v=DICT[x];
+    if(v==null)DICT_MISS[x]=(DICT_MISS[x]||0)+1; // копим непереведённое для отчёта
+    else out=v;}
+  /* Подстановки обязательны: фраза, разорванная тегом на «На <b>» + email + «. Введи»,
+     непереводима — в английском другой порядок слов. Переводится предложение целиком,
+     переменные въезжают на свои места уже после перевода. */
+  return vars?out.replace(/\{(\w+)\}/g,(m,k)=>vars[k]!=null?vars[k]:m):out;
+}
+/* Числительные — не словарь, а грамматика: в русском три формы, в английском две.
+   Ключ — сама русская тройка, поэтому все 100+ мест вызова остаются как есть. */
+function plural(n,one,few,many){
+  if(DICT&&DICT._plural){const p=DICT._plural[one+'|'+few+'|'+many];
+    if(p)return n===1?p[0]:p[1];
+    DICT_MISS['_plural:'+one+'|'+few+'|'+many]=1;}
+  const m=n%100,d=n%10;if(m>=11&&m<=14)return many;if(d===1)return one;if(d>=2&&d<=4)return few;return many;}
+/* Покрытие: сколько строк экрана уже переведено. Пока не 100% — переключатель
+   языка не показываем никому, кроме того, кто сам включил превью. */
+function langCoverage(){
+  const miss=Object.keys(DICT_MISS).length, have=DICT?Object.keys(DICT).length:0;
+  return {lang:LANG,dictSize:have,missing:miss,missingList:Object.keys(DICT_MISS).slice(0,50)};
+}
+function langBeta(){try{return localStorage.getItem('cockpit_lang_beta')==='1';}catch(e){return false;}}
+async function setLang(l){
+  if(!LANGS[l]||l===LANG)return;
+  const ok=await loadLang(l);
+  if(!ok){toast('Словарь '+l+' не загрузился — остаёмся на русском','⚠');return;}
+  LANG=l;try{localStorage.setItem('cockpit_lang',l);}catch(e){}
+  document.documentElement.setAttribute('lang',l);
+  DICT_MISS=Object.create(null);
+  render();renderSettings&&$('#setScrim')&&$('#setScrim').classList.contains('show')&&renderSettings();
+}
 /* Asana-урок: светофор проекта — недельный статус одной строкой, виден в «Всё» и в отчёте */
 const HEALTH={g:['#34d399','по плану'],y:['#fbbf24','есть риски'],r:['#f87171','горим']};
 function healthDot(pid,data){
@@ -4182,6 +4229,7 @@ function renderSettings(){
      <div class="colorrow" id="setColors" style="margin-top:14px">${COLORS.map(c=>`<span class="cdot ${me.color===c?'on':''}" data-c="${c}" style="background:${c}"></span>`).join('')}</div>
      <div class="set-sec">Оформление</div>
      <div class="set-item"><span>Тема</span><button class="btn" id="setTheme">${theme==='light'?'☀️ Светлая':'🌙 Тёмная'}</button></div>
+     ${langBeta()?`<div class="set-item"><span>${t('Язык')}<br><span style="font-size:11px;color:var(--mut2)">превью: перевод ещё не полный</span></span><select class="inp" id="setLang" style="width:auto;min-width:120px">${Object.keys(LANGS).map(k=>`<option value="${k}" ${k===LANG?'selected':''}>${LANGS[k]}</option>`).join('')}</select></div>`:''}
      <div class="set-item"><span>Звук при «Готово»</span><button class="btn" id="setSound">${sound?'🔔 Вкл':'🔇 Выкл'}</button></div>
      <div class="set-item"><span>Цвет проекта «${esc(S.projectName)}»</span><button class="btn" id="setAccent">🎨 Выбрать</button></div>
      <div class="set-sec">Команда и Claude</div>
@@ -4213,6 +4261,7 @@ function renderSettings(){
     if(v===(S.repo||'')){rp.value=v;return;}
     if(v)S.repo=v;else delete S.repo;save();rp.value=v;
     toast(v?'Репозиторий привязан: '+v:'Репозиторий отвязан','🔗',v?'Как включить':null,v?openDrift:null);};}
+  {const sl=$('#setLang');if(sl)sl.onchange=e=>setLang(e.target.value);}
   $('#setTheme').onclick=()=>{$('#btnTheme').click();renderSettings();};
   $('#setSound').onclick=()=>{const on=localStorage.getItem('cockpit_sound')!=='0';localStorage.setItem('cockpit_sound',on?'0':'1');if(!on)playDing();renderSettings();};
   $('#setAccent').onclick=()=>{closeSettings();openAccent();};
@@ -7699,30 +7748,30 @@ function showGate(){renderGate('login');}
 function renderGate(state,email){
   const g=$('#gate');if(!g)return;g.classList.remove('hide');
   if(location.protocol==='file:'){g.innerHTML=`<div class="gatecard"><div class="gatelogo">${logoMarkSVG(22)}</div><h1>WANDO</h1><div class="gp">Это локальная копия для разработки — вход здесь не работает.<br>Рабочая версия (вход запоминается):</div><a class="btn primary" href="https://cock-pit.com" target="_blank" rel="noopener" style="width:100%;justify-content:center;text-decoration:none">Открыть cock-pit.com →</a></div>`;return;}
-  if(state==='loading'){g.innerHTML=`<div class="gatecard"><div class="gatelogo">${logoMarkSVG(22)}</div><h1>WANDO</h1><div class="gp">Проверяю вход…</div></div>`;return;}
+  if(state==='loading'){g.innerHTML=`<div class="gatecard"><div class="gatelogo">${logoMarkSVG(22)}</div><h1>WANDO</h1><div class="gp">${t('Проверяю вход…')}</div></div>`;return;}
 /* веб-почта по домену — кнопка «Открыть почту» на экране «Письмо отправлено» */
 function webmailUrl(email){
   const d=String(email||'').split('@')[1]||'';
-  if(/gmail|googlemail/.test(d))return ['https://mail.google.com','Открыть Gmail'];
-  if(/yandex|ya\.ru/.test(d))return ['https://mail.yandex.ru','Открыть Яндекс.Почту'];
-  if(/mail\.ru|bk\.ru|inbox\.ru|list\.ru/.test(d))return ['https://e.mail.ru','Открыть Mail.ru'];
-  if(/icloud|me\.com|mac\.com/.test(d))return ['https://www.icloud.com/mail','Открыть iCloud Mail'];
-  if(/outlook|hotmail|live\./.test(d))return ['https://outlook.live.com/mail','Открыть Outlook'];
+  if(/gmail|googlemail/.test(d))return ['https://mail.google.com',t('Открыть Gmail')];
+  if(/yandex|ya\.ru/.test(d))return ['https://mail.yandex.ru',t('Открыть Яндекс.Почту')];
+  if(/mail\.ru|bk\.ru|inbox\.ru|list\.ru/.test(d))return ['https://e.mail.ru',t('Открыть Mail.ru')];
+  if(/icloud|me\.com|mac\.com/.test(d))return ['https://www.icloud.com/mail',t('Открыть iCloud Mail')];
+  if(/outlook|hotmail|live\./.test(d))return ['https://outlook.live.com/mail',t('Открыть Outlook')];
   return null;
 }
   if(state==='sent'){const wm=webmailUrl(email);
     /* Код вместо ссылки: ссылка ломается там, где письмо открывают в другом браузере
        или где почтовик её «прожимает» заранее. Ссылка остаётся запасным путём — она
        в том же письме, и человеку, которому удобнее нажать, ничего не мешает. */
-    g.innerHTML=`<div class="gatecard"><div class="gatelogo">✉️</div><h1>Письмо отправлено</h1>
-      <div class="gp">На <b>${esc(email||'')}</b>. Введи <b>6 цифр</b> из письма — или открой ссылку из него на этом устройстве. Загляни в «Спам», если письма нет.</div>
+    g.innerHTML=`<div class="gatecard"><div class="gatelogo">✉️</div><h1>${t('Письмо отправлено')}</h1>
+      <div class="gp">${t('На <b>{email}</b>. Введи <b>6 цифр</b> из письма — или открой ссылку из него на этом устройстве. Загляни в «Спам», если письма нет.',{email:esc(email||'')})}</div>
       <input class="inp codein" id="gateCode" inputmode="numeric" autocomplete="one-time-code"
-        maxlength="6" placeholder="000000" aria-label="Код из письма">
+        maxlength="6" placeholder="000000" aria-label="${t('Код из письма')}">
       <div id="gateCodeErr" style="min-height:17px;margin-top:6px;font-size:12px;color:var(--bad)"></div>
-      <button class="btn primary" id="gateGo" style="width:100%;justify-content:center">Войти</button>
+      <button class="btn primary" id="gateGo" style="width:100%;justify-content:center">${t('Войти')}</button>
       ${wm?`<button class="btn" id="gateMail" style="margin-top:8px;width:100%;justify-content:center">${wm[1]} ↗</button>`:''}
-      <div class="gatealt"><button class="gatelink" id="gateResend">Прислать ещё раз</button> ·
-        <button class="gatelink" id="gateBack">Другой email</button></div></div>`;
+      <div class="gatealt"><button class="gatelink" id="gateResend">${t('Прислать ещё раз')}</button> ·
+        <button class="gatelink" id="gateBack">${t('Другой email')}</button></div></div>`;
     {const gm=$('#gateMail');if(gm)gm.onclick=()=>window.open(wm[0],'_blank');}
     $('#gateBack').onclick=()=>renderGate('login',email);
     const inp=$('#gateCode'),go=$('#gateGo');
@@ -7737,12 +7786,12 @@ function webmailUrl(email){
     setTimeout(()=>inp.focus(),60);return;}
   const inTMA=!!tmaInitData();
   g.innerHTML=`<div class="gatecard"><div class="gatelogo">${logoMarkSVG(22)}</div><h1>WANDO</h1>
-    <div class="gp">Внутренний рабочий инструмент команды. Доска откроется только после входа.</div>
-    ${inTMA?`<div class="gp" style="margin-top:10px;background:rgba(167,139,250,.10);border:1px solid var(--line);border-radius:12px;padding:11px 13px;font-size:12.5px;text-align:left">📱 <b>Первый вход — один раз, прямо здесь.</b><br>Введи email, вернись сюда с кодом из письма. Telegram привяжется сам, и дальше кнопка <b>☰ WANDO</b> будет открывать доску сразу.</div>`:''}
-    <input class="inp gateinp" id="gateEmail" type="email" placeholder="ваш email" autocomplete="email" value="${esc(email||'')}">
-    <button class="btn primary" id="gateSend" style="width:100%;justify-content:center;margin-top:10px">Прислать код для входа</button>
-    <div class="gatefoot">Доступ только для участников команды.<br>Вход и регистрация — по коду из письма, без пароля.</div></div>`;
-  const send=()=>{const em=($('#gateEmail').value||'').trim();if(!em){toast('Введи email','⚠');return;}gateSend(em);};
+    <div class="gp">${t('Внутренний рабочий инструмент команды. Доска откроется только после входа.')}</div>
+    ${inTMA?`<div class="gp" style="margin-top:10px;background:rgba(167,139,250,.10);border:1px solid var(--line);border-radius:12px;padding:11px 13px;font-size:12.5px;text-align:left">${t('📱 <b>Первый вход — один раз, прямо здесь.</b><br>Введи email, вернись сюда с кодом из письма. Telegram привяжется сам, и дальше кнопка <b>☰ WANDO</b> будет открывать доску сразу.')}</div>`:''}
+    <input class="inp gateinp" id="gateEmail" type="email" placeholder="${t('ваш email')}" autocomplete="email" value="${esc(email||'')}">
+    <button class="btn primary" id="gateSend" style="width:100%;justify-content:center;margin-top:10px">${t('Прислать код для входа')}</button>
+    <div class="gatefoot">${t('Доступ только для участников команды.<br>Вход и регистрация — по коду из письма, без пароля.')}</div></div>`;
+  const send=()=>{const em=($('#gateEmail').value||'').trim();if(!em){toast(t('Введи email'),'⚠');return;}gateSend(em);};
   $('#gateSend').onclick=send;$('#gateEmail').onkeydown=e=>{if(e.key==='Enter')send();};
   setTimeout(()=>{const i=$('#gateEmail');if(i)i.focus();},60);
 }
@@ -7752,39 +7801,39 @@ let _gateResendAt=0;
 function gateResendTimer(email){
   const b=$('#gateResend');if(!b)return;
   const left=Math.ceil((_gateResendAt-Date.now())/1000);
-  if(left>0){b.disabled=true;b.textContent='Прислать ещё раз ('+left+')';
+  if(left>0){b.disabled=true;b.textContent=t('Прислать ещё раз')+' ('+left+')';
     setTimeout(()=>gateResendTimer(email),1000);return;}
-  b.disabled=false;b.textContent='Прислать ещё раз';
+  b.disabled=false;b.textContent=t('Прислать ещё раз');
   b.onclick=()=>{_gateResendAt=Date.now()+60000;gateResendTimer(email);gateSend(email,true);};
 }
 async function gateVerify(email,code){
   const token=String(code||'').replace(/\D/g,'');
   const err=$('#gateCodeErr'),inp=$('#gateCode'),go=$('#gateGo');
-  if(token.length!==6){if(err)err.textContent='Нужно 6 цифр';return;}
-  if(!sb){toast('Секунду, подключаюсь к серверу…','⏳');return;}
-  if(go){go.disabled=true;go.textContent='Проверяю…';}
+  if(token.length!==6){if(err)err.textContent=t('Нужно 6 цифр');return;}
+  if(!sb){toast(t('Секунду, подключаюсь к серверу…'),'⏳');return;}
+  if(go){go.disabled=true;go.textContent=t('Проверяю…');}
   try{
     const {error}=await sb.auth.verifyOtp({email,token,type:'email'});
     if(error)throw error;
     // дальше подхватывает onAuthStateChange: SIGNED_IN → загрузка облака
   }catch(e){
-    if(go){go.disabled=false;go.textContent='Войти';}
+    if(go){go.disabled=false;go.textContent=t('Войти');}
     const msg=String((e&&e.message)||e);
-    if(err)err.textContent=/expired/i.test(msg)?'Код истёк — пришли новый'
-      :/invalid|token/i.test(msg)?'Код не подошёл. Проверь последнее письмо.'
-      :'Не вышло: '+msg;
+    if(err)err.textContent=/expired/i.test(msg)?t('Код истёк — пришли новый')
+      :/invalid|token/i.test(msg)?t('Код не подошёл. Проверь последнее письмо.')
+      :t('Не вышло: ')+msg;
     if(inp){inp.classList.remove('codebad');void inp.offsetWidth;inp.classList.add('codebad');
       inp.select();}
   }
 }
 async function gateSend(email,quiet){
   if(!sb){toast('Секунду, подключаюсь к серверу…','⏳');return;}
-  const b=$('#gateSend');if(b){b.textContent='Отправляю…';b.disabled=true;}
+  const b=$('#gateSend');if(b){b.textContent=t('Отправляю…');b.disabled=true;}
   // emailRedirectTo оставляем: письмо несёт и код, и ссылку — что сработает, тем и войдёт
   try{const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.href}});if(error)throw error;
-    if(quiet){toast('Отправил новое письмо','✉️');const i=$('#gateCode');if(i){i.value='';i.focus();}}
+    if(quiet){toast(t('Отправил новое письмо'),'✉️');const i=$('#gateCode');if(i){i.value='';i.focus();}}
     else renderGate('sent',email);}
-  catch(e){toast('Ошибка входа: '+(e.message||e),'⚠');if(!quiet)renderGate('login',email);}
+  catch(e){toast(t('Ошибка входа: ')+(e.message||e),'⚠');if(!quiet)renderGate('login',email);}
 }
 // TMA: внутри Telegram initData лежит в hash — авто-вход без почты
 function tmaInitData(){try{const m=location.hash.match(/tgWebAppData=([^&]+)/);return m?decodeURIComponent(m[1]):null;}catch(e){return null;}}
@@ -8347,6 +8396,10 @@ $$('[data-icon]').forEach(el=>el.insertAdjacentHTML('afterbegin',icon(el.dataset
 {const bvl=$('#bootVeilLogo');if(bvl)bvl.innerHTML=logoMarkSVG(24);const veil=$('#bootVeil');if(veil){const rm=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;const hide=()=>{veil.classList.add('gone');setTimeout(()=>{try{veil.remove();}catch(e){}},600);};setTimeout(hide, rm?150:(tmaInitData()?450:720));}}
 setFavicon();
 applyTheme();
+document.documentElement.setAttribute('lang',LANG);
+/* Словарь грузим до первой отрисовки, иначе экран моргнёт русским и перерисуется.
+   Не загрузился — остаёмся на русском: продукт не должен падать из-за перевода. */
+if(LANG!=='ru')loadLang(LANG).then(ok=>{if(!ok)LANG='ru';render();});
 $('#sbLegend').innerHTML=legendHTML();
 resetUndo();
 render();
