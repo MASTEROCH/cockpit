@@ -62,13 +62,22 @@ Deno.serve(async (req) => {
     }
   }
 
+  // Проект, к которому привязан этот репозиторий (data.repo = "owner/name").
+  // Нужен, чтобы в журнал легли ВСЕ коммиты, а не только те, где назван #ID:
+  // иначе «что реально сделано» видно только по задачам, которые и так помнили.
+  const repoFull = String(payload.repository?.full_name ?? "").trim().toLowerCase();
+  const repoRow = repoFull
+    ? (rows ?? []).find((r) => String(r.data?.repo ?? "").trim().toLowerCase() === repoFull) ?? null
+    : null;
+
   const changed = new Set<Record<string, any>>();
-  let closed = 0, mentioned = 0;
+  let closed = 0, mentioned = 0, logged = 0;
   for (const c of commits) {
     const msg = String(c.message ?? "");
     const first = msg.split("\n")[0].slice(0, 140);
     const sha7 = String(c.id ?? "").slice(0, 7);
     const author = String(c.author?.username ?? c.author?.name ?? "GitHub");
+    const linked: string[] = []; // задачи этого проекта, названные в коммите
     const closeIds = new Set<string>(), allIds = new Set<string>();
     for (const m of msg.matchAll(CLOSE_RE)) closeIds.add(m[1].toUpperCase());
     for (const m of msg.matchAll(ANY_RE)) allIds.add(m[1].toUpperCase());
@@ -90,15 +99,29 @@ Deno.serve(async (req) => {
         if (t.hist.length > 30) t.hist = t.hist.slice(-30);
         closed++;
       } else mentioned++;
+      if (row === repoRow) linked.push(String(t.id));
       row.data.activity = row.data.activity ?? [];
       row.data.activity.unshift({ ts: Date.now(), who: author + " · GitHub", icon: doClose ? "✅" : "🔗", text: "«" + t.title + "» " + (doClose ? "закрыта коммитом " : "упомянута в коммите ") + sha7 });
       if (row.data.activity.length > 150) row.data.activity.length = 150;
       changed.add(row);
+    }
+    // журнал кода: коммит без #ID — это и есть работа мимо плана, её важно сохранить
+    if (repoRow) {
+      repoRow.data.codelog = repoRow.data.codelog ?? [];
+      if (!repoRow.data.codelog.some((e: { sha?: string }) => e.sha === sha7)) {
+        repoRow.data.codelog.unshift({
+          ts: Date.parse(String(c.timestamp ?? "")) || Date.now(),
+          sha: sha7, msg: first, who: author, url: String(c.url ?? ""), tids: linked,
+        });
+        if (repoRow.data.codelog.length > 200) repoRow.data.codelog.length = 200;
+        logged++;
+        changed.add(repoRow);
+      }
     }
   }
   for (const row of changed) {
     row.data.updatedAt = Date.now();
     await sb.from("projects").update({ data: row.data, updated_at: new Date().toISOString(), updated_by: null }).eq("id", row.id);
   }
-  return new Response(JSON.stringify({ ok: true, closed, mentioned }), { headers: { "content-type": "application/json" } });
+  return new Response(JSON.stringify({ ok: true, closed, mentioned, logged }), { headers: { "content-type": "application/json" } });
 });

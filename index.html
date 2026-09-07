@@ -842,6 +842,36 @@ body.light .brand .logo{background:linear-gradient(157deg,#1b1d27,#08090d 72%)}
 .wpoff h4{margin:0 0 7px;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--mut2);font-weight:800}
 .wpoff .wpo{font-size:12.5px;color:var(--mut);line-height:1.5;padding:3px 0}
 .modal.wide{width:660px}
+/* Код против плана */
+.dfk{display:flex;gap:9px;margin:14px 0 4px;flex-wrap:wrap}
+.dfk div{flex:1;min-width:96px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.dfk b{display:block;font-size:19px;font-weight:800;line-height:1.1}
+.dfk span{font-size:11px;color:var(--mut2)}
+.dfsec{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--mut2);margin:18px 0 8px}
+.dfrow{display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border:1px solid var(--line);background:var(--bg2);border-radius:11px;margin-bottom:6px}
+.dfrow.tap{cursor:pointer;transition:.15s}
+.dfrow.tap:hover{border-color:var(--acc2)}
+.dfm{font-size:13.5px;line-height:1.35;font-weight:600;word-break:break-word}
+.dfs{font-size:11px;color:var(--mut2);margin-top:3px}
+.dfsha{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;color:var(--mut2);background:var(--bg);padding:1px 5px;border-radius:5px}
+.dfadd{flex:0 0 auto;padding:5px 11px;border:1px solid var(--line2);border-radius:9px;background:none;color:var(--mut);font-size:11.5px;font-weight:700;cursor:pointer;transition:.15s;align-self:center}
+.dfadd:hover{border-color:var(--acc2);color:var(--acc2)}
+.dfok{text-align:center;padding:26px 10px;color:var(--mut);font-size:13.5px;line-height:1.6}
+.dfhook{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;word-break:break-all;background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:8px 10px;color:var(--mut);margin-top:7px}
+
+/* Пульс компании — какой проект сейчас умирает */
+.puhead{font-size:13.5px;line-height:1.55;color:var(--mut);background:var(--bg2);border:1px solid var(--line);border-left:3px solid var(--ok);border-radius:11px;padding:10px 13px;margin-bottom:10px}
+.puhead.bad{border-left-color:var(--bad);color:var(--txt)}
+.purow{display:flex;align-items:center;gap:11px;padding:9px 4px;border-top:1px solid var(--line);cursor:pointer;transition:.15s}
+.purow:hover{background:var(--bg2)}
+.pue{font-size:19px;flex:0 0 auto;line-height:1}
+.pum{flex:1;min-width:0}
+.pun{font-size:13.5px;font-weight:700;line-height:1.3}
+.pus{font-size:11.5px;color:var(--mut2);margin-top:2px;line-height:1.4}
+.pubar{flex:0 0 88px;height:5px;border-radius:5px;background:var(--line);overflow:hidden}
+.pubar span{display:block;height:100%;border-radius:5px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.pusc{flex:0 0 30px;text-align:right;font-size:14px;font-weight:800;font-variant-numeric:tabular-nums}
+@media(max-width:560px){.pubar{flex-basis:52px}}
 .hdot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-left:8px;vertical-align:1px;cursor:pointer;background:var(--bg2);border:1.5px dashed var(--line2)}
 .hdot:not(.unset){border:none}
 .hnote{font-size:11.5px;color:var(--mut2);margin-left:7px;font-weight:500}
@@ -2326,6 +2356,7 @@ html{font-optical-sizing:auto}
 <div class="modal-scrim" id="tgScrim"><div class="modal" id="tgModal"></div></div>
 <div class="modal-scrim" id="planScrim"><div class="modal" id="planModal"></div></div>
 <div class="modal-scrim" id="wplanScrim"><div class="modal wide" id="wplanModal"></div></div>
+<div class="modal-scrim" id="driftScrim"><div class="modal wide" id="driftModal"></div></div>
 <div class="modal-scrim" id="setScrim"><div class="modal" id="setModal"></div></div>
 <div class="modal-scrim" id="balScrim"><div class="modal" id="balModal"></div></div>
 <div class="present" id="present"></div>
@@ -2439,7 +2470,7 @@ function migrate(p){if(!p)return p;p.ui=p.ui||{zoom:38};if(!p.ui.zoom)p.ui.zoom=
   (p.members||[]).forEach(m=>{if(m.points===undefined)m.points=1000;});  /* стартовый капитал: экономика мотивирует, но никогда не блокирует */
   if(!p.id)p.id='p'+Math.random().toString(36).slice(2,8);p.ideas=p.ideas||[];p.tasks=p.tasks||[];p.members=p.members||[];p.sections=p.sections||[{id:'s1',name:'Задачи'}];
   p.tasks.forEach(t=>{if(!t.deps)t.deps=[];if(t.comments==null)t.comments=[];if(t.parentId===undefined)t.parentId=null;});
-  p.activity=p.activity||[];p.notes=p.notes||[];if(p.trash)p.trash=p.trash.filter(e=>Date.now()-(e.ts||0)<2592000000);if(!p.updatedAt)p.updatedAt=0;if(p.parentId===undefined)p.parentId=null;return p;}
+  p.activity=p.activity||[];p.notes=p.notes||[];p.codelog=p.codelog||[];if(p.trash)p.trash=p.trash.filter(e=>Date.now()-(e.ts||0)<2592000000);if(!p.updatedAt)p.updatedAt=0;if(p.parentId===undefined)p.parentId=null;return p;}
 
 function blankProject(){return {projectName:'Мой проект',emoji:'🚀',demo:false,ui:{zoom:38},
   members:[{id:'m1',name:'Я',role:'Founder',color:COLORS[1],capacity:30}],
@@ -4107,6 +4138,7 @@ function renderSettings(){
      <div class="set-item"><span>Вы в команде</span><select class="inp" id="setWho" style="width:auto;min-width:130px">${S.members.map(m=>`<option value="${m.id}" ${m.id===myId()?'selected':''}>${esc(m.name)}</option>`).join('')}</select></div>
      <div class="set-item"><span>Telegram-бот (голос, пуши, бриф)</span><button class="btn" id="setTg">${icon('send',14)} Подключить</button></div>
      <div class="set-item"><span>Подключить Claude (MCP)</span><button class="btn" id="setConnect">🔌 Открыть</button></div>
+     <div class="set-item"><span>Репозиторий GitHub<br><span style="font-size:11px;color:var(--mut2)">коммиты сверяются с планом</span></span><input class="inp" id="setRepo" style="width:auto;min-width:165px" placeholder="owner/repo" value="${esc(S.repo||'')}"></div>
      <div class="set-item"><span>Архив всех проектов (JSON)</span><button class="btn" id="setExport">📦 Выгрузить</button></div>
      <div class="set-item"><span>Фид для Google/Apple Calendar</span><button class="btn" id="setIcs">📅 Ссылка</button></div>
      <div class="set-item"><span>Выгрузка в Markdown</span><button class="btn" id="setMd">📝 Скачать</button></div>
@@ -4120,6 +4152,10 @@ function renderSettings(){
   $('#setPhoto').onclick=()=>settingsPhoto(me);
   const pd=$('#setPhotoDel');if(pd)pd.onclick=()=>{delete me.photo;save();render();renderSettings();};
   $$('#setColors .cdot').forEach(d=>d.onclick=()=>{me.color=d.dataset.c;save();render();renderSettings();});
+  {const rp=$('#setRepo');if(rp)rp.onblur=()=>{const v=repoNorm(rp.value);
+    if(v===(S.repo||'')){rp.value=v;return;}
+    if(v)S.repo=v;else delete S.repo;save();rp.value=v;
+    toast(v?'Репозиторий привязан: '+v:'Репозиторий отвязан','🔗',v?'Как включить':null,v?openDrift:null);};}
   $('#setTheme').onclick=()=>{$('#btnTheme').click();renderSettings();};
   $('#setSound').onclick=()=>{const on=localStorage.getItem('cockpit_sound')!=='0';localStorage.setItem('cockpit_sound',on?'0':'1');if(!on)playDing();renderSettings();};
   $('#setAccent').onclick=()=>{closeSettings();openAccent();};
@@ -4281,6 +4317,7 @@ function renderPortfolio(){
      <div class="kpi"><div class="v">${pct}%</div><div class="l">${gDone}/${gTasks} готово</div><div class="kpibar"><span style="width:${pct}%;background:linear-gradient(90deg,var(--ok),#10b981)"></span></div></div>
      <div class="kpi"><div class="v" style="color:${gOver?'var(--bad)':'var(--mut)'}">${gOver}</div><div class="l">Просрочено везде</div></div>
    </div>
+   ${pulseBlock(projs)}
    <button class="cmdex" id="btnRep" style="margin-bottom:16px"> Отчёт недели по всем проектам — собрать и скопировать для команды</button>
    ${mine.length?`<div class="panel-c" style="margin-bottom:16px"><h3>Мои задачи по всем проектам <span class="c">${mine.length}</span></h3>
      ${mine.slice(0,14).map(x=>{const ov=over(x.t);const dl=Math.round((parseD(x.t.end)-parseD(tISO))/dayMs);
@@ -4311,7 +4348,7 @@ function renderPortfolio(){
      <div class="actfeed">${allAct.length?allAct.slice(0,50).map(a=>`<div class="actrow"><span class="ai">${emi(a.icon,15)}</span><span class="atx"><b>${esc(a.who)}</b> ${esc(a.text)} <span class="pbadge" style="margin-left:5px;vertical-align:middle">${a.emoji||'📄'} ${esc(a.pname)}</span></span><span class="att">${relTime(a.ts)}</span></div>`).join(''):'<div class="emptymini">История появится по мере работы команды</div>'}</div></div>`;
   {const br=$('#btnRep');if(br)br.onclick=openEmpireRep;}
   $$('#portfolio [data-health]').forEach(el=>el.onclick=e=>{e.stopPropagation();cycleHealth(el.dataset.health);});
-  $$('#portfolio .prow').forEach(e=>e.onclick=()=>{const id=e.dataset.open;if(id===S.id)setView('board');else switchProject(id);});
+  $$('#portfolio .prow, #portfolio .purow').forEach(e=>e.onclick=()=>{const id=e.dataset.open;if(id===S.id)setView('board');else switchProject(id);});
   $$('#portfolio .trow').forEach(e=>e.onclick=()=>{const pid=e.dataset.pid,tid=e.dataset.tid;if(pid!==S.id)switchProject(pid);setTimeout(()=>openTask(tid),80);});
 }
 
@@ -5059,6 +5096,162 @@ function applyWeekPlan(){
   toast('Неделя разложена: '+items.length+' '+plural(items.length,'задача','задачи','задач'),'🗓','Отменить',()=>{
     prev.forEach(p=>editTaskInProject(p.pid,p.tid,t=>{t.start=p.start;t.end=p.end;}));
     renderWeek();toast('Вернул как было','↩');});
+}
+
+
+/* ==================== КОД ПРОТИВ ПЛАНА ====================
+   Вебхук GitHub пишет в проект журнал коммитов (gh-hook → data.codelog).
+   Здесь показываем расхождение в обе стороны: работа, которой нет в плане,
+   и задачи «в работе», по которым кода не было. */
+const GH_HOOK_URL=(typeof CFG!=='undefined'&&CFG.url?CFG.url:'')+'/functions/v1/gh-hook';
+/* принимаем и ссылку, и owner/repo — человек копирует из адресной строки */
+function repoNorm(v){
+  let x=String(v||'').trim().replace(/^https?:\/\/(www\.)?github\.com\//i,'').replace(/\.git$/i,'').replace(/^\/+|\/+$/g,'');
+  const m=x.match(/^([\w.-]+)\/([\w.-]+)/);return m?m[1]+'/'+m[2]:'';
+}
+function driftData(){
+  const now=Date.now(),d14=now-14*864e5,d7=now-7*864e5;
+  const all=(S.codelog||[]).filter(e=>e&&e.sha);
+  const log=all.filter(e=>(e.ts||0)>=d14);
+  const loose=log.filter(e=>!(e.tids&&e.tids.length));
+  const touched={};all.forEach(e=>{if((e.ts||0)>=d7)(e.tids||[]).forEach(id=>{touched[id]=1;});});
+  const stale=S.tasks.filter(t=>!t.isMilestone&&t.status==='progress'&&!touched[t.id]);
+  return {log,loose,stale,linked:log.length-loose.length};
+}
+function openDrift(){$('#driftScrim').classList.add('show');renderDrift();}
+function closeDrift(){$('#driftScrim').classList.remove('show');}
+$('#driftScrim').onclick=e=>{if(e.target===$('#driftScrim'))closeDrift();};
+/* коммит без задачи → задача, уже закрытая: план догоняет факт, а не наоборот */
+function driftToTask(sha){
+  const e=(S.codelog||[]).find(x=>x.sha===sha);if(!e)return;
+  const t=newTask(String(e.msg||('Работа из коммита '+sha)).slice(0,140));
+  const day=new Date(e.ts||Date.now()).toISOString().slice(0,10);
+  t.status='done';t.statusTs=Date.now();t.doneTs=Date.now();t.start=day;t.end=day;
+  if(!t.assigneeId)t.assigneeId=myId()||null;
+  t.comments.push({ts:e.ts||Date.now(),author:'GitHub',text:'✅ Заведена по коммиту '+sha+(e.who?' ('+e.who+')':'')+(e.url?'\n'+e.url:'')});
+  e.tids=[t.id];
+  save();render();renderDrift();
+  toast('Задача заведена по коммиту '+sha,'✅','Отменить',()=>{
+    S.tasks=S.tasks.filter(x=>x.id!==t.id);e.tids=[];save();render();renderDrift();});
+}
+function renderDrift(){
+  const m=$('#driftModal'),fmt=ts=>{const d=new Date(ts||Date.now());
+    return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0');};
+  if(!S.repo){
+    m.innerHTML=`<div class="ob-body">
+       <h2>Код против плана</h2>
+       <p>WANDO читает коммиты и показывает, что сделано на самом деле: работу мимо плана и задачи «в работе», по которым кода не было.</p>
+       <div class="dfsec" style="margin-top:18px">Подключается один раз</div>
+       <ol class="ob-list" style="padding-left:17px;list-style:decimal">
+         <li>Впиши репозиторий в Настройках — поле «Репозиторий GitHub», в виде <b>owner/repo</b>.</li>
+         <li>В репозитории: Settings → Webhooks → Add webhook, событие <b>Just the push event</b>, Content type <b>application/json</b>.</li>
+         <li>Payload URL:<div class="dfhook">${esc(GH_HOOK_URL)}</div></li>
+         <li>Secret — то же значение, что в секрете функции <b>GH_WEBHOOK_SECRET</b>.</li>
+       </ol>
+       <div style="font-size:12.5px;color:var(--mut2);margin-top:14px">Дальше ничего делать не нужно: «closes #A1B2C» в коммите закроет задачу, остальные коммиты просто лягут в журнал.</div>
+     </div>
+     <div class="ob-foot"><button class="btn" id="dfClose">Закрыть</button><div class="spacer"></div>
+       <button class="btn primary" id="dfSet">Открыть настройки</button></div>`;
+    $('#dfClose').onclick=closeDrift;
+    $('#dfSet').onclick=()=>{closeDrift();openSettings();setTimeout(()=>{const r=$('#setRepo');if(r)r.focus();},160);};
+    return;}
+  const d=driftData();
+  m.innerHTML=`<div class="ob-body">
+     <div class="wpsrc">${icon('sync',12)} ${esc(S.repo)}</div>
+     <h2>Код против плана</h2>
+     <div class="dfk">
+       <div><b>${d.log.length}</b><span>коммитов за 14 дней</span></div>
+       <div><b style="color:var(--ok)">${d.linked}</b><span>привязано к задачам</span></div>
+       <div><b style="color:${d.loose.length?'var(--warn)':'var(--mut)'}">${d.loose.length}</b><span>мимо плана</span></div>
+       <div><b style="color:${d.stale.length?'var(--bad)':'var(--mut)'}">${d.stale.length}</b><span>в работе без кода</span></div>
+     </div>
+     ${!d.log.length?`<div class="dfok">За две недели ни одного коммита.<br><span style="color:var(--mut2)">Либо работа шла не в коде, либо вебхук ещё не подключён.</span></div>`:''}
+     ${d.loose.length?`<div class="dfsec">Работа мимо плана · ${d.loose.length}</div>
+       <div style="font-size:12px;color:var(--mut2);margin-bottom:9px">Сделано, но в плане этого нет. «В задачу» заведёт её сразу закрытой — чтобы отчёт не врал.</div>
+       ${d.loose.slice(0,12).map(e=>`<div class="dfrow"><div style="flex:1;min-width:0">
+         <div class="dfm">${esc(e.msg||'без сообщения')}</div>
+         <div class="dfs"><span class="dfsha">${esc(e.sha)}</span> · ${esc(e.who||'')} · ${fmt(e.ts)}</div></div>
+         <button class="dfadd" data-sha="${esc(e.sha)}">В задачу</button></div>`).join('')}`:''}
+     ${d.stale.length?`<div class="dfsec">План без кода · ${d.stale.length}</div>
+       <div style="font-size:12px;color:var(--mut2);margin-bottom:9px">Числятся «в работе», но за неделю их не касался ни один коммит.</div>
+       ${d.stale.slice(0,12).map(t=>`<div class="dfrow tap" data-tid="${t.id}"><div style="flex:1;min-width:0">
+         <div class="dfm">${esc(t.title)}</div>
+         <div class="dfs">#${String(t.id).slice(1,6).toUpperCase()} · до ${esc(String(t.end||'').slice(8))}.${esc(String(t.end||'').slice(5,7))}</div></div></div>`).join('')}`:''}
+     ${d.log.length&&!d.loose.length&&!d.stale.length?`<div class="dfok">План и код сходятся ✅<br><span style="color:var(--mut2)">Каждый коммит привязан к задаче, все задачи «в работе» живые.</span></div>`:''}
+   </div>
+   <div class="ob-foot"><button class="btn" id="dfClose">Закрыть</button><div class="spacer"></div>
+     <button class="btn" id="dfSet">Настройки</button></div>`;
+  $('#dfClose').onclick=closeDrift;
+  $('#dfSet').onclick=()=>{closeDrift();openSettings();};
+  $$('#driftModal .dfadd').forEach(b=>b.onclick=()=>driftToTask(b.dataset.sha));
+  $$('#driftModal .dfrow.tap').forEach(r=>r.onclick=()=>{closeDrift();openTask(r.dataset.tid);});
+}
+
+
+/* ==================== ПУЛЬС КОМПАНИИ ====================
+   Диагноз проекта считается из данных, а не ставится рукой: просрочки, тишина,
+   застрявшие задачи, недостижимая веха, перегруз. Ручная метка — поправка, а не
+   замена: человек видит то, чего в цифрах нет. */
+function projectPulse(meta,data){
+  const tISO=todayISO(),now=Date.now(),day=864e5;
+  const tasks=(data.tasks||[]).filter(t=>!t.isMilestone);
+  const active=tasks.filter(t=>t.status!=='done'&&t.status!=='backlog');
+  const sig=[],add=(k,w,text)=>{if(w>0.5)sig.push({k,w:Math.round(w),text});};
+  const over=active.filter(t=>t.end&&t.end<tISO);
+  if(active.length&&over.length)
+    add('over',Math.min(30,over.length/active.length*60),
+      over.length+' '+plural(over.length,'просроченная задача','просроченные задачи','просроченных задач'));
+  const last=(data.activity&&data.activity[0]&&data.activity[0].ts)||data.updatedAt||0;
+  const quiet=last?Math.floor((now-last)/day):-1;
+  if(quiet<0)add('quiet',12,'в истории проекта пусто');
+  else if(quiet>7)add('quiet',Math.min(25,(quiet-7)*2.5),'тишина '+quiet+' '+plural(quiet,'день','дня','дней'));
+  const stuck=active.filter(t=>t.status==='progress'&&t.statusTs&&now-t.statusTs>10*day);
+  if(stuck.length)add('stuck',Math.min(20,stuck.length*7),
+    stuck.length+' '+plural(stuck.length,'задача висит','задачи висят','задач висят')+' «в работе» больше 10 дней');
+  const closed14=tasks.filter(t=>t.status==='done'&&(t.doneTs||t.statusTs||0)>now-14*day).length;
+  if(active.length&&!closed14)add('nomove',20,'за две недели не закрыто ни одной задачи');
+  const mile=(data.tasks||[]).filter(t=>t.isMilestone&&t.end&&t.end>=tISO)
+    .sort((a,b)=>parseD(a.end)-parseD(b.end))[0];
+  if(mile){
+    const remain=tasks.filter(t=>t.status!=='done'&&t.end&&t.end<=mile.end)
+      .reduce((a,t)=>a+(t.estimate||0),0);
+    let wd=0;for(let m=parseD(tISO);m<=parseD(mile.end);m+=day){const d=new Date(m).getUTCDay();if(d&&d!==6)wd++;}
+    const need=wd?remain/wd:remain;
+    const cap=(data.members||[]).reduce((a,m)=>a+(m.capacity?m.capacity/5:6),0)||6;
+    if(remain>0&&need>cap*0.9)
+      add('mile',20,'веха «'+String(mile.title||'').slice(0,26)+'» не успевает: нужно ~'+need.toFixed(1)+' ч/день при '+Math.round(cap));
+  }
+  const ovm=(data.members||[]).filter(m=>m.capacity&&
+    active.filter(t=>t.assigneeId===m.id).reduce((a,t)=>a+(t.estimate||0),0)>m.capacity*1.15);
+  if(ovm.length)add('load',Math.min(15,ovm.length*8),
+    ovm.length===1?('перегружен '+ovm[0].name):('перегружены '+ovm.length+' '+plural(ovm.length,'человек','человека','человек')));
+  const hc=data.health&&data.health.c;
+  if(hc==='r')add('manual',15,'помечен вручную: горим');
+  let score=100-sig.reduce((a,x)=>a+x.w,0);
+  if(hc==='g')score+=10;
+  score=Math.max(0,Math.min(100,Math.round(score)));
+  sig.sort((a,b)=>b.w-a.w);
+  // мёртвых проектов без активных задач не бывает — это просто завершённый проект
+  if(!active.length)return {score:100,band:'ok',sig:[],active:0,idle:true};
+  return {score,band:score<45?'dying':score<70?'risk':'ok',sig,active:active.length};
+}
+const PU_BAND={dying:['var(--bad)','умирает'],risk:['var(--warn)','под риском'],ok:['var(--ok)','в порядке']};
+function pulseBlock(projs){
+  const rows=projs.map(x=>({meta:x.meta,data:x.data,p:projectPulse(x.meta,x.data)}))
+    .sort((a,b)=>a.p.score-b.p.score);
+  const bad=rows.filter(r=>r.p.band!=='ok'),w=rows[0];
+  const head=bad.length
+    ? `Сейчас <b>${esc(w.meta.name)}</b> ${PU_BAND[w.p.band][1]}${w.p.sig[0]?' — '+esc(w.p.sig[0].text):''}${bad.length>1?`. Ещё ${bad.length-1} ${plural(bad.length-1,'проект просит','проекта просят','проектов просят')} внимания.`:''}`
+    : 'Все проекты живы: просрочек, тишины и недостижимых вех нет';
+  return `<div class="panel-c" style="margin-bottom:16px"><h3>Пульс компании <span class="c">${rows.length}</span></h3>
+    <div class="puhead ${bad.length?'bad':''}">${head}</div>
+    ${rows.map(r=>`<div class="purow" data-open="${r.meta.id}" title="Открыть проект">
+      <span class="pue">${r.meta.emoji||'📄'}</span>
+      <div class="pum"><div class="pun">${esc(r.meta.name)}</div>
+        <div class="pus">${r.p.idle?'активных задач нет':(r.p.sig.length?r.p.sig.slice(0,2).map(x=>esc(x.text)).join(' · '):'сигналов тревоги нет')}</div></div>
+      <div class="pubar"><span style="width:${r.p.score}%;background:${PU_BAND[r.p.band][0]}"></span></div>
+      <div class="pusc" style="color:${PU_BAND[r.p.band][0]}">${r.p.score}</div></div>`).join('')}
+  </div>`;
 }
 
 /* ============================ CLIENT REPORT (статус-сводка) ============================ */
@@ -6870,11 +7063,65 @@ $('#wizScrim').onclick=e=>{if(e.target===$('#wizScrim'))closeWiz();};
 const TEMPLATES=[
  {k:'company',emoji:'🏢',n:'Компания',d:'Контейнер: проекты внутри'},
  {k:'empty',emoji:'📄',n:'Пустой',d:'С чистого листа'},
- {k:'mvp',emoji:'🚀',n:'Запуск MVP',d:'Продукт → релиз'},
+ {k:'mvp',emoji:'🚀',n:'Разработка MVP',d:'Идея → релиз'},
+ {k:'saas',emoji:'💳',n:'Запуск SaaS',d:'Продукт → первая оплата'},
+ {k:'site',emoji:'🧾',n:'Клиентский сайт',d:'Бриф → сдача и остаток'},
  {k:'marketing',emoji:'📣',n:'Маркетинг-спринт',d:'Оффер → аналитика'},
  {k:'content',emoji:'✍️',n:'Контент-план',d:'Неделя контента'},
 ];
-const TPL_NAME={company:'Моя компания',mvp:'Запуск MVP',marketing:'Маркетинг-спринт',content:'Контент-план'};
+/* ДНК проекта: порядок работ, зависимости, вехи и — главное — «зачем» у каждой задачи.
+   why попадает в описание: через месяц задача без «зачем» выглядит необязательной. */
+const TPL_DNA={
+ mvp:{name:'Разработка MVP',emoji:'🚀',sections:['Продукт','Запуск'],tasks:[
+  {k:'scope',t:'Концепт и границы MVP',sec:0,s:0,d:2,st:'todo',est:8,pr:'high',why:'пока границы не записаны, продукт растёт бесконечно и релиз не наступает никогда'},
+  {k:'proto',t:'Прототип и дизайн экранов',sec:0,s:2,d:5,est:24,after:['scope'],why:'нарисовать дешевле, чем переписать: правки на макете стоят часы, в коде — недели'},
+  {k:'dev',t:'Разработка MVP',sec:0,s:7,d:14,est:60,pr:'high',after:['proto'],why:'узкая версия, которая делает главное дело до конца'},
+  {k:'qa',t:'Тестирование на живых сценариях',sec:0,s:21,d:5,est:16,after:['dev'],why:'первый чужой человек ломает продукт за пять минут — лучше до релиза'},
+  {k:'land',t:'Лендинг с понятным обещанием',sec:1,s:14,d:6,est:12,after:['scope'],why:'продукт без страницы, объясняющей его за 10 секунд, некому показать'},
+  {k:'prep',t:'Подготовка к запуску',sec:1,s:24,d:5,est:10,after:['qa','land'],why:'тексты, письма, ответы на вопросы — всё, что нельзя писать в день релиза'},
+  {k:'rel',t:'Релиз',sec:1,s:30,d:0,mile:true,pr:'urgent',after:['prep'],why:'дата, к которой всё остальное имеет смысл'}]},
+ saas:{name:'Запуск SaaS',emoji:'💳',sections:['Продукт','Деньги','Запуск'],tasks:[
+  {k:'who',t:'Одна боль и один клиент',sec:0,s:0,d:2,st:'todo',est:6,pr:'high',why:'пока клиент — «все», не покупает никто'},
+  {k:'talks',t:'10 разговоров с будущими клиентами',sec:0,s:1,d:5,est:10,pr:'high',after:['who'],why:'десять разговоров до кода дешевле десяти месяцев после'},
+  {k:'skel',t:'Каркас приложения и вход',sec:0,s:3,d:5,est:24,after:['who'],why:'скучная часть, без которой не начинается интересная'},
+  {k:'core',t:'Ядро: один сценарий до конца',sec:0,s:8,d:10,est:50,pr:'high',after:['skel'],why:'один сценарий, доведённый до конца, продаёт лучше пяти начатых'},
+  {k:'onb',t:'Первые 10 минут пользователя',sec:0,s:18,d:3,est:12,after:['core'],why:'человек решает в первые минуты, вернётся ли он вообще'},
+  {k:'bill',t:'Тарифы и биллинг',sec:1,s:18,d:4,est:16,pr:'high',after:['core'],why:'без оплаты это не SaaS, а демо'},
+  {k:'pay',t:'Живая оплата насквозь',sec:1,s:22,d:2,est:6,pr:'urgent',after:['bill'],why:'пока через систему не прошёл настоящий рубль, продаж нет'},
+  {k:'legal',t:'Оферта, политика, реквизиты',sec:1,s:22,d:2,est:5,after:['bill'],why:'приём денег без юр-минимума ставит под удар сам счёт'},
+  {k:'metr',t:'Метрика: регистрация → оплата',sec:1,s:24,d:2,est:6,after:['bill'],why:'без этой воронки любое решение о продукте — угадывание'},
+  {k:'land',t:'Лендинг с ценой на виду',sec:2,s:12,d:4,est:14,after:['who'],why:'спрятанная цена не бережёт продажу, а отменяет её'},
+  {k:'first',t:'Первая оплата',sec:2,s:27,d:0,mile:true,pr:'urgent',after:['pay','land'],why:'единственное событие, которое отличает продукт от хобби'}]},
+ site:{name:'Клиентский сайт',emoji:'🧾',sections:['Договор','Дизайн','Сборка','Сдача'],tasks:[
+  {k:'brief',t:'Бриф и границы работ',sec:0,s:0,d:2,st:'todo',est:4,pr:'high',why:'границы, записанные до старта, — единственная защита от бесконечных правок'},
+  {k:'money',t:'Смета и предоплата',sec:0,s:2,d:2,est:3,pr:'high',after:['brief'],why:'работа без предоплаты — это кредит, который выдаёшь ты'},
+  {k:'struct',t:'Структура и тексты',sec:1,s:4,d:3,est:8,after:['money'],why:'дизайн по готовому тексту рисуется один раз, по «рыбе» — трижды'},
+  {k:'proto',t:'Прототип экранов',sec:1,s:7,d:3,est:10,after:['struct'],why:'спор о расположении блоков дешевле решать на схеме, чем на макете'},
+  {k:'design',t:'Дизайн-макет',sec:1,s:10,d:5,est:20,after:['proto'],why:'то, за что клиент платит глазами'},
+  {k:'fix',t:'Правки макета — один круг',sec:1,s:15,d:3,est:6,after:['design'],why:'круг правок, посчитанный заранее, не съедает маржу'},
+  {k:'build',t:'Вёрстка и адаптив',sec:2,s:18,d:7,est:28,after:['fix'],why:'телефон у большинства посетителей — не «второй экран», а единственный'},
+  {k:'fill',t:'Наполнение контентом',sec:2,s:25,d:3,est:8,after:['build'],why:'сайт с текстом-заглушкой нельзя показать заказчику'},
+  {k:'host',t:'Домен, хостинг, SSL',sec:2,s:25,d:1,est:3,after:['build'],why:'оформляется на клиента, иначе через год сайт — заложник'},
+  {k:'an',t:'Аналитика и приём заявок',sec:2,s:28,d:2,est:5,after:['fill'],why:'сайт без заявок и цифр невозможно защитить на встрече'},
+  {k:'hand',t:'Сдача и обучение клиента',sec:3,s:30,d:2,est:4,after:['an','host'],why:'клиент, который умеет менять текст сам, не звонит по выходным'},
+  {k:'rest',t:'Остаток оплаты',sec:3,s:32,d:1,est:1,pr:'urgent',after:['hand'],why:'сдача без закрытого счёта — не сдача'},
+  {k:'done',t:'Сайт сдан',sec:3,s:33,d:0,mile:true,pr:'urgent',after:['rest'],why:'граница, после которой начинается поддержка, а не проект'}]},
+ marketing:{name:'Маркетинг-спринт',emoji:'📣',sections:['Подготовка','Запуск'],tasks:[
+  {k:'offer',t:'Стратегия и оффер',sec:0,s:0,d:2,st:'todo',est:6,pr:'high',why:'слабый оффер не спасают ни бюджет, ни креативы'},
+  {k:'crea',t:'Креативы',sec:0,s:2,d:4,est:12,after:['offer'],why:'несколько версий, иначе нечего сравнивать'},
+  {k:'fun',t:'Лендинг / воронка',sec:0,s:3,d:5,est:16,after:['offer'],why:'трафик без места приземления — деньги в песок'},
+  {k:'ads',t:'Настройка рекламы',sec:1,s:7,d:2,est:8,after:['crea','fun'],why:'запуск на непроверенную воронку сжигает бюджет первым же днём'},
+  {k:'seed',t:'Посевы и инфлюенсеры',sec:1,s:8,d:6,est:10,after:['crea'],why:'чужая аудитория даёт доверие, которого нет у рекламы'},
+  {k:'sum',t:'Аналитика и итоги',sec:1,s:14,d:2,est:6,after:['ads','seed'],why:'спринт без разбора превращает следующий в такое же угадывание'}]},
+ content:{name:'Контент-план',emoji:'✍️',sections:['Эта неделя'],tasks:[
+  {k:'reels',t:'Reels / видео',sec:0,s:0,d:1,st:'todo',est:3,why:'формат, который приносит новых людей'},
+  {k:'car',t:'Пост-карусель',sec:0,s:1,d:1,est:2,why:'формат, который объясняет и сохраняется'},
+  {k:'st',t:'Сторис-серия',sec:0,s:2,d:1,est:2,why:'формат, который продаёт тем, кто уже подписан'},
+  {k:'mail',t:'Email / рассылка',sec:0,s:3,d:1,est:2,why:'единственный канал, который у тебя не отнимет алгоритм'},
+  {k:'sum',t:'Аналитика недели',sec:0,s:5,d:1,est:1,after:['reels','car','st','mail'],why:'без разбора следующая неделя будет такой же наугад'}]},
+};
+const TPL_NAME=Object.assign({company:'Моя компания'},
+  Object.fromEntries(Object.entries(TPL_DNA).map(([k,v])=>[k,v.name])));
 // мой сохранённый профиль (имя/роль/цвет/фото/email) — чтобы в новых проектах я оставался собой
 function myProfileMember(){
   let p=null;try{p=JSON.parse(localStorage.getItem('cockpit_profile'));}catch(e){}
@@ -6891,12 +7138,15 @@ function buildTemplate(tpl){
   const today=parseD(todayISO());const D=i=>fmtD(today+i*dayMs);
   const mk=(title,sec,s,e,st,est,extra={})=>Object.assign({id:uid('t'),title,sectionId:sec,assigneeId:'m1',start:D(s),end:D(e),status:st||'backlog',estimate:est||0,spent:0,priority:'med',description:'',comments:[],isMilestone:false,deps:[],createdTs:0},extra);
   if(tpl==='company'){const p=base();p.projectName='Моя компания';p.emoji='🏢';p.sections=[{id:'s1',name:'Общее'}];return p;}
-  if(tpl==='mvp'){const p=base();p.projectName='Запуск MVP';p.emoji='🚀';p.sections=[{id:'s1',name:'Продукт'},{id:'s2',name:'Запуск'}];
-    p.tasks=[mk('Концепт и скоуп','s1',0,2,'todo',8,{priority:'high'}),mk('Прототип / дизайн','s1',2,7,'backlog',24),mk('Разработка MVP','s1',7,21,'backlog',60,{priority:'high'}),mk('Тестирование','s1',21,26,'backlog',16),mk('Лендинг','s2',14,20,'backlog',12),mk('Подготовка к запуску','s2',24,29,'backlog',10),mk('Релиз','s2',30,30,'backlog',0,{isMilestone:true,priority:'urgent'})];return p;}
-  if(tpl==='marketing'){const p=base();p.projectName='Маркетинг-спринт';p.emoji='📣';p.sections=[{id:'s1',name:'Подготовка'},{id:'s2',name:'Запуск'}];
-    p.tasks=[mk('Стратегия и оффер','s1',0,2,'todo',6,{priority:'high'}),mk('Креативы','s1',2,6,'backlog',12),mk('Лендинг / воронка','s1',3,8,'backlog',16),mk('Настройка рекламы','s2',7,9,'backlog',8),mk('Посевы / инфлюенсеры','s2',8,14,'backlog',10),mk('Аналитика и итоги','s2',14,16,'backlog',6)];return p;}
-  if(tpl==='content'){const p=base();p.projectName='Контент-план';p.emoji='✍️';p.sections=[{id:'s1',name:'Эта неделя'}];
-    p.tasks=[mk('Reels / видео','s1',0,1,'todo',3),mk('Пост-карусель','s1',1,2,'backlog',2),mk('Сторис-серия','s1',2,3,'backlog',2),mk('Email / рассылка','s1',3,4,'backlog',2),mk('Аналитика недели','s1',5,6,'backlog',1)];return p;}
+  const dna=TPL_DNA[tpl];
+  if(dna){const p=base();p.projectName=dna.name;p.emoji=dna.emoji;
+    p.sections=dna.sections.map((n,i)=>({id:'s'+(i+1),name:n}));
+    const byKey={};
+    p.tasks=dna.tasks.map(x=>{const t=mk(x.t,'s'+(x.sec+1),x.s,x.s+x.d,x.st,x.est,
+      {priority:x.pr||'med',description:x.why||'',isMilestone:!!x.mile});byKey[x.k]=t;return t;});
+    // зависимости проставляем вторым проходом: id появляются только после создания задач
+    dna.tasks.forEach((x,i)=>{if(x.after)p.tasks[i].deps=x.after.map(k=>byKey[k]&&byKey[k].id).filter(Boolean);});
+    return p;}
   return base();
 }
 function createProject(name,tpl,parentId,emoji){
@@ -7789,6 +8039,8 @@ function buildPaletteIndex(){
     ['zap','Что горит сейчас','просрочки, дедлайны, срочное','Планирование',()=>fireFocus()],
     ['cal','Авто-расписание','раскидать сроки по загрузке','Планирование',()=>autoSchedule()],
     ['cal','Умная неделя','Вандо разложит задачи всех проектов по дням','AI',()=>{setView('week');setTimeout(()=>runWeekPlan(),140);}],
+    ['sync','Код против плана','коммиты против задач: что реально сделано','Планирование',()=>openDrift()],
+    ['zap','Пульс компании','какой проект сейчас умирает','Планирование',()=>{setView('all');setTimeout(()=>{const el=$('#portfolio .puhead');if(el)el.scrollIntoView({block:'center',behavior:'smooth'});},180);}],
     ['board','Сбросить порядок задач','вернуть авто-сортировку','Планирование',()=>{S.tasks.forEach(t=>{delete t.rank;});save();render();toast('Авто-сортировка ↕','↕');}],
     ['users','Разгрузить команду','выровнять загрузку','Команда',()=>openRebalance()],
     ['users','Аналитика команды','выработка и cycle-time','Команда',()=>openAnalytics()],
