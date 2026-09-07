@@ -812,6 +812,36 @@ body.light .brand .logo{background:linear-gradient(157deg,#1b1d27,#08090d 72%)}
 .stuck{color:var(--warn);font-size:10.5px;font-weight:800;white-space:nowrap}
 .wiphint{margin:0 10px 8px;padding:7px 10px;border:1px solid var(--line);border-left:3px solid var(--warn);border-radius:9px;font-size:11.5px;color:var(--warn);cursor:pointer;line-height:1.35;background:var(--card)}
 .wiphint:hover{border-color:var(--warn)}
+/* Умная неделя — превью ИИ-раскладки по дням */
+.wpsum{font-size:13.5px;line-height:1.6;color:var(--mut);background:var(--bg2);border:1px solid var(--line);border-left:3px solid var(--acc2);border-radius:11px;padding:11px 13px;margin-bottom:12px}
+.wpsrc{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mut2);margin-bottom:10px}
+.wpwarn{display:flex;gap:7px;font-size:12.5px;line-height:1.5;color:var(--warn);padding:2px 0 6px}
+.wpday{border:1px solid var(--line);background:var(--bg2);border-radius:13px;margin-bottom:9px;overflow:hidden;animation:wpIn .34s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--i) * 42ms)}
+@keyframes wpIn{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+.wpday.wpover{border-color:rgba(248,113,113,.45)}
+.wpday.wpempty{opacity:.55}
+.wpdh{display:flex;align-items:center;gap:9px;padding:9px 13px;font-size:12.5px;font-weight:700}
+.wpdh .wpd8{color:var(--mut2);font-weight:500;font-size:11px}
+.wpdh .wph{margin-left:auto;font-size:11.5px;color:var(--mut2);font-variant-numeric:tabular-nums}
+.wpday.wpover .wpdh .wph{color:var(--bad)}
+.wpbar{height:3px;background:var(--line);position:relative;overflow:hidden}
+.wpbar span{position:absolute;top:0;bottom:0;left:0;width:0;background:linear-gradient(90deg,var(--acc2),#7dd3fc);transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.wpday.wpover .wpbar span{background:linear-gradient(90deg,#f87171,#fb923c)}
+.wprow{display:flex;align-items:flex-start;gap:9px;padding:8px 13px;border-top:1px solid var(--line);cursor:pointer;transition:.15s}
+.wprow:hover{background:var(--card)}
+.wprow.off{opacity:.36}
+.wprow.off .wpt{text-decoration:line-through}
+.wpck{width:16px;height:16px;border-radius:5px;border:1.5px solid var(--line2);flex:0 0 auto;margin-top:2px;display:grid;place-items:center;color:#0b0d13;transition:.15s}
+.wprow:not(.off) .wpck{background:var(--acc2);border-color:var(--acc2)}
+.wprow.off .wpck svg{opacity:0}
+.wpt{font-size:13.5px;line-height:1.35;font-weight:600}
+.wpm{font-size:11px;color:var(--mut2);margin-top:3px;line-height:1.45}
+.wpre{color:var(--acc2)}
+.wpmoved{font-size:10px;font-weight:700;color:var(--warn);margin-left:6px;white-space:nowrap}
+.wpoff{margin-top:13px;border:1px dashed var(--line2);border-radius:12px;padding:10px 13px}
+.wpoff h4{margin:0 0 7px;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--mut2);font-weight:800}
+.wpoff .wpo{font-size:12.5px;color:var(--mut);line-height:1.5;padding:3px 0}
+.modal.wide{width:660px}
 .hdot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-left:8px;vertical-align:1px;cursor:pointer;background:var(--bg2);border:1.5px dashed var(--line2)}
 .hdot:not(.unset){border:none}
 .hnote{font-size:11.5px;color:var(--mut2);margin-left:7px;font-weight:500}
@@ -2295,6 +2325,7 @@ html{font-optical-sizing:auto}
 <div class="modal-scrim" id="connectScrim"><div class="modal" id="connectModal"></div></div>
 <div class="modal-scrim" id="tgScrim"><div class="modal" id="tgModal"></div></div>
 <div class="modal-scrim" id="planScrim"><div class="modal" id="planModal"></div></div>
+<div class="modal-scrim" id="wplanScrim"><div class="modal wide" id="wplanModal"></div></div>
 <div class="modal-scrim" id="setScrim"><div class="modal" id="setModal"></div></div>
 <div class="modal-scrim" id="balScrim"><div class="modal" id="balModal"></div></div>
 <div class="present" id="present"></div>
@@ -4820,12 +4851,14 @@ function renderWeek(){
   days.forEach((d,i)=>cols+=col(d,WD[i],md(d),d===tISO?'today':''));
   if(by.later.length)cols+=col('later','Позже','за неделей','');
   el.innerHTML=`<div class="whead"><h2 style="margin:0;font-size:18px">Моя неделя</h2><span class="wt">${wt} · ${md(wstart)}–${md(wend)}</span>
-      <div class="wnav"><button class="btn" id="wPrev">←</button><button class="btn" id="wToday">Сегодня</button><button class="btn" id="wNext">→</button></div></div>
+      <div class="wnav"><button class="btn" id="wPrev">←</button><button class="btn" id="wToday">Сегодня</button><button class="btn" id="wNext">→</button>
+      <button class="btn primary" id="wSmart" title="Вандо разложит задачи всех проектов по дням — по ёмкости и зависимостям">${icon('sparkles',13)} Умная неделя</button></div></div>
     <div class="wgrid">${cols}</div>
     <div style="font-size:12px;color:var(--mut2);margin-top:10px">Это твои задачи по всем проектам на неделю. Перетаскивай между днями — меняешь срок. Клик — открыть.</div>`;
   $('#wPrev').onclick=()=>{weekOffset--;renderWeek();};
   $('#wNext').onclick=()=>{weekOffset++;renderWeek();};
   $('#wToday').onclick=()=>{weekOffset=0;renderWeek();};
+  $('#wSmart').onclick=e=>runWeekPlan(e.currentTarget);
   $$('#week .wcard').forEach(c=>{
     c.onclick=e=>{if(e.target.closest('.qdone'))return;const pid=c.dataset.pid,tid=c.dataset.tid;if(pid!==S.id)switchProject(pid);setTimeout(()=>openTask(tid),80);};
     c.ondragstart=()=>{weekDrag={pid:c.dataset.pid,tid:c.dataset.tid};c.classList.add('dragging');};
@@ -4844,6 +4877,188 @@ function renderWeek(){
         if(_o&&_o!==day){if(parseD(day)>parseD(_o))t.shifts=(t.shifts||0)+1;const f=x=>x.slice(8)+'.'+x.slice(5,7);t.comments=t.comments||[];t.comments.push({ts:Date.now(),author:meName(),authorId:myId(),text:'📅 Срок: '+f(_o)+' → '+f(day)+' — перенос в «Моей неделе»'});}});
       weekDrag=null;renderWeek();};});
   applyPingpong($('#week'));
+}
+
+
+/* ==================== УМНАЯ НЕДЕЛЯ ====================
+   Вандо раскладывает задачи ВСЕХ проектов по дням недели: ёмкость дня, зависимости,
+   просрочки. Без облака — тот же расклад считается локально, кнопка никогда не мёртвая. */
+let wplan=null;
+/* ёмкость в часах/день: недельный capacity берём максимальный из проектов — человек один */
+function wpDaily(){
+  const caps=[];visibleProjects().forEach(p=>{const d=loadProj(p.id);if(!d)return;const m=myMemberIn(d);if(m&&m.capacity)caps.push(m.capacity);});
+  return Math.max(2,Math.round((caps.length?Math.max.apply(null,caps):30)/5));
+}
+/* мои живые задачи по всем проектам; beyondWeek — срок дальше этой недели (запас на подтяжку) */
+function wpPool(days){
+  const wend=days[6],tISO=todayISO(),out=[];
+  visibleProjects().forEach(p=>{const data=loadProj(p.id);if(!data)return;const me=myMemberIn(data);if(!me)return;
+    const byId={};(data.tasks||[]).forEach(t=>{byId[t.id]=t;});
+    (data.tasks||[]).forEach(t=>{
+      if(t.isMilestone||t.status==='done'||t.status==='backlog')return;
+      if(t.assigneeId!==me.id)return;
+      const deps=(t.deps||[]).filter(d=>byId[d]);
+      out.push({id:p.id+'|'+t.id,pid:p.id,tid:t.id,pname:p.name,emoji:p.emoji||'📄',t,
+        deps:deps.map(d=>p.id+'|'+d),
+        blocked:deps.some(d=>byId[d].status!=='done'),
+        overdue:!!(t.end&&t.end<tISO),beyondWeek:!!(t.end&&t.end>wend)});});});
+  return out;
+}
+function wpPayload(days,pool,daily){
+  const tISO=todayISO(),has={};pool.forEach(x=>{has[x.id]=1;});
+  const WD=['понедельник','вторник','среда','четверг','пятница','суббота','воскресенье'];
+  return {today:tISO,who:meName(),dailyCapacity:daily,
+    days:days.map((d,i)=>({date:d,weekday:WD[i],isWeekend:i>4,isPast:d<tISO})),
+    tasks:pool.map(x=>({id:x.id,project:x.pname,title:String(x.t.title||'').slice(0,140),
+      estimate:x.t.estimate||0,priority:(prMap[x.t.priority]||{}).n||'Средний',
+      status:(stMap[x.t.status]||{}).n||'',deadline:x.t.end||null,
+      overdue:x.overdue,beyondWeek:x.beyondWeek,blocked:x.blocked,
+      waitingOn:x.t.waitingOn||null,deps:x.deps.filter(d=>has[d])}))};
+}
+/* сколько часов задачи ложится на каждый день: работа идёт ДО дедлайна, а не в один день */
+function wpSpread(day,est,days,daily){
+  const load={},i=days.indexOf(day);let rest=est||0;
+  if(i<0||rest<=0){load[day]=rest;return load;}
+  for(let k=i;k>=0&&rest>0.001;k--){const take=Math.min(daily,rest);load[days[k]]=take;rest-=take;}
+  if(rest>0.001)load[day]=(load[day]||0)+rest; // не влезло в неделю — честно грузим дедлайн
+  return load;
+}
+/* локальный расклад: приоритет, зависимости, потолок дня. Крупная задача занимает несколько дней */
+function wpLocal(days,pool,daily){
+  const tISO=todayISO();
+  const queue=[...pool].sort((a,b)=>(a.beyondWeek?1:0)-(b.beyondWeek?1:0)||(b.overdue?1:0)-(a.overdue?1:0)||relScore(b.t)-relScore(a.t));
+  const build=weekends=>{
+    const slots=days.map((d,i)=>({d,left:daily}))
+      .filter((s,i)=>days[i]>=tISO&&(weekends||i<5));
+    const plan=[],overflow=[],placed={};
+    queue.forEach(x=>{
+      let after='';x.deps.forEach(d=>{if(placed[d]&&placed[d]>after)after=placed[d];});
+      let rest=x.t.estimate||2;const load={},touched=[];
+      for(const s of slots){
+        if(s.d<=after||s.left<=0.001)continue;
+        const take=Math.min(s.left,rest);s.left-=take;rest-=take;
+        load[s.d]=take;touched.push(s);
+        if(rest<=0.001)break;}
+      if(rest>0.001){touched.forEach(s=>{s.left+=load[s.d];});
+        overflow.push({id:x.id,reason:x.beyondWeek?'срок дальше недели — оставил как есть':'не хватило ёмкости недели'});return;}
+      const day=touched[touched.length-1].d;placed[x.id]=day;
+      plan.push({id:x.id,day,load,reason:x.overdue?'просрочено — тянем в начало':x.beyondWeek?'подтянуто вперёд: остался запас':x.blocked?'после разблокировки':'по приоритету и свободной ёмкости'});});
+    return {plan,overflow};
+  };
+  let r=build(false);
+  if(r.overflow.length){const w=build(true);if(w.plan.length>r.plan.length)r=w;} // будни не вместили — добираем выходными
+  return {summary:'Расклад по ёмкости дня — '+daily+' ч, с учётом приоритета и зависимостей.',
+    plan:r.plan,overflow:r.overflow,warnings:[]};
+}
+/* чистим ответ: только известные id и дни этой недели, одна задача — один раз */
+function wpNormalize(res,days,byId,daily){
+  const seen={},plan=[];
+  (res.plan||[]).forEach(x=>{if(!x||!byId[x.id]||days.indexOf(x.day)<0||seen[x.id])return;
+    seen[x.id]=1;plan.push({id:x.id,day:x.day,reason:String(x.reason||'').slice(0,120),off:false,
+      load:x.load||wpSpread(x.day,byId[x.id].t.estimate||0,days,daily)});});
+  const overflow=(res.overflow||[]).filter(x=>x&&byId[x.id]&&!seen[x.id])
+    .map(x=>({id:x.id,reason:String(x.reason||'').slice(0,120)}));
+  return {summary:String(res.summary||''),plan,overflow,
+    warnings:(res.warnings||[]).slice(0,3).map(w=>String(w).slice(0,160))};
+}
+async function runWeekPlan(btn){
+  const days=weekDays(weekOffset),daily=wpDaily(),pool=wpPool(days);
+  if(!pool.length){toast('Нечего раскладывать — открытых задач на тебе нет','🗓');return;}
+  const byId={};pool.forEach(x=>{byId[x.id]=x;});
+  const reset=()=>{if(btn){btn.disabled=false;btn.innerHTML=icon('sparkles',13)+' Умная неделя';}};
+  const show=(res,source)=>{const n=wpNormalize(res,days,byId,daily);
+    if(!n.plan.length)return false;
+    wplan=Object.assign({days,daily,byId,source},n);openWeekPlan();return true;};
+  const fallback=note=>{const l=wpLocal(days,pool,daily);if(note)l.summary=note+' '+l.summary;
+    if(!show(l,'local'))toast('Нечего переносить — неделя уже разложена','✅');};
+  if(btn){btn.disabled=true;btn.innerHTML=icon('sparkles',13)+' Вандо думает…';}
+  const token=(cloudOn&&sb)?await aiToken():null;
+  if(!token){fallback('');reset();return;}
+  const ac=new AbortController(),tmo=setTimeout(()=>ac.abort(),100000);
+  try{
+    const r=await fetch(CFG.url+'/functions/v1/ai-review',{method:'POST',signal:ac.signal,
+      headers:{'content-type':'application/json',authorization:'Bearer '+token},
+      body:JSON.stringify({mode:'week',week:wpPayload(days,pool,daily)})});
+    const res=await r.json();
+    if(!r.ok)throw new Error(res&&res.error||'ai');
+    if(!show(res,'ai'))throw new Error('empty');
+  }catch(e){fallback('Вандо не ответил — разложил сам.');}
+  finally{clearTimeout(tmo);reset();}
+}
+function openWeekPlan(){$('#wplanScrim').classList.add('show');renderWeekPlan();}
+function closeWeekPlan(){$('#wplanScrim').classList.remove('show');}
+$('#wplanScrim').onclick=e=>{if(e.target===$('#wplanScrim'))closeWeekPlan();};
+function wpHours(d){const h=wplan.plan.reduce((a,x)=>a+(x.off?0:((x.load||{})[d]||0)),0);
+  return Math.round(h*10)/10;}
+function wpRefreshDay(d){
+  const el=$('#wplanModal .wpday[data-day="'+d+'"]');if(!el)return;
+  const h=wpHours(d),over=h>wplan.daily;
+  el.classList.toggle('wpover',over);
+  const lab=el.querySelector('.wph');if(lab)lab.textContent=(h?h+' ч':'—')+' / '+wplan.daily+' ч';
+  const fill=el.querySelector('.wpbar span');if(fill)fill.style.width=Math.min(100,Math.round(h/wplan.daily*100))+'%';
+}
+function wpRefreshFoot(){
+  const b=$('#wpApply');if(!b)return;const n=wplan.plan.filter(x=>!x.off).length;
+  b.disabled=!n;b.textContent=n?'Применить · '+n+' '+plural(n,'задача','задачи','задач'):'Ничего не выбрано';
+}
+function renderWeekPlan(){
+  if(!wplan)return;const m=$('#wplanModal');
+  const WD=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'],tISO=todayISO(),md=d=>d.slice(8)+'.'+d.slice(5,7);
+  const dayHtml=(d,i)=>{
+    const rs=wplan.plan.filter(x=>x.day===d),h=wpHours(d),over=h>wplan.daily;
+    return `<div class="wpday${over?' wpover':''}${rs.length||h?'':' wpempty'}" data-day="${d}" style="--i:${i}">
+      <div class="wpdh"><span>${WD[i]}</span><span class="wpd8">${md(d)}${d===tISO?' · сегодня':''}</span>
+        <span class="wph">${h?h+' ч':'—'} / ${wplan.daily} ч</span></div>
+      <div class="wpbar"><span data-w="${Math.min(100,Math.round(h/wplan.daily*100))}"></span></div>
+      ${!rs.length&&h?`<div class="wpm" style="padding:7px 13px 9px">день занят работой по задачам, что сдаются позже</div>`:''}
+      ${rs.map(x=>{const it=wplan.byId[x.id],moved=it.t.end!==x.day;
+        return `<div class="wprow${x.off?' off':''}" data-id="${esc(x.id)}">
+          <span class="wpck">${icon('check',11)}</span>
+          <div style="flex:1;min-width:0">
+            <div class="wpt">${esc(it.t.title)}${moved?`<span class="wpmoved">${it.t.end?md(it.t.end)+' →':'без срока →'}</span>`:''}</div>
+            <div class="wpm">${it.emoji} ${esc(it.pname)}${it.t.estimate?' · '+it.t.estimate+' ч':''}${Object.keys(x.load||{}).length>1?' · '+Object.keys(x.load).length+' дн':''}${x.reason?' · <span class="wpre">'+esc(x.reason)+'</span>':''}</div>
+          </div></div>`;}).join('')}
+    </div>`;};
+  m.innerHTML=`<div class="ob-body">
+     <div class="wpsrc">${icon('sparkles',12)} ${wplan.source==='ai'?'Разложил Вандо':'Расклад по ёмкости · без ИИ'}</div>
+     <h2>Умная неделя</h2>
+     ${wplan.summary?`<div class="wpsum" style="margin-top:12px">${esc(wplan.summary)}</div>`:''}
+     ${wplan.warnings.map(w=>`<div class="wpwarn">⚠️ <span>${esc(w)}</span></div>`).join('')}
+     <div style="font-size:12px;color:var(--mut2);margin:4px 0 12px">Клик по задаче — убрать из плана. Полоса дня покажет, влезает ли он в ёмкость.</div>
+     ${wplan.days.map(dayHtml).join('')}
+     ${wplan.overflow.length?`<div class="wpoff"><h4>Не влезло в эту неделю · ${wplan.overflow.length}</h4>
+       ${wplan.overflow.map(o=>{const it=wplan.byId[o.id];
+         return `<div class="wpo">• ${esc(it.t.title)} <span style="color:var(--mut2)">— ${esc(o.reason||'нет ёмкости')}</span></div>`;}).join('')}</div>`:''}
+   </div>
+   <div class="ob-foot"><button class="btn" id="wpClose">Закрыть</button><div class="spacer"></div>
+     <button class="btn primary" id="wpApply"></button></div>`;
+  $('#wpClose').onclick=closeWeekPlan;
+  $('#wpApply').onclick=applyWeekPlan;
+  $$('#wplanModal .wprow').forEach(r=>r.onclick=()=>{
+    const x=wplan.plan.find(p=>p.id===r.dataset.id);if(!x)return;
+    x.off=!x.off;r.classList.toggle('off',x.off);
+    Object.keys(x.load||{}).forEach(wpRefreshDay);wpRefreshDay(x.day);wpRefreshFoot();});
+  wpRefreshFoot();
+  // полосы наливаются после вставки — иначе transition не за что зацепиться
+  requestAnimationFrame(()=>$$('#wplanModal .wpbar span').forEach(b=>{b.style.width=b.dataset.w+'%';}));
+}
+function applyWeekPlan(){
+  const items=wplan.plan.filter(x=>!x.off);if(!items.length)return;
+  const prev=[],f=x=>x.slice(8)+'.'+x.slice(5,7);
+  items.forEach(x=>{const it=wplan.byId[x.id];if(!it)return;
+    editTaskInProject(it.pid,it.tid,t=>{
+      prev.push({pid:it.pid,tid:it.tid,start:t.start,end:t.end});
+      const o=t.end;if(o===x.day)return;
+      t.end=x.day;if(parseD(t.start)>parseD(x.day))t.start=x.day;
+      if(parseD(x.day)>parseD(o||x.day))t.shifts=(t.shifts||0)+1;
+      t.comments=t.comments||[];
+      t.comments.push({ts:Date.now(),author:meName(),authorId:myId(),
+        text:'🗓 Срок: '+(o?f(o):'—')+' → '+f(x.day)+' — умное планирование недели'});});});
+  logAct('🗓','умная неделя · '+items.length+' задач');save();
+  closeWeekPlan();renderWeek();
+  toast('Неделя разложена: '+items.length+' '+plural(items.length,'задача','задачи','задач'),'🗓','Отменить',()=>{
+    prev.forEach(p=>editTaskInProject(p.pid,p.tid,t=>{t.start=p.start;t.end=p.end;}));
+    renderWeek();toast('Вернул как было','↩');});
 }
 
 /* ============================ CLIENT REPORT (статус-сводка) ============================ */
@@ -7573,6 +7788,7 @@ function buildPaletteIndex(){
     ['cal','Перенести все просрочки','актуализировать сроки на неделю','Планирование',()=>healOverdue('week')],
     ['zap','Что горит сейчас','просрочки, дедлайны, срочное','Планирование',()=>fireFocus()],
     ['cal','Авто-расписание','раскидать сроки по загрузке','Планирование',()=>autoSchedule()],
+    ['cal','Умная неделя','Вандо разложит задачи всех проектов по дням','AI',()=>{setView('week');setTimeout(()=>runWeekPlan(),140);}],
     ['board','Сбросить порядок задач','вернуть авто-сортировку','Планирование',()=>{S.tasks.forEach(t=>{delete t.rank;});save();render();toast('Авто-сортировка ↕','↕');}],
     ['users','Разгрузить команду','выровнять загрузку','Команда',()=>openRebalance()],
     ['users','Аналитика команды','выработка и cycle-time','Команда',()=>openAnalytics()],

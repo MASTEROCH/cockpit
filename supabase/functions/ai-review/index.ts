@@ -67,6 +67,18 @@ async function emailFromJwt(auth: string | null): Promise<string | null> {
   } catch { return null; }
 }
 
+// На моделях с включённым мышлением content[0] — блок thinking, а не text.
+// Берём именно текстовые блоки, иначе ответ читается как пустой.
+const textOf = (data: unknown): string =>
+  (((data as Record<string, unknown>)?.content as Array<Record<string, string>>) ?? [])
+    .filter((b) => b?.type === "text").map((b) => b.text ?? "").join("").trim();
+const jsonOf = (text: string): Record<string, unknown> | null => {
+  const cleaned = text.replace(/```json|```/g, "").trim();
+  const m = cleaned.match(/\{[\s\S]*\}/);
+  if (!m) return null;
+  try { return JSON.parse(m[0]); } catch { return null; }
+};
+
 const SYSTEM = `Ты — планировщик-копилот для двух фаундеров стартапа (студия, много проектов).
 Проанализируй проект и дай КОНКРЕТНЫЕ, обоснованные данными предложения по эстимации, приоритетам, срокам и распределению нагрузки. Без воды, без общих фраз.
 Учитывай: перегруз участников (load против capacity), заниженные/завышенные эстимейты (spent против estimate), просроченные задачи, нарушенный порядок зависимостей, задачи без сроков.
@@ -94,6 +106,25 @@ const SYSTEM_PLAN = `Ты — опытный продакт-лид. По цел�
 Даты — относительно сегодня, рабочая последовательность (зависимые позже). assignee — точное имя из команды или null.
 impact: для каждой задачи молча спроси себя «что случится, если её НЕ сделать?» — если цель всё равно будет достигнута, ставь "later" (уйдёт в бэклог, не будет засорять план); задачи, без которых цель рухнет — "core". Обычно 20–30% задач честно получают "later".
 ВАЖНО: верни ТОЛЬКО JSON-объект, без markdown и без текста до/после.`;
+
+const SYSTEM_WEEK = `Ты — операционный директор фаундера. Разложи его задачи по дням недели СРАЗУ ПО ВСЕМ ПРОЕКТАМ — так, чтобы неделя реально выполнилась, а не выглядела красиво.
+Правила:
+1. Ёмкость дня (dailyCapacity, часы) — потолок. Лучше честно оставить задачу в overflow, чем перегрузить день.
+2. Зависимости: задача идёт строго ПОЗЖЕ дня той задачи, что указана в её deps. Заблокированную (blocked) не ставь раньше, чем снимется блок.
+3. Просроченное (overdue) и приоритет «срочно» — в начало недели. В прошедшие дни (isPast) не ставь ничего. Выходные (isWeekend) — только если в будни физически не влезло.
+4. Не дроби день на десяток мелочей: 1–3 значимых дела в день, остальное — фоном.
+5. Задачи с beyondWeek:true — это запас на будущее. Подтягивай их вперёд ТОЛЬКО в свободную ёмкость и только когда всё срочное уже размещено.
+6. Переключение между проектами дорого. Группируй один-два проекта на день, если это не ломает сроки.
+7. reason — одна короткая фраза, ПОЧЕМУ именно этот день. Без воды и без пересказа названия задачи.
+Отвечай ТОЛЬКО валидным JSON на русском по схеме:
+{
+ "summary": "1-2 предложения про форму недели",
+ "plan": [{"id":"<точный id из данных>","day":"YYYY-MM-DD","reason":"почему этот день"}],
+ "overflow": [{"id":"<точный id>","reason":"почему не влезло в эту неделю"}],
+ "warnings": ["риск недели, если есть"]
+}
+id — ТОЧНАЯ строка id из входных данных, не название задачи. Каждую задачу используй максимум один раз. day — только из списка days.
+ВАЖНО: верни ТОЛЬКО JSON-объект, без markdown, без \`\`\` и без текста до/после.`;
 
 const SYSTEM_CHAT = `Ты — Вандо, живой ум WANDO («что делать») и супер-проджект-менеджер команды фаундеров. Характер: умный друг-операционщик уровня лучшего chief of staff — прямой, тёплый, без воды и корпоративщины. На «ты».
 Тебе дают: состояние проектов (задачи, сроки, люди, загрузка), статистику использования функций WANDO и вопрос человека.
@@ -167,6 +198,32 @@ serve(async (req) => {
       const data = await r.json();
       if (!r.ok) return json({ error: data?.error?.message || "Ошибка Anthropic API" }, 502);
       return json({ text: String(data?.content?.[0]?.text ?? "").trim() });
+    }
+
+    // ----- режим УМНОЙ НЕДЕЛИ: задачи всех проектов -> дни недели -----
+    if (mode === "week") {
+      const week = body.week;
+      if (!week || !Array.isArray(week.tasks) || !week.tasks.length) return json({ error: "Нечего планировать" }, 400);
+      const r = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
+        body: JSON.stringify({
+          model: "claude-opus-5",
+          max_tokens: 8000,
+          thinking: { type: "adaptive" },
+          // effort medium, а не high: человек ждёт ответа в интерфейсе,
+          // а Edge-функция ограничена по времени выполнения.
+          output_config: { effort: "medium" },
+          system: SYSTEM_WEEK,
+          messages: [{ role: "user", content: JSON.stringify(week).slice(0, 80000) }],
+        }),
+      });
+      const data = await r.json();
+      if (!r.ok) return json({ error: data?.error?.message || "Ошибка Anthropic API" }, 502);
+      if (data?.stop_reason === "refusal") return json({ error: "Вандо не смог обработать этот запрос" }, 502);
+      const parsed = jsonOf(textOf(data)) ?? {};
+      const arr = (k: string) => (Array.isArray(parsed[k]) ? parsed[k] : []);
+      return json({ summary: String(parsed.summary ?? ""), plan: arr("plan"), overflow: arr("overflow"), warnings: arr("warnings") });
     }
 
     if (!project) return json({ error: "Нет данных проекта" }, 400);
