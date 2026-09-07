@@ -7738,7 +7738,7 @@ function webmailUrl(email){
   const inTMA=!!tmaInitData();
   g.innerHTML=`<div class="gatecard"><div class="gatelogo">${logoMarkSVG(22)}</div><h1>WANDO</h1>
     <div class="gp">Внутренний рабочий инструмент команды. Доска откроется только после входа.</div>
-    ${inTMA?`<div class="gp" style="margin-top:10px;background:rgba(167,139,250,.10);border:1px solid var(--line);border-radius:12px;padding:11px 13px;font-size:12.5px;text-align:left">📱 <b>Первый вход из Telegram — один раз:</b><br>1. Открой <b>cock-pit.com</b> в обычном браузере (Safari/Chrome).<br>2. Войди по ссылке из письма → нажми <b>«Подключить Telegram»</b>.<br>Дальше кнопка <b>☰ WANDO</b> в боте открывает доску <b>сразу</b>, без входа.</div>`:''}
+    ${inTMA?`<div class="gp" style="margin-top:10px;background:rgba(167,139,250,.10);border:1px solid var(--line);border-radius:12px;padding:11px 13px;font-size:12.5px;text-align:left">📱 <b>Первый вход — один раз, прямо здесь.</b><br>Введи email, вернись сюда с кодом из письма. Telegram привяжется сам, и дальше кнопка <b>☰ WANDO</b> будет открывать доску сразу.</div>`:''}
     <input class="inp gateinp" id="gateEmail" type="email" placeholder="ваш email" autocomplete="email" value="${esc(email||'')}">
     <button class="btn primary" id="gateSend" style="width:100%;justify-content:center;margin-top:10px">Прислать код для входа</button>
     <div class="gatefoot">Доступ только для участников команды.<br>Вход и регистрация — по коду из письма, без пароля.</div></div>`;
@@ -7818,7 +7818,12 @@ async function tmaAutoLink(){
   const init=tmaInitData();if(!init||!sb||tgLinked)return;
   try{const token=await aiToken();if(!token)return;
     const r=await fetch(fnUrl()+'/tma-link',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+token,'apikey':CFG.anon},body:JSON.stringify({initData:init})});
-    const d=await r.json().catch(()=>({}));if(d&&d.ok){tgLinked=true;}
+    const d=await r.json().catch(()=>({}));
+    if(d&&d.ok){tgLinked=true;
+      // одноразовое обещание: человек заплатил вводом кода и должен знать, что больше не придётся
+      if(!localStorage.getItem('cockpit_tg_linked_said')){
+        localStorage.setItem('cockpit_tg_linked_said','1');
+        setTimeout(()=>toast('Telegram привязан — дальше ☰ WANDO открывает доску сразу','🔗'),1200);}}
   }catch(_){/* не критично — вход почтой уже прошёл */}
 }
 async function tmaLogin(){
@@ -7827,7 +7832,9 @@ async function tmaLogin(){
     const r=await fetch(CFG.url+'/functions/v1/tma-auth',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({initData:init})});
     const d=await r.json();
     if(d&&d.token_hash){const {error}=await sb.auth.verifyOtp({type:'email',token_hash:d.token_hash});if(!error)return true;}
-    if(d&&d.error==='not_linked'){const g=$('#gate');if(g)g.querySelector('.gp').innerHTML='Сначала привяжи Telegram: открой cock-pit.com в браузере, войди и нажми «Подключить Telegram».';}
+    /* not_linked — не тупик и не повод выгонять в браузер: код из письма вводится
+       прямо здесь, в WebView. Раньше человека отправляли открывать cock-pit.com в
+       Safari, входить по ссылке и возвращаться — то есть три перехода на ровном месте. */
   }catch(e){}
   return false;
 }

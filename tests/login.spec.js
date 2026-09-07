@@ -78,3 +78,34 @@ test('повтор письма на таймере — лимит писем н
   await expect(page.locator('#gateResend')).toContainText('(');
   expect(await page.evaluate(() => window.__calls.sent)).toBe(1);
 });
+
+test('вход из Telegram не выгоняет в браузер', async ({ page }) => {
+  await page.route('**/*', route => route.request().url().includes('127.0.0.1')
+    ? route.continue() : route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
+  await page.goto(FILE + '#tgWebAppData=' + encodeURIComponent('user=%7B%22id%22%3A1%7D&hash=x'));
+  await page.evaluate(() => {
+    localStorage.clear();
+    S = migrate(seed()); S.demo = false;
+    reg.list = [{ id: S.id, name: S.projectName, emoji: '🚀' }]; reg.active = S.id; saveReg();
+    sb = { auth: { signInWithOtp: async () => ({}), verifyOtp: async () => ({}) } };
+    renderGate('login');
+  });
+  const card = await page.locator('.gatecard').textContent();
+  expect(card).toContain('прямо здесь');          // код вводится не покидая Telegram
+  expect(card).not.toContain('обычном браузере');  // прежний путь в Safari и обратно убран
+  expect(card).not.toContain('Safari');
+});
+
+test('not_linked не перехватывает экран входа', async ({ page }) => {
+  await page.route('**/*', route => {
+    const u = route.request().url();
+    if (u.includes('127.0.0.1')) return route.continue();
+    return route.fulfill({ status: 404, contentType: 'application/json', body: JSON.stringify({ error: 'not_linked' }) });
+  });
+  await page.goto(FILE + '#tgWebAppData=' + encodeURIComponent('user=%7B%22id%22%3A1%7D&hash=x'));
+  await page.evaluate(() => { sb = { auth: { verifyOtp: async () => ({}) } }; });
+  const ok = await page.evaluate(() => tmaLogin());
+  expect(ok).toBe(false);   // не залогинил и не упал — дальше показывается обычный гейт
+  await page.evaluate(() => { S = migrate(seed()); renderGate('login'); });
+  await expect(page.locator('#gateEmail')).toBeVisible();
+});
