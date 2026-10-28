@@ -2789,6 +2789,58 @@ body.light .ps-bars span{background:rgba(20,20,30,.1)}
 .ps-col em{font-style:normal;font-size:13px;color:var(--mut2)}
 .ps-next{font-size:14px;color:var(--mut);text-align:right}
 @media (max-width:680px){.ps-cols{grid-template-columns:1fr}}
+/* Вандо: ссылки-объекты, карточки действий, мета ответа */
+.vlink{display:inline;background:rgba(167,139,250,.16);color:var(--txt);border-radius:7px;padding:1px 5px;font-weight:600;cursor:pointer;-webkit-box-decoration-break:clone;box-decoration-break:clone} /* span, не button: кнопка в Chrome всегда строчный блок и растягивалась плашкой */
+body.light .vlink{background:rgba(124,92,224,.1)}
+.vlink:hover{background:rgba(167,139,250,.28)}
+.vacts{display:flex;flex-direction:column;gap:6px;margin:6px 0 2px;max-width:92%}
+.vact{display:flex;align-items:center;gap:10px;padding:8px 8px 8px 12px;border-radius:14px;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box;font-size:13.5px}
+.vact span{flex:1;min-width:0}
+.vact button{flex:0 0 auto;white-space:nowrap;border:none;border-radius:999px;padding:7px 13px;font-weight:650;font-size:12.5px;cursor:pointer;background:var(--inv-bg);color:var(--inv-fg);display:inline-flex;align-items:center;gap:5px}
+.vact.done{opacity:.7}.vact.done button{background:none;color:var(--ok)}
+.vmeta{font-size:11.5px;color:var(--mut2);margin:2px 0 10px 4px}
+.vmeta button{border:none;background:none;color:var(--mut2);font:inherit;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px}
+.vnew,.vmic{flex:0 0 auto;width:34px;height:34px;border-radius:50%;border:none;background:none;color:var(--mut);display:grid;place-items:center;cursor:pointer}
+.vnew svg,.vmic svg{width:17px;height:17px}.vnew:hover,.vmic:hover{color:var(--txt)}
+.vando-h .vnew{margin-left:auto}
+/* уведомления: шире и читабельнее (иконка · текст в 2 строки · «Вернуть» капсулой), полоска отсчёта отмены;
+   при открытой шторке/модалке — сверху, в затемнённой зоне, не на контенте (Роч, 29.10) */
+.toast{display:flex;align-items:center;gap:10px;width:max-content;max-width:min(440px,calc(100vw - 24px));text-align:left;
+  border-radius:18px;padding:11px 12px 11px 14px;font-size:14px;line-height:1.35;font-weight:600;z-index:400;overflow:hidden}
+.toast .ic{flex:0 0 auto;display:grid;place-items:center;font-size:16px}
+.toast .tmsg{flex:1 1 auto;min-width:0;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.toast .tact{flex:0 0 auto;margin-left:2px;padding:8px 14px;border-radius:999px;background:rgba(167,139,250,.2);color:var(--txt);font-weight:700;font-size:13.5px;white-space:nowrap}
+body.light .toast .tact{background:rgba(124,92,224,.12)}
+.toast.has-act::after{content:'';position:absolute;left:16px;right:16px;bottom:4px;height:2px;border-radius:2px;background:var(--acc2);opacity:.55;transform-origin:left;animation:tcount 5.5s linear forwards}
+@keyframes tcount{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+.toast.top,.toast.top[class]{top:calc(max(12px,env(safe-area-inset-top)) + 4px);bottom:auto}
+.toast.top:not(.show){transform:translateX(-50%) translateY(-28px) scale(.96)}
+.toast.top.show{transform:translateX(-50%) translateY(0) scale(1)}
+@media (prefers-reduced-motion:reduce){.toast.has-act::after{animation:none}}
+@media (max-width:680px){.toast:not(.top),.toast:not(.top)[class]{bottom:calc(118px + env(safe-area-inset-bottom))}} /* над плавающей панелью с зазором, не на ней */
+/* план дня и блокеры на «Сейчас» */
+.dpc,.blk{border-radius:20px;padding:12px 12px 8px;margin-bottom:14px;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-soft)}
+.dpc.empty{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:14px 16px 16px}
+.dpc-h{display:flex;align-items:center;gap:8px;padding:0 4px 8px;color:var(--mut);font-size:13px}
+.dpc.empty .dpc-h{padding:0}
+.dpc-h b{color:var(--txt);font-weight:650;white-space:nowrap}.dpc-h svg{color:var(--acc2);flex:0 0 auto}
+.blk .dpc-h svg{color:var(--bad)}
+.dpc-h span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dpc-s{font-size:13.5px;color:var(--mut);line-height:1.45}
+.dpc-re{flex:0 0 auto;width:28px;height:28px;border-radius:50%;border:none;background:none;color:var(--mut2);display:grid;place-items:center;cursor:pointer}
+.dpc-re:hover{color:var(--txt);background:rgba(255,255,255,.06)}
+.dpr{display:flex;align-items:center;gap:10px;padding:9px 6px;border-radius:12px;font-size:14px;cursor:pointer}
+.dpr:hover{background:rgba(255,255,255,.04)}body.light .dpr:hover{background:rgba(20,20,30,.035)}
+.dpck{flex:0 0 auto;width:22px;height:22px;border-radius:50%;border:2px solid var(--line2);background:none;display:grid;place-items:center;color:#fff;cursor:pointer;padding:0;transition:transform .34s var(--spring)}
+.dpck:active{transform:scale(.85)}.dpr.done .dpck{background:var(--ok);border-color:var(--ok)}
+.dpt{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dpr.done .dpt{color:var(--mut2);text-decoration:line-through}
+.dpr i{font-style:normal;font-size:11.5px;font-weight:600;white-space:nowrap;padding:2px 7px;border-radius:999px}
+.dpb{color:var(--acc2);background:rgba(167,139,250,.14)}.dpo{color:var(--bad);background:rgba(255,69,58,.12)}
+.dpr em{font-style:normal;font-size:12px;color:var(--mut2);white-space:nowrap}
+.blk-dot{width:8px;height:8px;padding:0!important;border-radius:50%!important;background:var(--bad);flex:0 0 auto}
+.blk-more{font-size:12px;color:var(--mut2);padding:2px 6px 6px}
+@media (max-width:680px){.dpr em{display:none}.blk .dpr em{display:inline;max-width:40%;overflow:hidden;text-overflow:ellipsis}}
 /* «Клиенты ждут шага» на «Сейчас» */
 .crmnow{border-radius:20px;padding:12px 12px 8px;margin-bottom:14px;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-soft)}
 .crmnow-h{display:flex;align-items:center;gap:8px;padding:0 4px 8px;color:var(--mut);font-size:13px}
@@ -3103,10 +3155,10 @@ body.light .w3-w{color:rgba(20,24,40,calc(.04 + .03 * (5 - var(--z))))}
 <div class="bulkbar" id="bulkBar"></div>
 <button class="vando-fab" id="vandoFab" title="Вандо — спроси о чём угодно"></button>
 <div class="vando-panel" id="vandoPanel">
-  <div class="vando-h"><span id="vandoAva"></span><div><div class="vt">Вандо</div><div class="vs">сверхразум-проджект · видит все проекты</div></div><span class="vx" id="vandoX">✕</span></div>
+  <div class="vando-h"><span id="vandoAva"></span><div><div class="vt">Вандо</div><div class="vs" id="vandoSub">ИИ команды · предлагает, ты применяешь</div></div><button class="vnew" id="vandoNew" title="Новый разговор" aria-label="Новый разговор" data-icon="edit"></button><span class="vx" id="vandoX">✕</span></div>
   <div class="vando-msgs" id="vandoMsgs"></div>
   <div class="vando-hint" id="vandoHints"></div>
-  <div class="vando-in"><input id="vandoIn" placeholder="Спроси: что горит? кому что делегировать?…" autocomplete="off"><button id="vandoSend">↑</button></div>
+  <div class="vando-in"><button class="vmic" id="vandoMic" aria-label="Сказать голосом" data-icon="mic"></button><input id="vandoIn" placeholder="Спроси или попроси: «перенеси просрочки на пятницу»" autocomplete="off"><button id="vandoSend">↑</button></div>
 </div>
 <nav class="mnav" id="mnav">
   <button data-mv="now" aria-label="Сегодня"><i data-icon="zap"></i><span>Сегодня</span></button>
@@ -3429,8 +3481,12 @@ function toast(msg,ic='✓',actLabel,actFn){const t=$('#toast');
      не имеет права его затирать: на мобиле «Готово · Отменить» исчезал через 0.7с,
      потому что сверху ложилась подсказка про long-press, и откат пропадал молча. */
   if(!actLabel&&t.classList.contains('show')&&t.querySelector('.tact'))return;
-  t.innerHTML=`<span class="ic">${emi(ic,16)}</span>${esc(msg)}`+(actLabel?`<button class="tact">${esc(actLabel)}</button>`:'');
-  t.classList.add('show');clearTimeout(toast._);toast._=setTimeout(()=>t.classList.remove('show'),actLabel?5500:2400);
+  t.innerHTML=`<span class="ic">${emi(ic,16)}</span><span class="tmsg">${esc(msg)}</span>`+(actLabel?`<button class="tact">${esc(actLabel)}</button>`:'');
+  /* открыта шторка/модалка/карточка — уведомление сверху, в затемнённой зоне над ней, а не поверх её содержимого */
+  const over=!!document.querySelector('.modal-scrim.show,#drawer.show,#present.show,#focusView:not([hidden]),#vandoPanel.show,#lpScrim.show');
+  t.classList.toggle('top',over);t.classList.toggle('has-act',!!actLabel);
+  t.classList.remove('show');void t.offsetWidth; // перезапуск полоски отсчёта и въезда
+  t.classList.add('show');setTimeout(()=>applyPingpong(t),40); // не rAF: в фоновой вкладке он не срабатываетclearTimeout(toast._);toast._=setTimeout(()=>t.classList.remove('show'),actLabel?5500:2400);
   if(actLabel){t.querySelector('.tact').onclick=()=>{t.classList.remove('show');actFn&&actFn();};}}
 /* «Готово» — тихая печать успеха (success-ripple, ROCH Motion; стили .okfx): кольцо и галка рисуются, три волны.
    Конфетти на ежедневное действие — шум (арт-дирекция ROCH), салют остался для больших моментов: big=true. */
@@ -3685,7 +3741,9 @@ window.addEventListener('offline',()=>{const sd=$('#syncDot');if(sd)sd.classList
 window.addEventListener('online',()=>{const sd=$('#syncDot');if(sd)sd.classList.remove('offline');
   if(cloudOn&&typeof cloudSync==='function'){cloudSync();toast('Сеть вернулась — синхронизирую','☁️');}});
 /* ROCH: пинг-понг обрезанного текста — везде, где текст не влез (вместо вечного «…») */
-const PP_SEL='.trow .tn,.mtask .tn,.pbadge,.wsub,.mr-t,.nh-up-t,.nh-crumb,.lbn,.rl,.wct,#projLabel';
+const PP_SEL='.trow .tn,.mtask .tn,.pbadge,.wsub,.mr-t,.nh-up-t,.nh-crumb,.lbn,.rl,.wct,#projLabel'
+  /* всё, что добавлено 28–29.10: длинное не обрезается «…», а проезжает (Роч: «пинг-понг для длинного текста») */
+  +',.toast .tmsg,.dpt,.dpc-h span,.crm-nm b,.crm-nm span,.crm-next span,.crm-colh em,.crmnow button span,.crm-tasks button span,.cs-chip b,.ps-rt,.ps-col span,.ps-person span,.bn-txt';
 function applyPingpong(root){
   try{(root||document).querySelectorAll(PP_SEL).forEach(el=>{
     if(el._ppDone)return;el._ppDone=1;
@@ -4554,7 +4612,7 @@ function firstStepsCard(){
    Раньше цепочка была ИЛИ: одна просроченная задача (то есть всегда) съедала слот,
    и денежный сигнал не показывался в проде никогда. Теперь деньги идут первыми,
    совет по гигиене плана остаётся под ними. */
-function assistCard(){return intakeNowCard()+cashPulse()+crmNowCard()+(selfHealCard()||mentorCard());}
+function assistCard(){return intakeNowCard()+dayPlanCard()+blockersCard()+cashPulse()+crmNowCard()+(selfHealCard()||mentorCard());}
 /* заявки команды — на «Сегодня», а не отдельной вкладкой внизу: внизу теперь «Клиенты». Нет заявок — нет карточки */
 function intakeNowCard(){const n=(typeof intakeRows!=='undefined'&&intakeRows)?intakeRows.length:0;if(!n||!isTeam)return '';
   return `<button class="intnow" data-goview="intake">${icon('inbox',18)}<b>${n} ${plural(n,'заявка ждёт','заявки ждут','заявок ждут')} решения</b><span>Разобрать →</span></button>`;}
@@ -4977,7 +5035,7 @@ function renderPresent(){
   $('#psCapGo').onclick=go;$('#psCapIn').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go();}if(e.key==='Escape'){e.stopPropagation();$('#psCap').hidden=true;}};
   const cp=$('#psCopy');if(cp)cp.onclick=()=>{const t=presSummaryText();if(navigator.clipboard)navigator.clipboard.writeText(t).then(()=>toast('Итог скопирован — вставь в чат команды','📋'));};
   const en=$('#psEnd');if(en)en.onclick=closePresent;
-  presCountUp();
+  presCountUp();setTimeout(()=>applyPingpong($('#present')),60);
 }
 function presNav(d){if(!presSlides.length)return;presIdx=(presIdx+d+presSlides.length)%presSlides.length;renderPresent();}
 function presToggleAuto(){if(presTimer){clearInterval(presTimer);presTimer=null;}else{presTimer=setInterval(()=>presNav(1),8000);}renderPresent();}
@@ -8395,25 +8453,84 @@ function track(k){try{const u=JSON.parse(localStorage.getItem('cockpit_usage')||
 function usageStats(){try{return JSON.parse(localStorage.getItem('cockpit_usage')||'{}');}catch(e){return{};}}
 let vandoHist=[];try{vandoHist=JSON.parse(localStorage.getItem('cockpit_vando')||'[]');}catch(e){}
 function vandoSaveHist(){try{localStorage.setItem('cockpit_vando',JSON.stringify(vandoHist.slice(-30)));}catch(e){}}
+/* контекст Вандо: id задач и клиентов (для ссылок и действий), роль (участнику — без денег и CRM), экран, компактно:
+   открытые задачи целиком, закрытые — последние 10 и счётчик */
 function vandoContext(){
+  const lead=iSeeAllProjects();
   const projs=reg.list.filter(p=>!p.archived).map(p=>{const d=p.id===S.id?S:loadProj(p.id);if(!d)return null;
-    const ts=(d.tasks||[]).filter(t=>!t.isMilestone);
+    const ts=(d.tasks||[]).filter(t=>!t.isMilestone),mn=id=>((d.members||[]).find(m=>m.id===id)||{}).name||null;
     return {name:p.name,emoji:p.emoji,parent:(projMeta(p.parentId)||{}).name||null,
-      tasks:ts.map(t=>({title:t.title,cash:!!t.cash,amount:t.amount||0,cashOutcome:t.cashOutcome||null,status:t.status,assignee:(d.members.find(m=>m.id===t.assigneeId)||{}).name||null,end:t.end,estimate:t.estimate||0,priority:t.priority,overdue:t.status!=='done'&&parseD(t.end)<parseD(todayISO())})),
+      tasks:ts.filter(t=>t.status!=='done').map(t=>Object.assign({id:p.id+'/'+t.id,title:t.title,status:t.status,assignee:mn(t.assigneeId),start:t.start,end:t.end,
+        estimate:t.estimate||0,spent:t.spent||0,priority:t.priority,overdue:isOverdue(t)||undefined,snoozedUntil:t.snooze||undefined,needsApproval:t.approval?true:undefined},
+        lead&&t.cash?{movesMoney:true,amount:t.amount||0}:{})),
+      doneRecent:ts.filter(t=>t.status==='done').sort((a,b)=>(b.statusTs||0)-(a.statusTs||0)).slice(0,10)
+        .map(t=>({title:t.title,who:mn(t.assigneeId),when:t.statusTs?new Date(t.statusTs).toISOString().slice(0,10):null})),
+      doneTotal:ts.filter(t=>t.status==='done').length,
+      milestones:(d.tasks||[]).filter(t=>t.isMilestone).map(t=>({title:t.title,end:t.end,done:t.status==='done'})),
       members:(d.members||[]).map(m=>({name:m.name,role:m.role,capacity:m.capacity})),
-      ideas:(d.ideas||[]).slice(0,20).map(i=>i.title),
+      ideas:(d.ideas||[]).slice(0,15).map(i=>i.title),
       memory:(d.notes||[]).slice(-30).map(n=>({when:new Date(n.ts).toISOString().slice(0,10),who:n.who,note:n.text})),
-      history:(d.activity||[]).slice(0,25).map(a=>({when:new Date(a.ts||0).toISOString().slice(0,10),who:a.who,what:(a.icon||'')+' '+(a.text||'')}))};}).filter(Boolean);
-  return {today:todayISO(),me:meName(),team:teamRows.map(t=>t.name||t.email),projects:projs,usage:usageStats(),
-    tool:'WANDO — таск-трекер фаундеров: Сейчас/Всё/Гант/Доска/Неделя/Бэклог/Команда/Приёмка, Telegram-бот (голос, кнопки, брифы 9:00 и 18:00), Claude-вход'};
+      history:(d.activity||[]).slice(0,20).map(a=>({when:new Date(a.ts||0).toISOString().slice(0,10),who:a.who,what:(a.icon||'')+' '+(a.text||'')}))};}).filter(Boolean);
+  const c={today:todayISO(),me:meName(),role:lead?'lead':'member',screen:view,currentProject:S.projectName,team:teamRows.map(t=>t.name||t.email),projects:projs,usage:usageStats(),
+    tool:'WANDO — штаб фаундера: Сейчас, Клиенты (CRM), проекты (Доска/Гант/Неделя/Бэклог), Команда, Приёмка (заявки из бота, Claude и рабочих чатов), Telegram-бот, презентация для созвона.'};
+  if(lead)c.clients=crmLive().map(x=>({id:x.id,name:x.name,company:x.company||null,stage:crmSt(x.stage).n,amount:+x.amount||0,
+    next:x.next&&x.next.text?{text:x.next.text,date:x.next.date||null,late:crmLate(x)}:null}));
+  return c;
 }
 function vandoMsgEl(role,text,cls){const d=document.createElement('div');d.className='vmsg '+(role==='user'?'u':'a')+(cls?' '+cls:'');d.textContent=text;return d;}
+/* ответ Вандо: [[t:ID|имя]] / [[c:ID|имя]] → живые ссылки; блок <actions> → карточки «Применить» с «Вернуть» */
+const vandoStrip=t=>{const k=String(t||'').indexOf('<actions>');return (k<0?String(t||''):String(t).slice(0,k)).trim();};
+function vandoParse(raw){const m=String(raw||'').match(/<actions>([\s\S]*?)(<\/actions>|$)/);let acts=[];
+  if(m){try{const a=JSON.parse(m[1].trim());if(Array.isArray(a))acts=a.filter(x=>x&&x.type).slice(0,4);}catch(e){}}
+  return {text:vandoStrip(raw),actions:acts};}
+function vandoHTML(t){return esc(t).replace(/\[\[(t|c):([^|\]]+)\|([^\]]+)\]\]/g,(_,k,id,nm)=>`<span class="vlink" role="button" tabindex="0" data-v${k}="${id}">${nm}</span>`).replace(/\n/g,'<br>');}
 function vandoRender(){
-  const box=$('#vandoMsgs');box.innerHTML='';
-  if(!vandoHist.length)box.appendChild(vandoMsgEl('assistant','Привет! Я Вандо — вижу все проекты, задачи и загрузку. Спроси «что горит?», «кому делегировать лендинг?», «как прошла неделя?» — отвечу по данным, не по воде. 🤝'));
-  vandoHist.forEach(m=>box.appendChild(vandoMsgEl(m.role,m.content,m.tip?'tip':'')));
-  box.scrollTop=box.scrollHeight;
+  const box=$('#vandoMsgs');
+  if(!vandoHist.length){box.innerHTML=`<div class="vmsg a">Привет! Я Вандо — вижу ${iSeeAllProjects()?'проекты, клиентов и деньги':'твои проекты'}. Спроси, что горит, кому что отдать или как успеть к сроку — предложу действия, ты нажмёшь «Применить».</div>`;renderVandoHints();return;}
+  box.innerHTML=vandoHist.map((m,i)=>m.role==='user'?`<div class="vmsg u">${esc(m.content)}</div>`
+    :`<div class="vmsg a${m.tip?' tip':''}">${vandoHTML(m.content)}</div>`
+     +((m.actions||[]).length?`<div class="vacts">${m.actions.map((a,k)=>`<div class="vact${a.done?' done':''}"><span>${esc(a.label||a.type)}</span><button data-va="${i}:${k}" ${a.done?'disabled':''}>${a.done?icon('check',14)+' Сделано':'Применить'}</button></div>`).join('')}</div>`:'')
+     +(m.tip?'':`<div class="vmeta">${m.ms?`думал ${Math.max(1,Math.round(m.ms/1000))} с · `:''}<button data-vcopy="${i}">Скопировать</button></div>`)).join('');
+  box.scrollTop=box.scrollHeight;renderVandoHints();
 }
+function vandoFindTask(id){const k=String(id||'').indexOf('/');if(k<0)return null;const pid=id.slice(0,k),tid=id.slice(k+1);
+  const d=pid===S.id?S:loadProj(pid);const t=d&&(d.tasks||[]).find(x=>x.id===tid);return t?{pid,tid,t,d}:null;}
+/* исполнитель — только белый список; удаления нет; каждое действие с «Вернуть» */
+function vandoApply(i,k){const m=vandoHist[i],a=m&&m.actions&&m.actions[k];if(!a||a.done)return;
+  const ISO=v=>/^\d{4}-\d{2}-\d{2}$/.test(String(v||''));let undo=null;
+  const projBy=n=>reg.list.find(p=>!p.archived&&(p.name||'').toLowerCase()===String(n||'').toLowerCase())||projMeta(S.id)||reg.list[0];
+  try{
+    if(['move_date','assign','set_status','snooze'].includes(a.type)){
+      const f=vandoFindTask(a.task);if(!f){toast('Задача не найдена — возможно, её уже убрали','⚠');return;}
+      const snap={end:f.t.end,start:f.t.start,assigneeId:f.t.assigneeId,status:f.t.status,statusTs:f.t.statusTs,snooze:f.t.snooze};
+      if(a.type==='move_date'){if(!ISO(a.to))throw 0;editTaskInProject(f.pid,f.tid,x=>{x.end=a.to;if(parseD(x.start)>parseD(a.to))x.start=a.to;});}
+      else if(a.type==='assign'){const w=String(a.who||'').toLowerCase().split(/\s+/)[0];const mm=(f.d.members||[]).find(x=>(x.name||'').toLowerCase().split(/\s+/)[0]===w);
+        if(!mm){toast('Не нашёл «'+(a.who||'')+'» в этом проекте','⚠');return;}editTaskInProject(f.pid,f.tid,x=>{x.assigneeId=mm.id;});}
+      else if(a.type==='set_status'){if(!STATUSES.some(st=>st.k===a.status))throw 0;editTaskInProject(f.pid,f.tid,x=>{x.status=a.status;x.statusTs=Date.now();});}
+      else editTaskInProject(f.pid,f.tid,x=>{x.snooze=fmtD(parseD(todayISO())+dayMs);});
+      undo=()=>editTaskInProject(f.pid,f.tid,x=>{Object.assign(x,snap);if(!snap.snooze)delete x.snooze;});}
+    else if(a.type==='create_task'){const title=String(a.title||'').trim().slice(0,140);if(!title)throw 0;const pm=projBy(a.project);
+      const q=[title];if(ISO(a.due))q.push('до '+a.due.slice(8)+'.'+a.due.slice(5,7));if(a.who)q.push('@'+String(a.who).split(/\s+/)[0]);
+      const pq=parseQuick(q.join(' '));if(!pq.title)pq.title=title;addTaskToProject(pm.id,pq,'todo');}
+    else if(a.type==='crm_stage'){const c=CRM.find(x=>x.id===a.client&&!x.deleted);if(!c||!CRM_ST.some(st=>st.k===a.stage))throw 0;
+      const prev=c.stage;crmSetStage(c,a.stage);undo=()=>{c.stage=prev;crmPush(c);if(view==='crm')renderCrm();};}
+    else if(a.type==='crm_next'){const c=CRM.find(x=>x.id===a.client&&!x.deleted);if(!c||!String(a.text||'').trim())throw 0;
+      const prev=JSON.stringify(c.next||{});c.next={text:String(a.text).slice(0,200),date:ISO(a.date)?a.date:((c.next&&c.next.date)||'')};crmPush(c);
+      undo=()=>{c.next=JSON.parse(prev);crmPush(c);};}
+    else if(a.type==='remember'){const txt=String(a.text||'').trim().slice(0,400);if(!txt)throw 0;const pm=projBy(a.project),d=pm.id===S.id?S:loadProj(pm.id);
+      const note={ts:Date.now(),who:meName(),text:txt};d.notes=d.notes||[];d.notes.push(note);persistProj(d,pm.id);
+      undo=()=>{const d2=pm.id===S.id?S:loadProj(pm.id);d2.notes=(d2.notes||[]).filter(n=>!(n.ts===note.ts&&n.text===note.text));persistProj(d2,pm.id);};}
+    else throw 0;
+  }catch(e){toast('Не получилось применить — открой задачу и поправь вручную','⚠');return;}
+  a.done=true;vandoSaveHist();render();vandoRender();haptic('ok');
+  toast(a.type==='remember'?'Запомнил для команды':(a.label||'Сделано'),'✅',undo?'Вернуть':undefined,undo?()=>{undo();a.done=false;vandoSaveHist();render();vandoRender();}:undefined);
+}
+{const box=$('#vandoMsgs');if(box)box.addEventListener('click',e=>{
+  const t=e.target.closest('[data-vt]');if(t){const f=vandoFindTask(t.dataset.vt);if(!f){toast('Задача не найдена','⚠');return;}if(window.innerWidth<=680)vandoToggle(false);
+    if(f.pid!==S.id){switchProject(f.pid);setTimeout(()=>openTask(f.tid),150);}else openTask(f.tid);return;}
+  const c=e.target.closest('[data-vc]');if(c){if(window.innerWidth<=680)vandoToggle(false);openClient(c.dataset.vc);return;}
+  const a=e.target.closest('[data-va]');if(a){const [i,k]=a.dataset.va.split(':').map(Number);vandoApply(i,k);return;}
+  const cp=e.target.closest('[data-vcopy]');if(cp){const m=vandoHist[+cp.dataset.vcopy];if(m&&navigator.clipboard)navigator.clipboard.writeText(m.content.replace(/\[\[(?:t|c):[^|\]]+\|([^\]]+)\]\]/g,'$1')).then(()=>toast('Скопировано','📋'));}});}
 // самообучение: раз в неделю Вандо сам подсвечивает, как используется инструмент
 function vandoWeeklyTip(){
   const last=+(localStorage.getItem('cockpit_vando_tip')||0);
@@ -8434,12 +8551,16 @@ function vandoWeeklyTip(){
 function vandoToggle(open){const p=$('#vandoPanel');const on=open!==undefined?open:!p.classList.contains('show');
   p.classList.toggle('show',on);
   if(on){track('vando:open');vandoWeeklyTip();vandoRender();renderVandoHints();setTimeout(()=>{const i=$('#vandoIn');if(i)i.focus();},60);}}
-function renderVandoHints(){
-  const h=$('#vandoHints');if(vandoHist.length){h.innerHTML='';return;}
-  const ex=['Что горит по всем проектам?','Кто перегружен и что перекинуть?','Составь план на завтра','Что нам оптимизировать в WANDO?'];
+/* подсказки зависят от экрана: Вандо знает, где ты */
+const VANDO_HINTS={now:['Что горит прямо сейчас?','Составь мне план на сегодня','Что отложить, чтобы успеть главное?'],
+  crm:['Кто из клиентов остывает?','Кому из клиентов написать сегодня?','Сколько реально закроем в этом месяце?'],
+  board:['Что застряло дольше недели?','Кто перегружен и что перекинуть?','Запомни: …'],gantt:['Успеваем к ближайшей вехе?','Что двигает дедлайн?'],
+  week:['Разложи неделю по людям','Что не влезает в эту неделю?'],team:['Кто перегружен и что перекинуть?','Кто давно ничего не закрывал?'],
+  intake:['Какие заявки взять первыми?'],backlog:['Какие идеи стоит взять в работу?'],all:['Как дела по всем проектам?','Где главный риск компании?']};
+function renderVandoHints(){const h=$('#vandoHints');if(!h)return;
+  const ex=(VANDO_HINTS[view]||VANDO_HINTS.now).filter(x=>iSeeAllProjects()||!/клиент/i.test(x)).slice(0,3);
   h.innerHTML=ex.map(x=>`<span>${esc(x)}</span>`).join('');
-  $$('#vandoHints span').forEach(s=>s.onclick=()=>{$('#vandoIn').value=s.textContent;vandoSend();});
-}
+  $$('#vandoHints span').forEach(sp=>sp.onclick=()=>{const v=sp.textContent;$('#vandoIn').value=v;if(/…$/.test(v)){const i=$('#vandoIn');i.value=v.replace('…','');i.focus();return;}vandoSend();});}
 let _vandoBusy=false;
 async function vandoSend(){
   if(_vandoBusy)return;
@@ -8452,7 +8573,7 @@ async function vandoSend(){
   const _stages=['Вандо думает…','смотрит все проекты…','сверяет сроки и загрузку…','вспоминает договорённости…','формулирует ответ…'];
   let _si=0;const _stTimer=setInterval(()=>{const t=th.querySelector('.vtt');if(!t){clearInterval(_stTimer);return;}
     _si=Math.min(_si+1,_stages.length-1);t.textContent=_stages[_si];},2200);
-  _vandoBusy=true;track('vando:ask');
+  _vandoBusy=true;track('vando:ask');const _t0=Date.now();
   try{
     const token=await aiToken();if(!token)throw new Error('нужен вход');
     const r=await fetch(CFG.url+'/functions/v1/ai-review',{method:'POST',
@@ -8462,11 +8583,11 @@ async function vandoSend(){
     if(!r.ok||!ct.includes('event-stream')){ /* ошибка или старая функция без стрима — обычный JSON-путь */
       const data=await r.json();
       if(!r.ok||data.error)throw new Error(data.error||('HTTP '+r.status));
-      vandoHist.push({role:'assistant',content:data.text||'…'});vandoSaveHist();
+      const pr=vandoParse(data.text||'…');vandoHist.push({role:'assistant',content:pr.text||'…',actions:pr.actions,ms:Date.now()-_t0});vandoSaveHist();
     }else{ /* живой стрим: печатаем дельты прямо в пузырь, пока Вандо говорит */
       const reader=r.body.getReader();const dec=new TextDecoder();
       let buf='',acc='',started=false;
-      const flow=()=>{th.textContent=acc;box.scrollTop=box.scrollHeight;};
+      const flow=()=>{th.textContent=vandoStrip(acc);box.scrollTop=box.scrollHeight;}; // блок <actions> не печатаем — он станет карточками
       for(;;){
         const {done,value}=await reader.read();if(done)break;
         buf+=dec.decode(value,{stream:true});
@@ -8482,7 +8603,7 @@ async function vandoSend(){
         }
       }
       if(!acc)throw new Error('пустой ответ');
-      vandoHist.push({role:'assistant',content:acc});vandoSaveHist();
+      const pr=vandoParse(acc);vandoHist.push({role:'assistant',content:pr.text||'…',actions:pr.actions,ms:Date.now()-_t0});vandoSaveHist();
     }
   }catch(e){vandoHist.push({role:'assistant',content:'⚠ Не получилось ответить: '+(e.message||e)+'. Попробуй ещё раз.'});}
   clearInterval(_stTimer);
@@ -8493,7 +8614,9 @@ async function vandoSend(){
  const x=$('#vandoX');if(x)x.onclick=()=>vandoToggle(false);
  const a=$('#vandoAva');if(a)a.innerHTML=logoMarkSVG(16);
  const si=$('#vandoIn');if(si)si.onkeydown=e=>{if(e.key==='Enter')vandoSend();if(e.key==='Escape')vandoToggle(false);};
- const sb2=$('#vandoSend');if(sb2)sb2.onclick=vandoSend;}
+ const sb2=$('#vandoSend');if(sb2)sb2.onclick=vandoSend;
+ const vm=$('#vandoMic');if(vm)vm.onclick=()=>dictateTo($('#vandoIn'),vm);
+ const vn=$('#vandoNew');if(vn)vn.onclick=()=>{vandoHist=[];vandoSaveHist();vandoRender();$('#vandoIn').focus();};}
 
 /* ============================ MOBILE: лист захвата и Проекты ============================ */
 let capPid=null;
@@ -9485,6 +9608,7 @@ function renderClient(){const c=CRM.find(x=>x.id===crmCur);if(!c)return;const st
     <div class="crm-notes">${(c.notes||[]).slice(0,30).map(n=>`<div class="${n.sys?'sys':''}"><b>${esc(n.author||'')}</b><span>${esc(n.text)}</span><i>${new Date(n.ts).toLocaleDateString('ru-RU',{day:'numeric',month:'short'})}</i></div>`).join('')||'<div class="sys"><span>Пока пусто — первая заметка появится здесь</span></div>'}</div>
     <div class="crm-foot"><button class="btn" id="cDel">Удалить</button><div class="spacer"></div><button class="btn primary" id="cDone">Готово</button></div>
   </div>`;
+  setTimeout(()=>applyPingpong($('#crmModal')),60);
   const set=(f)=>{f();delete c._draft;clearTimeout(c._t);c._t=setTimeout(()=>crmPush(c),450);};
   $('#cName').oninput=e=>set(()=>{c.name=e.target.value;const a=$('#crmModal .crm-av');if(a)a.textContent=initials(c.name.trim())||'?';});
   $('#cCompany').oninput=e=>set(()=>c.company=e.target.value);
@@ -9558,6 +9682,48 @@ async function connectChat(){
     if(error){toast('Не удалось: '+(error.message||''),'⚠');return;}
     closeLP();window.open('https://t.me/'+TG_BOT+'?startgroup='+code+'&admin=delete_messages','_blank','noopener');
     toast('Выбери группу в Telegram — бот подключится сам','💬');};}
+/* ===== ПЛАН ДНЯ и БЛОКЕРЫ (Роч, 29.10: «запланировать день, подсветить блокеры») =====
+   План — личный (на устройстве), сроки задач НЕ трогает: это порядок дня, а не перенос. Собирается под заряд:
+   полон сил 6ч · мало сил 3ч · иначе 5ч; первыми — просроченное, срок сегодня, что держит других, деньги, срочное;
+   заблокированное (ждёт другой задачи) в план не берём — его всё равно не сделать. */
+const DP_KEY=()=>'cockpit_dayplan_'+todayISO();
+function dpLoad(){try{return JSON.parse(localStorage.getItem(DP_KEY()))||null;}catch(e){return null;}}
+function dpTaskBy(x){const d=x.pid===S.id?S:loadProj(x.pid);return d&&(d.tasks||[]).find(t=>t.id===x.tid);}
+function blockedIn(t,d){return (t.deps||[]).some(id=>{const b=(d.tasks||[]).find(x=>x.id===id);return b&&b.status!=='done';});}
+function buildDayPlan(){const en=localStorage.getItem('cockpit_energy_'+todayISO())||'',cap=en==='hi'?6:en==='lo'?3:5,today=todayISO();
+  const cand=myTasksAll().map(x=>{const d=x.pid===S.id?S:loadProj(x.pid),t=x.t;if(!d||blockedIn(t,d))return null;
+    const unb=focusUnblocks(t.id,x.pid),rem=Math.max(.5,(t.estimate||1)-(t.spent||0));
+    let sc=0;if(isOverdue(t))sc+=50;if(t.end===today)sc+=25;sc+=unb*15;if(t.cash)sc+=20;if(t.priority==='urgent')sc+=30;else if(t.priority==='high')sc+=15;if(t.status==='progress')sc+=10;
+    return {pid:x.pid,tid:t.id,h:Math.round(Math.min(rem,cap)*10)/10,sc};}).filter(Boolean).sort((a,b)=>b.sc-a.sc);
+  const items=[];let sum=0;for(const c of cand){if(items.length&&sum+c.h>cap+.01)continue;items.push({pid:c.pid,tid:c.tid,h:c.h});sum+=c.h;if(sum>=cap||items.length>=6)break;}
+  return {cap,items,sum:Math.round(sum*10)/10};}
+function dayPlanCard(){const p=dpLoad();
+  if(!p)return `<div class="dpc empty"><div class="dpc-h">${icon('cal',16)}<b>План дня</b></div><span class="dpc-s">Соберу день под твой заряд: главное, просроченное и то, что держит других</span>
+    <button class="btn primary" data-dpbuild="1">${icon('sparkles',15)} Запланировать день</button></div>`;
+  const rows=p.items.map(x=>({x,t:dpTaskBy(x),pm:projMeta(x.pid)||{}})).filter(r=>r.t);if(!rows.length)return '';
+  const done=rows.filter(r=>r.t.status==='done').length,left=Math.round(rows.reduce((a,r)=>a+(r.t.status==='done'?0:r.x.h),0)*10)/10;
+  return `<div class="dpc"><div class="dpc-h">${icon('cal',16)}<b>План дня</b><span>${done}/${rows.length} · осталось ≈${left}ч из ${p.cap}ч</span>
+      <button class="dpc-re" data-dpbuild="1" title="Пересобрать" aria-label="Пересобрать">${icon('sync',14)}</button><button class="dpc-re" data-dpclear="1" title="Убрать план" aria-label="Убрать план">${icon('x',14)}</button></div>
+    ${rows.map(r=>{const unb=focusUnblocks(r.t.id,r.x.pid),dn=r.t.status==='done';
+      return `<div class="dpr${dn?' done':''}"><button class="dpck" data-dpdone="${r.x.pid}|${r.t.id}" aria-label="Готово">${dn?icon('check',13):''}</button>
+        <span class="dpt" data-dpopen="${r.x.pid}|${r.t.id}">${esc(r.t.title)}</span>${!dn&&unb?`<i class="dpb">держит ${unb}</i>`:''}${!dn&&isOverdue(r.t)?'<i class="dpo">просрочено</i>':''}<em>${r.pm.emoji||'📄'} ${r.x.h}ч</em></div>`;}).join('')}</div>`;}
+function blockersCard(){const items=[];
+  reg.list.filter(p=>!p.archived).forEach(p=>{const d=p.id===S.id?S:loadProj(p.id);if(!d)return;const T=d.tasks||[];
+    T.forEach(t=>{if(t.isMilestone||t.status==='done')return;const n=T.filter(x=>x.status!=='done'&&(x.deps||[]).includes(t.id)).length;
+      const m=(d.members||[]).find(x=>x.id===t.assigneeId),w=t.waitingOn?(d.members||[]).find(x=>x.id===t.waitingOn):null;
+      if(n)items.push({pid:p.id,t,n,txt:'держит '+n+' · '+(m?m.name:'без исполнителя')});
+      else if(w)items.push({pid:p.id,t,n:0,txt:'ждёт '+w.name});});});
+  if(!items.length)return '';items.sort((a,b)=>b.n-a.n);
+  return `<div class="blk"><div class="dpc-h">${icon('alert',16)}<b>Блокеры</b><span>${items.length} ${plural(items.length,'задача держит','задачи держат','задач держат')} работу</span></div>
+    ${items.slice(0,4).map(x=>`<div class="dpr" data-dpopen="${x.pid}|${x.t.id}"><i class="blk-dot"></i><span class="dpt">${esc(x.t.title)}</span><em>${esc(x.txt)}</em></div>`).join('')}
+    ${items.length>4?`<div class="blk-more">и ещё ${items.length-4}</div>`:''}</div>`;}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-dpbuild]');if(b){const p=buildDayPlan();if(!p.items.length){toast('На тебе нет открытых задач — план не нужен','🌤');return;}
+    localStorage.setItem(DP_KEY(),JSON.stringify(p));render();haptic('ok');toast('План: '+p.items.length+' '+plural(p.items.length,'задача','задачи','задач')+' ≈'+p.sum+'ч из '+p.cap+'ч','📅');return;}
+  if(e.target.closest('[data-dpclear]')){localStorage.removeItem(DP_KEY());render();return;}
+  const d=e.target.closest('[data-dpdone]');if(d){e.stopPropagation();const [pid,tid]=d.dataset.dpdone.split('|');const t=dpTaskBy({pid,tid});
+    if(t&&t.status!=='done'){const un=markDone(pid,tid);celebrateAt(e);render();toast('Готово','✅','Отменить',un);}return;}
+  const o=e.target.closest('[data-dpopen]');if(o){const [pid,tid]=o.dataset.dpopen.split('|');if(pid!==S.id){switchProject(pid);setTimeout(()=>openTask(tid),150);}else openTask(tid);}});
 /* заявка из «Приёмки» → клиент: имя из заявки, текст — первой заметкой */
 function intakeToClient(id){const r=(typeof intakeRows!=='undefined'?intakeRows:[]).find(x=>x.id===id);if(!r)return;
   const p=parseQuick(r.text);crmNew({name:(p.title||r.text||'').slice(0,80),source:'intake',

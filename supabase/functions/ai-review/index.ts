@@ -165,7 +165,13 @@ const SYSTEM_CHAT = `Ты — Вандо, живой ум WANDO («что дел
 • помогать думать: разложить хаос, приоритизировать, предложить план, сформулировать задачу;
 • улучшать сам инструмент: по статистике использования замечай, чем пользуются, а чем нет, и предлагай что упростить/убрать/добавить;
 • поддерживать здоровую культуру: замечать перекосы («всё на одном человеке»), предлагать разгрузку, хвалить за реальные результаты.
-Формат: коротко и по делу, обычно 2-6 предложений или компактный список. Без markdown-заголовков. Эмодзи умеренно. Если данных не хватает — скажи, чего не хватает, не выдумывай.`;
+Формат: коротко и по делу, обычно 2-6 предложений или компактный список. Без markdown-заголовков. Эмодзи умеренно. Если данных не хватает — скажи, чего не хватает, не выдумывай.
+ССЫЛКИ НА ОБЪЕКТЫ: называя задачу или клиента из контекста, пиши [[t:ID|название]] или [[c:ID|имя]] — ID бери из поля id. Человек тапнет и откроет карточку.
+ДЕЙСТВИЯ: если уместно предложить изменение, в САМОМ КОНЦЕ ответа добавь блок <actions>[ ... ]</actions> — JSON-массив, не больше 4 объектов:
+{"type":"move_date","task":"ID","to":"YYYY-MM-DD","label":"…"} · {"type":"assign","task":"ID","who":"Имя","label":"…"} · {"type":"set_status","task":"ID","status":"todo|progress|review|done","label":"…"} · {"type":"snooze","task":"ID","label":"…"} · {"type":"create_task","title":"…","project":"имя проекта","due":"YYYY-MM-DD","who":"Имя","label":"…"} · {"type":"crm_stage","client":"ID","stage":"new|talk|offer|prepay|work|done|lost","label":"…"} · {"type":"crm_next","client":"ID","text":"…","date":"YYYY-MM-DD","label":"…"} · {"type":"remember","text":"…","project":"имя проекта","label":"…"}.
+label — глагол и суть, до 40 символов («Перенести на пт», «Отдать Марине»). Выполняет человек кнопкой — ты только предлагаешь. Удалять ничего нельзя. Нет уместных действий — блока нет. Блок не описывай словами в тексте.
+«Запомни …» → действие remember. Если role в контексте "member" — денег, сумм и клиентов ты не видишь и не обсуждаешь.
+ЧЕСТНОСТЬ: цифры и факты — только из контекста; нет данных — скажи, что именно заполнить.`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
@@ -236,8 +242,11 @@ serve(async (req) => {
       const wantStream = body.stream === true;
       const r = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
-        headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
-        body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 1200, system: SYSTEM_CHAT, messages: hist, ...(wantStream ? { stream: true } : {}) }),
+        // claude-opus-5-5 при низком усилии: чат быстрый и недорогой; рассуждение у модели всегда включено и идёт отдельными
+        // thinking-блоками — фронт печатает только text_delta, так что стрим не меняется. fallbacks — запасная модель при отказе.
+        headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-beta": "server-side-fallback-2026-07-01" },
+        body: JSON.stringify({ model: "claude-opus-5-5", max_tokens: 8000, output_config: { effort: "low" }, fallbacks: "default",
+          system: SYSTEM_CHAT, messages: hist, ...(wantStream ? { stream: true } : {}) }),
       });
       if (wantStream) {
         if (!r.ok) { const d = await r.json().catch(() => null); return json({ error: d?.error?.message || "Ошибка Anthropic API" }, 502); }
@@ -246,7 +255,9 @@ serve(async (req) => {
       }
       const data = await r.json();
       if (!r.ok) return json({ error: data?.error?.message || "Ошибка Anthropic API" }, 502);
-      return json({ text: String(data?.content?.[0]?.text ?? "").trim() });
+      if (data?.stop_reason === "refusal") return json({ text: "Не могу ответить на это — переформулируй, пожалуйста." });
+      const txt = (data?.content ?? []).filter((b: any) => b?.type === "text").map((b: any) => b.text).join("").trim();
+      return json({ text: txt });
     }
 
     // ----- режим УМНОЙ НЕДЕЛИ: задачи всех проектов -> дни недели -----
