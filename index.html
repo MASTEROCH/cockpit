@@ -2721,6 +2721,74 @@ body.light .fv-stage .fv-ring .rtrack{stroke:rgba(20,20,30,.08)}
 body.light .cmore{background:rgba(20,20,30,.06)}
 .card:hover .cmore{opacity:1}.cmore:hover{background:rgba(255,255,255,.16);color:var(--txt)}
 @media (hover:none){.cmore{display:none}}
+/* рабочие чаты в «Приёмке» */
+.chatstrip:empty{display:none}
+.chatstrip{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:2px 0 14px}
+.cs-h{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--mut2)}
+.cs-chip{display:inline-flex;align-items:center;gap:8px;padding:5px 6px 5px 12px;border-radius:999px;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box;font-size:13px}
+.cs-chip i{font-style:normal;color:var(--mut2);font-size:12px}
+.cs-chip b,.cs-chip i{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+@media (max-width:680px){#intakeConnect{padding:8px 12px;font-size:13px;white-space:nowrap}.cs-chip i{display:none}}
+.cs-chip select{border:none;background:rgba(255,255,255,.07);color:var(--txt);border-radius:999px;padding:4px 8px;font:inherit;font-size:12px}
+body.light .cs-chip select{background:rgba(20,20,30,.05)}
+.cs-chip button{width:24px;height:24px;border-radius:50%;border:none;background:none;color:var(--mut2);display:grid;place-items:center;cursor:pointer}
+.cs-add{display:inline-flex;align-items:center;gap:6px;border-radius:999px;border:1px dashed var(--line2);background:none;color:var(--acc2);font-weight:600;font-size:13px;padding:6px 12px;cursor:pointer;white-space:nowrap}
+.inonot{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:var(--mut2)}
+.inonot button{border:1px solid var(--line2);background:none;color:var(--mut);border-radius:999px;padding:4px 10px;font-size:12px;cursor:pointer;white-space:nowrap}
+.inonot button:hover{color:var(--bad);border-color:rgba(255,69,58,.5)}
+.inonote a{color:var(--acc2);text-decoration:none;white-space:nowrap}
+/* презентация для созвона — Keynote: аврора бренда, одна мысль на слайд, полоска как в сторис */
+.present:not(:has(.pr-foot-brand)){background:radial-gradient(900px 600px at 85% -10%,rgba(167,139,250,.18),transparent 60%),
+  radial-gradient(700px 520px at -10% 110%,rgba(244,114,182,.10),transparent 60%),var(--bg);padding:max(18px,env(safe-area-inset-top)) clamp(18px,6vw,80px) max(16px,env(safe-area-inset-bottom))}
+.ps-top{display:flex;align-items:center;gap:14px}
+.ps-bars{flex:1;display:flex;gap:6px}
+.ps-bars span{flex:1;height:4px;border-radius:4px;background:rgba(255,255,255,.12);cursor:pointer;transition:background .3s}
+body.light .ps-bars span{background:rgba(20,20,30,.1)}
+.ps-bars span.done{background:rgba(255,255,255,.5)}body.light .ps-bars span.done{background:rgba(20,20,30,.35)}
+.ps-bars span.on{background:linear-gradient(90deg,#f472b6,#a78bfa)}
+.ps-clock{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--mut);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ps-x{width:36px;height:36px;border-radius:50%;border:1px solid transparent;cursor:pointer;color:var(--mut);display:grid;place-items:center;background:var(--lg-fill) padding-box,var(--lg-rim) border-box}
+.ps-slide{justify-content:center;max-width:980px;width:100%;margin:0 auto;gap:18px;padding:3vh 0;animation:lkView .5s var(--ease)}
+.ps-k{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--acc2)}
+.ps-h{font-size:clamp(32px,5.6vw,68px);font-weight:700;letter-spacing:-.035em;line-height:1.04;margin:0}
+.ps-p{font-size:clamp(16px,2vw,21px);color:var(--mut);max-width:640px;line-height:1.45;margin:0}
+.ps-nums{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(10px,2vw,22px)}
+.ps-nums>div{border-radius:24px;padding:clamp(14px,2.4vw,26px);border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-soft)}
+.ps-nums b{display:block;font-size:clamp(40px,8vw,104px);font-weight:700;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums}
+.ps-nums span{display:block;margin-top:8px;font-size:clamp(12px,1.4vw,15px);color:var(--mut)}
+.ps-nums .hot b{color:var(--bad)}
+.ps-projs{display:flex;flex-wrap:wrap;gap:8px}.ps-projs span{font-size:13px;color:var(--mut);padding:6px 12px;border-radius:999px;border:1px solid var(--line)}
+.ps-list{display:flex;flex-direction:column;gap:8px}
+.ps-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:18px;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box;font-size:clamp(15px,1.8vw,19px)}
+.ps-rt{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ps-rp{flex:0 0 auto;opacity:.8}
+.ps-row i{font-style:normal;font-size:13px;white-space:nowrap}.ps-ok{color:var(--ok);font-weight:700}.ps-bad{color:var(--bad);font-weight:600}
+.ps-av{flex:0 0 auto;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff;background-size:cover;background-position:center}
+.ps-av.ghost{background:var(--panel2);color:var(--mut2)}
+.ps-people{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.ps-person{display:flex;gap:12px;padding:14px;border-radius:20px;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box}
+.ps-person>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.ps-person b{font-size:16px}.ps-person span{font-size:13.5px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ps-person em{font-size:12.5px;color:var(--mut2);font-style:normal}
+.ps-acts{display:flex;gap:10px;flex-wrap:wrap}
+.ps-nav{display:flex;align-items:center;justify-content:center;gap:12px;padding-top:10px}
+.ps-arrow{width:52px;height:52px;border-radius:50%;border:1px solid transparent;cursor:pointer;color:var(--txt);font-size:24px;line-height:1;
+  background:var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-soft);transition:transform .34s var(--spring)}
+.ps-arrow:active,.ps-dec:active{transform:scale(.93);transition-duration:.06s}
+.ps-dec{display:inline-flex;align-items:center;gap:8px;height:52px;padding:0 22px;border-radius:999px;border:none;cursor:pointer;font-weight:650;font-size:15px;color:#fff;white-space:nowrap;
+  background:linear-gradient(135deg,#f472b6 -12%,#a78bfa 46%,#6f7cf6 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 10px 26px rgba(167,139,250,.34);transition:transform .34s var(--spring)}
+.ps-cap{display:flex;gap:8px;max-width:760px;width:100%;margin:0 auto 4px;padding:8px;border-radius:999px;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-shadow);animation:lkIn .3s var(--ease)}
+.ps-cap[hidden]{display:none}
+.ps-cap input{flex:1;min-width:0;border:none;background:none;outline:none;color:var(--txt);font:inherit;font-size:16px;padding:0 12px}
+@media (max-width:680px){.ps-nums{grid-template-columns:1fr 1fr}.ps-nums>div:last-child{grid-column:1/-1}.ps-row{padding:10px 12px}}
+.ps-who{display:flex;align-items:center;gap:16px}.ps-who .ps-av{width:56px;height:56px;font-size:20px}
+.ps-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.ps-col{display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:22px;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box;min-width:0}
+.ps-col h3{margin:0 0 2px;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--mut2)}
+.ps-col.ok h3{color:var(--ok)}.ps-col.bad h3{color:var(--bad)}
+.ps-col span{font-size:clamp(14px,1.6vw,17px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ps-col em{font-style:normal;font-size:13px;color:var(--mut2)}
+.ps-next{font-size:14px;color:var(--mut);text-align:right}
+@media (max-width:680px){.ps-cols{grid-template-columns:1fr}}
 /* «Клиенты ждут шага» на «Сейчас» */
 .crmnow{border-radius:20px;padding:12px 12px 8px;margin-bottom:14px;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-soft)}
 .crmnow-h{display:flex;align-items:center;gap:8px;padding:0 4px 8px;color:var(--mut);font-size:13px}
@@ -4834,32 +4902,90 @@ function presOverviewHTML(projs){
     <div class="pov-grid">${projs.map(card).join('')}</div>`;
 }
 let presSlides=[],presIdx=0,presTimer=null;
+/* ===== ПРЕЗЕНТАЦИЯ ДЛЯ СОЗВОНА — повестка, а не отчёт =====
+   Синк идёт по одной логике: что сделали → кто над чем → что горит (это и есть повестка) → клиенты и деньги →
+   итог. Одна мысль на слайд, крупные цифры. Во время звонка «＋ Решение» (клавиша N) пишет договорённость
+   сразу задачей; последний слайд собирает итог — скопировать в чат одним тапом. */
+let presDecisions=[],presStart=0,presClock=null;
+function presData(){
+  const projs=reg.list.filter(p=>!p.archived).map(p=>({meta:p,d:p.id===S.id?S:loadProj(p.id)})).filter(x=>x.d);
+  const all=projs.flatMap(x=>(x.d.tasks||[]).filter(t=>!t.isMilestone).map(t=>({t,p:x.meta,m:(x.d.members||[]).find(m=>m.id===t.assigneeId)})));
+  const wk=Date.now()-7*dayMs;
+  return {projs,
+    done:all.filter(x=>x.t.status==='done'&&(x.t.statusTs||x.t.doneTs||0)>wk),
+    prog:all.filter(x=>x.t.status==='progress'||x.t.status==='review'),
+    hot:all.filter(x=>x.t.status!=='done'&&(isOverdue(x.t)||x.t.approval)).sort((a,b)=>daysLeft(a.t)-daysLeft(b.t))};}
+const psAv=m=>m?`<span class="ps-av" style="${m.photo?`background-image:url('${m.photo}')`:`background:${m.color||'#8E8E93'}`}">${m.photo?'':esc(initials((m.name||'?').trim()))}</span>`:'<span class="ps-av ghost">?</span>';
+const psRow=(x,tail)=>`<div class="ps-row">${psAv(x.m)}<span class="ps-rt">${esc(x.t.title)}</span><span class="ps-rp">${x.p.emoji||'📄'}</span>${tail||''}</div>`;
 function buildPresSlides(){
-  const projs=reg.list.filter(p=>!p.archived);const slides=[];
-  if(projs.length>1)slides.push(presOverviewHTML(projs));
-  (projs.length?projs:[{id:S.id,name:S.projectName,emoji:'🚀'}]).forEach(p=>{const d=p.id===S.id?S:loadProj(p.id);if(d)slides.push(presProjectHTML(p,d));});
-  if(!slides.length)slides.push(presProjectHTML({name:S.projectName},S));
-  return slides;
-}
+  const D=presData(),date=new Date().toLocaleDateString('ru-RU',{day:'numeric',month:'long'}),sm=crmSums(),slides=[];
+  slides.push(`<div class="ps-k">Синк · ${date}</div><h1 class="ps-h">Неделя в цифрах</h1>
+    <div class="ps-nums"><div><b data-cu="${D.done.length}">0</b><span>закрыли за 7 дней</span></div>
+      <div><b data-cu="${D.prog.length}">0</b><span>в работе</span></div>
+      <div class="${D.hot.length?'hot':''}"><b data-cu="${D.hot.length}">0</b><span>горит и ждёт решения</span></div></div>
+    <div class="ps-projs">${D.projs.map(x=>`<span>${x.meta.emoji||'📄'} ${esc(x.meta.name)}</span>`).join('')}</div>`);
+  slides.push(`<div class="ps-k">01 · Сделали</div><h1 class="ps-h">${D.done.length?D.done.length+' '+plural(D.done.length,'задача закрыта','задачи закрыты','задач закрыто'):'Неделя без закрытых задач'}</h1>
+    ${D.done.length?`<div class="ps-list">${D.done.slice(0,8).map(x=>psRow(x,'<i class="ps-ok">✓</i>')).join('')}</div>`:'<p class="ps-p">Обсудим, что мешает — это главный вопрос созвона.</p>'}`);
+  /* «один человек — один экран» (механика «Созвон» из Штаба, #954): Сделал · Сейчас · Мешает — из данных, без отчётов */
+  const ppl={};const add=(x,k)=>{if(!x.m)return;const key=(x.m.name||'').trim().toLowerCase();if(!key)return;(ppl[key]=ppl[key]||{m:x.m,done:[],prog:[],hot:[]})[k].push(x);};
+  D.done.forEach(x=>add(x,'done'));D.prog.forEach(x=>add(x,'prog'));D.hot.forEach(x=>add(x,'hot'));
+  const persons=Object.values(ppl).sort((a,b)=>(b.hot.length-a.hot.length)||(b.prog.length-a.prog.length));
+  const col=(h,arr,empty,cls)=>`<div class="ps-col ${cls||''}"><h3>${h}${arr.length?` · ${arr.length}`:''}</h3>${arr.length?arr.slice(0,4).map(x=>`<span>${x.p.emoji||'📄'} ${esc(x.t.title)}</span>`).join('')+(arr.length>4?`<em>+ ещё ${arr.length-4}</em>`:''):`<em>${empty}</em>`}</div>`;
+  persons.forEach((g,k)=>slides.push(`<div class="ps-k">02 · Команда · ${k+1} из ${persons.length}</div>
+    <div class="ps-who">${psAv(g.m)}<h1 class="ps-h">${esc(g.m.name)}</h1></div>
+    <div class="ps-cols">${col('Сделал',g.done,'за неделю пусто','ok')}${col('Сейчас',g.prog,'ничего не в работе')}${col('Мешает',g.hot,'ничего не горит','bad')}</div>
+    ${persons[k+1]?`<div class="ps-next">Дальше: ${esc(persons[k+1].m.name)} →</div>`:''}`));
+  if(!persons.length)slides.push(`<div class="ps-k">02 · Команда</div><h1 class="ps-h">В работе пусто</h1><p class="ps-p">Никто ничего не ведёт — распределим на созвоне.</p>`);
+  slides.push(`<div class="ps-k">03 · Повестка</div><h1 class="ps-h">${D.hot.length?'Горит и ждёт решения':'Ничего не горит'}</h1>
+    ${D.hot.length?`<div class="ps-list">${D.hot.slice(0,7).map(x=>psRow(x,`<i class="ps-bad">${x.t.approval&&!isOverdue(x.t)?'ждёт решения':'просрочено '+(-daysLeft(x.t))+'д'}</i>`)).join('')}</div><p class="ps-p">Решение по каждому — клавиша N, оно сразу станет задачей.</p>`:'<p class="ps-p">Можно говорить о росте, а не о пожарах.</p>'}`);
+  if(crmLive().length){const late=crmLive().filter(crmLate);
+    slides.push(`<div class="ps-k">04 · Клиенты и деньги</div><h1 class="ps-h">${fmtMoney(sm.pipe)} в воронке</h1>
+      <div class="ps-nums"><div><b data-cu="${sm.open}">0</b><span>открытых сделок</span></div><div><b>${sm.won?fmtMoney(sm.won):'—'}</b><span>сдано за 30 дней</span></div>
+        <div class="${late.length?'hot':''}"><b data-cu="${late.length}">0</b><span>ждут нашего шага</span></div></div>
+      ${late.length?`<div class="ps-list">${late.slice(0,4).map(c=>`<div class="ps-row"><span class="ps-av" style="background:${crmSt(c.stage).c}">${esc(initials(c.name||'?'))}</span><span class="ps-rt">${esc(c.name)} — ${esc(c.next.text)}</span><i class="ps-bad">${crmDate(c.next.date)}</i></div>`).join('')}</div>`:''}`);}
+  slides.push('__SUMMARY__');
+  return slides;}
+function presSummaryHTML(){const D=presData();
+  return `<div class="ps-k">Итог созвона</div><h1 class="ps-h">${presDecisions.length?presDecisions.length+' '+plural(presDecisions.length,'решение','решения','решений'):'Решения появятся здесь'}</h1>
+    ${presDecisions.length?`<div class="ps-list">${presDecisions.map(d=>`<div class="ps-row"><i class="ps-ok">✓</i><span class="ps-rt">${esc(d)}</span></div>`).join('')}</div>`:'<p class="ps-p">Во время созвона жми N или «＋ Решение» — договорённость сразу станет задачей и попадёт сюда.</p>'}
+    <div class="ps-acts"><button class="btn primary" id="psCopy">${icon('doc',15)} Скопировать итог</button><button class="btn" id="psEnd">Завершить созвон</button></div>`;}
+function presSummaryText(){const D=presData(),date=new Date().toLocaleDateString('ru-RU',{day:'numeric',month:'long'});
+  const L=['Синк · '+date,'','Сделали за неделю: '+D.done.length,'В работе: '+D.prog.length];
+  if(presDecisions.length){L.push('','Решили:');presDecisions.forEach(d=>L.push('• '+d));}
+  if(D.hot.length){L.push('','Горит:');D.hot.slice(0,6).forEach(x=>L.push('• '+x.t.title+(isOverdue(x.t)?' (просрочено '+(-daysLeft(x.t))+'д)':'')));}
+  return L.join('\n');}
+function presCountUp(){const rm=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;
+  $$('#present [data-cu]').forEach(el=>{const n=+el.dataset.cu||0;if(rm||!n){el.textContent=n;return;}const t0=performance.now();
+    const step=t=>{const k=Math.min(1,(t-t0)/720),e=1-Math.pow(1-k,3);el.textContent=Math.round(n*e);if(k<1)requestAnimationFrame(step);};requestAnimationFrame(step);});}
+function presCapture(){const bar=$('#psCap');if(!bar)return;bar.hidden=false;const i=$('#psCapIn');i.value='';i.focus();}
 function renderPresent(){
-  const dots=presSlides.map((_,i)=>`<span class="pr-dot ${i===presIdx?'on':''}" data-d="${i}"></span>`).join('');
-  $('#present').innerHTML=`<button class="pr-close" id="prClose">${icon('x',16)} Esc</button>
-    <div class="pr-slide" key="${presIdx}">${presSlides[presIdx]}</div>
-    <div class="pr-nav"><button class="pr-arrow" id="prPrev">‹</button>
-      <div class="pr-dots">${dots}</div>
-      <button class="pr-arrow" id="prNext">›</button>
-      <button class="pr-auto ${presTimer?'on':''}" id="prAuto">${presTimer?'⏸ авто':'▶ авто'}</button>
-      <span class="pr-count">${presIdx+1} / ${presSlides.length}</span></div>`;
-  $('#prClose').onclick=closePresent;
-  $('#prPrev').onclick=()=>presNav(-1);$('#prNext').onclick=()=>presNav(1);
-  $('#prAuto').onclick=presToggleAuto;
-  $$('#present .pr-dot').forEach(d=>d.onclick=()=>{presIdx=+d.dataset.d;renderPresent();});
+  const body=presSlides[presIdx]==='__SUMMARY__'?presSummaryHTML():presSlides[presIdx];
+  const mins=presStart?Math.floor((Date.now()-presStart)/60000):0;
+  $('#present').innerHTML=`<div class="ps-top"><div class="ps-bars">${presSlides.map((_,i)=>`<span class="${i<presIdx?'done':i===presIdx?'on':''}" data-d="${i}"></span>`).join('')}</div>
+      <span class="ps-clock" id="psClock">${icon('clock',13)} ${mins} мин</span><button class="ps-x" id="prClose" aria-label="Закрыть">${icon('x',16)}</button></div>
+    <div class="pr-slide ps-slide" key="${presIdx}">${body}</div>
+    <div class="ps-cap" id="psCap" hidden><input id="psCapIn" placeholder="Что решили? «Марина отправит счёт Зерно до пятницы»" maxlength="160"><button class="btn primary" id="psCapGo">Записать</button></div>
+    <div class="ps-nav"><button class="ps-arrow" id="prPrev" aria-label="Назад">‹</button>
+      <button class="ps-dec" id="psDec">${icon('plus',15)} Решение${presDecisions.length?` · ${presDecisions.length}`:''}</button>
+      <button class="ps-arrow" id="prNext" aria-label="Дальше">›</button></div>`;
+  $('#prClose').onclick=closePresent;$('#prPrev').onclick=()=>presNav(-1);$('#prNext').onclick=()=>presNav(1);
+  $('#psDec').onclick=presCapture;
+  $$('#present .ps-bars span').forEach(d=>d.onclick=()=>{presIdx=+d.dataset.d;renderPresent();});
+  const go=()=>{const v=($('#psCapIn').value||'').trim();if(!v){$('#psCap').hidden=true;return;}
+    const p=parseQuick(v);if(!p.title)p.title=v;addTaskToProject(S.id,p,'todo');presDecisions.push(v);haptic('ok');
+    toast('Решение записано задачей','✅');renderPresent();};
+  $('#psCapGo').onclick=go;$('#psCapIn').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go();}if(e.key==='Escape'){e.stopPropagation();$('#psCap').hidden=true;}};
+  const cp=$('#psCopy');if(cp)cp.onclick=()=>{const t=presSummaryText();if(navigator.clipboard)navigator.clipboard.writeText(t).then(()=>toast('Итог скопирован — вставь в чат команды','📋'));};
+  const en=$('#psEnd');if(en)en.onclick=closePresent;
+  presCountUp();
 }
 function presNav(d){if(!presSlides.length)return;presIdx=(presIdx+d+presSlides.length)%presSlides.length;renderPresent();}
 function presToggleAuto(){if(presTimer){clearInterval(presTimer);presTimer=null;}else{presTimer=setInterval(()=>presNav(1),8000);}renderPresent();}
-function openPresent(){presSlides=buildPresSlides();presIdx=0;renderPresent();$('#present').classList.add('show');
+function openPresent(){presDecisions=[];presStart=Date.now();presSlides=buildPresSlides();presIdx=0;renderPresent();$('#present').classList.add('show');
+  clearInterval(presClock);presClock=setInterval(()=>{const c=$('#psClock');if(c)c.innerHTML=icon('clock',13)+' '+Math.floor((Date.now()-presStart)/60000)+' мин';},15000);
+  {const pr=$('#present');let sx=0;pr.ontouchstart=e=>{sx=e.touches[0].clientX;};pr.ontouchend=e=>{const dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>60&&!e.target.closest('input'))presNav(dx<0?1:-1);};}
   try{if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen();}catch(e){}}
-function closePresent(){$('#present').classList.remove('show');if(presTimer){clearInterval(presTimer);presTimer=null;}try{if(document.fullscreenElement)document.exitFullscreen();}catch(e){}}
+function closePresent(){$('#present').classList.remove('show');clearInterval(presClock);presClock=null;if(presTimer){clearInterval(presTimer);presTimer=null;}try{if(document.fullscreenElement)document.exitFullscreen();}catch(e){}}
 
 /* ---- read-only шеринг статуса по ссылке (без бэкенда, всё в URL) ---- */
 function buildShareSnapshot(){
@@ -5384,6 +5510,7 @@ function renderIntake(){
       <div style="flex:1;min-width:220px"><h1>Приёмка${intakeRows.length?` <span class="c" style="font-size:14px;vertical-align:3px">${intakeRows.length}</span>`:''}</h1>
         <div class="sub" style="margin-top:4px;line-height:1.5">задачи из бота и Claude ждут решения: выбери проект и подтверди — станут задачами</div></div>
       ${connectBtn}</div>
+    <div class="chatstrip" id="intChats"></div>
     <details class="cheat"><summary>Шпаргалка: быстрые команды для Claude и бота</summary>${cheatsheetHTML()}</details>`
     +((()=>{const ready=intakeRows.filter(r=>projectMatch(r.target_project));
       return ready.length>=2?`<button class="btn" id="intakeAll" style="margin-bottom:12px">✓ Принять все, где проект уже известен · ${ready.length}</button>`:'';})())
@@ -5391,8 +5518,8 @@ function renderIntake(){
       const p=parseQuick(r.text);const m=p.assignee?member(p.assignee):null;
       const noTarget=!projectMatch(r.target_project);
       return `<div class="ino" data-id="${r.id}">
-        <div class="inohead"><span class="inoby"><b>${esc(r.by_name||r.by_email)}</b>${/telegram/i.test(r.source||'')?' из Telegram':' через Claude'}</span>
-          ${r.source?`<span class="inosrc">${esc(r.source)}</span>`:''}<span class="inotime">${relTime(new Date(r.created_at).getTime())}</span></div>
+        <div class="inohead"><span class="inoby"><b>${esc(r.by_name||r.by_email)}</b>${/^chat:/.test(r.source||'')?' · 💬 из рабочего чата':/telegram/i.test(r.source||'')?' из Telegram':' через Claude'}</span>
+          ${r.source&&!/^chat:/.test(r.source)?`<span class="inosrc">${esc(r.source)}</span>`:''}<span class="inotime">${relTime(new Date(r.created_at).getTime())}</span></div>
         <div class="inotitle">${esc(p.title||r.text)}</div>
         <div class="inochips">
           ${noTarget?'<span class="ichip" style="color:var(--warn);border-color:rgba(251,191,36,.5)">без проекта — выбери ниже</span>':''}
@@ -5401,7 +5528,9 @@ function renderIntake(){
           ${p.est?`<span class="ichip">⏱ ${p.est}ч</span>`:''}
           ${p.prio==='urgent'?'<span class="ichip" style="color:var(--bad);border-color:var(--bad)">⚑ срочно</span>':p.prio==='high'?'<span class="ichip" style="color:var(--warn);border-color:var(--warn)">⚑ важно</span>':''}
         </div>
-        ${r.note?`<div class="inonote">💬 ${esc(r.note)}</div>`:''}
+        ${r.note?(()=>{const lk=(String(r.note).match(/https:\/\/t\.me\/c\/\d+\/\d+/)||[])[0];const q=String(r.note).replace(lk||'','').trim();
+          return `<div class="inonote">💬 ${esc(q)}${lk?` <a href="${lk}" target="_blank" rel="noopener">в чате ↗</a>`:''}</div>`;})():''}
+        ${/^chat:/.test(r.source||'')?`<div class="inonot">Не то: <button data-rjr="${r.id}" data-why="не задача">не задача</button><button data-rjr="${r.id}" data-why="дубль">дубль</button><button data-rjr="${r.id}" data-why="уже сделано">уже сделано</button></div>`:''}
         <div class="inofoot">
           ${projectSelectHTML(r.id,r.target_project)}
           <div class="inoacts">
@@ -5427,6 +5556,10 @@ function renderIntake(){
   $$('#intake [data-aisplit]').forEach(b=>b.onclick=()=>aiSplitIntake(b.dataset.aisplit,b));
   $$('#intake [data-bl]').forEach(b=>b.onclick=()=>acceptIntake(b.dataset.bl,true));
   $$('#intake [data-crm]').forEach(b=>b.onclick=()=>intakeToClient(b.dataset.crm));
+  /* «Не то» с причиной — для заявок из рабочих чатов: причина уходит в заметку и учит фильтр этого чата */
+  $$('#intake [data-rjr]').forEach(b=>b.onclick=()=>{const r=intakeRows.find(x=>x.id===b.dataset.rjr);
+    decideIntake(b.dataset.rjr,'rejected',{note:'['+b.dataset.why+'] '+((r&&r.note)||'')});toast('Понял — такое из чата больше не предложу','🧠');});
+  loadChats();
   $$('#intake [data-edit]').forEach(b=>b.onclick=()=>editIntake(b.dataset.edit));
   $$('#intake [data-rej]').forEach(b=>b.onclick=()=>{decideIntake(b.dataset.rej,'rejected');toast('Отклонено','✕');});
   {const ba=$('#intakeAll');if(ba)ba.onclick=()=>{const ready=intakeRows.filter(r=>projectMatch(r.target_project));
@@ -7456,8 +7589,10 @@ cmdEl.onkeydown=e=>{if(e.key==='Enter'){runCmd(cmdEl.value);cmdEl.value='';$('#c
 document.addEventListener('keydown',e=>{
   const a=document.activeElement;const typing=a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.isContentEditable);
   if($('#present').classList.contains('show')&&!$('#present').querySelector('.pr-foot-brand')){
+    if(typing)return; // в поле «Решение» печатаем, а не листаем
     if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();presNav(1);return;}
     if(e.key==='ArrowLeft'){e.preventDefault();presNav(-1);return;}
+    if(e.key==='n'||e.key==='N'||e.key==='т'||e.key==='Т'){e.preventDefault();presCapture();return;}
   }
   if((e.metaKey||e.ctrlKey)&&(e.key==='k'||e.key==='K')){e.preventDefault();$('#palScrim').classList.contains('show')?closePalette():openPalette();return;}
   if((e.metaKey||e.ctrlKey)&&e.shiftKey&&e.code==='KeyZ'&&!typing){e.preventDefault();redo();return;}
@@ -9394,6 +9529,35 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-snzhero]')
   const pid=b.dataset.pid||S.id,tid=b.dataset.snzhero,d=fmtD(parseD(todayISO())+dayMs);let prev=null;
   editTaskInProject(pid,tid,t=>{prev=t.snooze||null;t.snooze=d;});haptic('sel');render();
   toast('Отложено до завтра — срок не тронут','💤','Отменить',()=>{editTaskInProject(pid,tid,t=>{if(prev)t.snooze=prev;else delete t.snooze;});render();});});
+/* ===== рабочие чаты → Приёмка: подключить чат, частота выжимки, отключить (сервер — tg-bot, таблицы — supabase/chat.sql) =====
+   Пока таблиц нет (миграция не применена) — полоса не показывается вовсе: Приёмка работает как раньше. */
+const CADENCE=[['twice','13:00 и 19:00'],['evening','вечером'],['now','после разговора']];
+async function loadChats(){const el=$('#intChats');if(!el||!cloudOn||!sb)return;
+  let rows=null;try{const {data,error}=await sb.from('tg_chats').select('chat_id,title,project_id,cadence,enabled').eq('enabled',true);if(error)throw error;rows=data||[];}catch(e){el.innerHTML='';return;}
+  el.innerHTML=`<span class="cs-h">${icon('chat',15)} Рабочие чаты</span>`+rows.map(c=>{const pm=projMeta(c.project_id)||{};
+    return `<span class="cs-chip"><b>${esc(c.title||'Чат')}</b>${pm.name?`<i>${pm.emoji||'📄'} ${esc(pm.name)}</i>`:''}
+      <select data-cad="${c.chat_id}" aria-label="Когда присылать выжимку">${CADENCE.map(([k,n])=>`<option value="${k}" ${c.cadence===k?'selected':''}>${n}</option>`).join('')}</select>
+      <button data-cx="${c.chat_id}" aria-label="Отключить">${icon('x',13)}</button></span>`;}).join('')
+    +`<button class="cs-add" id="csAdd">${icon('plus',14)} Подключить чат</button>`;
+  $('#csAdd').onclick=connectChat;
+  $$('#intChats [data-cad]').forEach(s=>s.onchange=async()=>{await sb.from('tg_chats').update({cadence:s.value}).eq('chat_id',+s.dataset.cad);toast('Выжимка — '+(CADENCE.find(x=>x[0]===s.value)||['',''])[1],'💬');});
+  $$('#intChats [data-cx]').forEach(b=>b.onclick=async()=>{await sb.from('tg_chats').update({enabled:false}).eq('chat_id',+b.dataset.cx);loadChats();
+    toast('Чат отключён — бота можно удалить из группы','💬');});}
+async function connectChat(){
+  if(!cloudOn||!sb||!myEmail){toast('Подключение чатов работает после входа почтой','💬');return;}
+  const projs=reg.list.filter(p=>!p.archived);let pid=S.id;
+  $('#lpModal').innerHTML=`<div class="qa"><div class="qa-h"><div class="qa-t">Подключить рабочий чат</div>
+    <div class="qa-m">Бот станет админом группы, будет читать переписку и присылать тебе выжимку: решения, задачи, сроки. В саму группу писать не будет. В Приёмку попадёт только то, что тянет на задачу.</div></div>
+    <div class="qa-s">К какому проекту</div>
+    <div class="capq qa-st">${projs.map(p=>`<button data-cp="${p.id}" class="${p.id===pid?'on':''}">${p.emoji||'📄'} ${esc(p.name)}</button>`).join('')}</div>
+    <button class="btn primary qa-open" id="cpGo">${icon('send',15)} Выбрать группу в Telegram</button></div>`;
+  $('#lpScrim').classList.add('show');
+  $$('#lpModal [data-cp]').forEach(b=>b.onclick=()=>{pid=b.dataset.cp;$$('#lpModal [data-cp]').forEach(x=>x.classList.toggle('on',x===b));});
+  $('#cpGo').onclick=async()=>{const code=b64url(crypto.getRandomValues(new Uint8Array(12)));const ws=await myWorkspaceId();const pm=projMeta(pid)||{};
+    const {error}=await sb.from('workspace_meta').upsert({k:'chatbind:'+code,v:{pid,pname:pm.name||'',ws,email:myEmail,exp:Date.now()+30*60000},workspace_id:ws,updated_at:new Date().toISOString()});
+    if(error){toast('Не удалось: '+(error.message||''),'⚠');return;}
+    closeLP();window.open('https://t.me/'+TG_BOT+'?startgroup='+code+'&admin=delete_messages','_blank','noopener');
+    toast('Выбери группу в Telegram — бот подключится сам','💬');};}
 /* заявка из «Приёмки» → клиент: имя из заявки, текст — первой заметкой */
 function intakeToClient(id){const r=(typeof intakeRows!=='undefined'?intakeRows:[]).find(x=>x.id===id);if(!r)return;
   const p=parseQuick(r.text);crmNew({name:(p.title||r.text||'').slice(0,80),source:'intake',

@@ -495,6 +495,7 @@ async function teamLinks(exceptEmail?: string, ws?: string): Promise<Link[]> {
 }
 async function notifyNewIntake(rec: Record<string, any>) {
   if (rec.source === "telegram-idea") return; // идеи маршрутизирует сам автор — не шумим
+  if (String(rec.source ?? "").startsWith("chat:")) return; // из рабочих чатов — одной выжимкой, не пушем на каждую
   const p = parseTask(rec.text ?? "");
   const tl = await targetLabel(rec.target_project);
   const ws = rec.workspace_id ?? "main";
@@ -929,6 +930,154 @@ const HELP = `<b>WANDO-бот — пульт в кармане</b>
 
 Понимаю: @имя · сегодня/завтра/послезавтра · «с 22 по 28 июля» · «до 15 июля» · «на 3 дня» · 2ч · !срочно/важно`;
 
+// ---------- рабочие чаты → Приёмка ----------
+// Бот — админ в рабочих чатах проекта. В чат не пишет (кроме «подключён»): копит переписку после сита,
+// по расписанию разбирает её Claude'ом и шлёт выжимку в личку тому, кто подключил. В Приёмку — только задачи
+// с уверенностью ≥ 0.75 и не дубли открытых; решения/сроки/блокеры — только в выжимку. Отказы учат фильтр.
+const CHAT_MODEL = "claude-sonnet-5-5";
+const NOISE = /^(ок|ok|окей|ага|угу|да|нет|спс|спасибо|благодарю|\+|понял|принял|норм|хорошо|отлично|супер|good|thanks|thx)[\s!.)👍🙏🔥❤️]*$/i;
+function chatSieve(t: string): boolean {
+  const s = t.trim();
+  if (s.length < 8 || NOISE.test(s)) return false;
+  return s.split(/\s+/).filter((w) => /[a-zа-яё0-9]/i.test(w)).length >= 3;
+}
+const cadenceLabel = (c: string) => c === "now" ? "после каждого разговора" : c === "evening" ? "вечером в 19:00" : "в 13:00 и 19:00";
+
+async function onMyChatMember(u: Record<string, any>) {
+  const st = u.new_chat_member?.status, chatId = u.chat?.id;
+  if (chatId && (st === "left" || st === "kicked")) await sb.from("tg_chats").update({ enabled: false }).eq("chat_id", chatId);
+}
+
+async function bindChat(chatId: number, title: string, code: string) {
+  const { data: row } = await sb.from("workspace_meta").select("v").eq("k", "chatbind:" + code).maybeSingle();
+  const v = (row?.v ?? null) as Record<string, any> | null;
+  if (!v || (v.exp && Date.now() > Number(v.exp))) {
+    await TG("sendMessage", { chat_id: chatId, text: "Код подключения устарел — возьми новый: WANDO → Приёмка → «Подключить рабочий чат»." });
+    return;
+  }
+  await sb.from("tg_chats").upsert({ chat_id: chatId, workspace_id: v.ws ?? "main", project_id: v.pid ?? null, title, added_by: String(v.email ?? ""), enabled: true });
+  await sb.from("workspace_meta").delete().eq("k", "chatbind:" + code);
+  await TG("sendMessage", { chat_id: chatId, text: `✅ WANDO подключён к «${title}». Пишите как обычно — соберу из переписки задачи и пришлю выжимку в личку. Сюда писать не буду.` });
+  const { data: l } = await sb.from("tg_links").select("chat_id").ilike("email", String(v.email ?? "")).eq("revoked", false).maybeSingle();
+  if (l?.chat_id) await say(l.chat_id, `💬 Чат <b>${esc(title)}</b> подключён${v.pname ? ` к проекту <b>${esc(v.pname)}</b>` : ""}. Выжимка — ${cadenceLabel("twice")}.`);
+}
+
+async function onGroupMessage(m: Record<string, any>) {
+  const chatId = m.chat.id as number, text = String(m.text ?? m.caption ?? "");
+  // привязка: Telegram присылает «/start <код>», когда бота добавляют по ссылке из WANDO
+  const st = text.match(/^\/start(?:@\w+)?\s+([A-Za-z0-9_-]{8,64})/);
+  if (st) { await bindChat(chatId, String(m.chat.title ?? "Чат"), st[1]); return; }
+  if (m.from?.is_bot || !text) return;
+  const { data: c } = await sb.from("tg_chats").select("enabled").eq("chat_id", chatId).maybeSingle();
+  if (!c?.enabled || !chatSieve(text)) return;
+  const who = [m.from?.first_name, m.from?.last_name].filter(Boolean).join(" ") || m.from?.username || "кто-то";
+  await sb.from("tg_chat_msgs").upsert({ chat_id: chatId, msg_id: m.message_id, from_id: m.from?.id ?? null, from_name: who,
+    text: text.slice(0, 1500), ts: new Date(Number(m.edit_date ?? m.date ?? Date.now() / 1000) * 1000).toISOString(), processed: false });
+}
+
+function chatDue(c: Record<string, any>, now: Date): boolean {
+  const h = (now.getUTCHours() + TZ) % 24, last = c.last_digest_at ? new Date(c.last_digest_at).getTime() : 0;
+  if (c.cadence === "now") return now.getTime() - last > 25 * 60_000;
+  const slots = c.cadence === "evening" ? [19] : [13, 19];
+  return slots.includes(h) && now.getUTCMinutes() < 30 && now.getTime() - last > 60 * 60_000;
+}
+
+async function askClaudeModel(model: string, system: string, user: string, maxTokens: number): Promise<string> {
+  const r = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": ANTHROPIC, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({ model, max_tokens: maxTokens, system, messages: [{ role: "user", content: user }] }),
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data?.error?.message || "anthropic " + r.status);
+  return String(data?.content?.[0]?.text ?? "").trim();
+}
+function parseJSONLoose(raw: string): Record<string, any> | null {
+  const a = raw.indexOf("{"), b = raw.lastIndexOf("}");
+  if (a < 0 || b <= a) return null;
+  try { return JSON.parse(raw.slice(a, b + 1)); } catch { return null; }
+}
+
+async function digestChat(c: Record<string, any>, msgs: Record<string, any>[]) {
+  const { data: p } = c.project_id
+    ? await sb.from("projects").select("id,name,emoji,data").eq("id", c.project_id).maybeSingle()
+    : { data: null as Record<string, any> | null };
+  const people = (((p?.data?.members) ?? []) as Record<string, any>[]).map((m) => m.name).filter(Boolean);
+  const open = taskList(p ?? {}).filter((t) => t.status !== "done").map((t) => String(t.title)).slice(0, 80);
+  // обучение: что команда брала и что отклоняла из ЭТОГО чата — примерами в промпт
+  const src = "chat:" + c.chat_id;
+  const { data: hist } = await sb.from("intake").select("text,status,note").eq("source", src)
+    .in("status", ["accepted", "rejected"]).order("created_at", { ascending: false }).limit(24);
+  const yes = (hist ?? []).filter((h) => h.status === "accepted").slice(0, 8).map((h) => "+ " + h.text);
+  const no = (hist ?? []).filter((h) => h.status === "rejected").slice(0, 12)
+    .map((h) => "− " + h.text + (String(h.note ?? "").startsWith("[") ? " " + String(h.note).split("]")[0] + "]" : ""));
+  const transcript = msgs.map((m) => `[${m.msg_id}] ${m.from_name}: ${String(m.text).replace(/\s+/g, " ")}`).join("\n").slice(0, 24000);
+  const system = `Ты — помощник фаундера в WANDO. Из рабочей переписки команды выдели только то, что реально стоит взять в работу.
+Ответ — СТРОГО JSON без пояснений:
+{"tasks":[{"title":"глагол + что сделать, до 90 символов","who":"имя из списка людей или null","due":"YYYY-MM-DD или null","confidence":0.0,"quote_id":0,"quote":"короткая цитата до 120 символов"}],
+ "decisions":["что решили"],"deadlines":["что назначили или сдвинули по срокам"],"blockers":["что мешает"]}
+Задача — конкретное действие, о котором договорились или попросили, с исполнителем или очевидным владельцем.
+НЕ задачи: обсуждения, мнения, шутки, вопросы без просьбы, уже сделанное («сделал», «отправил»), повтор открытой задачи.
+confidence ≥ 0.75 — только если действие и договорённость явные. Сегодня ${todayISO(0)} (UTC+4). Нечего — пустые массивы.`;
+  const user = `Проект: ${p?.name ?? c.title}\nЛюди: ${people.join(", ") || "—"}\n` +
+    `Открытые задачи (не дублируй):\n${open.map((t) => "• " + t).join("\n") || "—"}\n` +
+    (yes.length ? `\nКоманда БРАЛА такое:\n${yes.join("\n")}\n` : "") +
+    (no.length ? `\nКоманда ОТКЛОНЯЛА такое — похожее не предлагай:\n${no.join("\n")}\n` : "") +
+    `\nПереписка «${c.title}»:\n${transcript}`;
+  const out = parseJSONLoose(await askClaudeModel(CHAT_MODEL, system, user, 1500));
+  if (!out) return;
+  const norm = (s: string) => String(s).toLowerCase().replace(/[^a-zа-яё0-9 ]/gi, "").replace(/\s+/g, " ").trim();
+  const openN = new Set(open.map(norm));
+  const tasks = ((out.tasks ?? []) as Record<string, any>[])
+    .filter((t) => Number(t.confidence) >= 0.75 && t.title && !openN.has(norm(t.title))).slice(0, 10);
+  const created: { id: string; line: string }[] = [];
+  for (const t of tasks) {
+    const parts = [String(t.title).slice(0, 140)];
+    if (/^\d{4}-\d{2}-\d{2}$/.test(String(t.due ?? ""))) parts.push("до " + String(t.due).slice(8, 10) + "." + String(t.due).slice(5, 7));
+    if (t.who) parts.push("@" + String(t.who).split(/\s+/)[0]);
+    const text = parts.join(" ");
+    const link = t.quote_id && String(c.chat_id).startsWith("-100") ? `https://t.me/c/${String(c.chat_id).slice(4)}/${t.quote_id}` : "";
+    const note = ((t.quote ? "«" + String(t.quote).slice(0, 160) + "»" : "") + (link ? " " + link : "")).trim();
+    const { data: ins } = await sb.from("intake").insert({ workspace_id: c.workspace_id, by_email: c.added_by,
+      by_name: "Чат «" + String(c.title ?? "").slice(0, 40) + "»", source: src, workspace: c.workspace_id, text,
+      status: "pending", target_project: c.project_id, note: note || null }).select("id").single();
+    if (ins?.id) created.push({ id: ins.id, line: text });
+  }
+  const dec = ((out.decisions ?? []) as string[]).slice(0, 6), dl = ((out.deadlines ?? []) as string[]).slice(0, 5), bl = ((out.blockers ?? []) as string[]).slice(0, 5);
+  if (!created.length && !dec.length && !dl.length && !bl.length) return; // пустая выжимка — тишина
+  const sec = (h: string, a: string[]) => a.length ? `\n<b>${h}</b>\n${a.map((x) => "• " + esc(x)).join("\n")}\n` : "";
+  const html = `💬 <b>${esc(String(c.title ?? "Чат"))}</b>${p?.name ? " · " + esc(String(p.name)) : ""}\n` +
+    sec("Решили", dec) +
+    (created.length ? `\n<b>В Приёмку · ${created.length}</b>\n${created.map((x, i) => `${i + 1}. ${esc(x.line)}`).join("\n")}\n` : "") +
+    sec("Сроки", dl) + sec("Мешает", bl);
+  const { data: l } = await sb.from("tg_links").select("chat_id").ilike("email", String(c.added_by ?? "")).eq("revoked", false).maybeSingle();
+  if (!l?.chat_id) return;
+  const kb: unknown[][] = created.slice(0, 8).map((x, i) => [{ text: `✓ ${i + 1} взять`, callback_data: "acc:" + x.id }, { text: `✕ ${i + 1}`, callback_data: "rej:" + x.id }]);
+  kb.push([{ text: "📥 Открыть Приёмку", url: APP_URL }]);
+  await sayInline(l.chat_id, html, kb);
+}
+
+async function chatDigest() {
+  if (!ANTHROPIC) return;
+  const now = new Date();
+  const { data: chats } = await sb.from("tg_chats").select("*").eq("enabled", true);
+  for (const c of chats ?? []) {
+    try {
+      if (!chatDue(c, now)) continue;
+      const { data: msgs } = await sb.from("tg_chat_msgs").select("msg_id,from_name,text,ts").eq("chat_id", c.chat_id)
+        .eq("processed", false).order("ts", { ascending: true }).limit(200);
+      if (!msgs?.length) continue;
+      // «после каждого разговора»: ждём 20 минут тишины, чтобы не разбирать разговор на полуслове
+      if (c.cadence === "now" && now.getTime() - new Date(msgs[msgs.length - 1].ts).getTime() < 20 * 60_000) continue;
+      await digestChat(c, msgs);
+      await sb.from("tg_chat_msgs").update({ processed: true }).eq("chat_id", c.chat_id).lte("ts", msgs[msgs.length - 1].ts);
+      await sb.from("tg_chats").update({ last_digest_at: now.toISOString() }).eq("chat_id", c.chat_id);
+    } catch { /* один чат не роняет остальные */ }
+  }
+  // переписку дольше 3 суток не храним
+  await sb.from("tg_chat_msgs").delete().eq("processed", true).lt("ts", new Date(Date.now() - 3 * 86400_000).toISOString());
+}
+
 // ---------- main ----------
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("ok");
@@ -944,6 +1093,7 @@ Deno.serve(async (req) => {
       else if (ev.kind === "friday_digest") await fridayDigest();
       else if (ev.kind === "graveyard") await graveyardReview();
       else if (ev.kind === "ai_pulse") await aiPulse();
+      else if (ev.kind === "chat_digest") await chatDigest();
     } catch { /* не роняем */ }
     return new Response("ok");
   }
@@ -1083,6 +1233,12 @@ Deno.serve(async (req) => {
     return new Response("ok");
   }
 
+  // --- рабочие чаты (группы): привязка, сито, буфер. Личные сценарии ниже их не видят ---
+  if (update.my_chat_member) { try { await onMyChatMember(update.my_chat_member); } catch { /* не роняем */ } return new Response("ok"); }
+  {
+    const gm = update.message ?? update.edited_message, ct = gm?.chat?.type;
+    if (gm && (ct === "group" || ct === "supergroup")) { try { await onGroupMessage(gm); } catch { /* не роняем */ } return new Response("ok"); }
+  }
   const msg = update.message ?? update.edited_message;
   const chatId: number | undefined = msg?.chat?.id;
   if (!chatId) return new Response("ok");
