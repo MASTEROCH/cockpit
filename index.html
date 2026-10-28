@@ -305,12 +305,8 @@
   /* demo banner */
   .banner{display:flex;align-items:center;gap:9px;padding:6px 16px;background:rgba(167,139,250,.06);border-bottom:1px solid var(--line);font-size:12px;color:var(--mut);flex:0 0 auto}
   .banner b{color:var(--txt)}
-  .banner .acts{margin-left:auto;display:flex;gap:8px;flex:0 0 auto}
-  .banner .lnk{font-size:12px;font-weight:700;color:var(--acc2);background:none;border:none;padding:4px 6px}
   button.lnk{font-size:12px;font-weight:700;color:var(--acc2);background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.3);border-radius:8px;padding:4px 10px;cursor:pointer;transition:.15s}
   button.lnk:hover{background:rgba(167,139,250,.16)}
-  .banner .lnk:hover{text-decoration:underline}
-  .banner .lnk.mut{color:var(--mut2)}
   .banner.hide{display:none}
 
   /* legend */
@@ -2318,7 +2314,10 @@ body.light .cap-go{box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 8px 22px rgb
 
 /* мобайл: плавающий таб-бар жидкого стекла (iOS 26), плашка под выбранной, «＋» — светом бренда */
 @media (max-width:680px){
-  main{padding-bottom:calc(104px + env(safe-area-inset-bottom))}
+  /* прокрутка доходит до низа экрана, отступ — внутри неё: контент уходит ПОД вуаль и панель,
+     а не обрезается жёсткой линией над ними (раньше отступ стоял на main и подрезал экраны) */
+  main{padding-bottom:0}
+  .view{padding-bottom:calc(112px + env(safe-area-inset-bottom))}
   .mnav,body.light .mnav{left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));padding:6px;gap:2px;align-items:center;
     border-radius:32px;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-shadow);
     -webkit-backdrop-filter:blur(26px) saturate(190%) brightness(1.08);backdrop-filter:blur(26px) saturate(190%) brightness(1.08)}
@@ -2433,6 +2432,268 @@ body.light .crm-col{background:rgba(20,20,30,.025)}
 .crm-notes .sys{color:var(--mut2)}.crm-notes .sys span{font-style:italic}
 .crm-foot{display:flex;align-items:center;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
 .crm-foot #cDel{color:var(--bad)}
+/* баннер демо — одна строка на любой ширине: метка, фраза (уступает место первой, многоточием),
+   кнопка и крестик не сжимаются. Раньше фраза и две ссылки делили flex-строку, и на мобайле
+   текст ломался в столбик по слову (та же грабля, что #132) */
+.banner{gap:10px;padding:8px 14px;flex-wrap:nowrap;min-width:0;font-size:13px;
+  background:linear-gradient(90deg,rgba(167,139,250,.12),rgba(244,114,182,.05) 70%,transparent);border-bottom:1px solid var(--line)}
+body.light .banner{background:linear-gradient(90deg,rgba(124,92,224,.10),rgba(244,114,182,.05) 70%,transparent)}
+.bn-chip{flex:0 0 auto;white-space:nowrap;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px;
+  background:rgba(167,139,250,.18);color:var(--acc2)}
+body.light .bn-chip{background:rgba(124,92,224,.12)}
+.bn-txt{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--mut)}
+.bn-go{flex:0 0 auto;margin-left:auto;white-space:nowrap;border:none;cursor:pointer;font-weight:600;font-size:12.5px;padding:7px 14px;border-radius:999px;
+  background:var(--inv-bg);color:var(--inv-fg);transition:transform .34s var(--spring)}
+.bn-go:active{transform:scale(.95);transition-duration:.06s}
+.bn-x{flex:0 0 auto;width:30px;height:30px;border-radius:50%;border:none;background:none;color:var(--mut2);display:grid;place-items:center;cursor:pointer}
+.bn-x:hover{color:var(--txt);background:rgba(255,255,255,.06)}body.light .bn-x:hover{background:rgba(20,20,30,.05)}
+.bn-x svg{width:15px;height:15px}
+@media (max-width:680px){.bn-txt{display:none}.banner{padding:8px 12px}}
+/* блюр под нижним навом (мобайл): контент к низу экрана уходит в расфокус, а не просвечивает
+   вокруг и сквозь плавающую панель. Прогрессивный блюр из библиотеки ROCH (snippets/progressive-blur.css, #910):
+   три слоя 2/7/18px со своими масками — плавный фокус без «ступеньки». Вуаль — сосед нава, а не родитель:
+   у элемента с backdrop-filter вложенный блюр не видит страницу. */
+.mnav-veil{display:none}
+@media (max-width:680px){
+  .mnav-veil{display:block;position:fixed;left:0;right:0;bottom:0;height:calc(124px + env(safe-area-inset-bottom));z-index:35;pointer-events:none}
+  .mnav-veil>span{position:absolute;left:0;right:0;bottom:0;display:block}
+  .mnav-veil>span:nth-child(1){height:100%;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);
+    -webkit-mask-image:linear-gradient(#0000,#000 40%);mask-image:linear-gradient(#0000,#000 40%)}
+  .mnav-veil>span:nth-child(2){height:80%;-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);
+    -webkit-mask-image:linear-gradient(#0000,#000 50%);mask-image:linear-gradient(#0000,#000 50%)}
+  .mnav-veil>span:nth-child(3){height:62%;-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
+    background:linear-gradient(to bottom,transparent,rgba(11,11,13,.72) 55%,rgba(11,11,13,.9));
+    -webkit-mask-image:linear-gradient(#0000,#000 30%);mask-image:linear-gradient(#0000,#000 30%)}
+  body.light .mnav-veil>span:nth-child(3){background:linear-gradient(to bottom,transparent,rgba(236,236,240,.72) 55%,rgba(236,236,240,.92))}
+  /* сама панель — плотнее: стекло читается, интерфейс под ним — нет */
+  .mnav{background:linear-gradient(180deg,rgba(44,44,50,.78),rgba(22,22,26,.86)) padding-box,var(--lg-rim) border-box}
+  body.light .mnav{background:linear-gradient(180deg,rgba(255,255,255,.86),rgba(250,250,252,.8)) padding-box,var(--lg-rim) border-box}
+}
+@media (prefers-reduced-transparency:reduce){
+  .mnav-veil>span:nth-child(1),.mnav-veil>span:nth-child(2){display:none}
+  .mnav-veil>span:nth-child(3){-webkit-backdrop-filter:none;backdrop-filter:none}
+}
+/* плашка проекта: у эмодзи своя ячейка — глиф шире 13px-бокса и наползал на первую букву («🍽estoran»);
+   название сжимается многоточием, а не уезжает под значок */
+.proj{gap:7px;min-width:0}
+#projEmoji{flex:0 0 auto;width:18px;height:18px;display:grid;place-items:center;font-size:15px;line-height:1}
+#projEmoji svg{width:16px;height:16px}
+#projLabel,#projLabel[id]{flex:1 1 auto;min-width:0;max-width:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.proj{overflow:hidden}
+@media (max-width:680px){.proj{flex:1 1 auto;max-width:none;justify-content:flex-start}} /* center + переполнение = название уходило ЗА оба края, первая буква пряталась под эмодзи («🍽estoran») */ /* на мобайле плашка проекта берёт свободное место шапки — название целиком, а не «Testo…» */
+/* знак в HUD: белый, без плитки-подложки и бликов (Роч: «подложка не нужна, лого белое, а не цветное»);
+   на светлой теме тот же знак графитом — белое на белом пропадает */
+.brand .logo,body.light .brand .logo{width:auto;height:auto;border:none;border-radius:0;background:none;box-shadow:none;overflow:visible;padding:0 2px}
+.brand .logo::before,.brand .logo::after{display:none}
+.brand .logo svg{display:block;opacity:.96}
+body.light .brand .logo svg{filter:brightness(0);opacity:.86}
+/* «заряд сегодня» — подписанная капсула: две безымянные блёклые батарейки читались как сломанные кнопки,
+   а на телефоне подсказок при наведении нет. Выбор подстраивает героя: крупная задача или лёгкая */
+.energyrow{display:inline-flex;gap:2px;padding:3px;border-radius:999px;border:1px solid transparent;margin-left:12px;vertical-align:middle;
+  background:var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-soft)}
+.energyrow button,body.light .energyrow button{display:inline-flex;align-items:center;gap:5px;border:none;background:none;border-radius:999px;padding:5px 10px;
+  font-size:12px;font-weight:600;color:var(--mut);opacity:1;white-space:nowrap;box-shadow:none}
+.energyrow button svg{width:14px;height:14px}
+.energyrow button.on{background:rgba(255,255,255,.12);color:var(--txt);box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+body.light .energyrow button.on{background:#fff;box-shadow:0 1px 3px rgba(30,30,60,.12)}
+.energyrow button[data-en="hi"].on svg{color:var(--ok)}.energyrow button[data-en="lo"].on svg{color:var(--warn)}
+@media (max-width:680px){.mgreet{flex-wrap:wrap;row-gap:0}.mgreet h1{flex:1 1 100%}.energyrow{display:flex;width:max-content;margin:10px 0 0}} /* приветствие — целой строкой, заряд — под ним */
+/* доска: «＋ задача» — плотная подложка: сквозь полупрозрачное стекло просвечивала карточка под ней */
+.addcard{background:var(--panel2);border-color:var(--line2)}
+body.light .addcard{background:#fff}
+@media (max-width:680px){
+  /* фильтры доски — одна строка: поиск растягивается, чипы рядом и листаются; «Моё» больше не падает строкой ниже */
+  #toolbar{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  #toolbar .search{order:0;flex:1 1 auto;flex-basis:auto;min-width:150px}
+  #toolbar .fchip{flex:0 0 auto;border-radius:999px}
+  /* сегменты проекта — капсулы, как вкладки и фильтры по всему продукту */
+  .mseg{background:linear-gradient(180deg,rgba(11,11,13,.9),rgba(11,11,13,.76));-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+  body.light .mseg{background:linear-gradient(180deg,rgba(247,247,249,.94),rgba(247,247,249,.8))}
+  #mseg button{border-radius:999px;border:1px solid var(--line);background:none;color:var(--mut);font-weight:600}
+  #mseg button.on{background:rgba(255,255,255,.12);border-color:transparent;color:var(--txt);box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+  body.light #mseg button.on{background:#fff;box-shadow:0 1px 3px rgba(30,30,60,.12)}
+}
+.fpeople{display:none}
+@media (max-width:680px){
+  #fMine{display:none!important}
+  .fpeople{display:flex;gap:6px;flex:0 0 auto}
+  .fpeople button{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;white-space:nowrap;border-radius:999px;border:1px solid var(--line);
+    background:none;color:var(--mut);font-weight:600;font-size:13.5px;padding:6px 12px 6px 6px;min-height:40px}
+  .fpeople button:first-child{padding:6px 14px}
+  .fpeople button.on{background:rgba(255,255,255,.12);border-color:transparent;color:var(--txt);box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+  body.light .fpeople button.on{background:#fff;box-shadow:0 1px 3px rgba(30,30,60,.12)}
+  .fpav{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;background-size:cover;background-position:center}
+}
+/* «＋» — живой радиальный градиент (Роч): три пятна бренда медленно плавают внутри круга.
+   @property делает позиции анимируемыми — градиент перетекает, а не прыгает. Одна бесконечная анимация на экран (лимит — 2). */
+@property --pa{syntax:'<percentage>';inherits:false;initial-value:22%}
+@property --pb{syntax:'<percentage>';inherits:false;initial-value:78%}
+@property --pc{syntax:'<percentage>';inherits:false;initial-value:30%}
+@media (max-width:680px){
+  .mnav .mplus{background:
+      radial-gradient(circle at var(--pa) var(--pc),#fb923c 0%,rgba(251,146,60,0) 46%),
+      radial-gradient(circle at var(--pb) var(--pa),#f472b6 0%,rgba(244,114,182,0) 52%),
+      radial-gradient(circle at var(--pc) var(--pb),#6f7cf6 0%,rgba(111,124,246,0) 58%),
+      #a78bfa;
+    animation:plusLive 7s ease-in-out infinite alternate}
+}
+@keyframes plusLive{
+  0%{--pa:22%;--pb:78%;--pc:30%}
+  33%{--pa:70%;--pb:30%;--pc:76%}
+  66%{--pa:38%;--pb:64%;--pc:18%}
+  100%{--pa:80%;--pb:22%;--pc:60%}}
+@media (prefers-reduced-motion:reduce){.mnav .mplus{animation:none}}
+/* ===== сплэш: «знак рождается из света» =====
+   Живёт ~0.7с — сцена читается целиком: аврора бренда дышит (те же три пятна, что в «＋»), белый знак
+   проявляется из размытия (единственный кино-момент экрана, focusBlurResolve ROCH Motion), буквы сходятся
+   из разрядки, блик проходит по слову один раз, по капсуле бежит свет — без фальшивых процентов. */
+#bootVeil{background:var(--bg);overflow:hidden;transition:opacity .5s var(--ease),visibility .5s,filter .5s var(--ease)}
+#bootVeil.gone{filter:blur(6px)}
+#bootVeil.gone .bv-logo{transform:scale(1.08);opacity:0;transition:transform .5s var(--ease),opacity .4s var(--ease)}
+.bv-aur{position:absolute;left:50%;top:44%;width:560px;height:560px;margin:-280px 0 0 -280px;border-radius:50%;pointer-events:none;filter:blur(40px);opacity:.55;
+  background:radial-gradient(circle at var(--pa) var(--pc),rgba(251,146,60,.55),transparent 42%),
+    radial-gradient(circle at var(--pb) var(--pa),rgba(244,114,182,.6),transparent 46%),
+    radial-gradient(circle at var(--pc) var(--pb),rgba(111,124,246,.55),transparent 50%);
+  animation:plusLive 5s ease-in-out infinite alternate,bvAur .9s var(--ease) both}
+body.light .bv-aur{opacity:.38}
+@keyframes bvAur{from{transform:scale(.6);opacity:0}}
+.bv-inner{position:relative;gap:18px;animation:none}
+.bv-logo,body.light .bv-logo{width:auto;height:auto;border-radius:0;background:none;box-shadow:none;
+  animation:bvMark .62s cubic-bezier(.22,1,.36,1) both}
+.bv-logo svg{width:auto;height:40px;filter:drop-shadow(0 6px 24px rgba(167,139,250,.55))}
+body.light .bv-logo svg{filter:brightness(0) drop-shadow(0 6px 24px rgba(124,92,224,.35));opacity:.88}
+@keyframes bvMark{from{opacity:0;filter:blur(14px);transform:translateY(10px) scale(.9)}to{opacity:1;filter:none;transform:none}}
+.bv-word{font-size:15px;font-weight:700;letter-spacing:.42em;padding-left:.42em;color:transparent;
+  background:linear-gradient(100deg,var(--mut2) 0%,var(--txt) 40%,#fff 50%,var(--txt) 60%,var(--mut2) 100%);background-size:250% 100%;
+  -webkit-background-clip:text;background-clip:text;
+  animation:bvWord .7s .12s cubic-bezier(.22,1,.36,1) both,bvSheen 1.1s .3s ease-out both}
+body.light .bv-word{background-image:linear-gradient(100deg,var(--mut2) 0%,var(--txt) 40%,#7C5CE0 50%,var(--txt) 60%,var(--mut2) 100%)}
+@keyframes bvWord{from{opacity:0;letter-spacing:.9em;padding-left:.9em;filter:blur(4px)}to{opacity:1}}
+@keyframes bvSheen{from{background-position:100% 0}to{background-position:0 0}}
+.bv-bar{width:96px;height:3px;border-radius:999px;background:rgba(255,255,255,.08);animation:bvWord .5s .2s var(--ease) both}
+body.light .bv-bar{background:rgba(20,20,30,.08)}
+.bv-bar::after{width:46%;background:linear-gradient(90deg,transparent,#f472b6,#a78bfa,#fb923c,transparent);animation:bvBar .9s var(--ease) infinite}
+@media (prefers-reduced-motion:reduce){.bv-aur,.bv-logo,.bv-word,.bv-bar,.bv-bar::after{animation:none}}
+/* карточка задачи: закрыть — крестиком в шапке (как у шторок iOS), подвал на телефоне — один ряд «⋯ · Фокус · Готово».
+   Раньше разделитель занимал всю ширину и подвал разъезжался в три ряда, «⋯» — кнопкой во всю ширину */
+.dx{flex:0 0 auto;margin-left:6px;width:34px;height:34px;border-radius:50%;border:1px solid transparent;cursor:pointer;color:var(--mut);display:grid;place-items:center;
+  background:var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-soft);transition:transform .34s var(--spring)}
+.dx:active{transform:scale(.92);transition-duration:.06s}
+.dx svg{width:16px;height:16px}
+@media (max-width:680px){
+  .df{flex-wrap:wrap}
+  .df .spacer,.df #dClose{display:none}
+  .df .dfmore{flex:0 0 52px}
+  .df .btn:not(.dfmore){flex:1 1 0}
+  #dMoreBox{flex:1 1 100%;order:-1}
+  #dMoreBox .btn{flex:1 1 0}
+}
+.apvbar,.apvbar[class]{display:flex;flex-direction:column;align-items:stretch;gap:10px;padding:12px;border-radius:18px;border:1px solid transparent;
+  background:radial-gradient(120% 140% at 100% 0%,rgba(167,139,250,.16),transparent 60%) padding-box,var(--lg-fill) padding-box,var(--lg-rim) border-box}
+.apv-t{display:flex;align-items:center;gap:8px;color:var(--mut);font-size:13.5px;line-height:1.35}
+.apv-t svg{flex:0 0 auto;color:var(--acc2)}
+.apv-t b{color:var(--txt);font-weight:650}
+.apv-a{display:flex;gap:8px}
+.apv-a .btn{flex:1 1 0;white-space:nowrap;justify-content:center}
+.capmode{display:flex;gap:2px;padding:3px;border-radius:999px;align-self:flex-start;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box}
+.capmode button{border:none;background:none;color:var(--mut);font-weight:600;font-size:13px;padding:7px 14px;border-radius:999px;cursor:pointer;white-space:nowrap;transition:background .25s var(--ease),color .2s}
+.capmode button.on{background:rgba(255,255,255,.13);color:var(--txt);box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+body.light .capmode button.on{background:#fff;box-shadow:0 1px 3px rgba(30,30,60,.12)}
+#capModal[data-mode="client"] .capq,#capModal[data-mode="idea"] .capq,#capModal[data-mode="client"] .cap-understood,#capModal[data-mode="idea"] .cap-understood,
+#capModal[data-mode="client"] #capProjs,#capModal[data-mode="idea"] #capProjs,#capModal[data-mode="client"] .cap-t,#capModal[data-mode="idea"] .cap-t{display:none!important}
+/* «Завтра» на главной карточке */
+.hsnz{color:var(--mut)}
+.mh-snz{flex:0 0 54px;border-radius:18px;border:1px solid var(--line2);background:none;color:var(--mut);display:grid;place-items:center;cursor:pointer;transition:transform .34s var(--spring)}
+.mh-snz:active{transform:scale(.92);transition-duration:.06s}
+/* три кнопки героя в ряд: подписи не переносятся (правило «подпись — одна строка»), ширину делят поровну */
+.mh-acts .mh-go,.mh-acts .mh-done{white-space:nowrap;min-width:0;flex:1 1 0}
+.mh-acts .mh-go{flex-grow:1.3}
+/* во время фокуса «Завтра» прячем — откладывать задачу, над которой сидишь, нельзя; «Готово» получает место */
+.focusrun ~ .mh-snz,.focusrun ~ .hsnz{display:none}
+.mh-acts .focusrun{flex:1.4 1 0;min-width:0}
+/* шторка «Новая задача»: «Пойму так» над живым разбором, быстрые слова и люди — тапом */
+.cap-understood{display:none;align-items:center;gap:8px;flex-wrap:wrap}
+.cap-understood.on{display:flex;animation:lkIn .3s var(--ease)}
+.cap-understood>span{font-size:11.5px;font-weight:700;color:var(--acc2);letter-spacing:.02em;white-space:nowrap}
+.cap-understood .cap-chips{display:flex;gap:6px;flex-wrap:wrap}
+.capq{display:flex;align-items:center;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -2px;padding:2px}
+.capq::-webkit-scrollbar{display:none}
+.capq button{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;border-radius:999px;border:1px solid var(--line2);background:none;
+  color:var(--mut);font-weight:600;font-size:13px;padding:7px 12px;cursor:pointer;transition:background .2s,color .2s,border-color .2s,transform .34s var(--spring)}
+.capq button:active{transform:scale(.94);transition-duration:.06s}
+.capq button.on{background:rgba(167,139,250,.18);border-color:rgba(167,139,250,.5);color:var(--txt)}
+body.light .capq button.on{background:rgba(124,92,224,.1);border-color:rgba(124,92,224,.4)}
+.capq i{flex:0 0 1px;height:18px;background:var(--line2);margin:0 2px}
+.capq.who button{padding:4px 12px 4px 4px}
+.capq .fpav{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;background-size:cover;background-position:center}
+.cap-go{transition:opacity .2s,transform .34s var(--spring),background .25s}
+.cap-go.idle{opacity:.45}
+.cap-go.ok,body.light .cap-go.ok{background:var(--ok);color:#fff}
+/* режим фокуса: крестик — всегда в правом углу (прижимался вправо, только когда был счётчик «1 из N»);
+   экран — во всю высоту, действия прибиты к низу; под подвалом — размытие до краёв экрана вместо плотной «коробки»
+   (её края были видны на фоне со свечением); «Готово» — цветом бренда, как «Фокус» героя: это одно и то же действие */
+.fv-top .fv-x{margin-left:auto;border-radius:50%;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-soft)}
+.fv-top .fv-prog ~ .fv-x{margin-left:10px}
+.focusbody{min-height:100%}
+.fv-acts{margin-top:auto;background:none;isolation:isolate}
+.fv-acts::before{content:'';position:absolute;z-index:-1;left:-20px;right:-20px;top:-28px;bottom:calc(-30px - env(safe-area-inset-bottom));pointer-events:none;
+  -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
+  -webkit-mask-image:linear-gradient(transparent,#000 36%);mask-image:linear-gradient(transparent,#000 36%)}
+.fv-done,body.light .fv-done{border-radius:18px;background:linear-gradient(135deg,#f472b6 -12%,#a78bfa 46%,#6f7cf6 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 12px 30px rgba(167,139,250,.34)}
+.fv-sec button{border-radius:16px;white-space:nowrap;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box;color:var(--txt)}
+.fv-why{border-radius:18px;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box}
+/* фокус: сцена — кольцо и время по центру */
+.focusbody{gap:24px}
+.fv-timer{display:none}
+.fv-stage{display:flex;flex-direction:column;align-items:center;gap:16px;margin-top:6px}
+.fv-stage .fv-ring{position:relative;width:min(62vw,236px);height:min(62vw,236px);flex:none}
+.fv-stage .fv-ring svg{width:100%;height:100%;transform:rotate(-90deg);overflow:visible}
+.fv-stage .fv-ring .rtrack{stroke:rgba(255,255,255,.08)}
+body.light .fv-stage .fv-ring .rtrack{stroke:rgba(20,20,30,.08)}
+.fv-stage .fv-ring .rfill{stroke:url(#fvGrad);filter:drop-shadow(0 0 6px rgba(167,139,250,.5))}
+.fv-stage .fv-clock{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:clamp(44px,13vw,60px);font-weight:700;letter-spacing:-.035em;font-variant-numeric:tabular-nums;line-height:1}
+.fv-stage .fv-clock small{font-size:12.5px;font-weight:600;letter-spacing:0;color:var(--mut2);margin-top:8px}
+.fv-pause{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:11px 20px;font-weight:600;font-size:14.5px;color:var(--txt);cursor:pointer;
+  border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-soft);transition:transform .34s var(--spring)}
+.fv-pause:active{transform:scale(.94);transition-duration:.06s}
+.fv-pause.paused{color:var(--acc2)}
+.fv-task{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px}
+.fv-task .fv-title{font-size:clamp(22px,6.4vw,28px);font-weight:700;letter-spacing:-.025em;line-height:1.18;cursor:pointer}
+.fv-line{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 14px;font-size:13px;color:var(--mut)}
+.fv-line .bad{color:var(--bad);font-weight:600}.fv-line .unb{color:var(--acc2);font-weight:600}
+/* таймер на герое: одна строка, приписка тише */
+.fclock{white-space:nowrap}
+.fclock small{font-size:.62em;font-weight:600;color:var(--mut2)}
+/* мобайл: в ряду героя — только время и стоп у края (итог часов — на экране фокуса), ничего не наезжает */
+.mh-acts .focusrun{display:flex;align-items:center;gap:10px;min-width:0}
+.mh-acts .focusrun .fclock{flex:1 1 auto;min-width:0;overflow:hidden}
+.mh-acts .fclock small{display:none}
+.mh-acts .focusrun .btn{flex:0 0 42px;width:42px;height:42px;padding:0;margin-left:auto;display:grid;place-items:center;border-radius:14px}
+.mh-acts .focusrun{flex:1.9 1 0!important}
+.mh-acts .fclock{font-size:22px;font-variant-numeric:tabular-nums}
+/* неделя на телефоне: «Умная неделя» вылезала за край (366px в 343) — встаёт своей строкой во всю ширину, листание остаётся над ней */
+@media (max-width:680px){
+  .wnav{flex-wrap:wrap}
+  .wnav #wPrev,.wnav #wNext{flex:0 0 52px}
+  .wnav #wToday{flex:1 1 auto}
+  .wnav #wSmart{flex:1 1 100%;justify-content:center;white-space:nowrap}
+}
+/* узкие телефоны (320–360): три кнопки героя ужимают отступы, а не подписи; «Добавить участника» — одной строкой */
+@media (max-width:360px){
+  /* самые узкие телефоны: на герое — только «Фокус» и «Готово» (отложить можно из карточки и фокуса);
+     в шапке нет истории (она в ⌘K) — колокольчик и аватар больше не падают второй строкой */
+  .mh-snz{display:none!important}
+  #btnHist{display:none!important}
+  header{flex-wrap:nowrap}
+  .mh-acts{gap:8px}
+  .mh-acts .mh-go,.mh-acts .mh-done{padding:14px 8px;font-size:15px}
+  .mh-snz{flex-basis:46px}
+}
+.addmcard{white-space:nowrap}
+/* накопленный итог на «Фокус» — бейджем внутри кнопки: строкой «· 0.1ч» он вылезал за край */
+.mh-go small{display:inline-block;margin-left:6px;padding:2px 7px;border-radius:999px;font-size:11.5px;font-weight:700;background:rgba(255,255,255,.22);vertical-align:2px}
 /* «Клиенты ждут шага» на «Сейчас» */
 .crmnow{border-radius:20px;padding:12px 12px 8px;margin-bottom:14px;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-soft)}
 .crmnow-h{display:flex;align-items:center;gap:8px;padding:0 4px 8px;color:var(--mut);font-size:13px}
@@ -2496,7 +2757,8 @@ body.light .w3-w{color:rgba(20,24,40,calc(.04 + .03 * (5 - var(--z))))}
 </style>
 </head>
 <body>
-<div id="bootVeil"><div class="bv-inner"><div class="bv-logo" id="bootVeilLogo"></div><div class="bv-word">WANDO</div><div class="bv-bar"></div></div></div>
+<script>try{var _t=localStorage.getItem('cockpit_theme')||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');if(_t==='light')document.body.classList.add('light');}catch(e){}</script>
+<div id="bootVeil"><i class="bv-aur" aria-hidden="true"></i><div class="bv-inner"><div class="bv-logo" id="bootVeilLogo"></div><div class="bv-word">WANDO</div><div class="bv-bar"></div></div></div>
 <div class="gate" id="gate"><div class="gatecard"><div class="gatelogo" id="gateBootLogo"></div><h1>WANDO</h1><div class="gp">Загрузка…</div></div></div>
 
 <header>
@@ -2539,15 +2801,15 @@ body.light .w3-w{color:rgba(20,24,40,calc(.04 + .03 * (5 - var(--z))))}
 <main>
   <div class="mseg" id="mseg" style="display:none"></div>
   <div class="banner hide" id="banner">
-    🎬 <span><b>Демо-режим.</b> Это пример данных, чтобы показать как всё работает.</span>
-    <div class="acts">
-      <button class="lnk" id="bannerFresh">Начать с чистого листа</button>
-      <button class="lnk mut" id="bannerHide">скрыть</button>
-    </div>
+    <span class="bn-chip">Демо-данные</span>
+    <span class="bn-txt">Так выглядит штаб в работе — потрогай всё, это пример</span>
+    <button class="bn-go" id="bannerFresh">С чистого листа</button>
+    <button class="bn-x" id="bannerHide" data-icon="x" aria-label="Скрыть"></button>
   </div>
   <div class="toolbar hide" id="toolbar">
     <div class="search"><span data-icon="search"></span><input id="fq" placeholder="Поиск задач…" autocomplete="off"></div>
     <select class="fsel" id="fAssignee"><option value="">Все люди</option></select>
+    <div class="fpeople" id="fPeople"></div>
     <button class="fchip" id="fMine">Моё</button>
     <button class="fchip" id="fOver">Просрочено</button>
     <button class="fchip" id="fQuick" title="Правило двух минут: полчаса и меньше">⚡ Быстрые</button>
@@ -2581,7 +2843,7 @@ body.light .w3-w{color:rgba(20,24,40,calc(.04 + .03 * (5 - var(--z))))}
       <div class="secttl">Команда и загрузка
         <span style="margin-left:auto;display:flex;align-items:center;gap:7px;text-transform:none;letter-spacing:0;font-weight:500;color:var(--mut)">Вы: <select class="fsel" id="whoAmI"></select></span>
       </div>
-      <div style="font-size:12.5px;color:var(--mut2);margin:-6px 0 14px;line-height:1.5"><b style="color:var(--mut)">Пригласить партнёра:</b> добавь участника → впиши его email → он войдёт этой почтой и сразу увидит ваши проекты и задачи. (Доступ открыт только участникам, прописанным в Supabase.) <button class="lnk" id="inviteCopy" style="font-size:12.5px">Скопировать приглашение</button></div>
+      <div style="font-size:12.5px;color:var(--mut2);margin:-6px 0 14px;line-height:1.5"><b style="color:var(--mut)">Пригласить партнёра:</b> добавь участника → впиши его email → он войдёт этой почтой и сразу увидит ваши проекты и задачи. Видят только те, кого ты добавил. <button class="lnk" id="inviteCopy" style="font-size:12.5px">Скопировать приглашение</button></div>
       <div id="leaderboard"></div>
       <div class="grid" id="team"></div>
       <div id="accessPanel"></div>
@@ -2599,6 +2861,7 @@ body.light .w3-w{color:rgba(20,24,40,calc(.04 + .03 * (5 - var(--z))))}
     <span class="dot" id="dDot" style="width:9px;height:9px;border-radius:50%;background:var(--acc)"></span>
     <span style="font-size:12px;color:var(--mut2);font-weight:600" id="dId">TASK</span>
     <button class="cashbtn" id="dCash" title="Двигает деньги"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2.4"/><circle cx="12" cy="12" r="2.6"/><path d="M5.6 9.6h.01M18.4 14.4h.01"/></svg></button><button class="cashbtn" id="dApprove" title="Задача-согласование: у исполнителя появятся кнопки ✓/✗">🤝</button><select class="inp" id="dStatus" style="width:auto;margin-left:auto"></select>
+    <button class="dx" id="dCloseTop" data-icon="x" aria-label="Закрыть"></button>
   </div>
   <div class="db">
     <div id="dCrumb" class="crumbrow" style="display:none"></div>
@@ -2757,6 +3020,7 @@ body.light .w3-w{color:rgba(20,24,40,calc(.04 + .03 * (5 - var(--z))))}
   <button data-mv="intake" id="mnavIntake" aria-label="Приёмка"><i data-icon="inbox"></i><span>Приёмка</span></button>
   <button id="mnavVando" aria-label="Вандо — ассистент"><i data-icon="sparkles"></i><span>Вандо</span></button>
 </nav>
+<div class="mnav-veil" aria-hidden="true"><span></span><span></span><span></span></div>
 <div class="modal-scrim" id="capScrim"><div class="modal capsheet" id="capModal"></div></div>
 <div class="modal-scrim" id="crmScrim"><div class="modal crmmodal" id="crmModal"></div></div>
 <div class="modal-scrim" id="repScrim"><div class="modal repsheet" id="repModal"></div></div>
@@ -3367,7 +3631,7 @@ function updFocus(){
   const el=$('#focusClock');
   const t=focus.tid&&task(focus.tid);
   const tot=t?Math.round(((t.spent||0)+sec/3600)*10)/10:0;
-  if(el)el.textContent=fmtDur(sec)+(tot?' · всего '+tot+'ч':'');
+  if(el)el.innerHTML=fmtDur(sec)+(tot?`<small> · ${tot}ч</small>`:''); // одна строка: «03:06 · 0.1ч», не столбик
   /* большой таймер фокус-режима + кольцо */
   const fc=$('#fvClock');if(fc){fc.firstChild&&(fc.childNodes[0].nodeValue=fmtDur(sec));
     const sm=fc.querySelector('small');if(sm)sm.textContent=(focus.paused?'на паузе':'идёт фокус')+(tot?' · всего '+tot+'ч':'');}
@@ -3416,37 +3680,36 @@ function renderFocusMode(){
   const order=focusOrder();const idx=order.findIndex(x=>x.t.id===t.id);
   const dl=daysLeft(t);const ov=isOverdue(t);const unb=focusUnblocks(t.id,pid);
   const subs=t.subtasks||[];const sdone=subs.filter(x=>x.done).length;
-  const why=whyNext(t,localStorage.getItem('cockpit_energy_'+todayISO())||'');
   const C=2*Math.PI*32;const sec=focusSec();const p=Math.min(1,sec/FOCUS_RING);
   const cp=crumbPath(t);
+  /* один предмет внимания: большое кольцо со временем по центру (геометрически, а не глифом «❚❚»), пауза — отдельной
+     кнопкой под кольцом, задача и одна тихая строка мета. «Почему сейчас» убрано: выбор уже сделан, объяснение живёт на герое */
+  const ICPAUSE='<svg viewBox="0 0 24 24" width="18" height="18"><rect x="6.5" y="5" width="3.6" height="14" rx="1.2" fill="currentColor"/><rect x="13.9" y="5" width="3.6" height="14" rx="1.2" fill="currentColor"/></svg>';
+  const meta=[ov?`<b class="bad">просрочено ${-dl}д</b>`:dl===0?'дедлайн сегодня':dl===1?'дедлайн завтра':dl>0?'через '+dl+'д':'',
+    t.estimate?`${t.spent||0} из ${t.estimate}ч`:'',unb?`<b class="unb">🔓 откроет ${unb}</b>`:''].filter(Boolean);
   body.innerHTML=`
     <div class="fv-top">
-      <span class="fv-badge"><span class="bdot"></span>Режим фокуса</span>
-      ${order.length>1?`<span class="fv-prog">${idx>=0?idx+1:1} из ${order.length} сегодня</span>`:''}
-      <button class="fv-x" id="fvMin" title="Свернуть — таймер продолжит идти">✕</button>
+      <span class="fv-badge"><span class="bdot"></span>Фокус${order.length>1?` · ${idx>=0?idx+1:1} из ${order.length}`:''}</span>
+      <button class="fv-x" id="fvMin" title="Свернуть — таймер продолжит идти" aria-label="Свернуть">${icon('x',16)}</button>
     </div>
-    <div class="fv-pchip">${proj.emoji||'🗂'} ${esc(proj.projectName||S.projectName||'Проект')}</div>
-    <div class="fv-timer">
+    <div class="fv-stage">
       <div class="fv-ring">
-        <svg width="74" height="74" viewBox="0 0 74 74"><circle class="rtrack" cx="37" cy="37" r="32" stroke-width="5"/>
-          <circle id="fvRingFill" class="rfill" cx="37" cy="37" r="32" stroke-width="5" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-p)}"/></svg>
-        <div class="rplay" id="fvPause" title="${focus.paused?'Продолжить':'Пауза'}">${focus.paused?'▶':'❚❚'}</div>
+        <svg viewBox="0 0 74 74"><defs><linearGradient id="fvGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f472b6"/><stop offset=".5" stop-color="#a78bfa"/><stop offset="1" stop-color="#6f7cf6"/></linearGradient></defs>
+          <circle class="rtrack" cx="37" cy="37" r="32" stroke-width="2.2"/>
+          <circle id="fvRingFill" class="rfill" cx="37" cy="37" r="32" stroke-width="2.6" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-p)}"/></svg>
+        <div class="fv-clock" id="fvClock">${fmtDur(sec)}<small>${focus.paused?'на паузе':'идёт фокус'}${t.spent?' · всего '+t.spent+'ч':''}</small></div>
       </div>
-      <div class="fv-clock" id="fvClock">${fmtDur(sec)}<small>${focus.paused?'на паузе':'идёт фокус'}${t.spent?' · всего '+t.spent+'ч':''}</small></div>
+      <button class="fv-pause${focus.paused?' paused':''}" id="fvPause">${focus.paused?icon('play',18):ICPAUSE}<span>${focus.paused?'Продолжить':'Пауза'}</span></button>
     </div>
-    <div>
+    <div class="fv-task">
+      <div class="fv-pchip">${proj.emoji||'🗂'} ${esc(proj.projectName||S.projectName||'Проект')}</div>
       <div class="fv-title" id="fvOpen">${prGlyph(t)}${esc(t.title)}</div>
       ${cp.length?`<div class="fv-crumb">↳ ${cp.map(esc).join(' ▸ ')}</div>`:''}
-      <div class="fv-meta">
-        <span class="ichip ${ov?'bad':''}" style="${ov?'':'border-color:'+stMap[t.status].c}">${ov?'просрочено '+(-dl)+'д':dl===0?'дедлайн сегодня':dl===1?'дедлайн завтра':dl>0?'через '+dl+'д':'без срока'}</span>
-        ${t.estimate?`<span class="ichip">${t.spent||0}/${t.estimate}ч</span>`:''}
-        ${unb?`<span class="ichip" style="border-color:var(--acc2);color:var(--acc2)">🔓 разблокирует ${unb}</span>`:''}
-      </div>
-      <div class="fv-why"><b>почему сейчас:</b> ${why.join(' · ')}</div>
+      ${meta.length?`<div class="fv-line">${meta.map(m=>`<span>${m}</span>`).join('')}</div>`:''}
     </div>
     <div>
       <div class="fv-subh">Шаги${subs.length?` · ${sdone}/${subs.length}`:''}</div>
-      <div class="fv-subs">${subs.map(s=>`<div class="fv-sub ${s.done?'done':''}" data-sub="${s.id}"><span class="fv-cb">${s.done?'✓':''}</span><span class="fv-st">${esc(s.text||'')}</span></div>`).join('')||'<div class="fv-crumb" style="padding:4px 2px 8px">Разбей задачу на маленькие шаги — так проще начать.</div>'}</div>
+      <div class="fv-subs">${subs.map(s=>`<div class="fv-sub ${s.done?'done':''}" data-sub="${s.id}"><span class="fv-cb">${s.done?'✓':''}</span><span class="fv-st">${esc(s.text||'')}</span></div>`).join('')||''}</div>
       <div class="fv-addsub"><input id="fvSubIn" placeholder="Добавить шаг и Enter" maxlength="120"><button id="fvSubAdd" title="Добавить">＋</button></div>
     </div>
     <div class="fv-acts">
@@ -3813,6 +4076,7 @@ function renderNow(){
         ${isFoc?`<div class="focusrun"><span class="fdot"></span><span id="focusClock" class="fclock">00:00</span><button class="btn" id="focusStop">■ Стоп</button></div>`
                :`<button class="btn primary big" id="focusStart">${icon('play',15)} ${next.spent?`Фокус <span style="opacity:.75;font-weight:600">· уже ${next.spent}ч</span>`:'Фокус — поехали'}</button>`}
         <button class="btn big" data-done="${next.id}">✓ Готово</button>
+        <button class="btn big hsnz" data-snzhero="${next.id}" data-pid="${nextPid}" title="Убрать из «Сейчас» до завтра — срок не тронется">${icon('moon',15)} Завтра</button>
       </div>
      </div>
      ${upList.length?`<div class="nh-side"><div class="nh-side-t">На очереди · ${upList.length}</div>${upList.map(x=>`<div class="nh-up" data-open="${x.t.id}" data-pid="${x.pid}"><button class="nh-qd" data-qd="${x.t.id}" data-pid="${x.pid}" title="Готово" aria-label="Готово" style="--c:${stMap[x.t.status].c}">✓</button><span class="nh-up-t">${prGlyph(x.t)}${esc(x.t.title)}</span>${multi?`<span class="nh-up-e">${x.emoji||''}</span>`:(x.t.estimate?`<span class="nh-up-e">${x.t.estimate}ч</span>`:'')}</div>`).join('')}</div>`:''}
@@ -3825,7 +4089,7 @@ function renderNow(){
   if(window.innerWidth<=680){renderNowMobile({el,greet,next,upNext,mine,pct,prog,ov,vel,back,ins,running,energy:localStorage.getItem('cockpit_energy_'+todayISO())||''});return;}
   window._heroNext=next?{id:next.id,title:next.title,est:next.estimate,pid:nextPid,st:next.status}:null;
   el.innerHTML=`<div class="now-greet"><h1>${greet}${(n=>n&&n!=='Я'&&n!=='Новый участник'?', '+esc(n):'!')(myDisplayName())}</h1><span>${esc(S.projectName)} · пульс проекта
-      <span class="energyrow" title="Заряд сегодня: подстрою следующий шаг"><button data-en="hi" class="${energy==='hi'?'on':''}" title="Полон сил — дай крупную задачу" aria-label="Полон сил">${icon('battery',15)}</button><button data-en="lo" class="${energy==='lo'?'on':''}" title="Мало сил — подкинь лёгкие" aria-label="Мало сил">${icon('battlow',15)}</button></span></span></div>
+      <span class="energyrow" title="Заряд сегодня: подстрою следующий шаг"><button data-en="hi" class="${energy==='hi'?'on':''}" title="Полон сил — дай крупную задачу" aria-label="Полон сил">${icon('battery',15)}<span>Полон сил</span></button><button data-en="lo" class="${energy==='lo'?'on':''}" title="Мало сил — подкинь лёгкие" aria-label="Мало сил">${icon('battlow',15)}<span>Мало сил</span></button></span></span></div>
     ${whatsNewStrip()}
     ${hero}
     ${firstStepsCard()}
@@ -4063,8 +4327,9 @@ function renderNowMobile(ctx){
       <div class="mh-why">почему: ${whyNext(next,energy).join(' · ')}</div>
       <div class="mh-acts">
         ${running&&focus.tid===next.id?`<div class="focusrun"><span class="fdot"></span><span id="focusClock" class="fclock">00:00</span><button class="btn" id="focusStop">■</button></div>`
-          :`<button class="mh-go" id="focusStart">▶ Фокус${next.spent?` · ${next.spent}ч`:''}</button>`}
+          :`<button class="mh-go" id="focusStart">▶ Фокус${next.spent?`<small>${next.spent}ч</small>`:''}</button>`}
         <button class="mh-done" data-done="${next.id}">✓ Готово</button>
+        <button class="mh-snz" data-snzhero="${next.id}" data-pid="${nextPid}" aria-label="Отложить до завтра">${icon('moon',20)}</button>
       </div></div>`
     :(!S.tasks.some(t=>!t.isMilestone)
       ?`<div class="mhero start"><div class="mh-label">Начнём?</div><div class="mh-title">Вандо спланирует за тебя</div><div class="mh-meta">опиши цель голосом — получи готовый план</div><button class="mh-done" id="npPlan" style="margin-top:10px">Спланируй за меня</button></div>`
@@ -4080,7 +4345,7 @@ function renderNowMobile(ctx){
     return `<div class="mrow" data-open="${t.id}" data-pid="${pid}"><span class="dot" style="background:${stMap[t.status].c}"></span><span class="mr-t">${prGlyph(t)}${esc(t.title)}</span>${x.pid?badge(x):''}${t.estimate?`<span class="mr-e">${t.estimate}ч</span>`:''}</div>`;}).join('');
   el.innerHTML=`
     <div class="mgreet"><h1>${greet.split(' ')[0]} ${greet.split(' ').slice(1).join(' ')}${(n=>n&&n!=='Я'&&n!=='Новый участник'?', '+esc(n.split(' ')[0]):'!')(myDisplayName())}</h1>
-      <span class="energyrow"><button data-en="hi" class="${energy==='hi'?'on':''}" title="Полон сил — дай крупную задачу" aria-label="Полон сил">${icon('battery',15)}</button><button data-en="lo" class="${energy==='lo'?'on':''}" title="Мало сил — подкинь лёгкие" aria-label="Мало сил">${icon('battlow',15)}</button></span></div>
+      <span class="energyrow"><button data-en="hi" class="${energy==='hi'?'on':''}" title="Полон сил — дай крупную задачу" aria-label="Полон сил">${icon('battery',15)}<span>Полон сил</span></button><button data-en="lo" class="${energy==='lo'?'on':''}" title="Мало сил — подкинь лёгкие" aria-label="Мало сил">${icon('battlow',15)}<span>Мало сил</span></button></span></div>
     ${whatsNewStrip()}
     ${hero}
     ${firstStepsCard()}
@@ -6792,8 +7057,11 @@ $('#dApprove').onclick=()=>{if(!curTask)return;curTask.approval=!curTask.approva
 function renderApproveBar(){
   const box=$('#dApproveBar');if(!box)return;const t=curTask;
   if(!t||!t.approval||t.status==='done'){box.innerHTML='';return;}
-  box.innerHTML=`<div class="apvbar"><span>🤝 Ждёт решения${t.assigneeId?' от '+esc((member(t.assigneeId)||{}).name||''):''}</span>
-    <button class="btn primary" id="apvYes">✓ Согласовать</button><button class="btn" id="apvNo">✕ Вернуть</button></div>`;
+  /* текст — своей строкой, кнопки — рядом под ним поровну: в одной flex-строке текст сжимался в столбик,
+     а «Вернуть» вылезал за край (грабля #132). «Решает Дмитрий» — без падежа, имя не склоняем */
+  const _who=t.assigneeId?esc((member(t.assigneeId)||{}).name||''):'';
+  box.innerHTML=`<div class="apvbar"><div class="apv-t">${icon('users',15)}<span>Ждёт решения${_who?` · решает <b>${_who}</b>`:''}</span></div>
+    <div class="apv-a"><button class="btn primary" id="apvYes">✓ Согласовать</button><button class="btn" id="apvNo">✕ Вернуть</button></div></div>`;
   $('#apvYes').onclick=()=>{const t2=curTask;if(!t2)return;
     t2.status='done';t2.statusTs=Date.now();if(t2.estimate&&!t2.spent)t2.spent=t2.estimate;
     t2.comments=t2.comments||[];t2.comments.push({ts:Date.now(),author:meName(),authorId:myId(),text:'✓ Согласовано'});
@@ -6991,7 +7259,7 @@ $('#dDup').onclick=()=>{if(!curTask)return;const t=curTask;
   c.status='todo';c.spent=0;c.comments=[];c.pointsAwarded=undefined;c.createdTs=Date.now();
   if(c.subtasks)c.subtasks=c.subtasks.map(s=>({...s,done:false}));
   const idx=S.tasks.indexOf(t);S.tasks.splice(idx+1,0,c);logAct('⧉','дубль «'+t.title+'»');save();render();openTask(c.id);toast('Создан дубль','⧉');};
-$('#dClose').onclick=closeDrawer;$('#scrim').onclick=()=>{closeDrawer();closeMember();closeInbox();};
+$('#dClose').onclick=closeDrawer;$('#dCloseTop').onclick=closeDrawer;$('#scrim').onclick=()=>{closeDrawer();closeMember();closeInbox();};
 /* ⋯ — второстепенные действия прячем, подвал ведёт глаголами потока */
 $('#dMoreActs').onclick=()=>{const b=$('#dMoreBox');const open=b.style.display!=='none';b.style.display=open?'none':'inline-flex';$('#dMoreActs').classList.toggle('on',!open);};
 /* ▶ Фокус прямо из карточки — глагол желания там, где ты решаешь ДЕЛАТЬ */
@@ -7013,7 +7281,14 @@ function syncFilterUI(){
   const sel=$('#fAssignee');
   sel.innerHTML='<option value="">Все люди</option>'+S.members.map(m=>`<option value="${m.id}" ${filter.assignee===m.id?'selected':''}>${esc(m.name)}</option>`).join('');
   $('#fq').value=filter.q;
+  $('#fq').placeholder=window.innerWidth<=680?'Поиск':'Поиск задач…'; // на телефоне рядом ряд людей — длинная подсказка обрезалась
   $('#fMine').classList.toggle('on',filter.mine);
+  /* мобайл: фильтр по людям — ряд аватаров вместо одинокого «Моё» (выпадающий «Все люди» на телефоне скрыт) */
+  {const fp=$('#fPeople');if(fp){const me=myId();
+    fp.innerHTML=`<button data-fp="" class="${!filter.assignee&&!filter.mine?'on':''}">Все</button>`+S.members.map(m=>{
+      const on=filter.assignee===m.id||(filter.mine&&m.id===me);
+      return `<button data-fp="${m.id}" class="${on?'on':''}"><span class="fpav" style="${m.photo?`background-image:url('${m.photo}')`:`background:${m.color||'#8E8E93'}`}">${m.photo?'':esc(initials((m.name||'?').trim()))}</span>${esc(m.id===me?'Я':((m.name||'').trim().split(/\s+/)[0]||'—'))}</button>`;}).join('');
+    fp.querySelectorAll('[data-fp]').forEach(b=>b.onclick=()=>{const id=b.dataset.fp;filter.mine=false;filter.assignee=(id&&id!==filter.assignee)?id:'';render();});}}
   $('#fOver').classList.toggle('on',filter.overdue);
   $('#fQuick').classList.toggle('on',!!filter.quick);
   $('#fReset').style.display=filterActive()?'':'none';
@@ -8027,30 +8302,55 @@ function openCap(){
   capPid=projs.find(p=>p.id===last)?last:S.id;
   const ordered=[...projs].sort((a,b)=>(a.id===capPid?-1:0)-(b.id===capPid?-1:0));
   $('#capModal').innerHTML=`<div class="cap-b">
-    <div class="cap-t">Новая задача · говори или пиши</div>
-    <textarea id="capIn" placeholder="Опиши задачу своими словами — даты, часы и приоритет пойму сам…"></textarea>
-    <div class="cap-chips" id="capChips"></div>
+    <div class="capmode" id="capMode"><button data-m="task" class="on">Задача</button><button data-m="client">Клиент</button><button data-m="idea">Идея</button></div>
+    <textarea id="capIn" placeholder="Например: созвон с поставщиком завтра 2ч важно"></textarea>
+    <div class="cap-understood" id="capUnd"><span>Пойму так</span><div class="cap-chips" id="capChips"></div></div>
+    <div class="capq" id="capQ"></div>
+    <div class="capq who" id="capWho"></div>
     <div class="cap-t" style="margin-top:4px">В проект</div>
     <div class="cap-projs" id="capProjs">${ordered.slice(0,8).map(p=>`<button data-p="${p.id}" class="${p.id===capPid?'on':''}">${p.emoji||'📄'} ${esc(String(p.name).slice(0,16))}</button>`).join('')}</div></div>
    <div class="cap-f"><button class="cap-mic" id="capMic">${icon('mic',24)}</button>
     <button class="cap-go" id="capGo">${icon('zap',15)} Создать задачу</button></div>`;
   $('#capScrim').classList.add('show');
   const inp=$('#capIn');
-  const chips=()=>{const p=parseQuick(inp.value);$('#capChips').innerHTML=nlpChips(p).join('');};
+  /* быстрые слова: тап вписывает/убирает слово в текст — текст остаётся единственной правдой, разбор видит то же, что человек */
+  const CAPG=[['сегодня','завтра','послезавтра'],['1ч','2ч','4ч'],['важно','срочно']];
+  const has=w=>new RegExp('(^|\\s)'+w.replace('@','\\@')+'(?=\\s|$|[!.,])','i').test(inp.value);
+  const strip=w=>{inp.value=inp.value.replace(new RegExp('(^|\\s)'+w.replace('@','\\@')+'(?=\\s|$|[!.,])','ig'),' ').replace(/\s{2,}/g,' ').trim();};
+  const toggle=(w,group)=>{const on=has(w);(group||[w]).forEach(strip);if(!on)inp.value=(inp.value.trim()+' '+w).trim();chips();haptic('light');inp.focus();};
+  const who=()=>{const pd=capPid===S.id?S:loadProj(capPid);const me=myId();
+    $('#capWho').innerHTML=((pd&&pd.members)||[]).filter(m=>m.name&&m.name!=='Новый участник').map(m=>{const fn=(m.name||'').trim().split(/\s+/)[0];
+      return `<button data-w="@${esc(fn)}" class="${has('@'+fn)?'on':''}"><span class="fpav" style="${m.photo?`background-image:url('${m.photo}')`:`background:${m.color||'#8E8E93'}`}">${m.photo?'':esc(initials(m.name.trim()))}</span>${esc(m.id===me?'Мне':fn)}</button>`;}).join('');
+    $$('#capWho [data-w]').forEach(b=>b.onclick=()=>toggle(b.dataset.w,$$('#capWho [data-w]').map(x=>x.dataset.w)));};
+  const quick=()=>{$('#capQ').innerHTML=CAPG.map(g=>g.map(w=>`<button data-q="${w}" class="${has(w)?'on':''}">${w[0].toUpperCase()+w.slice(1)}</button>`).join('')).join('<i></i>');
+    $$('#capQ [data-q]').forEach(b=>b.onclick=()=>toggle(b.dataset.q,CAPG.find(g=>g.includes(b.dataset.q))));};
+  const chips=()=>{const p=parseQuick(inp.value),c=nlpChips(p);$('#capChips').innerHTML=c.join('');$('#capUnd').classList.toggle('on',!!c.length&&!!inp.value.trim());
+    $('#capGo').classList.toggle('idle',!inp.value.trim());quick();who();};
   inp.oninput=chips;
+  /* одна точка входа для всего, что рождается за день: задача, клиент, идея. Режим помним */
+  let capMode=localStorage.getItem('cockpit_cap_mode')||'task';
+  const PH={task:'Например: созвон с поставщиком завтра 2ч важно',client:'Имя и компания — например: Марк, кофейни «Зерно»',idea:'Идея, гипотеза, фича — запишу в бэклог'};
+  const GO={task:'Создать задачу',client:'Добавить клиента',idea:'В бэклог идей'};
+  const setMode=m=>{capMode=m;localStorage.setItem('cockpit_cap_mode',m);
+    $$('#capMode button').forEach(x=>x.classList.toggle('on',x.dataset.m===m));
+    $('#capModal').dataset.mode=m;inp.placeholder=PH[m];$('#capGo').innerHTML=icon(m==='client'?'briefcase':m==='idea'?'idea':'zap',15)+' '+GO[m];chips();inp.focus();};
+  $$('#capMode button').forEach(b=>b.onclick=()=>{haptic('light');setMode(b.dataset.m);});
   inp.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('#capGo').click();}if(e.key==='Escape')closeCap();};
   $$('#capProjs button').forEach(b=>b.onclick=()=>{capPid=b.dataset.p;
-    $$('#capProjs button').forEach(x=>x.classList.toggle('on',x===b));haptic('light');});
+    $$('#capProjs button').forEach(x=>x.classList.toggle('on',x===b));haptic('light');who();});
   $('#capMic').onclick=()=>dictateTo(inp,$('#capMic'));
   $('#capGo').onclick=()=>{const v=inp.value.trim();if(!v){inp.focus();return;}
-    closeCap();haptic('ok');
+    const go=$('#capGo');if(go.classList.contains('ok'))return; // повторный тап, пока кнопка говорит «Создано»
+    go.classList.add('ok');go.innerHTML=icon('check',16)+(capMode==='client'?' Добавлен':' Создано');setTimeout(closeCap,420);haptic('ok');
+    if(capMode==='client'){setTimeout(()=>{const [nm,...rest]=v.split(/[,—–-]\s*/);crmNew({name:nm.trim().slice(0,80),company:rest.join(', ').trim().slice(0,80)});const c=CRM[0];if(c){delete c._draft;crmPush(c);}},430);return;}
+    if(capMode==='idea'){S.ideas.push({id:uid('i'),title:v,note:'',votes:1,createdTs:Date.now()});save();render();toast('Идея в бэклоге','💡','Открыть',()=>setView('backlog'));return;}
     localStorage.setItem('cockpit_cap_last',capPid||S.id);
     if(capPid&&capPid!==S.id&&!isManageCmd(v)){ // задача уходит В выбранный проект, ты остаёшься тут
       const p=parseQuick(v);if(!p.title)p.title=v;
       addTaskToProject(capPid,p,'todo');
       const pm=projMeta(capPid);toast('Задача → '+((pm&&pm.emoji)||'📄')+' '+((pm&&pm.name)||'проект')+' ✓','🚀');render();
     }else runCmd(v);};
-  setTimeout(()=>inp.focus(),80);
+  setMode(capMode);setTimeout(()=>inp.focus(),80);
 }
 function closeCap(){$('#capScrim').classList.remove('show');}
 $('#capScrim').onclick=e=>{if(e.target===$('#capScrim'))closeCap();};
@@ -8979,6 +9279,11 @@ function crmNowCard(){const today=todayISO();
     ${due.length>3?`<button data-crmall="1" class="more">Все клиенты →</button>`:''}</div>`;}
 document.addEventListener('click',e=>{const o=e.target.closest('[data-crmopen]');if(o){openClient(o.dataset.crmopen);return;}
   if(e.target.closest('[data-crmall]'))setView('crm');});
+/* «Завтра» с главной карточки: шаг уходит из «Сейчас» до завтра одним тапом, срок не трогаем; «Отменить» — в тосте */
+document.addEventListener('click',e=>{const b=e.target.closest('[data-snzhero]');if(!b)return;
+  const pid=b.dataset.pid||S.id,tid=b.dataset.snzhero,d=fmtD(parseD(todayISO())+dayMs);let prev=null;
+  editTaskInProject(pid,tid,t=>{prev=t.snooze||null;t.snooze=d;});haptic('sel');render();
+  toast('Отложено до завтра — срок не тронут','💤','Отменить',()=>{editTaskInProject(pid,tid,t=>{if(prev)t.snooze=prev;else delete t.snooze;});render();});});
 /* заявка из «Приёмки» → клиент: имя из заявки, текст — первой заметкой */
 function intakeToClient(id){const r=(typeof intakeRows!=='undefined'?intakeRows:[]).find(x=>x.id===id);if(!r)return;
   const p=parseQuick(r.text);crmNew({name:(p.title||r.text||'').slice(0,80),source:'intake',
@@ -9000,8 +9305,8 @@ movePlate(true);syncMnav(view);
     requestAnimationFrame(()=>{const x=b.querySelector('.w3');if(!x)return;
       x.classList.remove('wake');void x.offsetWidth;x.classList.add('wake');clearTimeout(x._wt);x._wt=setTimeout(()=>x.classList.remove('wake'),1100);});},true);
 })();
-{const bl=$('#brandLogo');if(bl)bl.innerHTML=logoMarkSVG(15);const gbl=$('#gateBootLogo');if(gbl)gbl.innerHTML=logoMarkSVG(22);}
-{const bvl=$('#bootVeilLogo');if(bvl)bvl.innerHTML=logoMarkSVG(24);const veil=$('#bootVeil');if(veil){const rm=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;const hide=()=>{veil.classList.add('gone');setTimeout(()=>{try{veil.remove();}catch(e){}},600);};setTimeout(hide, rm?150:(tmaInitData()?450:720));}}
+{const bl=$('#brandLogo');if(bl)bl.innerHTML=logoMarkSVG(17,true); /* в HUD — белый знак без плитки (Роч, 28.10) */const gbl=$('#gateBootLogo');if(gbl)gbl.innerHTML=logoMarkSVG(22);}
+{const bvl=$('#bootVeilLogo');if(bvl)bvl.innerHTML=logoMarkSVG(40,true);const veil=$('#bootVeil');if(veil){const rm=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;const hide=()=>{veil.classList.add('gone');setTimeout(()=>{try{veil.remove();}catch(e){}},600);};setTimeout(hide, rm?150:(tmaInitData()?450:720));}}
 setFavicon();
 applyTheme();
 document.documentElement.setAttribute('lang',LANG);
