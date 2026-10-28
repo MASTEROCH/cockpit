@@ -2694,6 +2694,33 @@ body.light .fv-stage .fv-ring .rtrack{stroke:rgba(20,20,30,.08)}
 .addmcard{white-space:nowrap}
 /* накопленный итог на «Фокус» — бейджем внутри кнопки: строкой «· 0.1ч» он вылезал за край */
 .mh-go small{display:inline-block;margin-left:6px;padding:2px 7px;border-radius:999px;font-size:11.5px;font-weight:700;background:rgba(255,255,255,.22);vertical-align:2px}
+.intnow{display:flex;align-items:center;gap:10px;width:100%;margin-bottom:14px;padding:14px 16px;border-radius:20px;cursor:pointer;color:var(--txt);text-align:left;
+  border:1px solid transparent;background:radial-gradient(120% 140% at 100% 0%,rgba(167,139,250,.16),transparent 60%) padding-box,var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-soft)}
+.intnow svg{color:var(--acc2);flex:0 0 auto}.intnow b{font-weight:650;flex:1}.intnow span{color:var(--acc2);font-weight:600;white-space:nowrap}
+/* шторка быстрых действий */
+.lpsheet,.lpsheet[class]{width:min(460px,96vw)}
+.qa{display:flex;flex-direction:column;gap:12px;padding:18px 16px calc(14px + env(safe-area-inset-bottom))}
+.qa-t{font-size:17px;font-weight:700;letter-spacing:-.02em;line-height:1.3}
+.qa-m{font-size:12.5px;color:var(--mut2);margin-top:3px}
+.qa-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.qa-tiles button{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 4px 11px;border-radius:18px;cursor:pointer;color:var(--txt);font-size:12.5px;font-weight:600;white-space:nowrap;
+  border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-soft);transition:transform .34s var(--spring)}
+.qa-tiles button:active{transform:scale(.94);transition-duration:.06s}
+.qa-tiles button[data-qa="done"] svg{color:var(--ok)}.qa-tiles button[data-qa="tomorrow"] svg{color:var(--acc2)}
+.qa-tiles button[data-qa="cal"] svg{color:#64D2FF}.qa-tiles .dng{color:var(--bad)}
+.qa-cal{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.qa-cal[hidden]{display:none}
+.qa-cal button{border-radius:14px;padding:11px 8px;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap;border:1px solid var(--line2);background:none;color:var(--txt)}
+.qa-s{font-size:11.5px;font-weight:700;color:var(--mut2);letter-spacing:.02em;margin-bottom:-4px}
+.capq.qa-st i.qa-dot{flex:0 0 8px;width:8px;height:8px;border-radius:50%;margin:0;display:inline-block} /* не разделитель из шторки «＋» */
+.qa-open{justify-content:center}
+/* «⋯» на карточке доски: видна при наведении (десктоп), на телефоне — долгое нажатие */
+.card{position:relative}
+.cmore{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;border:none;cursor:pointer;display:grid;place-items:center;color:var(--mut);
+  background:rgba(255,255,255,.08);opacity:0;transition:opacity .2s,background .2s}
+body.light .cmore{background:rgba(20,20,30,.06)}
+.card:hover .cmore{opacity:1}.cmore:hover{background:rgba(255,255,255,.16);color:var(--txt)}
+@media (hover:none){.cmore{display:none}}
 /* «Клиенты ждут шага» на «Сейчас» */
 .crmnow{border-radius:20px;padding:12px 12px 8px;margin-bottom:14px;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-soft)}
 .crmnow-h{display:flex;align-items:center;gap:8px;padding:0 4px 8px;color:var(--mut);font-size:13px}
@@ -2779,13 +2806,13 @@ body.light .w3-w{color:rgba(20,24,40,calc(.04 + .03 * (5 - var(--z))))}
 
   <div class="tabs" id="tabs">
     <button class="tab tab-home active" data-v="now" data-icon="zap"><span>Сейчас</span></button>
+    <button class="tab" data-v="crm" data-icon="briefcase"><span>Клиенты</span> <span class="cnt" id="cntCrm" style="display:none">0</span></button>
     <button class="tab" data-v="all" data-icon="layers"><span>Всё</span></button>
     <button class="tab" data-v="gantt" data-icon="gantt"><span>Гант</span></button>
     <button class="tab" data-v="board" data-icon="board"><span>Доска</span></button>
     <button class="tab" data-v="week" data-icon="cal"><span>Неделя</span></button>
     <button class="tab" data-v="backlog" data-icon="idea"><span>Бэклог</span> <span class="cnt" id="cntIdeas">0</span></button>
     <button class="tab" data-v="team" data-icon="users"><span>Команда</span></button>
-    <button class="tab" data-v="crm" data-icon="briefcase"><span>Клиенты</span> <span class="cnt" id="cntCrm" style="display:none">0</span></button>
     <button class="tab" data-v="intake" data-icon="inbox"><span>Приёмка</span> <span class="cnt" id="cntIntake" style="display:none">0</span></button>
   </div>
   <button class="iconbtn" id="btnUndo" title="Отменить (⌘Z / Ctrl+Z)" style="font-size:16px">↩</button><button class="iconbtn" id="btnRedo" title="Вернуть (⌘⇧Z / Ctrl+Shift+Z)" style="font-size:16px">↪</button><button class="iconbtn" id="btnHist" data-icon="clock" title="История проекта — все закрытые задачи, с фильтрами и возвратом"></button><button class="iconbtn" id="btnSearch" data-icon="search" title="Поиск и команды (⌘K)"></button>
@@ -3017,7 +3044,7 @@ body.light .w3-w{color:rgba(20,24,40,calc(.04 + .03 * (5 - var(--z))))}
   <button data-mv="now" aria-label="Сегодня"><i data-icon="zap"></i><span>Сегодня</span></button>
   <button data-mv="mprojects" aria-label="Проекты"><i data-icon="layers"></i><span>Проекты</span></button>
   <button class="mplus" id="mPlus" title="Новая задача" aria-label="Новая задача">＋</button>
-  <button data-mv="intake" id="mnavIntake" aria-label="Приёмка"><i data-icon="inbox"></i><span>Приёмка</span></button>
+  <button data-mv="crm" id="mnavCrm" aria-label="Клиенты"><i data-icon="briefcase"></i><span>Клиенты</span></button>
   <button id="mnavVando" aria-label="Вандо — ассистент"><i data-icon="sparkles"></i><span>Вандо</span></button>
 </nav>
 <div class="mnav-veil" aria-hidden="true"><span></span><span></span><span></span></div>
@@ -3605,7 +3632,7 @@ function applyPingpong(root){
 }
 /* подсветка нижнего нава: экраны проекта живут под «Проекты». Зовётся и при загрузке — раньше
    первый экран открывался без подсвеченной вкладки, пока человек не тапнул */
-function syncMnav(v){const mvMap={board:'mprojects',gantt:'mprojects',week:'mprojects',backlog:'mprojects',team:'mprojects',all:'mprojects',crm:'mprojects'};
+function syncMnav(v){const mvMap={board:'mprojects',gantt:'mprojects',week:'mprojects',backlog:'mprojects',team:'mprojects',all:'mprojects',intake:'now'};
   const hv=mvMap[v]||v;$$('.mnav [data-mv]').forEach(b=>b.classList.toggle('on',b.dataset.mv===hv));}
 function setView(v){view=v;if(typeof track==='function')track('view:'+v);
   syncMnav(v);if(v==='gantt')ganttNeedsScroll=true;$$('.tab').forEach(t=>t.classList.toggle('active',t.dataset.v===v));
@@ -4148,18 +4175,60 @@ function haptic(kind){try{const T=window.Telegram&&window.Telegram.WebApp;if(!T|
   else if(kind==='sel')T.HapticFeedback.selectionChanged();
   else T.HapticFeedback.impactOccurred('light');}catch(e){}}
 /* long-press на задаче → лист быстрых действий (моб) */
-function openLP(taskId,pid){
+/* ===== быстрые действия над задачей — без захода в карточку (Things 3 / Apple Reminders: долгое нажатие,
+   Linear: правый клик и «⋯»). Крупные плитки — частое; люди — переназначить в один тап; статусы; всё с «Вернуть». ===== */
+function persistProj(d,pid){if(pid===S.id)save();else{d.updatedAt=Date.now();localStorage.setItem(pkey(pid),JSON.stringify(d));if(cloudOn)cloudPush(d,true);}}
+function quickDelete(pid,tid){const d=pid===S.id?S:loadProj(pid);if(!d)return;const t=(d.tasks||[]).find(x=>x.id===tid);if(!t)return;
+  const ids=new Set([tid]);let grew=true;while(grew){grew=false;d.tasks.forEach(x=>{if(x.parentId&&ids.has(x.parentId)&&!ids.has(x.id)){ids.add(x.id);grew=true;}});}
+  const removed=d.tasks.filter(x=>ids.has(x.id));trashPush(d,removed);d.tasks=d.tasks.filter(x=>!ids.has(x.id));
+  d.tasks.forEach(x=>x.deps=(x.deps||[]).filter(y=>!ids.has(y)));if(pid===S.id)logAct('🗑','удалил «'+t.title+'»');persistProj(d,pid);render();haptic('ok');
+  toast('Удалено'+(removed.length>1?' с подзадачами':'')+' · в корзине 30 дней','🗑','Вернуть',()=>{const d2=pid===S.id?S:loadProj(pid);if(!d2)return;
+    d2.tasks.push(...removed);d2.trash=(d2.trash||[]).slice(1);persistProj(d2,pid);render();});}
+function quickAssign(pid,tid,mid){let prev=null,name='';editTaskInProject(pid,tid,x=>{prev=x.assigneeId||null;x.assigneeId=mid||null;});
+  const d=pid===S.id?S:loadProj(pid);const m=d&&(d.members||[]).find(x=>x.id===mid);name=m?m.name:'';render();haptic('sel');
+  toast(mid?'Теперь ведёт '+name:'Без исполнителя','👤','Вернуть',()=>{editTaskInProject(pid,tid,x=>{x.assigneeId=prev;});render();});}
+/* календарь по одной задаче: Google — ссылкой-шаблоном, Apple/Outlook — файлом .ics с напоминанием в 9:00 в день срока */
+const icsEsc=v=>String(v==null?'':v).replace(/\\/g,'\\\\').replace(/;/g,'\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n');
+function taskCal(t,pname){const day=t.end||todayISO(),d1=day.replace(/-/g,''),d2=fmtD(parseD(day)+dayMs).replace(/-/g,'');
+  const details='WANDO'+(pname?' · '+pname:'')+(t.description?'\n\n'+t.description:'');
+  const g='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(t.title)+'&dates='+d1+'/'+d2+'&details='+encodeURIComponent(details);
+  const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//WANDO//RU','BEGIN:VEVENT','UID:'+t.id+'@wando','DTSTAMP:'+new Date().toISOString().replace(/[-:]/g,'').slice(0,15)+'Z',
+    'DTSTART;VALUE=DATE:'+d1,'DTEND;VALUE=DATE:'+d2,'SUMMARY:'+icsEsc(t.title),'DESCRIPTION:'+icsEsc(details),
+    'BEGIN:VALARM','TRIGGER:PT9H','ACTION:DISPLAY','DESCRIPTION:'+icsEsc(t.title),'END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n');
+  return {g,ics};}
+function saveFile(name,text,type){const b=new Blob([text],{type:type||'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;
+  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},800);}
+function openLP(taskId,pid){pid=pid||S.id;
+  const openX=(p,tid)=>{if(p&&p!==S.id){switchProject(p);setTimeout(()=>openTask(tid),120);}else openTask(tid);}; // глобальной openX нет — «Открыть карточку» падал
   const d=pid===S.id?S:loadProj(pid);const t=d&&(d.tasks||[]).find(x=>x.id===taskId);if(!t)return;
-  $('#lpModal').innerHTML=`<div class="lp-t">${t.cash?'💰 ':''}${esc(t.title)}</div>
-   <div class="lp-move">Переместить в колонку:</div>
-   <div class="lp-cols">${STATUSES.map(s=>`<button class="chip ${t.status===s.k?'on':''}" data-lpmove="${s.k}" style="${t.status===s.k?`background:${s.c};color:#fff`:''}"><span class="pal-dot" style="background:${s.c}"></span>${s.n}</button>`).join('')}</div>
-   <button class="btn" data-lp="tomorrow">${icon('moon',14)} Срок — на завтра</button>
-   <button class="btn" data-lp="open">${icon('edit',14)} Открыть карточку</button>`;
+  const pm=projMeta(pid)||{},me=myId(),done=t.status==='done';
+  const due=t.end?(t.end===todayISO()?'сегодня':new Date(parseD(t.end)).toLocaleDateString('ru-RU',{day:'numeric',month:'short'})):'без срока';
+  $('#lpModal').innerHTML=`<div class="qa">
+   <div class="qa-h"><div class="qa-t">${t.cash?'💰 ':''}${esc(t.title)}</div><div class="qa-m">${pm.emoji||'📄'} ${esc(pm.name||'')} · ${due}</div></div>
+   <div class="qa-tiles">
+     <button data-qa="done" class="${done?'on':''}">${icon('check',20)}<span>${done?'Вернуть':'Готово'}</span></button>
+     <button data-qa="tomorrow">${icon('moon',20)}<span>Завтра</span></button>
+     <button data-qa="cal">${icon('cal',20)}<span>В календарь</span></button>
+     <button data-qa="del" class="dng">${icon('trash',20)}<span>Удалить</span></button>
+   </div>
+   <div class="qa-cal" id="qaCal" hidden><button data-qa="gcal">Google Календарь</button><button data-qa="ics">Apple · Outlook (.ics)</button></div>
+   <div class="qa-s">Кто делает</div>
+   <div class="capq who qa-who">${(d.members||[]).filter(m=>m.name).map(m=>`<button data-qam="${m.id}" class="${t.assigneeId===m.id?'on':''}"><span class="fpav" style="${m.photo?`background-image:url('${m.photo}')`:`background:${m.color||'#8E8E93'}`}">${m.photo?'':esc(initials((m.name||'?').trim()))}</span>${esc(m.id===me?'Я':(m.name||'').trim().split(/\s+/)[0])}</button>`).join('')}</div>
+   <div class="qa-s">Статус</div>
+   <div class="capq qa-st">${STATUSES.map(st=>`<button data-lpmove="${st.k}" class="${t.status===st.k?'on':''}"><i class="qa-dot" style="background:${st.c}"></i>${st.n}</button>`).join('')}</div>
+   <button class="btn qa-open" data-qa="open">${icon('edit',15)} Открыть карточку</button></div>`;
   $('#lpScrim').classList.add('show');haptic('light');
   $$('#lpModal [data-lpmove]').forEach(b=>b.onclick=()=>{const k=b.dataset.lpmove;closeLP();moveTaskStatus(pid,taskId,k);});
-  $$('#lpModal [data-lp]').forEach(b=>b.onclick=()=>{const k=b.dataset.lp;closeLP();
-    if(k==='tomorrow'){const tm=fmtD(parseD(todayISO())+dayMs);
-      editTaskInProject(pid,taskId,x=>{x.end=tm;if(parseD(x.start)>parseD(tm))x.start=tm;});render();toast('На завтра','🌙');}
+  $$('#lpModal [data-qam]').forEach(b=>b.onclick=()=>{const m=b.dataset.qam;closeLP();quickAssign(pid,taskId,t.assigneeId===m?null:m);});
+  $$('#lpModal [data-qa]').forEach(b=>b.onclick=ev=>{const k=b.dataset.qa;
+    if(k==='cal'){const c=$('#qaCal');c.hidden=!c.hidden;return;}
+    if(k==='gcal'){window.open(taskCal(t,pm.name).g,'_blank','noopener');closeLP();return;}
+    if(k==='ics'){saveFile('wando-'+(t.title||'task').slice(0,40).replace(/[^\wа-яё -]/gi,'')+'.ics',taskCal(t,pm.name).ics,'text/calendar');closeLP();toast('Открой файл — событие с напоминанием в 9:00','📅');return;}
+    closeLP();
+    if(k==='done'){moveTaskStatus(pid,taskId,done?'todo':'done');if(!done)celebrateAt(ev);}
+    else if(k==='tomorrow'){let prev=null;editTaskInProject(pid,taskId,x=>{prev=x.snooze||null;x.snooze=fmtD(parseD(todayISO())+dayMs);});render();
+      toast('Отложено до завтра — срок не тронут','💤','Отменить',()=>{editTaskInProject(pid,taskId,x=>{if(prev)x.snooze=prev;else delete x.snooze;});render();});}
+    else if(k==='del')quickDelete(pid,taskId);
     else openX(pid,taskId);});
 }
 function closeLP(){$('#lpScrim').classList.remove('show');}
@@ -4177,6 +4246,8 @@ function openHotkeys(){
 function closeHotkeys(){$('#hkScrim').classList.remove('show');}
 $('#hkScrim').onclick=e=>{if(e.target===$('#hkScrim'))closeHotkeys();};
 $('#lpScrim').onclick=e=>{if(e.target===$('#lpScrim'))closeLP();};
+document.addEventListener('contextmenu',e=>{const c=e.target.closest('#board .card[data-id],#now .mrow[data-open],#now [data-qtask]');if(!c)return;e.preventDefault();
+  if(c.dataset.id)openLP(c.dataset.id,S.id);else if(c.dataset.open)openLP(c.dataset.open,c.dataset.pid||S.id);else openLP(c.dataset.qtask,c.dataset.pid||S.id);});
 $('#histScrim').onclick=e=>{if(e.target===$('#histScrim'))closeHistory();};
 $('#pickScrim').onclick=e=>{if(e.target===$('#pickScrim'))closePick();};
 function attachSwipe(el,taskId,pid){
@@ -4415,7 +4486,10 @@ function firstStepsCard(){
    Раньше цепочка была ИЛИ: одна просроченная задача (то есть всегда) съедала слот,
    и денежный сигнал не показывался в проде никогда. Теперь деньги идут первыми,
    совет по гигиене плана остаётся под ними. */
-function assistCard(){return cashPulse()+crmNowCard()+(selfHealCard()||mentorCard());}
+function assistCard(){return intakeNowCard()+cashPulse()+crmNowCard()+(selfHealCard()||mentorCard());}
+/* заявки команды — на «Сегодня», а не отдельной вкладкой внизу: внизу теперь «Клиенты». Нет заявок — нет карточки */
+function intakeNowCard(){const n=(typeof intakeRows!=='undefined'&&intakeRows)?intakeRows.length:0;if(!n||!isTeam)return '';
+  return `<button class="intnow" data-goview="intake">${icon('inbox',18)}<b>${n} ${plural(n,'заявка ждёт','заявки ждут','заявок ждут')} решения</b><span>Разобрать →</span></button>`;}
 function selfHealCard(){
   const ov=S.tasks.filter(isOverdue);if(!ov.length)return '';
   const names=ov.slice(0,3).map(t=>t.title).join(' · ');
@@ -4903,9 +4977,10 @@ function renderSettings(){
      <div class="set-item"><span>Подключить Claude (MCP)</span><button class="btn" id="setConnect">🔌 Открыть</button></div>
      <div class="set-item"><span>Репозиторий GitHub<br><span style="font-size:11px;color:var(--mut2)">коммиты сверяются с планом</span></span><input class="inp" id="setRepo" style="width:auto;min-width:165px" placeholder="owner/repo" value="${esc(S.repo||'')}"></div>
      ${S.repo?`<div class="set-item"><span>Секрет вебхука<br><span style="font-size:11px;color:var(--mut2)">свой на этот репозиторий — чужой коммит не тронет твои задачи</span></span><input class="inp" id="setRepoSec" type="password" style="width:auto;min-width:165px" placeholder="свой секрет" value="${esc(S.repoSecret||'')}"></div>`:''}
-     <div class="set-item"><span>Архив всех проектов (JSON)</span><button class="btn" id="setExport">📦 Выгрузить</button></div>
-     <div class="set-item"><span>Фид для Google/Apple Calendar</span><button class="btn" id="setIcs">📅 Ссылка</button></div>
-     <div class="set-item"><span>Выгрузка в Markdown</span><button class="btn" id="setMd">📝 Скачать</button></div>
+     <div class="set-sec">Данные и календарь</div>
+     <div class="set-item"><span>Мои задачи — в календарь<br><span style="font-size:11px;color:var(--mut2)">Google или iPhone, обновляется сам</span></span><button class="btn" id="setIcs">${icon('cal',14)} Подписать</button></div>
+     <div class="set-item"><span>Excel · Google Таблицы<br><span style="font-size:11px;color:var(--mut2)">задачи и клиенты, .csv</span></span><button class="btn" id="setCsv">${icon('download',14)} Выгрузить</button></div>
+     <div class="set-item"><span>Отчёт текстом<br><span style="font-size:11px;color:var(--mut2)">Markdown — читается везде</span></span><button class="btn" id="setMd">${icon('doc',14)} Скачать</button></div>
      <div class="set-sec">Аккаунт и данные</div>
      <div class="set-item"><span>${cloudOn?('☁️ '+esc(myEmail||'в облаке')):'☁️ Не в облаке'}</span><button class="btn" id="setCloud">${cloudOn?'Выйти':'Войти'}</button></div>
      <div class="set-grid2"><button class="btn" id="setExport">${icon('download',14)} Бэкап всех проектов</button><button class="btn" id="setImport">${icon('upload',14)} Восстановить</button></div>
@@ -4931,8 +5006,8 @@ function renderSettings(){
   $('#setAccent').onclick=()=>{closeSettings();openAccent();};
   $('#setWho').onchange=e=>{localStorage.setItem('cockpit_me',e.target.value);render();renderSettings();toast('Теперь вы — '+meName(),'👤');};
   $('#setConnect').onclick=()=>{closeSettings();openConnect();};
-  {const ex=$('#setExport');if(ex)ex.onclick=exportAll;}
-  {const ic=$('#setIcs');if(ic)ic.onclick=icsFeedLink;}
+  {const ic=$('#setIcs');if(ic)ic.onclick=calSubscribe;}
+  {const cv=$('#setCsv');if(cv)cv.onclick=exportCsv;}
   {const md=$('#setMd');if(md)md.onclick=exportMd;}
   {const st=$('#setTg');if(st)st.onclick=()=>{closeSettings();openTgGate();};}
   $('#setCloud').onclick=()=>{if(cloudOn){if(confirm('Выйти из облака на этом устройстве?'))sb.auth.signOut().then(()=>location.reload());}else{closeSettings();const b=$('#btnCloud');if(b)b.click();}};
@@ -6387,7 +6462,9 @@ function renderBoardPeople(){renderBulkBar();
   });
 }
 function boardSwipes(){if(window.innerWidth>680)return;
-  $$('#board .card[data-id]').forEach(c=>attachLongPress(c,c.dataset.id));
+  $$('#board .card[data-id]').forEach(c=>{attachLongPress(c,c.dataset.id);
+    if(!c.querySelector('.cmore')){const m=document.createElement('button');m.className='cmore';m.setAttribute('aria-label','Действия');m.innerHTML=icon('dots',16);
+      m.onclick=ev=>{ev.stopPropagation();openLP(c.dataset.id,S.id);};m.onmousedown=ev=>ev.stopPropagation();c.appendChild(m);}});
   if(!localStorage.getItem('cockpit_board_lp_tip')){
     // флаг ставим ТОЛЬКО когда подсказку реально показали — иначе подавленная
     // подсказка сгорает молча и человек не узнает про long-press никогда
@@ -8437,13 +8514,10 @@ function renderMProjects(){
   let html='';tops.forEach(t=>{html+=row(t,false);projs.filter(k=>k.meta.parentId===t.meta.id).forEach(k=>html+=row(k,true));});
   el.innerHTML=`<div class="secttl">📁 Проекты <span style="margin-left:auto;text-transform:none;letter-spacing:0;font-weight:500;color:var(--mut2)">${projs.length}</span></div>
     <div class="mplist">${html}</div>
-    ${(()=>{const sm=crmSums();return `<button class="mpcrm" id="mpCrm"><span class="pe">${icon('briefcase',20)}</span><div class="pm"><div class="pn2">Клиенты</div>
-      <div class="ps2">${sm.open?`${sm.open} ${plural(sm.open,'сделка','сделки','сделок')} · ${fmtMoney(sm.pipe)} в воронке${sm.late?` · <b style="color:var(--bad)">${sm.late} ${plural(sm.late,'ждёт','ждут','ждут')} шага</b>`:''}`:'сделки, следующий шаг, контакты'}</div></div><span class="arr">›</span></button>`;})()}
     <button class="btn" style="width:100%;margin-top:14px;justify-content:center" id="mpAll">Пульс всей компании</button>
     <button class="btn" style="width:100%;margin-top:8px;justify-content:center" id="mpRep">Отчёт недели</button>
     ${isTeam?'<button class="btn" style="width:100%;margin-top:8px;justify-content:center" id="mpNew">＋ Новый проект</button>':''}`;
   $$('#mprojects .mprow').forEach(r=>r.onclick=()=>{const id=r.dataset.p;if(id!==S.id)switchProject(id);else setView('board');});
-  const mc=$('#mpCrm');if(mc)mc.onclick=()=>setView('crm');
   const a=$('#mpAll');if(a)a.onclick=()=>setView('all');
   const rp=$('#mpRep');if(rp)rp.onclick=openEmpireRep;
   const n=$('#mpNew');if(n)n.onclick=openNewProject;
@@ -8920,6 +8994,39 @@ function icsFeedLink(){
   if(typeof track==='function')track('ics:link');
 }
 /* 📝 Markdown-выгрузка: человекочитаемый снимок всех проектов */
+/* подписка календаря одним тапом: ключ создаётся сам (раньше просили вставить cpk_… из другого меню),
+   дальше — Google (по почте входа), iPhone/Mac (webcal) или скопировать. Фид обновляется сам: мои открытые задачи со сроками */
+async function calSubscribe(){
+  if(!cloudOn||!sb||!myEmail){toast('Календарь подключается после входа почтой','📅');return;}
+  let key=localStorage.getItem('cockpit_ics_key')||'';
+  if(!/^cpk_[A-Za-z0-9_-]{10,}$/.test(key)){
+    const raw='cpk_'+b64url(crypto.getRandomValues(new Uint8Array(24)));const hash=await sha256hex(raw);
+    const {error}=await sb.from('intake_tokens').insert({email:myEmail,label:'Календарь',token_hash:hash,workspace:intakeWorkspace});
+    if(error){toast('Не удалось подключить: '+(error.message||''),'⚠');return;}
+    key=raw;localStorage.setItem('cockpit_ics_key',key);}
+  const https=CFG.url+'/functions/v1/ics?k='+key,webcal=https.replace(/^https:/,'webcal:');
+  $('#lpModal').innerHTML=`<div class="qa"><div class="qa-h"><div class="qa-t">Мои задачи — в календарь</div>
+    <div class="qa-m">Задачи со сроком появятся в календаре и будут обновляться сами. Почта: ${esc(myEmail)}</div></div>
+    <div class="qa-cal"><button data-cs="g">Google Календарь</button><button data-cs="a">iPhone · Mac</button></div>
+    <button class="btn qa-open" data-cs="c">${icon('doc',15)} Скопировать ссылку</button></div>`;
+  $('#lpScrim').classList.add('show');
+  $$('#lpModal [data-cs]').forEach(b=>b.onclick=()=>{const k=b.dataset.cs;closeLP();
+    if(k==='g')window.open('https://calendar.google.com/calendar/r?cid='+encodeURIComponent(webcal),'_blank','noopener');
+    else if(k==='a')location.href=webcal;
+    else if(navigator.clipboard)navigator.clipboard.writeText(https).then(()=>toast('Ссылка скопирована — календарь → «Добавить по URL»','📅'));});
+  if(typeof track==='function')track('ics:sub');}
+/* Excel / Google Таблицы: задачи всех проектов и клиенты — два .csv с «;» (русский Excel открывает сразу) и BOM (кириллица не ломается) */
+function exportCsv(){
+  const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"',row=a=>a.map(q).join(';'),stN=k=>(STATUSES.find(x=>x.k===k)||{}).n||k;
+  const T=[row(['Проект','Задача','Статус','Исполнитель','Начало','Срок','Оценка, ч','Потрачено, ч','Приоритет','Сумма, $','Клиент'])];
+  reg.list.filter(p=>!p.archived).forEach(p=>{const d=p.id===S.id?S:loadProj(p.id);if(!d)return;
+    (d.tasks||[]).filter(t=>!t.isMilestone).forEach(t=>{const m=(d.members||[]).find(x=>x.id===t.assigneeId),c=t.clientId&&crmLive().find(x=>x.id===t.clientId);
+      T.push(row([p.name,t.title,stN(t.status),m?m.name:'',t.start||'',t.end||'',t.estimate||'',t.spent||'',t.priority||'',t.amount||'',c?c.name:'']));});});
+  saveFile('wando-задачи-'+todayISO()+'.csv','﻿'+T.join('\r\n'),'text/csv');
+  const L=crmLive();if(L.length){const C=[row(['Клиент','Компания','Этап','Сумма, $','Следующий шаг','Дата шага','Telegram','Телефон','Почта'])];
+    L.forEach(c=>{const ct=c.contact||{};C.push(row([c.name,c.company||'',crmSt(c.stage).n,c.amount||'',(c.next&&c.next.text)||'',(c.next&&c.next.date)||'',ct.tg||'',ct.phone||'',ct.email||'']));});
+    setTimeout(()=>saveFile('wando-клиенты-'+todayISO()+'.csv','﻿'+C.join('\r\n'),'text/csv'),400);}
+  toast('Выгружено: задачи'+(L.length?' и клиенты':'')+' — открывается в Excel и Google Таблицах','📊');}
 function exportMd(){try{
   const L=['# WANDO — выгрузка '+todayISO(),''];
   reg.list.filter(p=>!p.archived).forEach(p=>{const d=p.id===S.id?S:loadProj(p.id);if(!d)return;
@@ -9015,6 +9122,8 @@ function buildPaletteIndex(){
     ['layers','Печать / PDF','распечатать обзор','Настройки',()=>window.print()],
     ['layers','Выгрузить архив (JSON)','страховка: все проекты одним файлом','Настройки',()=>exportAll()],
     ['layers','Выгрузить в Markdown','человекочитаемый снимок всех проектов','Настройки',()=>exportMd()],
+    ['download','Выгрузить в Excel','задачи и клиенты · .csv для Excel и Google Таблиц','Настройки',()=>exportCsv()],
+    ['cal','Мои задачи — в календарь','Google или iPhone, обновляется сам','Настройки',()=>calSubscribe()],
   ];
   ACT.forEach(([ic,name,sub,grp,run])=>items.push({type:'Команда',grp,icon:icon(ic,17),title:name,sub,kw:name+' '+sub,run}));
   visibleProjects().forEach(p=>items.push({type:'Проект',icon:`<span class="pal-emoji">${esc(p.emoji||'📄')}</span>`,title:p.name,sub:p.id===S.id?'текущий':'переключиться',kw:p.name+' проект',run:()=>{if(p.id!==S.id)switchProject(p.id);else setView('board');}}));
@@ -9139,7 +9248,8 @@ async function crmLoad(){if(!cloudOn||!sb)return;
 function crmSums(){const L=crmLive(),m30=Date.now()-30*dayMs;let pipe=0,won=0;
   L.forEach(c=>{const a=+c.amount||0;if(crmIsOpen(c))pipe+=a;else if(c.stage==='done'&&(c.stageTs||0)>m30)won+=a;});
   return {pipe,won,open:L.filter(crmIsOpen).length,late:L.filter(crmLate).length};}
-function updateCrmCount(){const b=$('#cntCrm');if(!b)return;const n=crmLive().filter(crmLate).length;b.textContent=n;b.style.display=n?'':'none';}
+function updateCrmCount(){const n=crmLive().filter(crmLate).length;const b=$('#cntCrm');if(b){b.textContent=n;b.style.display=n?'':'none';}
+  const mi=$('#mnavCrm i');if(mi){let mb=mi.querySelector('.mbadge');if(n&&!mb){mb=document.createElement('b');mb.className='mbadge';mi.appendChild(mb);}if(mb){if(n)mb.textContent=n>9?'9+':n;else mb.remove();}}}
 function crmMoney(n){n=+n||0;return n?fmtMoney(n):'—';}
 function crmDate(d){if(!d)return '';const t=parseD(d),td=parseD(todayISO()),k=Math.round((t-td)/dayMs);
   return k===0?'сегодня':k===1?'завтра':k===-1?'вчера':k<0?(-k)+' дн назад':new Date(t).toLocaleDateString('ru-RU',{day:'numeric',month:'short'});}
@@ -9170,7 +9280,7 @@ function renderCrm(){
       return `<div class="crm-grp" style="--sc:${st.c}"><div class="crm-colh"><i></i>${st.n}<span>${cs.length}</span></div>${cs.map(crmCard).join('')}</div>`;}).join('')
       ||`<div class="crm-hole big">Пусто — здесь появятся клиенты с этапом «${crmFilter==='done'?'Сдано':crmFilter==='lost'?'Потерян':'—'}»</div>`;
   }
-  el.innerHTML=`${mob?`<button class="crm-back" id="crmBack">‹ Проекты</button>`:''}
+  el.innerHTML=`
     <div class="dhead crm-head"><h1>Клиенты</h1><span class="sub">сделки, следующий шаг, контакты</span>
       <button class="btn primary" id="crmAdd">${icon('plus',15)} Клиент</button></div>
     ${crmLive().length?`<div class="crm-kpis">
@@ -9183,7 +9293,6 @@ function renderCrm(){
     ${body}`;
   const ad=$('#crmAdd');if(ad)ad.onclick=()=>crmNew();
   const fi=$('#crmFirst');if(fi)fi.onclick=()=>crmNew();
-  const bk=$('#crmBack');if(bk)bk.onclick=()=>setView('mprojects');
   const qi=$('#crmQ');if(qi)qi.oninput=e=>{crmQ=e.target.value;clearTimeout(_crmT);_crmT=setTimeout(()=>{renderCrm();const n=$('#crmQ');if(n){n.focus();n.setSelectionRange(n.value.length,n.value.length);}},180);};
   $$('#crm [data-cf]').forEach(b=>b.onclick=()=>{crmFilter=b.dataset.cf;renderCrm();});
   $$('#crm .crmcard').forEach(card=>{card.onclick=()=>openClient(card.dataset.cid);
@@ -9277,7 +9386,8 @@ function crmNowCard(){const today=todayISO();
   return `<div class="crmnow"><div class="crmnow-h">${icon('briefcase',15)}<b>Клиенты ждут шага</b><span>${due.length}</span></div>
     ${due.slice(0,3).map(c=>`<button data-crmopen="${c.id}" style="--sc:${crmSt(c.stage).c}"><i></i><b>${esc(c.name)}</b><span>${esc(c.next.text)}</span><em class="${crmLate(c)?'late':''}">${crmDate(c.next.date)}</em></button>`).join('')}
     ${due.length>3?`<button data-crmall="1" class="more">Все клиенты →</button>`:''}</div>`;}
-document.addEventListener('click',e=>{const o=e.target.closest('[data-crmopen]');if(o){openClient(o.dataset.crmopen);return;}
+document.addEventListener('click',e=>{const gv=e.target.closest('[data-goview]');if(gv){setView(gv.dataset.goview);return;}
+  const o=e.target.closest('[data-crmopen]');if(o){openClient(o.dataset.crmopen);return;}
   if(e.target.closest('[data-crmall]'))setView('crm');});
 /* «Завтра» с главной карточки: шаг уходит из «Сейчас» до завтра одним тапом, срок не трогаем; «Отменить» — в тосте */
 document.addEventListener('click',e=>{const b=e.target.closest('[data-snzhero]');if(!b)return;
@@ -9294,7 +9404,7 @@ function intakeToClient(id){const r=(typeof intakeRows!=='undefined'?intakeRows:
 $$('[data-icon]').forEach(el=>el.insertAdjacentHTML('afterbegin',icon(el.dataset.icon)));
 // плашка вкладок: ширины меняются от счётчиков, перевода и окна — подложка следует без анимации
 if(window.ResizeObserver){const ro=new ResizeObserver(()=>movePlate(true));$$('#tabs .tab').forEach(t=>ro.observe(t));}
-movePlate(true);syncMnav(view);
+movePlate(true);syncMnav(view);updateCrmCount();
 /* живые иконки навигации: статичные svg → объёмные (icon3), тап играет сцену */
 (function navIcons(){
   $$('.mnav i[data-icon],.tabs .tab[data-icon]').forEach(host=>{const svg=host.querySelector(':scope>svg');if(svg)svg.outerHTML=icon3(host.dataset.icon);});
