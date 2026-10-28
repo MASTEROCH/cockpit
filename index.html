@@ -2053,6 +2053,10 @@ body{font-feature-settings:"kern","liga","calt";font-kerning:normal}
 h1,h2,h3,.nh-title,.mh-title,.fv-title,.kpi .v,.pulse-card .pv,.pv,.hero-num,[class*=clock]{font-variant-numeric:tabular-nums}
 ::selection{background:rgba(167,139,250,.32);color:#fff;text-shadow:none}
 ::-moz-selection{background:rgba(167,139,250,.32);color:#fff}
+/* на светлой теме белый текст в выделении пропадал (1.5:1). inherit не годится:
+   у ::selection он наследует выделение родителя (то же белое), нужен токен текста */
+body.light ::selection{color:var(--txt)}
+body.light ::-moz-selection{color:var(--txt)}
 /* 3. Свет по верхней кромке — «стекло под источником сверху», ключевой премиум-приём */
 .kpi,.panel-c,.pulse-row,.fold,.insight,.assist-card,.now-sec+.insights .insight,.mrow,.pick-row,.hist-row,.pulse-card{position:relative}
 .kpi::before,.panel-c::before,.pulse-row::before,.now-hero::before{
@@ -2147,6 +2151,348 @@ html{font-optical-sizing:auto}
   display:grid;place-items:center;cursor:pointer;transition:.15s var(--ease)}
 .brief-x:hover{color:var(--txt);border-color:var(--acc2)}
 #briefModal .ob-body{padding-right:46px}
+
+/* =====================================================================
+   СКИН AppHUB Link — Apple-графит, жидкое стекло с кромкой, системные цвета
+   Токены и рецепт стекла — из AppHUB Link Desktop (vip-studio/public/desk/desk.css:29-40, 966-968).
+   Монохромная главная кнопка (белая на тёмной, графитовая на светлой) — как в Link;
+   фиолетовый WANDO остаётся светом бренда: выбранное, прогресс, герой дня.
+   Тёмная и светлая — обе обязательны: каждое правило ниже имеет пару body.light.
+   ===================================================================== */
+:root{
+  --bg:#0B0B0D; --bg2:#141416; --panel:#17171A; --panel2:#1F1F23;
+  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
+  --txt:#F5F5F7; --mut:#AEAEB4; --mut2:#8E8E93;
+  --ok:#30D158; --warn:#FF9F0A; --bad:#FF453A;
+  --radius:18px;
+  --glass:rgba(28,28,32,.62); --glass-2:rgba(36,36,41,.62);
+  --gbrd:rgba(255,255,255,.09); --ghi:inset 0 1px 0 rgba(255,255,255,.1);
+  --sheen:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,0) 46%);
+  --blur:blur(26px) saturate(190%) brightness(1.08); --blur-s:blur(16px) saturate(170%);
+  --depth:0 16px 40px rgba(0,0,0,.42),0 2px 8px rgba(0,0,0,.26);
+  --lg-fill:linear-gradient(180deg,rgba(54,54,60,.58),rgba(24,24,28,.66));
+  --lg-rim:linear-gradient(145deg,rgba(255,255,255,.34),rgba(255,255,255,.08) 32%,rgba(255,255,255,.02) 58%,rgba(255,255,255,.14));
+  --lg-shadow:inset 0 1px 0 rgba(255,255,255,.12),inset 0 -12px 24px -20px rgba(255,255,255,.1),0 16px 40px rgba(0,0,0,.42),0 2px 8px rgba(0,0,0,.26);
+  --lg-soft:inset 0 1px 0 rgba(255,255,255,.08),0 2px 10px rgba(0,0,0,.28);
+  --inv-bg:#F5F5F7; --inv-fg:#0B0B0D;
+  --brand:linear-gradient(135deg,#f472b6 0%,#a78bfa 48%,#fb923c 100%);
+  --ease:cubic-bezier(.16,1,.3,1); --spring:cubic-bezier(.34,1.56,.64,1);
+  --move:cubic-bezier(.32,.72,0,1); --exit:cubic-bezier(.64,0,.78,0);
+}
+body.light{
+  --bg:#ECECF0; --bg2:#F7F7F9; --panel:#FFFFFF; --panel2:#F1F1F4;
+  --line:rgba(20,20,30,.08); --line2:rgba(20,20,30,.14);
+  --txt:#1D1D1F; --mut:#3C3C43; --mut2:#6E6E73;
+  --ok:#1E9E52; --warn:#B35300; --bad:#E0342B;
+  --acc2:#7C5CE0;  /* фиолетовый на белом: #a78bfa давал 2.6:1, этот — 4.9:1 */
+  --glass:rgba(255,255,255,.74); --glass-2:rgba(255,255,255,.84);
+  --gbrd:rgba(20,20,30,.08); --ghi:inset 0 1px 0 rgba(255,255,255,.95);
+  --sheen:linear-gradient(180deg,rgba(255,255,255,.7),rgba(255,255,255,0) 50%);
+  --depth:0 10px 30px rgba(30,30,60,.08),0 1px 3px rgba(30,30,60,.08);
+  --lg-fill:linear-gradient(180deg,rgba(255,255,255,.9),rgba(255,255,255,.76));
+  --lg-rim:linear-gradient(145deg,#fff,rgba(20,20,30,.07) 38%,rgba(20,20,30,.05) 62%,rgba(255,255,255,.9));
+  --lg-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 10px 30px rgba(30,30,60,.08),0 1px 3px rgba(30,30,60,.08);
+  --lg-soft:inset 0 1px 0 #fff,0 1px 3px rgba(30,30,60,.08),0 4px 14px rgba(30,30,60,.05);
+  --inv-bg:#1D1D1F; --inv-fg:#FFFFFF;
+}
+/* фон: тёплый свет бренда сверху — продукт фаундера, а не корпоративная серость */
+body{background:
+  radial-gradient(900px 520px at 88% -12%,rgba(167,139,250,.13),transparent 62%),
+  radial-gradient(700px 460px at -8% -6%,rgba(244,114,182,.07),transparent 60%),
+  var(--bg)}
+body.light{background:
+  radial-gradient(900px 520px at 88% -12%,rgba(124,92,224,.10),transparent 62%),
+  radial-gradient(700px 460px at -8% -6%,rgba(244,114,182,.07),transparent 60%),
+  var(--bg)}
+body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;letter-spacing:-.006em}
+.mh-title,.nh-title,.dhead h1,.ob-body h2{letter-spacing:-.022em}
+
+/* шапка: стекло без рамки-линии, только тень-кромка */
+header{background:linear-gradient(180deg,rgba(11,11,13,.82),rgba(11,11,13,.64));border-bottom:1px solid var(--line);box-shadow:0 1px 0 rgba(255,255,255,.03)}
+body.light header{background:linear-gradient(180deg,rgba(247,247,249,.88),rgba(247,247,249,.72))}
+
+/* вкладки десктопа: капсула жидкого стекла + скользящая плашка (рецепт «плашка вкладок» ДВИЖЕНИЕ, 520ms move) */
+.tabs{position:relative;border:1px solid transparent;border-radius:999px;padding:4px;gap:2px;
+  background:var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-soft)}
+.tab{position:relative;z-index:1;border-radius:999px;color:var(--mut);font-weight:600;transition:color .3s var(--ease),transform .5s var(--spring)}
+.tab:hover{color:var(--txt);background:none}
+.tabs .tab.active,body.light .tabs .tab.active{background:none;box-shadow:none;color:var(--txt)}
+.tplate{position:absolute;z-index:0;top:4px;bottom:4px;left:0;width:0;border-radius:999px;pointer-events:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,.07));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 2px 10px rgba(0,0,0,.3);
+  transition:transform .52s var(--move),width .52s var(--move)}
+body.light .tplate{background:#fff;box-shadow:0 1px 2px rgba(30,30,60,.1),0 4px 14px rgba(30,30,60,.08)}
+.tabs.noanim .tplate{transition:none}
+
+/* кнопки: монохромная главная как в Link, вторичные — стекло; нажатие — тактильное (60ms вниз, пружина назад) */
+.btn{border-radius:14px;border:1px solid var(--line2);background:var(--glass-2);font-weight:600;letter-spacing:-.01em}
+.btn:hover{border-color:rgba(255,255,255,.22)}
+body.light .btn{background:#fff;border-color:var(--line2)}
+.btn.primary,body.light .btn.primary{background:var(--inv-bg);color:var(--inv-fg);border-color:transparent;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 8px 22px rgba(0,0,0,.28);filter:none}
+body.light .btn.primary{box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 8px 22px rgba(20,20,30,.2)}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn,.iconbtn,.chip,.tab,.mnav button,.qdone{transition:transform .34s var(--spring),background .2s,border-color .2s,color .2s,box-shadow .2s,opacity .2s}
+.btn:active,.iconbtn:active,.chip:active,.mnav button:active,.tab:active{transform:scale(.95);transition-duration:.06s}
+.iconbtn{border-radius:999px;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-soft);color:var(--mut)}
+.iconbtn:hover{color:var(--txt)}
+.chip{border-radius:999px;background:var(--glass-2);border-color:var(--gbrd)}
+body.light .chip{background:#fff}
+
+/* поля: глубже фона, кольцо фокуса — светом бренда */
+.inp{border-radius:12px;background:rgba(255,255,255,.05);border-color:var(--line);transition:border-color .2s,box-shadow .25s var(--ease)}
+.inp:focus{border-color:rgba(167,139,250,.6);box-shadow:0 0 0 4px rgba(167,139,250,.2)}
+body.light .inp{background:#fff}
+body.light .inp:focus{border-color:rgba(124,92,224,.55);box-shadow:0 0 0 4px rgba(124,92,224,.14)}
+
+/* карточки доски: стекло с кромкой, лёгкая тень; наведение — подъём */
+.card{border-radius:16px;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-soft)}
+.card:hover{transform:translateY(-2px);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 10px 26px rgba(0,0,0,.34)}
+body.light .card:hover{box-shadow:0 10px 26px rgba(30,30,60,.12)}
+.fscard,.healcard{border-radius:20px;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-soft)}
+
+/* герой дня — главный экран: стекло, свет бренда в углу, кромка */
+.now-hero,.mhero{border:1px solid transparent;border-radius:28px;
+  background:radial-gradient(120% 130% at 100% 0%,rgba(167,139,250,.24),transparent 55%) padding-box,
+    radial-gradient(90% 120% at 0% 100%,rgba(244,114,182,.10),transparent 60%) padding-box,
+    var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-shadow)}
+body.light .now-hero,body.light .mhero{
+  background:radial-gradient(120% 130% at 100% 0%,rgba(124,92,224,.14),transparent 55%) padding-box,
+    radial-gradient(90% 120% at 0% 100%,rgba(244,114,182,.08),transparent 60%) padding-box,
+    var(--lg-fill) padding-box,var(--lg-rim) border-box}
+.now-hero.over,.mhero.over{background:radial-gradient(120% 130% at 100% 0%,rgba(255,69,58,.16),transparent 55%) padding-box,var(--lg-fill) padding-box,var(--lg-rim) border-box}
+.now-hero.done,.mhero.done{background:radial-gradient(120% 130% at 100% 0%,rgba(48,209,88,.2),transparent 55%) padding-box,var(--lg-fill) padding-box,var(--lg-rim) border-box}
+/* «Начнём?» — приглашение, а не успех: цвет бренда, не зелёный «готово» */
+.now-hero.start .nh-label,.mhero.start .mh-label{color:var(--acc2)}
+
+/* модалки и шторки: плотное стекло (поверх затемнения прозрачность не нужна), кромка, скругление 28/30 */
+.modal-scrim{background:rgba(0,0,0,.46);backdrop-filter:blur(10px) saturate(140%);-webkit-backdrop-filter:blur(10px) saturate(140%)}
+body.light .modal-scrim{background:rgba(20,20,30,.2)}
+.modal{border:1px solid transparent;border-radius:28px;
+  background:linear-gradient(180deg,rgba(30,30,34,.96),rgba(22,22,25,.97)) padding-box,var(--lg-rim) border-box;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 30px 80px rgba(0,0,0,.6),0 4px 14px rgba(0,0,0,.3)}
+body.light .modal{background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(250,250,252,.98)) padding-box,var(--lg-rim) border-box}
+.modal-scrim.show .modal{animation:lkIn .46s var(--ease) both}
+@keyframes lkIn{from{opacity:0;transform:translateY(8px) scale(.975)}to{opacity:1;transform:none}}
+.ob-foot{border-top-color:var(--line)}
+
+/* тост: стеклянная капсула — плотная: лежит поверх текста, сквозь полупрозрачное стекло он читался насквозь */
+.toast{border-radius:999px;border:1px solid transparent;padding:12px 20px;
+  background:linear-gradient(180deg,rgba(40,40,45,.94),rgba(26,26,30,.96)) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-shadow);
+  transition:opacity .3s var(--ease),transform .52s var(--spring)}
+body.light .toast{background:linear-gradient(180deg,rgba(255,255,255,.97),rgba(248,248,250,.97)) padding-box,var(--lg-rim) border-box}
+/* пара «появление/уход»: приходит пружиной, уходит быстрее и без отскока (≈0.5× времени входа) */
+.toast:not(.show){transition:opacity .24s var(--exit),transform .24s var(--exit)}
+
+/* «Фокус» героя — единственная кнопка цвета бренда: главное действие дня; остальные главные — монохромные, как в Link */
+#focusStart,body.light #focusStart{background:linear-gradient(135deg,#f472b6 -12%,#a78bfa 46%,#6f7cf6 100%);color:#fff;border-color:transparent;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 10px 26px rgba(167,139,250,.34)}
+#focusStart:hover{filter:brightness(1.06)}
+.mh-go{border-radius:18px}
+/* шторка «Новая задача»: поле и есть вся шторка — кольцо фокуса вокруг него лишнее, каретки достаточно */
+#capIn:focus-visible{box-shadow:none;border-color:transparent}
+.cap-go,body.light .cap-go{background:var(--inv-bg);color:var(--inv-fg);border-radius:18px;box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 8px 22px rgba(0,0,0,.26)}
+body.light .cap-go{box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 8px 22px rgba(20,20,30,.2)}
+
+/* смена экрана: подъём из лёгкого размытия (2–3px — намёк, не кино) */
+.view.active{animation:lkView .42s var(--ease)}
+@keyframes lkView{from{opacity:0;transform:translateY(6px);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}
+
+/* «Готово» — тихая печать успеха (success-ripple, ROCH Motion): диск стекла, кольцо и галка рисуются, три волны */
+.okfx{position:fixed;width:52px;height:52px;margin:-26px 0 0 -26px;pointer-events:none;z-index:200;color:var(--ok)}
+.okfx::before{content:'';position:absolute;inset:3px;border-radius:50%;border:1px solid transparent;
+  background:var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-shadow);
+  animation:okPop .32s var(--spring) both,okOut .32s 1.05s var(--exit) forwards}
+.okfx svg{position:absolute;inset:0;overflow:visible;animation:okOut .32s 1.05s var(--exit) forwards}
+.okfx circle,.okfx path{fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.okfx circle{stroke-dasharray:145;stroke-dashoffset:145;animation:okDraw .3s cubic-bezier(.33,1,.68,1) forwards}
+.okfx path{stroke-dasharray:34;stroke-dashoffset:34;animation:okDraw .22s .26s cubic-bezier(.33,1,.68,1) forwards}
+.okfx i{position:absolute;inset:0;border-radius:50%;border:2px solid currentColor;opacity:0;animation:okWave .95s .42s cubic-bezier(.33,1,.68,1) forwards}
+.okfx i:nth-child(2){animation-delay:.56s}.okfx i:nth-child(3){animation-delay:.7s}
+@keyframes okDraw{to{stroke-dashoffset:0}}
+@keyframes okPop{from{transform:scale(.4);opacity:0}to{transform:none;opacity:1}}
+@keyframes okWave{from{transform:scale(1);opacity:.55}to{transform:scale(2.6);opacity:0}}
+@keyframes okOut{to{opacity:0;transform:scale(.88)}}
+/* галка чеклиста «Три шага» дорисовывается, когда шаг сделан */
+.fsrow.ok .fsc svg path,.fsrow.ok .fsc svg polyline{stroke-dasharray:24;stroke-dashoffset:24;animation:okDraw .45s .1s var(--ease) forwards}
+
+/* мобайл: плавающий таб-бар жидкого стекла (iOS 26), плашка под выбранной, «＋» — светом бренда */
+@media (max-width:680px){
+  main{padding-bottom:calc(104px + env(safe-area-inset-bottom))}
+  .mnav,body.light .mnav{left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));padding:6px;gap:2px;align-items:center;
+    border-radius:32px;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-shadow);
+    -webkit-backdrop-filter:blur(26px) saturate(190%) brightness(1.08);backdrop-filter:blur(26px) saturate(190%) brightness(1.08)}
+  .mnav button{position:relative;border-radius:24px;min-height:52px;justify-content:center;padding:5px 2px;font-weight:600;letter-spacing:-.01em}
+  .mnav button.on{background:rgba(255,255,255,.09);box-shadow:inset 0 1px 0 rgba(255,255,255,.1)}
+  body.light .mnav button.on{background:rgba(20,20,30,.06);box-shadow:none}
+  .mnav button.on i{transform:none}
+  .mnav .mplus{width:54px;height:54px;min-height:0;border-radius:50%;margin:0 4px;transform:none;
+    background:var(--brand);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 8px 22px rgba(167,139,250,.38);font-size:28px}
+  .mnav .mplus:active{transform:scale(.92)}
+  .toast{bottom:calc(92px + env(safe-area-inset-bottom))}
+  .modal{border-radius:30px 30px 0 0}
+  .now-hero,.mhero{border-radius:26px}
+}
+@media (prefers-reduced-motion:reduce){
+  .view.active,.modal-scrim.show .modal{animation:none}
+  .tplate{transition:none}
+  .okfx,.fsrow.ok .fsc svg path{animation:none}
+  .card:hover{transform:none}
+}
+/* меньше прозрачности (системная настройка) — стекло становится плотным */
+@media (prefers-reduced-transparency:reduce){
+  .mnav,.modal-scrim{-webkit-backdrop-filter:none;backdrop-filter:none}
+  .mnav{background:var(--panel) padding-box,var(--lg-rim) border-box}
+}
+
+/* ===== КЛИЕНТЫ (CRM): воронка колонками, карточки стекла, цвет этапа — точкой и кромкой слева ===== */
+.crm-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.crm-head .btn{margin-left:auto}
+.crm-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:4px 0 16px}
+.crm-kpis>div{border-radius:18px;padding:14px 16px;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-soft)}
+.crm-kpis b{display:block;font-size:22px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.crm-kpis span{font-size:12px;color:var(--mut2)}
+.crm-kpis .bad b{color:var(--bad)}
+.crm-tools{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.crm-tools .inp{flex:1;min-width:200px;border-radius:999px;padding-left:16px}
+.crm-seg{display:flex;gap:2px;padding:3px;border-radius:999px;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box}
+.crm-seg button{border:none;background:none;color:var(--mut);font-weight:600;font-size:13px;padding:7px 13px;border-radius:999px;white-space:nowrap;transition:background .25s var(--ease),color .2s}
+.crm-seg button.on{background:rgba(255,255,255,.12);color:var(--txt);box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+body.light .crm-seg button.on{background:#fff;box-shadow:0 1px 3px rgba(30,30,60,.12)}
+#v-crm .pad{max-width:1440px}
+.crm-board{display:grid;grid-template-columns:repeat(5,minmax(190px,1fr));gap:12px;overflow-x:auto;padding-bottom:10px}
+.crm-col{border-radius:20px;padding:10px;background:rgba(255,255,255,.025);border:1px solid var(--line);min-height:240px;transition:background .2s,border-color .2s}
+body.light .crm-col{background:rgba(20,20,30,.025)}
+.crm-col.over{border-color:var(--sc);background:color-mix(in srgb,var(--sc) 9%,transparent)}
+.crm-colh{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:var(--mut);padding:4px 6px 10px;letter-spacing:.01em}
+.crm-colh i{width:8px;height:8px;border-radius:50%;background:var(--sc);box-shadow:0 0 10px var(--sc)}
+.crm-colh em{font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crm-colh span{margin-left:auto;font-weight:600;color:var(--mut2);font-variant-numeric:tabular-nums}
+.crm-colsum{font-size:12px;color:var(--mut2);padding:0 6px 10px;margin-top:-6px;font-variant-numeric:tabular-nums}
+.crm-grp .crm-colsum{display:none}
+.crm-drop{display:flex;flex-direction:column;gap:8px}
+.crm-hole{font-size:12px;color:var(--mut2);text-align:center;padding:18px 8px;border:1px dashed var(--line2);border-radius:14px}
+.crm-hole.big{padding:40px 16px;font-size:13.5px}
+.crmcard{position:relative;border-radius:16px;padding:12px 12px 11px 14px;cursor:pointer;border:1px solid transparent;
+  background:var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-soft);transition:transform .34s var(--spring),box-shadow .2s;margin-bottom:8px}
+.crm-drop .crmcard{margin-bottom:0}
+.crmcard::before{content:'';position:absolute;left:0;top:12px;bottom:12px;width:3px;border-radius:0 3px 3px 0;background:var(--sc)}
+.crmcard:hover{transform:translateY(-2px)}
+.crmcard:active{transform:scale(.98);transition-duration:.06s}
+.crmcard.drag{opacity:.45}
+.crm-top{display:flex;align-items:center;gap:10px}
+.crm-av{width:32px;height:32px;border-radius:11px;display:grid;place-items:center;flex:0 0 auto;font-size:12.5px;font-weight:700;color:#fff;
+  background:linear-gradient(145deg,color-mix(in srgb,var(--sc) 85%,#fff),var(--sc));box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
+.crm-av.big{width:52px;height:52px;border-radius:16px;font-size:19px}
+.crm-nm{flex:1;min-width:0;display:flex;flex-direction:column}
+.crm-nm b{font-size:14px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crm-nm span{font-size:12px;color:var(--mut2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crm-amt{font-weight:700;font-size:13.5px;font-variant-numeric:tabular-nums;color:var(--txt)}
+.crm-next{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12.5px;color:var(--mut)}
+.crm-next span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crm-next i{font-style:normal;font-size:11.5px;color:var(--mut2);white-space:nowrap}
+.crm-next.late,.crm-next.late i{color:var(--bad)}
+.crm-next.none{color:var(--mut2);opacity:.75}
+.crm-mid{display:flex;align-items:center;gap:8px;margin-top:9px}
+.crm-ct{display:flex;gap:7px;margin-left:auto;color:var(--mut2)}
+.crm-grp{margin-bottom:14px}
+.crm-empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:48px 20px;max-width:420px;margin:0 auto}
+.crm-empty b{font-size:18px;letter-spacing:-.02em}
+.crm-empty span{color:var(--mut);font-size:14px;line-height:1.5;margin-bottom:8px}
+.crm-back{border:none;background:none;color:var(--acc2);font-weight:600;font-size:15px;padding:4px 0 10px;cursor:pointer}
+/* карточка клиента */
+.crmmodal{width:620px}
+.crm-sheet{padding:22px 22px 16px}
+.crm-sh-head{display:flex;gap:14px;align-items:flex-start;margin-bottom:16px}
+.crm-title{width:100%;border:none;background:none;outline:none;font-size:22px;font-weight:700;letter-spacing:-.02em;color:var(--txt);padding:2px 0}
+.crm-sub{width:100%;border:none;background:none;outline:none;font-size:14px;color:var(--mut);padding:2px 0}
+.crm-title::placeholder,.crm-sub::placeholder{color:var(--mut2)}
+.crm-stages{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+@media (max-width:680px){.crm-stages{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}}
+.crm-stages button{flex:0 0 auto;border:1px solid var(--line2);background:none;color:var(--mut);border-radius:999px;padding:7px 12px;font-size:12.5px;font-weight:600;white-space:nowrap;
+  transition:background .25s var(--ease),color .2s,border-color .2s,transform .34s var(--spring)}
+.crm-stages button:active{transform:scale(.94);transition-duration:.06s}
+.crm-stages button.on{background:color-mix(in srgb,var(--sc) 20%,transparent);border-color:color-mix(in srgb,var(--sc) 60%,transparent);color:var(--txt)}
+.crm-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.crm-grid label{display:flex;flex-direction:column;gap:5px}
+.crm-grid label span,.crm-sec{font-size:11.5px;font-weight:700;color:var(--mut2);letter-spacing:.02em}
+.crm-sec{margin:16px 0 8px}
+.crm-acts{display:flex;gap:8px;flex-wrap:wrap}
+.crm-acts .btn{display:inline-flex;align-items:center;gap:7px;text-decoration:none;color:var(--txt);padding:9px 14px}
+.crm-nextrow{display:grid;grid-template-columns:1fr 150px auto;gap:8px}
+.crm-noteadd{display:flex;gap:8px}
+.crm-tasks{display:flex;flex-direction:column;gap:6px}
+.crm-tasks button{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--glass-2);border-radius:12px;padding:9px 11px;text-align:left;color:var(--txt);font-size:13px}
+.crm-tasks button span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crm-tasks button i{font-style:normal;color:var(--mut2);font-size:11.5px}
+.crm-tasks button.done{color:var(--mut2)}.crm-tasks button.done svg{color:var(--ok)}
+.crm-notes{display:flex;flex-direction:column;gap:2px;margin-top:8px;max-height:220px;overflow:auto}
+.crm-notes>div{display:grid;grid-template-columns:auto 1fr auto;gap:8px;padding:8px 2px;border-bottom:1px solid var(--line);font-size:13px}
+.crm-notes b{font-weight:600;color:var(--mut)}
+.crm-notes i{font-style:normal;color:var(--mut2);font-size:11.5px}
+.crm-notes .sys{color:var(--mut2)}.crm-notes .sys span{font-style:italic}
+.crm-foot{display:flex;align-items:center;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+.crm-foot #cDel{color:var(--bad)}
+/* «Клиенты ждут шага» на «Сейчас» */
+.crmnow{border-radius:20px;padding:12px 12px 8px;margin-bottom:14px;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-soft)}
+.crmnow-h{display:flex;align-items:center;gap:8px;padding:0 4px 8px;color:var(--mut);font-size:13px}
+.crmnow-h b{color:var(--txt);font-weight:650}
+.crmnow-h span{margin-left:auto;font-size:12px;font-weight:700;color:var(--bad);font-variant-numeric:tabular-nums}
+.crmnow button{display:grid;grid-template-columns:8px auto 1fr auto;align-items:center;gap:9px;width:100%;border:none;background:none;color:var(--txt);
+  padding:9px 6px;border-radius:12px;text-align:left;font-size:13.5px;cursor:pointer;transition:background .2s,transform .34s var(--spring)}
+.crmnow button:hover{background:rgba(255,255,255,.05)}body.light .crmnow button:hover{background:rgba(20,20,30,.04)}
+.crmnow button:active{transform:scale(.98);transition-duration:.06s}
+.crmnow button i{width:8px;height:8px;border-radius:50%;background:var(--sc)}
+.crmnow button b{font-weight:600;white-space:nowrap}
+.crmnow button span{color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.crmnow button em{font-style:normal;font-size:12px;color:var(--mut2);white-space:nowrap}
+.crmnow button em.late{color:var(--bad)}
+.crmnow button.more{display:block;color:var(--acc2);font-weight:600}
+/* плитка «Клиенты» в «Проектах» (мобайл) */
+.mpcrm{display:flex;align-items:center;gap:13px;width:100%;text-align:left;margin-top:12px;padding:14px 16px;border-radius:20px;color:var(--txt);cursor:pointer;
+  border:1px solid transparent;background:radial-gradient(120% 140% at 100% 0%,rgba(167,139,250,.18),transparent 60%) padding-box,var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-soft)}
+.mpcrm .pe{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;background:var(--brand);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
+.mpcrm .pm{flex:1;min-width:0}.mpcrm .pn2{font-weight:650;font-size:15px}.mpcrm .ps2{font-size:12.5px;color:var(--mut2);margin-top:2px}
+.mpcrm .arr{color:var(--mut2);font-size:20px}
+@media (max-width:980px){.crm-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:680px){
+  .crm-head .sub{display:none}
+  .crm-kpis b{font-size:19px}
+  .crm-seg{width:100%;overflow-x:auto;scrollbar-width:none}
+  .crm-sheet{padding:20px 16px calc(14px + env(safe-area-inset-bottom))}
+  .crm-grid{grid-template-columns:1fr}
+  .crm-nextrow{grid-template-columns:1fr 1fr}
+  .crm-nextrow .btn{grid-column:1/-1}
+}
+
+/* ===== живые иконки навигации — приём AppHUB MASKA (#1321) =====
+   Иконка объёмная: 4 копии-стенки уходят вглубь (translateZ −1.1px × z) + лицо сверху.
+   В покое чуть наклонена, выбранная — наклон сильнее и свечение, нажатие играет свою
+   короткую сцену на пружине. Размер берётся от самой svg — стопка ничего не двигает. */
+.w3{position:relative;display:inline-grid;transform-style:preserve-3d;
+  transform:perspective(160px) rotateX(8deg) rotateY(-10deg) scale(.96);transition:transform .45s cubic-bezier(.34,1.56,.64,1)}
+.w3>span{grid-area:1/1;display:grid;place-items:center}
+.w3-w{transform:translateZ(calc(var(--z) * -1.1px));color:rgba(255,255,255,calc(.05 + .035 * (5 - var(--z))))}
+body.light .w3-w{color:rgba(20,24,40,calc(.04 + .03 * (5 - var(--z))))}
+.w3-f{transform:translateZ(1px)}
+.tab:hover .w3{transform:perspective(160px) rotateX(14deg) rotateY(-16deg) translateY(-1px)}
+.mnav button.on .w3,.tab.active .w3{transform:perspective(160px) rotateX(18deg) rotateY(-20deg) translateY(-1px)}
+.mnav button.on .w3-f,.tab.active .w3-f{filter:drop-shadow(0 0 6px rgba(167,139,250,.6))}
+.w3.wake .w3-w{animation:w3Wall .9s ease-out}
+@keyframes w3Wall{30%{transform:translateZ(calc(var(--z) * -3px))}}
+.w3.wake.sc-wob{animation:w3Wob .9s cubic-bezier(.34,1.56,.64,1)}
+.w3.wake.sc-flip{animation:w3Flip .9s cubic-bezier(.34,1.4,.64,1)}
+.w3.wake.sc-spin{animation:w3Spin 1s cubic-bezier(.34,1.3,.64,1)}
+.w3.wake.sc-turn{animation:w3Turn 1s cubic-bezier(.34,1.3,.64,1)}
+.w3.wake.sc-roll{animation:w3Roll .9s cubic-bezier(.34,1.4,.64,1)}
+.w3.wake.sc-drop{animation:w3Drop .85s cubic-bezier(.34,1.56,.64,1)}
+@keyframes w3Wob{0%{transform:perspective(160px) rotateZ(0) scale(.8)}30%{transform:perspective(160px) rotateZ(-14deg) scale(1.2)}60%{transform:perspective(160px) rotateZ(10deg) scale(1.05)}100%{transform:perspective(160px) rotateX(18deg) rotateY(-20deg) rotateZ(0) scale(1)}}
+@keyframes w3Flip{0%{transform:perspective(160px) rotateX(18deg)}35%{transform:perspective(160px) rotateX(-60deg) translateY(-3px)}70%{transform:perspective(160px) rotateX(30deg)}100%{transform:perspective(160px) rotateX(18deg) rotateY(-20deg)}}
+@keyframes w3Spin{0%{transform:perspective(160px) rotateY(0)}70%{transform:perspective(160px) rotateY(380deg) translateY(-3px)}100%{transform:perspective(160px) rotateX(18deg) rotateY(340deg)}}
+@keyframes w3Turn{0%{transform:perspective(160px) rotateZ(0)}70%{transform:perspective(160px) rotateZ(370deg) scale(1.12)}100%{transform:perspective(160px) rotateX(18deg) rotateY(-20deg) rotateZ(360deg)}}
+@keyframes w3Roll{0%{transform:perspective(160px) translateX(0) rotateZ(0)}25%{transform:perspective(160px) translateX(-3px) rotateZ(-8deg)}55%{transform:perspective(160px) translateX(4px) rotateZ(6deg)}100%{transform:perspective(160px) rotateX(18deg) rotateY(-20deg)}}
+@keyframes w3Drop{0%{transform:perspective(160px) translateY(0)}30%{transform:perspective(160px) translateY(-6px) rotateX(-20deg)}55%{transform:perspective(160px) translateY(2px) scale(1.08,.9)}100%{transform:perspective(160px) rotateX(18deg) rotateY(-20deg)}}
+@media (prefers-reduced-motion:reduce){.w3,.tab:hover .w3,.mnav button.on .w3,.tab.active .w3{transform:none;transition:none}.w3.wake,.w3.wake .w3-w{animation:none}.w3-w{display:none}}
 </style>
 </head>
 <body>
@@ -2177,6 +2523,7 @@ html{font-optical-sizing:auto}
     <button class="tab" data-v="week" data-icon="cal"><span>Неделя</span></button>
     <button class="tab" data-v="backlog" data-icon="idea"><span>Бэклог</span> <span class="cnt" id="cntIdeas">0</span></button>
     <button class="tab" data-v="team" data-icon="users"><span>Команда</span></button>
+    <button class="tab" data-v="crm" data-icon="briefcase"><span>Клиенты</span> <span class="cnt" id="cntCrm" style="display:none">0</span></button>
     <button class="tab" data-v="intake" data-icon="inbox"><span>Приёмка</span> <span class="cnt" id="cntIntake" style="display:none">0</span></button>
   </div>
   <button class="iconbtn" id="btnUndo" title="Отменить (⌘Z / Ctrl+Z)" style="font-size:16px">↩</button><button class="iconbtn" id="btnRedo" title="Вернуть (⌘⇧Z / Ctrl+Shift+Z)" style="font-size:16px">↪</button><button class="iconbtn" id="btnHist" data-icon="clock" title="История проекта — все закрытые задачи, с фильтрами и возвратом"></button><button class="iconbtn" id="btnSearch" data-icon="search" title="Поиск и команды (⌘K)"></button>
@@ -2240,6 +2587,7 @@ html{font-optical-sizing:auto}
       <div id="accessPanel"></div>
     </div></div>
     <div class="view" id="v-intake"><div class="pad" id="intake"></div></div>
+    <div class="view" id="v-crm"><div class="pad" id="crm"></div></div>
     <div class="view" id="v-mprojects"><div class="pad" id="mprojects"></div></div>
   </div>
 </main>
@@ -2360,7 +2708,6 @@ html{font-optical-sizing:auto}
 
 <div class="modal-scrim" id="obScrim"><div class="modal" id="obModal"></div></div>
 <div class="modal-scrim" id="wizScrim"><div class="modal" id="wizModal"></div></div>
-<div class="modal-scrim" id="welScrim"><div class="modal" id="welModal"></div></div>
 <div class="modal-scrim" id="emojiScrim"><div class="modal" id="emojiModal"></div></div>
 <div class="modal-scrim" id="npScrim"><div class="modal" id="npModal"></div></div>
 <div class="modal-scrim" id="authScrim"><div class="modal" id="authModal"></div></div>
@@ -2411,6 +2758,7 @@ html{font-optical-sizing:auto}
   <button id="mnavVando" aria-label="Вандо — ассистент"><i data-icon="sparkles"></i><span>Вандо</span></button>
 </nav>
 <div class="modal-scrim" id="capScrim"><div class="modal capsheet" id="capModal"></div></div>
+<div class="modal-scrim" id="crmScrim"><div class="modal crmmodal" id="crmModal"></div></div>
 <div class="modal-scrim" id="repScrim"><div class="modal repsheet" id="repModal"></div></div>
 <div class="modal-scrim" id="lpScrim"><div class="modal lpsheet" id="lpModal"></div></div>
 <div class="modal-scrim" id="hkScrim"><div class="modal hksheet" id="hkModal"></div></div>
@@ -2486,6 +2834,21 @@ function seed(){
     ],
   };
 }
+/* ---- локальный вход для разработки: только localhost, на проде не существует ----
+   ?local       — внутрянка на демо-данных (без облака, данные живут в браузере)
+   ?local=new   — первый вход основателя с чистого листа
+   ?local=join  — первый вход партнёра в готовую команду
+   Вход по коду из почты локально не пройти, а смотреть продукт и онбординг нужно. */
+const LOCAL_DEV=(()=>{
+  if(!/^(localhost|127\.0\.0\.1)$/.test(location.hostname))return null;
+  const m=location.search.match(/[?&]local(?:=(new|join))?(?=&|$)/);if(!m)return null;
+  const mode=m[1]||'demo';
+  if(mode!=='demo'){const keep=['cockpit_theme','cockpit_lang'].map(k=>[k,localStorage.getItem(k)]);
+    localStorage.clear();keep.forEach(([k,v])=>{if(v!=null)localStorage.setItem(k,v);});}
+  const fresh=!localStorage.getItem('cockpit_reg');
+  localStorage.setItem('cockpit_cfg',JSON.stringify({url:'local',anon:''}));
+  return {mode,fresh};
+})();
 /* ---- multi-project registry ---- */
 const LS_REG='cockpit_reg';
 const pkey=id=>'cockpit_p_'+id;
@@ -2625,12 +2988,19 @@ const ICONS={
  bot:'<rect x="4.8" y="8.5" width="14.4" height="10.4" rx="2.6"/><circle cx="9.3" cy="13.6" r="1.1" fill="currentColor" stroke="none"/><circle cx="14.7" cy="13.6" r="1.1" fill="currentColor" stroke="none"/><path d="M12 8.5V5.4M12 3.6a1.4 1.4 0 1 0 0 .1zM3.4 13v2.6M20.6 13v2.6"/>',
  building:'<rect x="5.2" y="3.6" width="13.6" height="16.8" rx="1.4"/><path d="M9 7.4h2M13 7.4h2M9 11h2M13 11h2M9 14.6h2M13 14.6h2M9.5 20.4v-3h5v3"/>',
  chat:'<path d="M4 5.5h16v10H9.5L5 19.5v-4H4z"/>',
+ briefcase:'<rect x="3.5" y="7" width="17" height="12.5" rx="2.4"/><path d="M9 7V5.6A1.6 1.6 0 0 1 10.6 4h2.8A1.6 1.6 0 0 1 15 5.6V7M3.5 12.5h17M10.5 12.5v1.6h3v-1.6"/>',
+ phone:'<path d="M6.6 3.8h2.6l1.4 4.1-2 1.4a12 12 0 0 0 6.1 6.1l1.4-2 4.1 1.4v2.6a2 2 0 0 1-2.2 2A17 17 0 0 1 4.6 6a2 2 0 0 1 2-2.2z"/>',
+ mail:'<rect x="3.5" y="5.5" width="17" height="13" rx="2.2"/><path d="m4.5 7 7.5 6 7.5-6"/>',
  folder:'<path d="M3.2 6.4a2 2 0 0 1 2-2h3.8l2 2h7.8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5.2a2 2 0 0 1-2-2z"/>',
  star:'<path d="M12 3.6l2.5 5.3 5.5.7-4 3.9 1 5.6-5-2.8-5 2.8 1-5.6-4-3.9 5.5-.7z"/>',
  rocket:'<path d="M12 3c3.5 1.6 5.5 5 5.5 9l-2.5 2.5h-6L6.5 12C6.5 8 8.5 4.6 12 3z"/><circle cx="12" cy="9.5" r="1.6"/><path d="M9 15c-2 .8-2.5 3-2.5 5 2 0 4.2-.5 5-2.5M15 15c2 .8 2.5 3 2.5 5-2 0-4.2-.5-5-2.5"/>',
  flame:'<path d="M12 3s5 3.5 5 9a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5.3 1.6 1.2 2.3 2 2.3 1 0 1.5-1 1.2-2.3C11.8 6.5 12 4.5 12 3z"/>',
 };
 function icon(n,s){s=s||18;return `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]||''}</svg>`;}
+/* объёмная иконка навигации (приём AppHUB MASKA, стили .w3): 4 стенки + лицо, у каждой иконки своя сцена на тап */
+const ICON3_SC={zap:'wob',layers:'flip',gantt:'roll',board:'flip',cal:'flip',idea:'wob',users:'spin',inbox:'drop',sparkles:'turn',briefcase:'flip'};
+function icon3(n,s){const sv=icon(n,s);let h='';for(let z=4;z>=1;z--)h+=`<span class="w3-w" style="--z:${z}" aria-hidden="true">${sv}</span>`;
+  return `<span class="w3 sc-${ICON3_SC[n]||'wob'}">${h}<span class="w3-f">${sv}</span></span>`;}
 /* Анимированные SVG-иллюстрации для пустых состояний — двухцветные line-иконки
    (базовый штрих --mut, акцент --acc2) с лёгкой «жизнью». Замена крупным эмодзи. */
 const AICONS={
@@ -2703,9 +3073,16 @@ function toast(msg,ic='✓',actLabel,actFn){const t=$('#toast');
   t.innerHTML=`<span class="ic">${emi(ic,16)}</span>${esc(msg)}`+(actLabel?`<button class="tact">${esc(actLabel)}</button>`:'');
   t.classList.add('show');clearTimeout(toast._);toast._=setTimeout(()=>t.classList.remove('show'),actLabel?5500:2400);
   if(actLabel){t.querySelector('.tact').onclick=()=>{t.classList.remove('show');actFn&&actFn();};}}
-function celebrate(x,y){
+/* «Готово» — тихая печать успеха (success-ripple, ROCH Motion; стили .okfx): кольцо и галка рисуются, три волны.
+   Конфетти на ежедневное действие — шум (арт-дирекция ROCH), салют остался для больших моментов: big=true. */
+function celebrate(x,y,big){
   playDing();
   if(x==null){x=innerWidth/2;y=innerHeight/2;}
+  if(window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  const fx=document.createElement('div');fx.className='okfx';fx.style.left=x+'px';fx.style.top=y+'px';
+  fx.innerHTML='<i></i><i></i><i></i><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="23"/><path d="M15 27l7 7 15-15"/></svg>';
+  document.body.appendChild(fx);setTimeout(()=>fx.remove(),1700);
+  if(!big)return;
   const cols=['#f472b6','#a78bfa','#38bdf8','#34d399','#fbbf24','#fb7185'];
   for(let i=0;i<20;i++){const d=document.createElement('div');d.className='confetti';
     d.style.left=x+'px';d.style.top=y+'px';d.style.background=cols[i%cols.length];
@@ -2912,8 +3289,8 @@ function render(){
   {const ti=document.querySelector('.tab[data-v="intake"]');if(ti)ti.style.display=isTeam?'':'none';
    const mi=$('#mnavIntake');if(mi){if(isTeam){mi.dataset.mv='intake';
        const n=(typeof intakeRows!=='undefined'&&intakeRows)?intakeRows.length:0;
-       mi.innerHTML='<i>'+icon('inbox')+(n?'<b class="mbadge">'+(n>9?'9+':n)+'</b>':'')+'</i><span>Приёмка</span>';}
-     else{mi.dataset.mv='backlog';mi.innerHTML='<i>'+icon('idea')+'</i><span>Бэклог</span>';}}
+       mi.innerHTML='<i>'+icon3('inbox')+(n?'<b class="mbadge">'+(n>9?'9+':n)+'</b>':'')+'</i><span>Приёмка</span>';}
+     else{mi.dataset.mv='backlog';mi.innerHTML='<i>'+icon3('idea')+'</i><span>Бэклог</span>';}}
    if(!isTeam&&view==='intake'){setView('now');return;}}
   const _T=S.tasks.filter(t=>!t.isMilestone);
   $('#sbStats').textContent=`${_T.length} задач · ${_T.filter(t=>t.status==='done').length} готово · ${S.tasks.filter(isOverdue).length} просроч.`;
@@ -2933,6 +3310,7 @@ function render(){
   else if(view==='backlog')renderBacklog();
   else if(view==='team')renderTeam();
   else if(view==='intake')renderIntake();
+  else if(view==='crm')renderCrm();
   else if(view==='mprojects')renderMProjects();
   if(typeof tickKpis==='function')tickKpis();
   applyPingpong();
@@ -2961,10 +3339,20 @@ function applyPingpong(root){
     el.style.setProperty('--ppt',Math.min(14,Math.max(5,ov/16))+'s');
   });}catch(e){}
 }
+/* подсветка нижнего нава: экраны проекта живут под «Проекты». Зовётся и при загрузке — раньше
+   первый экран открывался без подсвеченной вкладки, пока человек не тапнул */
+function syncMnav(v){const mvMap={board:'mprojects',gantt:'mprojects',week:'mprojects',backlog:'mprojects',team:'mprojects',all:'mprojects',crm:'mprojects'};
+  const hv=mvMap[v]||v;$$('.mnav [data-mv]').forEach(b=>b.classList.toggle('on',b.dataset.mv===hv));}
 function setView(v){view=v;if(typeof track==='function')track('view:'+v);
-  {const mvMap={board:'mprojects',gantt:'mprojects',week:'mprojects',backlog:'mprojects',team:'mprojects',all:'mprojects'};
-   const hv=mvMap[v]||v;$$('.mnav [data-mv]').forEach(b=>b.classList.toggle('on',b.dataset.mv===hv));}if(v==='gantt')ganttNeedsScroll=true;$$('.tab').forEach(t=>t.classList.toggle('active',t.dataset.v===v));
-  $$('.view').forEach(el=>el.classList.toggle('active',el.id==='v-'+v));render();}
+  syncMnav(v);if(v==='gantt')ganttNeedsScroll=true;$$('.tab').forEach(t=>t.classList.toggle('active',t.dataset.v===v));
+  $$('.view').forEach(el=>el.classList.toggle('active',el.id==='v-'+v));render();movePlate();}
+/* плашка вкладок (рецепт ДВИЖЕНИЕ, стили .tplate): одна подложка едет к выбранной, а не каждая вкладка красится сама */
+function movePlate(instant){const box=$('#tabs');if(!box)return;let pl=box.querySelector('.tplate');
+  if(!pl){pl=document.createElement('span');pl.className='tplate';pl.setAttribute('aria-hidden','true');box.prepend(pl);instant=true;}
+  const a=box.querySelector('.tab.active');if(!a||!a.offsetWidth){pl.style.opacity='0';return;}
+  if(instant)box.classList.add('noanim');
+  pl.style.opacity='1';pl.style.width=a.offsetWidth+'px';pl.style.transform='translateX('+a.offsetLeft+'px)';
+  if(instant){void pl.offsetWidth;box.classList.remove('noanim');}}
 
 /* ============================ СЕЙЧАС — MISSION CONTROL ============================ */
 let focus={tid:null,pid:null,start:0,iv:null,paused:false,acc:0};
@@ -3431,7 +3819,7 @@ function renderNow(){
     </div>`;
   }else{const bare=!S.tasks.some(t=>!t.isMilestone);
     const allDone=!bare&&!S.tasks.some(t=>!t.isMilestone&&t.status!=='done');
-    hero=`<div class="now-hero done"><div class="nh-label">${bare?'Начнём?':'Чисто'}</div><div class="nh-title">${bare?'Не знаешь, с чего начать — норм':allDone?'Всё закрыто — красавчик':'Активных задач на тебе нет'}</div>
+    hero=`<div class="now-hero ${bare?'start':'done'}"><div class="nh-label">${bare?'Начнём?':'Чисто'}</div><div class="nh-title">${bare?'Не знаешь, с чего начать — норм':allDone?'Всё закрыто — красавчик':'Активных задач на тебе нет'}</div>
       <div class="nh-meta">${bare?'<button class="btn primary" id="npPlan" style="margin-top:4px">'+icon('sparkles',14)+' Вандо, спланируй за меня</button>':allDone?'<span class="ichip">создай следующую задачу или запланируй новую цель</span>':'<span class="ichip">создай задачу строкой сверху или ⌘K</span>'}</div></div>`;}
   const energy=localStorage.getItem('cockpit_energy_'+todayISO())||'';
   if(window.innerWidth<=680){renderNowMobile({el,greet,next,upNext,mine,pct,prog,ov,vel,back,ins,running,energy:localStorage.getItem('cockpit_energy_'+todayISO())||''});return;}
@@ -3471,6 +3859,7 @@ function renderNow(){
   $$('#now [data-fs]').forEach(b=>b.onclick=()=>{const a=b.dataset.fs;
     if(a==='skip'){localStorage.setItem('cockpit_fs_done','1');render();}
     else if(a==='tg'){if(!cloudOn)toast('Сначала войди в облако','🤖');else openTgGate();}
+    else if(a==='invite')inviteFromChecklist();
     else if(a==='add'){if(window.innerWidth<=680)openCap();else{const c=$('#cmd');if(c){c.focus();toast('Пиши: «созвон завтра 2ч важно» — разберу сам','⚡');}}}});
   {const np=$('#npPlan');if(np)np.onclick=openAiPlan;}
   const cb=$('#claudeBtn');if(cb)cb.onclick=()=>fetchClaudeInsight(cb);
@@ -3678,7 +4067,7 @@ function renderNowMobile(ctx){
         <button class="mh-done" data-done="${next.id}">✓ Готово</button>
       </div></div>`
     :(!S.tasks.some(t=>!t.isMilestone)
-      ?`<div class="mhero done"><div class="mh-label">Начнём?</div><div class="mh-title">Вандо спланирует за тебя</div><div class="mh-meta">опиши цель голосом — получи готовый план</div><button class="mh-done" id="npPlan" style="margin-top:10px">Спланируй за меня</button></div>`
+      ?`<div class="mhero start"><div class="mh-label">Начнём?</div><div class="mh-title">Вандо спланирует за тебя</div><div class="mh-meta">опиши цель голосом — получи готовый план</div><button class="mh-done" id="npPlan" style="margin-top:10px">Спланируй за меня</button></div>`
       :(S.tasks.some(t=>!t.isMilestone&&t.status!=='done')
         ?`<div class="mhero done"><div class="mh-label">Чисто</div><div class="mh-title">На тебе задач нет</div><div class="mh-meta">жми ➕ и создай первую</div></div>`
         :`<div class="mhero done"><div class="mh-label">Чисто</div><div class="mh-title">Всё закрыто — красавчик</div><div class="mh-meta">жми ➕ и создай следующую</div></div>`));
@@ -3712,6 +4101,7 @@ function renderNowMobile(ctx){
   $$('#now [data-fs]').forEach(b=>b.onclick=()=>{const a=b.dataset.fs;
     if(a==='skip'){localStorage.setItem('cockpit_fs_done','1');render();}
     else if(a==='tg'){if(!cloudOn)toast('Сначала войди в облако','🤖');else openTgGate();}
+    else if(a==='invite')inviteFromChecklist();
     else if(a==='add'){openCap();}});
   $$('#now .mrow[data-open]').forEach(e=>{e.onclick=()=>openX(e.dataset.pid,e.dataset.open);attachSwipe(e,e.dataset.open,e.dataset.pid);});
   const fs=$('#focusStart');if(fs&&next)fs.onclick=()=>{if(nextPid!==S.id){switchProject(nextPid);setTimeout(()=>{startFocus(next.id);setView('now');},150);}else startFocus(next.id);};
@@ -3730,18 +4120,27 @@ function renderNowMobile(ctx){
   clearTimeout(_nowSeenT);_nowSeenT=setTimeout(()=>{try{localStorage.setItem('cockpit_seen_'+S.id,Date.now());}catch(e){}},4200);
 }
 // проактивная актуализация просрочек прямо с «Сейчас»
+function inviteFromChecklist(){
+  if(!cloudOn){toast('Позвать партнёра можно после входа в облако','🤝');return;}
+  setView('team');
+  setTimeout(()=>{const i=$('#accTeamEmail');if(i){i.scrollIntoView({block:'center',behavior:'smooth'});i.focus();}},260);
+}
 /* Чеклист новичка: 3 шага до «ага-момента», гаснет сам. Понятность > фичи. */
 function firstStepsCard(){
   if(localStorage.getItem('cockpit_fs_done'))return '';
   const T=S.tasks.filter(t=>!t.isMilestone);
-  const s1=T.some(t=>t.status==='done');                                   // закрыл задачу
+  /* Основатель (видит все проекты) зовёт партнёра здесь, а не в мастере на первой минуте;
+     участнику команды звать некого — ему «закрой первую», шаг до «ага-момента». */
+  const founder=iSeeAllProjects();
+  const s1=founder?S.members.some(m=>m.email&&m.email.toLowerCase()!==(myEmail||'')) // позвал партнёра
+                  :T.some(t=>t.status==='done');                                     // закрыл задачу
   const s2=T.some(t=>t.createdTs&&t.createdTs>Date.now()-30*dayMs)&&T.length>1; // добавил свою
   const s3=tgLinked;                                                        // подключил TG
   if(s1&&s2&&s3){localStorage.setItem('cockpit_fs_done','1');return '';}
   const row=(ok,txt,act)=>`<div class="fsrow${ok?' ok':''}" ${act&&!ok?`data-fs="${act}"`:''}><span class="fsc">${ok?icon('check',13):''}</span><span>${txt}</span></div>`;
   return `<div class="fscard"><div class="fst">Три шага — и WANDO твой</div>
     ${row(s2,'Добавь задачу своими словами — «＋» или строка сверху','add')}
-    ${row(s1,'Закрой первую — кнопкой «Готово» у героя','')}
+    ${founder?row(s1,'Позови партнёра — увидит проект и задачи сразу','invite'):row(s1,'Закрой первую — кнопкой «Готово» у героя','')}
     ${row(s3,'Подключи Telegram — задачи голосом из кармана','tg')}
     <button class="fsx" data-fs="skip" title="Скрыть">✕</button></div>`;
 }
@@ -3751,7 +4150,7 @@ function firstStepsCard(){
    Раньше цепочка была ИЛИ: одна просроченная задача (то есть всегда) съедала слот,
    и денежный сигнал не показывался в проде никогда. Теперь деньги идут первыми,
    совет по гигиене плана остаётся под ними. */
-function assistCard(){return cashPulse()+(selfHealCard()||mentorCard());}
+function assistCard(){return cashPulse()+crmNowCard()+(selfHealCard()||mentorCard());}
 function selfHealCard(){
   const ov=S.tasks.filter(isOverdue);if(!ov.length)return '';
   const names=ov.slice(0,3).map(t=>t.title).join(' · ');
@@ -3978,7 +4377,7 @@ function autoSchedule(){
   const seen={},temp={},order=[];
   (function(){const prW={urgent:0,high:1,med:2,low:3};
     const visit=t=>{if(seen[t.id]||temp[t.id])return;temp[t.id]=1;(t.deps||[]).forEach(d=>{if(byId[d])visit(byId[d]);});temp[t.id]=0;seen[t.id]=1;order.push(t);};
-    [...active].sort((a,b)=>(prW[a.priority]??2)-(prW[b.priority]??2)).forEach(visit);})();
+    [...active].sort((a,b)=>(prW[a.priority]!=null?prW[a.priority]:2)-(prW[b.priority]!=null?prW[b.priority]:2)).forEach(visit);})();
   const sched=order.filter(t=>active.includes(t));
   const endMs={};S.tasks.forEach(t=>{if(t.end)endMs[t.id]=parseD(t.end);});
   const today=parseD(todayISO());const ptr={};
@@ -4030,7 +4429,7 @@ function computeRebalance(){
     if(!over)break;
     let to=null,best=1e9;S.members.forEach(m=>{if(m.id===over)return;if(cap[m.id]-load[m.id]>0&&load[m.id]<best){best=load[m.id];to=m.id;}});
     if(!to)break;
-    const cand=T.filter(t=>t.assigneeId===over&&!moves.find(v=>v.taskId===t.id)).sort((a,b)=>(pr[a.priority]??1)-(pr[b.priority]??1))[0];
+    const cand=T.filter(t=>t.assigneeId===over&&!moves.find(v=>v.taskId===t.id)).sort((a,b)=>(pr[a.priority]!=null?pr[a.priority]:1)-(pr[b.priority]!=null?pr[b.priority]:1))[0];
     if(!cand)break;
     moves.push({taskId:cand.id,title:cand.title,fromId:over,toId:to,est:cand.estimate||0});
     load[over]-=cand.estimate||0;load[to]+=cand.estimate||0;
@@ -4216,7 +4615,7 @@ $('#setScrim').onclick=e=>{if(e.target===$('#setScrim'))closeSettings();};
 function settingsPhoto(m){const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.onchange=()=>{const f=inp.files[0];if(f)cropPhoto(f,d=>{m.photo=d;save();render();renderSettings();});};inp.click();}
 function renderSettings(){
   const me=member(myId());if(!me){toast('Профиль не найден','⚙️');return;}
-  const theme=localStorage.getItem('cockpit_theme')||'dark';
+  const theme=themeNow();
   const sound=localStorage.getItem('cockpit_sound')!=='0';
   const av=me.photo?`<span class="set-bigav" style="background-image:url('${me.photo}')"></span>`:`<span class="set-bigav" style="background:${me.color}">${initials(me.name||'Я')}</span>`;
   $('#setModal').innerHTML=`
@@ -4512,7 +4911,7 @@ let intakeRows=[], intakeReady=true, intakeWorkspace='default';
 function intakePending(){return intakeRows.length;}
 function updateIntakeBadge(){const c=$('#cntIntake');if(c){c.textContent=intakeRows.length;c.style.display=intakeRows.length?'':'none';}
   const mi=$('#mnavIntake');if(mi&&mi.dataset.mv==='intake'){const n=intakeRows.length;
-    mi.innerHTML='<i>'+icon('inbox')+(n?'<b class="mbadge">'+(n>9?'9+':n)+'</b>':'')+'</i><span>Приёмка</span>';}
+    mi.innerHTML='<i>'+icon3('inbox')+(n?'<b class="mbadge">'+(n>9?'9+':n)+'</b>':'')+'</i><span>Приёмка</span>';}
   updateInboxBadge();}
 async function loadIntake(){
   if(!cloudOn||!sb){intakeRows=[];updateIntakeBadge();return;}
@@ -4671,6 +5070,7 @@ function renderIntake(){
             <div class="inomore"><button class="btn" data-more="${r.id}" title="Ещё действия">⋯</button>
               <div class="inomenu" data-menu="${r.id}">
                 <button data-edit="${r.id}">✎ Править текст</button>
+                <button data-crm="${r.id}">→ В клиенты</button>
                 <button data-bl="${r.id}">В бэклог идей</button>
                 <button data-rej="${r.id}" class="dng">✕ Отклонить</button>
               </div></div>
@@ -4686,6 +5086,7 @@ function renderIntake(){
   $$('#intake [data-acc]').forEach(b=>b.onclick=()=>acceptIntake(b.dataset.acc,false));
   $$('#intake [data-aisplit]').forEach(b=>b.onclick=()=>aiSplitIntake(b.dataset.aisplit,b));
   $$('#intake [data-bl]').forEach(b=>b.onclick=()=>acceptIntake(b.dataset.bl,true));
+  $$('#intake [data-crm]').forEach(b=>b.onclick=()=>intakeToClient(b.dataset.crm));
   $$('#intake [data-edit]').forEach(b=>b.onclick=()=>editIntake(b.dataset.edit));
   $$('#intake [data-rej]').forEach(b=>b.onclick=()=>{decideIntake(b.dataset.rej,'rejected');toast('Отклонено','✕');});
   {const ba=$('#intakeAll');if(ba)ba.onclick=()=>{const ready=intakeRows.filter(r=>projectMatch(r.target_project));
@@ -4744,7 +5145,7 @@ function closeTgGate(){stopTgPoll();$('#tgScrim').classList.remove('show');}
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState!=='visible')return;
   const sc=$('#tgScrim');if(!sc||!sc.classList.contains('show')||tgLinked)return;
-  checkTgLink().then(ok=>{if(ok){stopTgPoll();renderTgGate('done');try{celebrate();}catch(_){}setTimeout(()=>{closeTgGate();render();},1600);}});
+  checkTgLink().then(ok=>{if(ok){stopTgPoll();renderTgGate('done');try{celebrate(null,null,true);}catch(_){}setTimeout(()=>{closeTgGate();render();},1600);}});
 });
 async function startTgBind(){
   if(_tgBinding)return;_tgBinding=true;
@@ -4761,7 +5162,7 @@ async function startTgBind(){
     let tries=0;stopTgPoll();
     _tgPoll=setInterval(async()=>{
       tries++;
-      if(await checkTgLink()){stopTgPoll();renderTgGate('done');celebrate();
+      if(await checkTgLink()){stopTgPoll();renderTgGate('done');celebrate(null,null,true);
         setTimeout(()=>{closeTgGate();render();},1600);}
       else if(tries>40){stopTgPoll();renderTgGate('timeout');}
     },2500);
@@ -6714,6 +7115,7 @@ document.addEventListener('keydown',e=>{
     if($('#present').classList.contains('show'))return closePresent();
     if($('#palScrim').classList.contains('show'))return closePalette();
     if($('#pickScrim').classList.contains('show'))closePick();
+    else if($('#crmScrim').classList.contains('show'))closeClient();
     else if($('#histScrim').classList.contains('show'))closeHistory();
     else if($('#hkScrim').classList.contains('show'))closeHotkeys();
     else if($('#lpScrim').classList.contains('show'))closeLP();
@@ -6975,8 +7377,10 @@ $('#bannerHide').onclick=()=>{bannerDismissed=true;$('#banner').classList.add('h
 $('#bannerFresh').onclick=()=>startReal();
 $('#btnHelp').onclick=()=>openOnboarding(0);
 {const u=$('#btnUndo');if(u)u.onclick=()=>undo();const r=$('#btnRedo');if(r)r.onclick=()=>redo();const h=$('#btnHist');if(h)h.onclick=()=>openHistory();}
-function applyTheme(){const t=localStorage.getItem('cockpit_theme')||'dark';document.body.classList.toggle('light',t==='light');const b=$('#btnTheme');if(b)b.innerHTML=t==='light'?icon('moon'):icon('sun');}
-$('#btnTheme').onclick=()=>{const cur=localStorage.getItem('cockpit_theme')||'dark';localStorage.setItem('cockpit_theme',cur==='light'?'dark':'light');applyTheme();toast(cur==='light'?'Тёмная тема':'Светлая тема','🎨');};
+function themeNow(){return localStorage.getItem('cockpit_theme')||(window.matchMedia&&matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');}
+function applyTheme(){const t=themeNow();document.body.classList.toggle('light',t==='light');const b=$('#btnTheme');if(b)b.innerHTML=t==='light'?icon('moon'):icon('sun');}
+if(window.matchMedia)matchMedia('(prefers-color-scheme: light)').addEventListener('change',()=>{if(!localStorage.getItem('cockpit_theme'))applyTheme();});
+$('#btnTheme').onclick=()=>{const cur=themeNow();localStorage.setItem('cockpit_theme',cur==='light'?'dark':'light');applyTheme();toast(cur==='light'?'Тёмная тема':'Светлая тема','🎨');};
 
 function startFresh(){closeOb();openNewProject();}
 
@@ -7118,51 +7522,60 @@ let wizStep=0, wizData={projName:'',tpl:'mvp',invites:[]};
 function openSetupWizard(){wizStep=0;wizData={projName:'',tpl:'mvp',invites:[]};renderWiz();$('#wizScrim').classList.add('show');}
 function closeWiz(){$('#wizScrim').classList.remove('show');localStorage.setItem('cockpit_welcomed','1');/* основатель прошёл мастер — приветствие присоединившегося ему не нужно */}
 
-/* ==== Приветствие ПРИСОЕДИНИВШЕГОСЯ: партнёр входит в готовый воркспейс и попадал
-       на доску холодным. Даём тёплую ориентацию за 30 секунд — один принцип + три
-       движения — на языке «хочу», а не «должен». Финал — высадка на «Сейчас». ==== */
-let welStep=0;
-function openJoinWelcome(){welStep=0;renderWel();$('#welScrim').classList.add('show');}
-function closeJoinWelcome(landOnNow){
-  localStorage.setItem('cockpit_welcomed','1');
-  $('#welScrim').classList.remove('show');
-  if(landOnNow){setView('now');setTimeout(()=>{const h=document.querySelector('.now-hero,.mhero');if(h){h.classList.add('justland');setTimeout(()=>h.classList.remove('justland'),1400);}},220);
-    toast('Твой следующий шаг — прямо здесь. Жми «Фокус» 👆','⚡');}
+/* ==== ПЕРВЫЙ ВХОД — один экран: имя → «Сейчас» ====
+   Было пять модалок до продукта: анкета (фото, цвет, роль), мастер из трёх шагов
+   (проект и шаблон → партнёр → Telegram) и следом гейт Telegram. Человек вводил код
+   из письма и ещё минуту отвечал на вопросы, не видя продукта. Теперь — только имя:
+   проект уже есть (пустой «Мой проект» заводится при загрузке), партнёр и Telegram —
+   строки чеклиста на «Сейчас», шаблоны — в «Новый проект». Два первых запуска
+   по-прежнему разные (канон #418), но различает их само «Сейчас»: в пустом проекте
+   герой — «Вандо спланирует за тебя», в проекте команды — твой следующий шаг. */
+function firstRun(){
+  if(!localStorage.getItem('cockpit_profile_done')){openProfileSetup();return true;}
+  if(!localStorage.getItem('cockpit_onboarded')||!localStorage.getItem('cockpit_welcomed')){quickStart();return true;}
+  return false;
 }
-function renderWel(){
-  const dots=`<div class="wiz-steps">${[0,1].map(i=>`<span class="${i<welStep?'done':i===welStep?'on':''}"></span>`).join('')}</div>`;
-  const chip=(t,strong)=>`<span style="display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border-radius:999px;border:1px solid var(--line);font-size:12.5px;font-weight:${strong?700:600};${strong?'background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.4);color:var(--acc2)':'color:var(--mut)'}">${t}</span>`;
-  const arrow=`<span style="color:var(--mut2);font-size:15px">→</span>`;
-  let body;
-  if(welStep===0){
-    body=`<div class="ob-art">${logoMarkSVG(40)}</div><div class="ob-body">
-      <h2>Добро пожаловать в команду 🚀</h2>
-      <p>WANDO — это не список того, что ты <b>должен</b>. Это то, что ты <b>хочешь</b> сделать, и система, которая доводит до конца. Тебе не нужно ничего настраивать — проекты команды уже здесь.</p>
-      <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:18px">
-        ${chip('Сейчас')} ${arrow} ${chip('твой следующий шаг',1)} ${arrow} ${chip('Готово ✓')}
-      </div>
-      <p style="margin-top:14px;font-size:13px">Один взгляд на «Сейчас» — и ты знаешь, что делать. Без разбора завалов и поиска.</p>
-    </div>
-    <div class="ob-foot">${dots}<button class="wiz-skip" id="welSkip">Пропустить</button><div class="spacer"></div><button class="btn primary" id="welNext">Дальше →</button></div>`;
-  }else{
-    body=`<div class="ob-art" style="font-size:44px">⚡</div><div class="ob-body">
-      <h2>Три движения — и ты в потоке</h2>
-      <ul class="ob-list">
-        <li><span class="k">🎯</span><span>Открывай <b>«Сейчас»</b> — там всегда твой следующий шаг. Жми «Фокус» и делай.</span></li>
-        <li><span class="k">⌘K</span><span>Пиши задачу словами — строкой сверху или <b>⌘K</b>. «созвон завтра 2ч важно» — Вандо разберёт сам.</span></li>
-        <li><span class="k">✈️</span><span>Подключи <b>Telegram</b> — пульт в кармане: задачи голосом, бриф по утрам.</span></li>
-      </ul>
-    </div>
-    <div class="ob-foot">${dots}<button class="wiz-skip" id="welBack">← Назад</button><div class="spacer"></div><button class="btn primary" id="welGo">Поехали →</button></div>`;
-  }
-  $('#welModal').innerHTML=body;
-  if(welStep===0){
-    $('#welNext').onclick=()=>{welStep=1;renderWel();};
-    $('#welSkip').onclick=()=>closeJoinWelcome(true);
-  }else{
-    $('#welBack').onclick=()=>{welStep=0;renderWel();};
-    $('#welGo').onclick=()=>closeJoinWelcome(true);
-  }
+function quickStart(){
+  localStorage.setItem('cockpit_onboarded','1');localStorage.setItem('cockpit_welcomed','1');
+  // Telegram в первую минуту уже стоит в чеклисте — гейт подождёт до следующего визита;
+  // «Итог дня» в день знакомства подводить нечему — бриф тоже с завтра
+  localStorage.setItem('cockpit_tg_skip',todayISO());localStorage.setItem('cockpit_brief_date',todayISO());
+  // в пустом проекте герой сам говорит «опиши цель» — тост повторил бы его слово в слово
+  const empty=!S.tasks.some(t=>!t.isMilestone);
+  landOnNow(empty?'':'Твой следующий шаг — прямо здесь. Жми «Фокус» 👆');
+}
+/* локальный вход (?local…, см. LOCAL_DEV) — вторая половина: данные и первый вход
+   поверх готового приложения, тем же кодом firstRun, что после настоящего входа */
+function localDevBoot(){
+  const {mode,fresh}=LOCAL_DEV;
+  history.replaceState(null,'',location.pathname+'?local'); // перезагрузка больше не стирает состояние
+  if(mode==='new'){myEmail='alex@local.test';firstRun();return;}
+  if(mode==='demo'&&!fresh)return; // уже засеяно — продолжаем с того места
+  const ph=S.id;loadDemo();
+  const pd=loadProj(ph);
+  if(ph!==S.id&&pd&&!(pd.tasks||[]).length){reg.list=reg.list.filter(x=>x.id!==ph);localStorage.removeItem(pkey(ph));saveReg();}
+  if(!crmLive().length){ // демо-клиенты — выдуманные люди и компании, никаких реальных данных
+    const D=k=>fmtD(parseD(todayISO())+k*dayMs),now=Date.now();
+    [['Ника Орлова','Студия «Лён»','offer',4800,{tg:'@lyon_studio_demo'},'Созвон по КП',1],
+     ['Марк Белов','Кофейни «Зерно»','prepay',12000,{phone:'+995 555 000 111'},'Выставить счёт на предоплату',-1],
+     ['Ева Соколова','Школа «Кодекс»','talk',3000,{email:'eva@codex.example'},'Отправить кейсы',2],
+     ['Тимур Гаспарян','Отель «Маяк»','work',22000,{tg:'@mayak_demo'},'Показать первый экран',4],
+     ['Лия Кравец','Пекарня «Утро»','new',1500,{},'Узнать бюджет',0]].forEach(([n,co,st,a,ct,nx,dd],i)=>
+      CRM.push({id:uid('c'),name:n,company:co,stage:st,amount:a,contact:ct,next:{text:nx,date:D(dd)},
+        notes:[{ts:now-(i+1)*86400000,author:'Roch',text:'Первый контакт — пришли по рекомендации'}],createdTs:now-i*86400000,updatedTs:now-i*3600000,stageTs:now-i*86400000}));
+    crmSaveLocal();}
+  if(mode==='join'){myEmail='sam@local.test';
+    S.members.push({id:uid('m'),name:'Новый участник',role:'—',color:COLORS[5%COLORS.length],capacity:30,points:1000,email:myEmail});save();
+    localStorage.setItem('cockpit_onboarded','1'); // проекты команды уже есть — как hasReal после входа
+    firstRun();return;}
+  ['cockpit_onboarded','cockpit_profile_done','cockpit_welcomed'].forEach(k=>localStorage.setItem(k,'1'));
+  localStorage.setItem('cockpit_brief_date',todayISO());localStorage.setItem('cockpit_me',S.members[0].id);
+  setView('now');
+}
+function landOnNow(msg){
+  setView('now');
+  setTimeout(()=>{const h=document.querySelector('.now-hero,.mhero');if(h){h.classList.add('justland');setTimeout(()=>h.classList.remove('justland'),1400);}},220);
+  if(msg)toast(msg,'⚡');
 }
 function renderWiz(){
   const dots=`<div class="wiz-steps">${[0,1,2].map(i=>`<span class="${i<wizStep?'done':i===wizStep?'on':''}"></span>`).join('')}</div>`;
@@ -7724,10 +8137,13 @@ function renderMProjects(){
   let html='';tops.forEach(t=>{html+=row(t,false);projs.filter(k=>k.meta.parentId===t.meta.id).forEach(k=>html+=row(k,true));});
   el.innerHTML=`<div class="secttl">📁 Проекты <span style="margin-left:auto;text-transform:none;letter-spacing:0;font-weight:500;color:var(--mut2)">${projs.length}</span></div>
     <div class="mplist">${html}</div>
+    ${(()=>{const sm=crmSums();return `<button class="mpcrm" id="mpCrm"><span class="pe">${icon('briefcase',20)}</span><div class="pm"><div class="pn2">Клиенты</div>
+      <div class="ps2">${sm.open?`${sm.open} ${plural(sm.open,'сделка','сделки','сделок')} · ${fmtMoney(sm.pipe)} в воронке${sm.late?` · <b style="color:var(--bad)">${sm.late} ${plural(sm.late,'ждёт','ждут','ждут')} шага</b>`:''}`:'сделки, следующий шаг, контакты'}</div></div><span class="arr">›</span></button>`;})()}
     <button class="btn" style="width:100%;margin-top:14px;justify-content:center" id="mpAll">Пульс всей компании</button>
     <button class="btn" style="width:100%;margin-top:8px;justify-content:center" id="mpRep">Отчёт недели</button>
     ${isTeam?'<button class="btn" style="width:100%;margin-top:8px;justify-content:center" id="mpNew">＋ Новый проект</button>':''}`;
   $$('#mprojects .mprow').forEach(r=>r.onclick=()=>{const id=r.dataset.p;if(id!==S.id)switchProject(id);else setView('board');});
+  const mc=$('#mpCrm');if(mc)mc.onclick=()=>setView('crm');
   const a=$('#mpAll');if(a)a.onclick=()=>setView('all');
   const rp=$('#mpRep');if(rp)rp.onclick=openEmpireRep;
   const n=$('#mpNew');if(n)n.onclick=openNewProject;
@@ -7905,7 +8321,7 @@ async function cloudInit(){
     else if(!cloudOn)showGate();
   }catch(e){if(!cloudOn)showGate();}
 }
-async function onLoggedIn(){cloudOn=true;closeAuth();hideGate();updateCloudBadge();await cloudSync();subscribeRealtime();loadIntake();loadAccess();
+async function onLoggedIn(){cloudOn=true;closeAuth();hideGate();updateCloudBadge();await cloudSync();subscribeRealtime();loadIntake();loadAccess();crmLoad();
   if(tmaInitData())tmaAutoLink(); // вошёл почтой в Mini App → связываем Telegram на будущее
   // есть настоящие проекты в облаке → человек онбоожен ПО ОПРЕДЕЛЕНИЮ
   // (флаги localStorage теряются на новом девайсе/в TMA — не мучаем мастером)
@@ -7929,9 +8345,7 @@ async function onLoggedIn(){cloudOn=true;closeAuth();hideGate();updateCloudBadge
         localStorage.setItem('cockpit_profile',JSON.stringify(v));
         localStorage.setItem('cockpit_profile_done','1');localStorage.setItem('cockpit_welcomed','1');/* профиль уже в облаке = не новичок */save();render();}
     }catch(e){/* нет строки — покажем анкету один раз */}}
-  if(!localStorage.getItem('cockpit_profile_done'))openProfileSetup();
-  else if(!localStorage.getItem('cockpit_onboarded'))openSetupWizard();
-  else if(hasReal&&!localStorage.getItem('cockpit_welcomed'))openJoinWelcome(); // присоединившийся партнёр — тёплая ориентация
+  if(firstRun()){/* первый вход: имя → «Сейчас», бриф подождёт до завтра */}
   else if(!window._tmaFirst&&!tmaInitData()&&localStorage.getItem('cockpit_brief_date')!==todayISO())openBrief();
   /* в Mini App бриф авто-НЕ всплывает: модалка на открытии мешает (и показу клиента) — только по кнопке */
   setTimeout(maybeTgGate,2200);
@@ -7945,53 +8359,54 @@ async function onLoggedIn(){cloudOn=true;closeAuth();hideGate();updateCloudBadge
 /* ---- профиль при первом входе ---- */
 let profileDraft=null;
 function cropPhoto(f,cb){const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const s=160,c=document.createElement('canvas');c.width=s;c.height=s;const ctx=c.getContext('2d');const mn=Math.min(img.width,img.height),sx=(img.width-mn)/2,sy=(img.height-mn)/2;ctx.drawImage(img,sx,sy,mn,mn,0,0,s,s);cb(c.toDataURL('image/jpeg',0.82));};img.src=r.result;};r.readAsDataURL(f);}
-function pickProfilePhoto(){const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.onchange=()=>{const f=inp.files[0];if(f)cropPhoto(f,d=>{profileDraft.photo=d;renderProfileSetup();});};inp.click();}
 function openProfileSetup(){
   const ex=S.members.find(x=>(x.email||'').toLowerCase()===myEmail);
   let saved=null;try{saved=JSON.parse(localStorage.getItem('cockpit_profile'));}catch(e){}
   const gn=n=>(n&&n!=='Я'&&n!=='Новый участник')?n:'';
-  profileDraft={name:gn(ex&&ex.name)||(saved&&saved.name)||'',
-    role:(ex&&ex.role&&ex.role!=='—'?ex.role:'')||(saved&&saved.role)||'',
-    color:(ex&&ex.color)||(saved&&saved.color)||COLORS[1],
+  // имя из почты, если левая часть похожа на имя: anna@… → «Anna»; иначе поле пустое
+  const lp=(myEmail||'').split('@')[0];
+  const guess=/^[a-zа-яё]{2,20}$/i.test(lp)?lp[0].toUpperCase()+lp.slice(1).toLowerCase():'';
+  const free=COLORS.find(c=>!S.members.some(m=>m!==ex&&m.color===c))||COLORS[1];
+  profileDraft={name:gn(ex&&ex.name)||(saved&&saved.name)||guess,
+    color:(ex&&ex.color)||(saved&&saved.color)||free,
     photo:(ex&&ex.photo)||(saved&&saved.photo)||''};
   renderProfileSetup();$('#profileScrim').classList.add('show');
 }
+/* Один вопрос вместо анкеты. Фото, цвет и роль — в «Команде», когда захочется:
+   на первой минуте они только отделяли человека от продукта. */
 function renderProfileSetup(){
   const d=profileDraft;
   $('#profileModal').innerHTML=`
-   <div class="ob-body" style="padding-top:26px;text-align:center">
-     <h2 style="text-align:center">Ваш профиль</h2>
-     <p style="text-align:center">Так вас будут видеть в команде. Настройте один раз — потом можно поменять в разделе «Команда».</p>
-     <div class="mbig edit" id="pfAvatar" style="margin:18px auto 10px;${d.photo?`background-image:url('${d.photo}')`:`background:${d.color}`}">${d.photo?'':(d.name?initials(d.name):'+')}<span class="cam">📷</span></div>
-     <div class="colorrow" id="pfColors" style="justify-content:center;margin-bottom:16px">${COLORS.map(c=>`<span class="cdot ${d.color===c&&!d.photo?'on':''}" data-c="${c}" style="background:${c}"></span>`).join('')}</div>
-     <input class="inp" id="pfName" placeholder="Ваше имя" value="${esc(d.name)}" style="text-align:center;font-size:16px;margin-bottom:9px">
-     <input class="inp" id="pfRole" placeholder="Роль (напр. Founder / Tech)" value="${esc(d.role)}" style="text-align:center;margin-bottom:9px">
-     <div class="inp" style="text-align:center;color:var(--mut2)">${esc(myEmail||'—')}</div>
+   <div class="ob-body" style="padding-top:30px;text-align:center">
+     <div class="mbig" id="pfAvatar" style="margin:0 auto 18px;${d.photo?`background-image:url('${d.photo}')`:`background:${d.color}`}">${d.photo?'':esc(initials(d.name.trim()))}</div>
+     <h2 style="text-align:center">Как тебя зовут?</h2>
+     <p style="text-align:center">Так тебя увидит команда. Фото и роль — потом, в «Команде».</p>
+     <input class="inp" id="pfName" placeholder="Имя" maxlength="40" autocomplete="name" enterkeyhint="go" value="${esc(d.name)}" style="text-align:center;font-size:16px;margin-top:18px">
    </div>
-   <div class="ob-foot"><div class="spacer"></div><button class="btn primary" id="pfSave">Сохранить и начать</button></div>`;
-  $('#pfAvatar').onclick=pickProfilePhoto;
-  $$('#pfColors .cdot').forEach(el=>el.onclick=()=>{profileDraft.color=el.dataset.c;profileDraft.photo='';renderProfileSetup();});
-  $('#pfName').oninput=e=>profileDraft.name=e.target.value;
-  $('#pfRole').oninput=e=>profileDraft.role=e.target.value;
+   <div class="ob-foot" style="border-top:0;padding-top:4px"><button class="btn primary" id="pfSave" style="flex:1;justify-content:center;padding:13px 16px;font-size:15px">Начать →</button></div>`;
+  const inp=$('#pfName');
+  inp.oninput=e=>{profileDraft.name=e.target.value;const a=$('#pfAvatar');if(a&&!profileDraft.photo)a.textContent=initials(profileDraft.name.trim());};
+  inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();saveProfileSetup();}};
   $('#pfSave').onclick=saveProfileSetup;
-  setTimeout(()=>{const i=$('#pfName');if(i&&!d.name)i.focus();},60);
+  setTimeout(()=>{inp.focus();inp.select();},60);
 }
 function saveProfileSetup(){
-  const nm=($('#pfName').value||'').trim();if(!nm){toast('Введите имя','⚠');const i=$('#pfName');if(i)i.focus();return;}
-  profileDraft.name=nm;profileDraft.role=($('#pfRole').value||'').trim();
+  if(!$('#profileScrim').classList.contains('show'))return; // Enter + тап, двойной тап — сохраняем один раз
+  const nm=($('#pfName').value||'').trim().slice(0,40);if(!nm){toast('Напиши имя — так тебя увидит команда','⚠');$('#pfName').focus();return;}
+  profileDraft.name=nm;
   let m=S.members.find(x=>(x.email||'').toLowerCase()===myEmail);
   if(!m&&S.members.length===1&&!S.members[0].email)m=S.members[0];
   if(!m){m={id:uid('m'),capacity:30};S.members.push(m);}
-  m.name=nm;m.role=profileDraft.role||'—';m.color=profileDraft.color;if(profileDraft.photo)m.photo=profileDraft.photo;m.email=myEmail||m.email||'';
+  m.name=nm;m.role=m.role||'—';m.color=profileDraft.color;if(profileDraft.photo)m.photo=profileDraft.photo;m.email=myEmail||m.email||'';
   localStorage.setItem('cockpit_me',m.id);
   const prof={name:nm,role:m.role,color:m.color,photo:m.photo||'',email:myEmail};
   localStorage.setItem('cockpit_profile',JSON.stringify(prof));
   localStorage.setItem('cockpit_profile_done','1');
-  if(cloudOn&&sb){try{sb.from('workspace_meta').upsert({k:'profile:'+myEmail,v:prof,updated_at:new Date().toISOString()}).then(()=>{});}catch(e){}}
+  // workspace_id явно: без него строка встаёт в 'main', и у второй компании RLS молча отбивает запись
+  if(cloudOn&&sb){myWorkspaceId().then(ws=>sb.from('workspace_meta').upsert({k:'profile:'+myEmail,v:prof,workspace_id:ws,updated_at:new Date().toISOString()})).catch(()=>{});}
   logAct('🧑','настроил профиль');save();render();
-  $('#profileScrim').classList.remove('show');toast('Профиль сохранён','✅');
-  if(!localStorage.getItem('cockpit_onboarded'))openSetupWizard();
-  else if(!localStorage.getItem('cockpit_welcomed'))openJoinWelcome(); // присоединившийся заполнил профиль → ориентация
+  $('#profileScrim').classList.remove('show');
+  firstRun();
 }
 /* ==== MERGE-СИНК: трёхстороннее слияние вместо last-write-wins ==========
    base = последнее согласованное состояние (cockpit_b_<id>, пишется при
@@ -8390,8 +8805,201 @@ $('#palScrim').onclick=e=>{if(e.target===$('#palScrim'))closePalette();};
     '','Утром бот присылает только ТВОИ задачи. Слово «настройки» боту — если хочешь что-то отключить.'].join('\n');
   navigator.clipboard.writeText(t);toast('Приглашение скопировано — отправь партнёру','✓');};}
 
+/* ============================ КЛИЕНТЫ (CRM) ============================
+   Клиенты фаундера и сделки: воронка на языке «что дальше», следующий шаг с датой,
+   контакты в один тап, шаг → задача с деньгами. Хранение без миграций: локально
+   (cockpit_crm) и в облаке — строка на клиента в workspace_meta (k='crm:<id>'),
+   где RLS уже пускает только участников команды. Строка на клиента, а не один общий
+   список: двое правят разных клиентов — ничего не затирается. Удаление — надгробие
+   {id,deleted} без личных данных: иначе офлайн-копия воскрешала бы удалённого. */
+const CRM_ST=[
+  {k:'new',n:'Новый',c:'#8E8E93'},{k:'talk',n:'Обсуждаем',c:'#64D2FF'},{k:'offer',n:'КП отправлено',c:'#BF5AF2'},
+  {k:'prepay',n:'Предоплата',c:'#FF9F0A'},{k:'work',n:'В работе',c:'#0A84FF'},{k:'done',n:'Сдано',c:'#30D158'},{k:'lost',n:'Потерян',c:'#FF453A'}];
+const CRM_OPEN=['new','talk','offer','prepay','work'];
+const crmSt=k=>CRM_ST.find(s=>s.k===k)||CRM_ST[0];
+let CRM=[];try{CRM=JSON.parse(localStorage.getItem('cockpit_crm'))||[];}catch(e){CRM=[];}
+let crmFilter='open',crmQ='',crmCur=null,_crmT=null;
+const crmLive=()=>CRM.filter(c=>!c.deleted);
+const crmIsOpen=c=>CRM_OPEN.includes(c.stage);
+const crmLate=c=>crmIsOpen(c)&&c.next&&c.next.date&&c.next.date<todayISO();
+function crmSaveLocal(){try{localStorage.setItem('cockpit_crm',JSON.stringify(CRM));}catch(e){}}
+async function crmPush(c){c.updatedTs=Date.now();crmSaveLocal();updateCrmCount();
+  if(!cloudOn||!sb)return;
+  try{const ws=await myWorkspaceId();
+    const {error}=await sb.from('workspace_meta').upsert({k:'crm:'+c.id,v:c,workspace_id:ws,updated_at:new Date().toISOString()});
+    if(error)throw error;}
+  catch(e){toast('Клиент сохранён на устройстве — облако не ответило, повторю при входе','⚠');}}
+async function crmLoad(){if(!cloudOn||!sb)return;
+  try{const {data,error}=await sb.from('workspace_meta').select('k,v').like('k','crm:%');if(error)throw error;
+    const byId={};(data||[]).forEach(r=>{if(r.v&&r.v.id)byId[r.v.id]=r.v;});
+    // по каждому клиенту побеждает свежая правка; то, чего в облаке нет, — догружаем туда
+    CRM.forEach(l=>{const c=byId[l.id];if(!c||(l.updatedTs||0)>(c.updatedTs||0)){byId[l.id]=l;crmPush(l);}});
+    CRM=Object.values(byId);crmSaveLocal();updateCrmCount();if(view==='crm')renderCrm();
+  }catch(e){/* нет сети — работаем с копией на устройстве */}}
+function crmSums(){const L=crmLive(),m30=Date.now()-30*dayMs;let pipe=0,won=0;
+  L.forEach(c=>{const a=+c.amount||0;if(crmIsOpen(c))pipe+=a;else if(c.stage==='done'&&(c.stageTs||0)>m30)won+=a;});
+  return {pipe,won,open:L.filter(crmIsOpen).length,late:L.filter(crmLate).length};}
+function updateCrmCount(){const b=$('#cntCrm');if(!b)return;const n=crmLive().filter(crmLate).length;b.textContent=n;b.style.display=n?'':'none';}
+function crmMoney(n){n=+n||0;return n?fmtMoney(n):'—';}
+function crmDate(d){if(!d)return '';const t=parseD(d),td=parseD(todayISO()),k=Math.round((t-td)/dayMs);
+  return k===0?'сегодня':k===1?'завтра':k===-1?'вчера':k<0?(-k)+' дн назад':new Date(t).toLocaleDateString('ru-RU',{day:'numeric',month:'short'});}
+function crmCard(c){const st=crmSt(c.stage),late=crmLate(c),ct=c.contact||{};
+  return `<div class="crmcard" draggable="true" data-cid="${c.id}" style="--sc:${st.c}">
+    <div class="crm-top"><span class="crm-av">${esc(initials((c.name||'?').trim())||'?')}</span>
+      <div class="crm-nm"><b>${esc(c.name||'Без имени')}</b>${c.company?`<span>${esc(c.company)}</span>`:''}</div></div>
+    <div class="crm-mid"><span class="crm-amt">${crmMoney(c.amount)}</span>${ct.tg||ct.phone||ct.email?`<span class="crm-ct">${ct.tg?icon('send',13):''}${ct.phone?icon('phone',13):''}${ct.email?icon('mail',13):''}</span>`:''}</div>
+    ${c.next&&c.next.text?`<div class="crm-next${late?' late':''}">${icon('target',13)}<span>${esc(c.next.text)}</span>${c.next.date?`<i>${crmDate(c.next.date)}</i>`:''}</div>`:`<div class="crm-next none">${icon('target',13)}<span>Нет следующего шага</span></div>`}
+  </div>`;}
+function renderCrm(){
+  const el=$('#crm');if(!el)return;updateCrmCount();
+  const sm=crmSums(),q=crmQ.trim().toLowerCase(),mob=window.innerWidth<=680;
+  const L=crmLive().filter(c=>!q||[c.name,c.company,c.next&&c.next.text,(c.contact||{}).tg].join(' ').toLowerCase().includes(q));
+  const F=[['open','В работе'],['done','Сданные'],['lost','Потерянные'],['all','Все']];
+  let body='';
+  if(!crmLive().length){
+    body=`<div class="crm-empty">${typeof aico==='function'?aico('inbox'):''}<b>Здесь будут твои клиенты</b>
+      <span>Каждый — со сделкой, следующим шагом и контактом в один тап. Шаг превращается в задачу с деньгами — и не теряется.</span>
+      <button class="btn primary" id="crmFirst">${icon('plus',15)} Первый клиент</button></div>`;
+  }else if(crmFilter==='open'&&!mob){
+    body=`<div class="crm-board">${CRM_OPEN.map(k=>{const st=crmSt(k),cs=L.filter(c=>c.stage===k),sum=cs.reduce((a,c)=>a+(+c.amount||0),0);
+      return `<div class="crm-col" data-st="${k}" style="--sc:${st.c}"><div class="crm-colh"><i></i><em>${st.n}</em><span>${cs.length}</span></div><div class="crm-colsum">${sum?fmtMoney(sum):'&nbsp;'}</div>
+        <div class="crm-drop">${cs.sort((a,b)=>(crmLate(b)-crmLate(a))||((b.updatedTs||0)-(a.updatedTs||0))).map(crmCard).join('')||'<div class="crm-hole">перетащи сюда</div>'}</div></div>`;}).join('')}</div>`;
+  }else{
+    const keys=crmFilter==='open'?CRM_OPEN:crmFilter==='all'?CRM_ST.map(s=>s.k):[crmFilter];
+    body=keys.map(k=>{const cs=L.filter(c=>c.stage===k);if(!cs.length)return '';const st=crmSt(k);
+      return `<div class="crm-grp" style="--sc:${st.c}"><div class="crm-colh"><i></i>${st.n}<span>${cs.length}</span></div>${cs.map(crmCard).join('')}</div>`;}).join('')
+      ||`<div class="crm-hole big">Пусто — здесь появятся клиенты с этапом «${crmFilter==='done'?'Сдано':crmFilter==='lost'?'Потерян':'—'}»</div>`;
+  }
+  el.innerHTML=`${mob?`<button class="crm-back" id="crmBack">‹ Проекты</button>`:''}
+    <div class="dhead crm-head"><h1>Клиенты</h1><span class="sub">сделки, следующий шаг, контакты</span>
+      <button class="btn primary" id="crmAdd">${icon('plus',15)} Клиент</button></div>
+    ${crmLive().length?`<div class="crm-kpis">
+      <div><b>${crmMoney(sm.pipe)}</b><span>в воронке</span></div>
+      <div><b>${crmMoney(sm.won)}</b><span>сдано за 30 дней</span></div>
+      <div><b>${sm.open}</b><span>${plural(sm.open,'открытая сделка','открытые сделки','открытых сделок')}</span></div>
+      <div class="${sm.late?'bad':''}"><b>${sm.late}</b><span>${sm.late?'шаг просрочен':'всё по плану'}</span></div></div>
+    <div class="crm-tools"><input class="inp" id="crmQ" placeholder="Найти клиента, компанию, шаг…" value="${esc(crmQ)}">
+      <div class="crm-seg">${F.map(([k,n])=>`<button class="${crmFilter===k?'on':''}" data-cf="${k}">${n}</button>`).join('')}</div></div>`:''}
+    ${body}`;
+  const ad=$('#crmAdd');if(ad)ad.onclick=()=>crmNew();
+  const fi=$('#crmFirst');if(fi)fi.onclick=()=>crmNew();
+  const bk=$('#crmBack');if(bk)bk.onclick=()=>setView('mprojects');
+  const qi=$('#crmQ');if(qi)qi.oninput=e=>{crmQ=e.target.value;clearTimeout(_crmT);_crmT=setTimeout(()=>{renderCrm();const n=$('#crmQ');if(n){n.focus();n.setSelectionRange(n.value.length,n.value.length);}},180);};
+  $$('#crm [data-cf]').forEach(b=>b.onclick=()=>{crmFilter=b.dataset.cf;renderCrm();});
+  $$('#crm .crmcard').forEach(card=>{card.onclick=()=>openClient(card.dataset.cid);
+    card.ondragstart=e=>{e.dataTransfer.setData('text/plain',card.dataset.cid);card.classList.add('drag');};
+    card.ondragend=()=>card.classList.remove('drag');});
+  $$('#crm .crm-col').forEach(col=>{col.ondragover=e=>{e.preventDefault();col.classList.add('over');};
+    col.ondragleave=()=>col.classList.remove('over');
+    col.ondrop=e=>{e.preventDefault();col.classList.remove('over');const c=CRM.find(x=>x.id===e.dataTransfer.getData('text/plain'));
+      if(c&&c.stage!==col.dataset.st)crmSetStage(c,col.dataset.st);};});
+}
+function crmSetStage(c,k,ev){const was=c.stage;c.stage=k;c.stageTs=Date.now();
+  (c.notes=c.notes||[]).unshift({ts:Date.now(),author:meName(),text:'Этап: '+crmSt(was).n+' → '+crmSt(k).n,sys:1});
+  crmPush(c);haptic(k==='done'?'ok':'sel');
+  if(k==='done'){celebrateAt(ev);toast('Сделка сдана'+(+c.amount?' · '+fmtMoney(+c.amount):''),'🤝');}
+  else if(k==='lost')toast('Отметил как потерянного — останется в архиве','📁');
+  if(view==='crm')renderCrm();if(crmCur===c.id)renderClient();}
+function crmNew(seed){const c=Object.assign({id:uid('c'),name:'',company:'',stage:'new',amount:0,contact:{},next:{text:'',date:''},notes:[],
+  createdTs:Date.now(),updatedTs:Date.now(),stageTs:Date.now(),owner:myEmail||''},seed||{});
+  CRM.unshift(c);crmCur=c.id;c._draft=!seed;renderClient();$('#crmScrim').classList.add('show');
+  setTimeout(()=>{const i=$('#cName');if(i)i.focus();},80);}
+function openClient(id){crmCur=id;renderClient();$('#crmScrim').classList.add('show');}
+function closeClient(){const c=CRM.find(x=>x.id===crmCur);
+  if(c&&c._draft&&!(c.name||'').trim()){CRM=CRM.filter(x=>x!==c);crmSaveLocal();} // пустой черновик не храним
+  else if(c&&c._draft){delete c._draft;crmPush(c);}
+  $('#crmScrim').classList.remove('show');crmCur=null;if(view==='crm')renderCrm();}
+function crmTasks(c){const out=[];reg.list.forEach(p=>{const d=p.id===S.id?S:loadProj(p.id);
+  (d&&d.tasks||[]).forEach(t=>{if(t.clientId===c.id)out.push({pid:p.id,pname:p.name,t});});});return out;}
+function renderClient(){const c=CRM.find(x=>x.id===crmCur);if(!c)return;const st=crmSt(c.stage),ct=c.contact||(c.contact={});
+  const tgU=(ct.tg||'').replace(/^@|^https?:\/\/t\.me\//,'').trim(),tel=(ct.phone||'').replace(/[^\d+]/g,'');
+  const tks=crmTasks(c);
+  $('#crmModal').innerHTML=`<div class="crm-sheet" style="--sc:${st.c}">
+    <div class="crm-sh-head"><span class="crm-av big">${esc(initials((c.name||'?').trim())||'?')}</span>
+      <div style="flex:1;min-width:0"><input class="crm-title" id="cName" placeholder="Имя клиента" value="${esc(c.name)}" maxlength="80">
+        <input class="crm-sub" id="cCompany" placeholder="Компания или проект" value="${esc(c.company||'')}" maxlength="80"></div>
+      <button class="iconbtn" id="cClose" aria-label="Закрыть">${icon('x',16)}</button></div>
+    <div class="crm-stages">${CRM_ST.map(s=>`<button class="${s.k===c.stage?'on':''}" data-cs="${s.k}" style="--sc:${s.c}">${s.n}</button>`).join('')}</div>
+    <div class="crm-grid">
+      <label><span>Сумма сделки, $</span><input class="inp" id="cAmt" inputmode="decimal" placeholder="0" value="${+c.amount||''}"></label>
+      <label><span>Telegram</span><input class="inp" id="cTg" placeholder="@username" value="${esc(ct.tg||'')}"></label>
+      <label><span>Телефон</span><input class="inp" id="cPhone" inputmode="tel" placeholder="+995 …" value="${esc(ct.phone||'')}"></label>
+      <label><span>Почта</span><input class="inp" id="cMail" inputmode="email" placeholder="name@company.com" value="${esc(ct.email||'')}"></label>
+    </div>
+    <div class="crm-acts">
+      ${tgU?`<a class="btn" href="https://t.me/${encodeURIComponent(tgU)}" target="_blank" rel="noopener">${icon('send',15)} Написать</a>`:''}
+      ${tel?`<a class="btn" href="tel:${tel}">${icon('phone',15)} Позвонить</a>`:''}
+      ${ct.email?`<a class="btn" href="mailto:${encodeURIComponent(ct.email)}">${icon('mail',15)} Письмо</a>`:''}
+    </div>
+    <div class="crm-sec">Следующий шаг</div>
+    <div class="crm-nextrow"><input class="inp" id="cNext" placeholder="Что сделать: отправить КП, созвон, выставить счёт…" value="${esc((c.next&&c.next.text)||'')}">
+      <input class="inp" id="cDate" type="date" value="${(c.next&&c.next.date)||''}">
+      <button class="btn" id="cToTask" title="Создать задачу с этим шагом в текущем проекте">${icon('check',15)} В задачи</button></div>
+    ${tks.length?`<div class="crm-sec">Задачи по клиенту · ${tks.length}</div><div class="crm-tasks">${tks.map(x=>`<button data-ct="${x.pid}|${x.t.id}" class="${x.t.status==='done'?'done':''}">${x.t.status==='done'?icon('check',13):icon('target',13)}<span>${esc(x.t.title)}</span><i>${esc(x.pname)}</i></button>`).join('')}</div>`:''}
+    <div class="crm-sec">Заметки</div>
+    <div class="crm-noteadd"><input class="inp" id="cNote" placeholder="Что обсудили, о чём договорились…"><button class="btn" id="cNoteAdd">Добавить</button></div>
+    <div class="crm-notes">${(c.notes||[]).slice(0,30).map(n=>`<div class="${n.sys?'sys':''}"><b>${esc(n.author||'')}</b><span>${esc(n.text)}</span><i>${new Date(n.ts).toLocaleDateString('ru-RU',{day:'numeric',month:'short'})}</i></div>`).join('')||'<div class="sys"><span>Пока пусто — первая заметка появится здесь</span></div>'}</div>
+    <div class="crm-foot"><button class="btn" id="cDel">Удалить</button><div class="spacer"></div><button class="btn primary" id="cDone">Готово</button></div>
+  </div>`;
+  const set=(f)=>{f();delete c._draft;clearTimeout(c._t);c._t=setTimeout(()=>crmPush(c),450);};
+  $('#cName').oninput=e=>set(()=>{c.name=e.target.value;const a=$('#crmModal .crm-av');if(a)a.textContent=initials(c.name.trim())||'?';});
+  $('#cCompany').oninput=e=>set(()=>c.company=e.target.value);
+  $('#cAmt').oninput=e=>set(()=>c.amount=parseFloat(String(e.target.value).replace(/[^\d.,]/g,'').replace(',','.'))||0);
+  $('#cTg').onchange=e=>set(()=>{ct.tg=e.target.value.trim();renderClient();});
+  $('#cPhone').onchange=e=>set(()=>{ct.phone=e.target.value.trim();renderClient();});
+  $('#cMail').onchange=e=>set(()=>{ct.email=e.target.value.trim();renderClient();});
+  $('#cNext').oninput=e=>set(()=>{c.next=c.next||{};c.next.text=e.target.value;});
+  $('#cDate').onchange=e=>set(()=>{c.next=c.next||{};c.next.date=e.target.value;});
+  $$('#crmModal [data-cs]').forEach(b=>b.onclick=e=>{if(!(c.name||'').trim()){toast('Сначала имя клиента','⚠');$('#cName').focus();return;}delete c._draft;crmSetStage(c,b.dataset.cs,e);});
+  const addNote=()=>{const v=($('#cNote').value||'').trim();if(!v)return;(c.notes=c.notes||[]).unshift({ts:Date.now(),author:meName(),text:v});delete c._draft;crmPush(c);renderClient();};
+  $('#cNoteAdd').onclick=addNote;$('#cNote').onkeydown=e=>{if(e.key==='Enter')addNote();};
+  $('#cToTask').onclick=()=>{const tx=(c.next&&c.next.text||'').trim();if(!(c.name||'').trim()){toast('Сначала имя клиента','⚠');return;}
+    if(!tx){toast('Напиши шаг — из него будет задача','⚠');$('#cNext').focus();return;}
+    const dup=crmTasks(c).find(x=>x.t.status!=='done'&&x.t.title===c.name.trim()+': '+tx); // повторный тап — не плодим дубли
+    if(dup){toast('Этот шаг уже в задачах','👌','Открыть',()=>{closeClient();if(dup.pid!==S.id)switchProject(dup.pid);setTimeout(()=>openTask(dup.t.id),dup.pid!==S.id?250:0);});return;}
+    const t=newTask((c.name.trim())+': '+tx);t.clientId=c.id;t.status='todo';t.priority=c.stage==='prepay'||crmLate(c)?'high':'med';
+    if(c.next.date){t.end=c.next.date;if(parseD(t.start)>parseD(t.end))t.start=t.end;}
+    if(+c.amount){t.cash=true;t.amount=+c.amount;}
+    delete c._draft;crmPush(c);save();render();renderClient();haptic('ok');
+    toast('Задача в «'+S.projectName+'»','✅','Открыть',()=>{closeClient();openTask(t.id);});};
+  $$('#crmModal [data-ct]').forEach(b=>b.onclick=()=>{const [pid,tid]=b.dataset.ct.split('|');closeClient();if(pid!==S.id)switchProject(pid);setTimeout(()=>openTask(tid),pid!==S.id?250:0);});
+  $('#cClose').onclick=closeClient;$('#cDone').onclick=closeClient;
+  $('#cDel').onclick=()=>{if(c._draft){closeClient();return;}if(!confirm('Удалить клиента «'+(c.name||'')+'»? Задачи по нему останутся.'))return;
+    const i=CRM.indexOf(c);CRM[i]={id:c.id,deleted:true,updatedTs:Date.now()};crmPush(CRM[i]);$('#crmScrim').classList.remove('show');crmCur=null;
+    if(view==='crm')renderCrm();toast('Клиент удалён','🗑');};
+}
+$('#crmScrim').onclick=e=>{if(e.target===$('#crmScrim'))closeClient();};
+/* «Сейчас»: клиенты, чей шаг сегодня или уже просрочен, — рядом с деньгами: это они и есть.
+   Пусто — карточки нет совсем (контейнер не показывает нули). */
+function crmNowCard(){const today=todayISO();
+  const due=crmLive().filter(c=>crmIsOpen(c)&&c.next&&c.next.text&&c.next.date&&c.next.date<=today).sort((a,b)=>a.next.date<b.next.date?-1:1);
+  if(!due.length)return '';
+  return `<div class="crmnow"><div class="crmnow-h">${icon('briefcase',15)}<b>Клиенты ждут шага</b><span>${due.length}</span></div>
+    ${due.slice(0,3).map(c=>`<button data-crmopen="${c.id}" style="--sc:${crmSt(c.stage).c}"><i></i><b>${esc(c.name)}</b><span>${esc(c.next.text)}</span><em class="${crmLate(c)?'late':''}">${crmDate(c.next.date)}</em></button>`).join('')}
+    ${due.length>3?`<button data-crmall="1" class="more">Все клиенты →</button>`:''}</div>`;}
+document.addEventListener('click',e=>{const o=e.target.closest('[data-crmopen]');if(o){openClient(o.dataset.crmopen);return;}
+  if(e.target.closest('[data-crmall]'))setView('crm');});
+/* заявка из «Приёмки» → клиент: имя из заявки, текст — первой заметкой */
+function intakeToClient(id){const r=(typeof intakeRows!=='undefined'?intakeRows:[]).find(x=>x.id===id);if(!r)return;
+  const p=parseQuick(r.text);crmNew({name:(p.title||r.text||'').slice(0,80),source:'intake',
+    notes:[{ts:Date.now(),author:r.by_name||r.by_email||'',text:r.text}]});
+  decideIntake(id,'accepted');toast('Заявка стала клиентом — допиши контакт и шаг','🤝');}
+
 /* ============================ INIT ============================ */
 $$('[data-icon]').forEach(el=>el.insertAdjacentHTML('afterbegin',icon(el.dataset.icon)));
+// плашка вкладок: ширины меняются от счётчиков, перевода и окна — подложка следует без анимации
+if(window.ResizeObserver){const ro=new ResizeObserver(()=>movePlate(true));$$('#tabs .tab').forEach(t=>ro.observe(t));}
+movePlate(true);syncMnav(view);
+/* живые иконки навигации: статичные svg → объёмные (icon3), тап играет сцену */
+(function navIcons(){
+  $$('.mnav i[data-icon],.tabs .tab[data-icon]').forEach(host=>{const svg=host.querySelector(':scope>svg');if(svg)svg.outerHTML=icon3(host.dataset.icon);});
+  const calm=()=>window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;
+  // снять класс → reflow → поставить: сцена играет на каждый тап, а не только на первый
+  // сцена — в следующем кадре: тап вызывает render, а он перерисовывает кнопку «Приёмка» вместе с иконкой
+  document.addEventListener('click',e=>{const b=e.target.closest('.mnav button,.tabs .tab');if(!b||calm())return;
+    requestAnimationFrame(()=>{const x=b.querySelector('.w3');if(!x)return;
+      x.classList.remove('wake');void x.offsetWidth;x.classList.add('wake');clearTimeout(x._wt);x._wt=setTimeout(()=>x.classList.remove('wake'),1100);});},true);
+})();
 {const bl=$('#brandLogo');if(bl)bl.innerHTML=logoMarkSVG(15);const gbl=$('#gateBootLogo');if(gbl)gbl.innerHTML=logoMarkSVG(22);}
 {const bvl=$('#bootVeilLogo');if(bvl)bvl.innerHTML=logoMarkSVG(24);const veil=$('#bootVeil');if(veil){const rm=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;const hide=()=>{veil.classList.add('gone');setTimeout(()=>{try{veil.remove();}catch(e){}},600);};setTimeout(hide, rm?150:(tmaInitData()?450:720));}}
 setFavicon();
@@ -8407,6 +9015,7 @@ const _share=(location.hash.match(/[#&]s=([^&]+)/)||[])[1];
 const _shareSnap=_share?decodeShare(_share):null;
 if(_shareSnap){renderSharePage(_shareSnap);}
 else{tmaBoot();cloudInit();}
+if(LOCAL_DEV&&!_shareSnap)localDevBoot();
 try{startEmojify();}catch(e){}
 // утренний бриф для локального режима (без облака) — один раз в день
 if(!_shareSnap)setTimeout(()=>{
@@ -8416,8 +9025,11 @@ if(!_shareSnap)setTimeout(()=>{
   if(!window._tmaFirst&&localStorage.getItem('cockpit_onboarded')&&localStorage.getItem('cockpit_brief_date')!==todayISO())openBrief();
 },1900);
 // разовая подсказка: где живут поиск/команды (по фидбеку — ⌘K был неочевиден)
-if(!_shareSnap)setTimeout(()=>{
+if(!_shareSnap)setTimeout(function menuTip(){
   if(localStorage.getItem('cockpit_tip_menu'))return;
+  // одноразовая — не тратить её на экран входа и не класть поверх имени/модалок: ждём, пока человек в продукте
+  const g=$('#gate'),busy=(g&&!g.classList.contains('hide'))||['#profileScrim','#wizScrim','#tgScrim','#briefScrim'].some(id=>{const el=$(id);return el&&el.classList.contains('show');});
+  if(busy){setTimeout(menuTip,6000);return;}
   localStorage.setItem('cockpit_tip_menu','1');
   toast(window.innerWidth<=680?'Поиск, команды и переходы — под 🔍 наверху':'Поиск, команды и переходы — кнопка «Меню ⌘K» наверху','💡');
 },3600);
