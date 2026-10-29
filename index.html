@@ -2933,6 +2933,26 @@ body.col-resizing,body.col-resizing *{cursor:col-resize!important;-webkit-user-s
 .board.matrix .lcard{width:100%;max-width:none;box-sizing:border-box;display:flex;align-items:center;gap:8px}
 .board.matrix .lct{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:clip;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent)}
 .board.matrix .le{flex:0 0 auto}
+/* ROCH #1399: вход через Telegram — первым; почта — запасной путь под разделителем. Приглашение — шторка с одной главной кнопкой */
+.gate-tg{display:flex;align-items:center;width:100%;justify-content:center;margin-top:14px;gap:8px;min-height:46px}
+.gate-or{display:flex;align-items:center;gap:10px;margin:14px 0 2px;color:var(--mut2);font-size:12px}
+.gate-or::before,.gate-or::after{content:'';flex:1;height:1px;background:var(--line)}
+.gate-inv{margin-top:12px;background:rgba(52,211,153,.10);border:1px solid rgba(52,211,153,.28);border-radius:14px;padding:11px 13px;font-size:13px;text-align:left}
+.invsheet{width:min(460px,94vw);padding:20px;border-radius:24px;display:flex;flex-direction:column;gap:12px}
+.inv-h{display:flex;flex-direction:column;gap:3px;position:relative;padding-right:40px}
+.inv-h b{font-size:18px;letter-spacing:-.01em}
+.inv-h span{font-size:12.5px;color:var(--mut)}
+.inv-h .iconbtn{position:absolute;right:-4px;top:-4px}
+.inv-steps{display:flex;flex-direction:column;gap:7px;font-size:13px;color:var(--mut)}
+.inv-steps>div{display:flex;align-items:center;gap:9px}
+.inv-steps span{flex:0 0 auto;width:20px;height:20px;border-radius:50%;display:inline-grid;place-items:center;font-size:11px;font-weight:800;background:rgba(167,139,250,.18);color:var(--txt)}
+.inv-go{display:flex;align-items:center;justify-content:center;gap:8px;min-height:46px;width:100%}
+.inv-row{display:flex;gap:8px}
+.inv-row .inp{flex:1;min-width:0;font-size:12.5px;color:var(--mut)}
+.inv-share{justify-content:center}
+.inv-alt{font-size:12.5px;color:var(--mut);line-height:1.55}
+.acc-invite{gap:8px;margin-top:6px}
+@media (max-width:680px){#invScrim{padding:0;align-items:flex-end}.invsheet{width:100vw;border-radius:22px 22px 0 0;padding-bottom:calc(20px + env(safe-area-inset-bottom))}}
 /* «Клиенты ждут шага» на «Сейчас» */
 .crmnow{border-radius:20px;padding:12px 12px 8px;margin-bottom:14px;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-soft)}
 .crmnow-h{display:flex;align-items:center;gap:8px;padding:0 4px 8px;color:var(--mut);font-size:13px}
@@ -3107,7 +3127,7 @@ body.light{--scrim-bg:rgba(24,24,36,.24)}
       <div class="secttl">Команда и загрузка
         <span style="margin-left:auto;display:flex;align-items:center;gap:7px;text-transform:none;letter-spacing:0;font-weight:500;color:var(--mut)">Вы: <select class="fsel" id="whoAmI"></select></span>
       </div>
-      <div style="font-size:12.5px;color:var(--mut2);margin:-6px 0 14px;line-height:1.5"><b style="color:var(--mut)">Пригласить партнёра:</b> добавь участника → впиши его email → он войдёт этой почтой и сразу увидит ваши проекты и задачи. Видят только те, кого ты добавил. <button class="lnk" id="inviteCopy" style="font-size:12.5px">Скопировать приглашение</button></div>
+      <div style="font-size:12.5px;color:var(--mut2);margin:-6px 0 14px;line-height:1.5"><b style="color:var(--mut)">Пригласить партнёра:</b> отправь ссылку — он нажмёт её в Telegram и сразу окажется в команде, без писем и паролей. Видят только те, кого ты позвал. <button class="lnk" id="inviteCopy" style="font-size:12.5px">Пригласить по ссылке</button></div>
       <div id="leaderboard"></div>
       <div class="grid" id="team"></div>
       <div id="accessPanel"></div>
@@ -3288,6 +3308,7 @@ body.light{--scrim-bg:rgba(24,24,36,.24)}
 <div class="modal-scrim" id="capScrim"><div class="modal capsheet" id="capModal"></div></div>
 <div class="modal-scrim" id="crmScrim"><div class="modal crmmodal" id="crmModal"></div></div>
 <div class="modal-scrim" id="repScrim"><div class="modal repsheet" id="repModal"></div></div>
+<div class="modal-scrim" id="invScrim"><div class="modal invsheet" id="invModal"></div></div>
 <div class="modal-scrim" id="lpScrim"><div class="modal lpsheet" id="lpModal"></div></div>
 <div class="modal-scrim" id="hkScrim"><div class="modal hksheet" id="hkModal"></div></div>
 <div id="focusView" class="focusview" hidden><div id="focusBody" class="focusbody"></div></div>
@@ -4729,11 +4750,36 @@ function renderNowMobile(ctx){
   clearTimeout(_nowSeenT);_nowSeenT=setTimeout(()=>{try{localStorage.setItem('cockpit_seen_'+S.id,Date.now());}catch(e){}},4200);
 }
 // проактивная актуализация просрочек прямо с «Сейчас»
-function inviteFromChecklist(){
-  if(!cloudOn){toast('Позвать партнёра можно после входа в облако','🤝');return;}
-  setView('team');
-  setTimeout(()=>{const i=$('#accTeamEmail');if(i){i.scrollIntoView({block:'center',behavior:'smooth'});i.focus();}},260);
+/* ROCH #1399: «Пригласить» = ссылка. Партнёр тапает её в Telegram → Start → «Открыть WANDO» — он внутри, с именем из Telegram.
+   2 тапа, 0 писем (было: email → письмо → код → имя → назавтра «подключи Telegram»). Код живёт 7 дней, до 20 входов */
+const TG_MAIL='@tg.cock-pit.com';
+function isTgEmail(e){return String(e||'').toLowerCase().endsWith(TG_MAIL);}
+function shownEmail(e){return isTgEmail(e)?'через Telegram':(e||'');}
+async function openInvite(){
+  if(!cloudOn||!sb){toast('Пригласить можно после входа в облако','🤝');return;}
+  const ws=await myWsCached();const code=rndCode(12);
+  const {error}=await sb.from('workspace_meta').insert({k:'invite:'+code,workspace_id:ws,
+    v:{ws,project:S.id,by:myEmail,byName:meName(),role:'member',exp:Date.now()+7*864e5,max:20,uses:0}});
+  if(error){toast('Не получилось создать приглашение: '+error.message,'⚠');return;}
+  const tg='https://t.me/wando_tasks_bot?start=join_'+code,web=location.origin+location.pathname+'?join='+code;
+  const msg=meName()+' зовёт тебя в «'+S.projectName+'» в WANDO — нажми, и ты в команде';
+  const m=$('#invModal');
+  m.innerHTML=`<div class="inv-h"><b>Пригласить в команду</b><span>в «${esc(S.projectName)}» · ссылка живёт 7 дней</span><button class="iconbtn" data-invx aria-label="Закрыть">${icon('x',16)}</button></div>
+    <div class="inv-steps"><div><span>1</span>партнёр нажимает ссылку</div><div><span>2</span>Start в боте</div><div><span>3</span>«Открыть WANDO» — и он внутри</div></div>
+    <button class="btn primary inv-go" data-invtg="https://t.me/share/url?url=${encodeURIComponent(tg)}&text=${encodeURIComponent(msg)}">${icon('send',16)} Отправить в Telegram</button>
+    <div class="inv-row"><input class="inp" readonly value="${esc(tg)}"><button class="btn" data-invcopy="${esc(tg)}">Скопировать</button></div>
+    ${navigator.share?`<button class="btn inv-share" data-invshare>Поделиться…</button>`:''}
+    <div class="inv-alt">Без Telegram? <button class="lnk" data-invcopy="${esc(web)}">Ссылка для браузера</button> — войдёт по почте и сразу окажется в команде. Или <button class="lnk" data-invmail>добавь по email</button>.</div>`;
+  m.onclick=e=>{const g=e.target.closest('[data-invtg]');if(g){window.open(g.dataset.invtg,'_blank');return;} /* <button>, не <a>: ссылка красила текст главной кнопки цветом ссылок */
+    const c=e.target.closest('[data-invcopy]');
+    if(c){navigator.clipboard&&navigator.clipboard.writeText(c.dataset.invcopy).then(()=>toast('Ссылка скопирована','✓'),()=>toast('Не скопировалось — выдели и скопируй','⚠'));return;}
+    if(e.target.closest('[data-invshare]')){navigator.share({text:msg,url:tg}).catch(()=>{});return;}
+    if(e.target.closest('[data-invx]')){$('#invScrim').classList.remove('show');return;}
+    if(e.target.closest('[data-invmail]')){$('#invScrim').classList.remove('show');setView('team');setTimeout(()=>{const i=$('#accTeamEmail');if(i){i.scrollIntoView({block:'center',behavior:'smooth'});i.focus();}},260);}};
+  $('#invScrim').onclick=e=>{if(e.target.id==='invScrim')e.target.classList.remove('show');};
+  $('#invScrim').classList.add('show');haptic('sel');
 }
+function inviteFromChecklist(){openInvite();}
 /* Чеклист новичка: 3 шага до «ага-момента», гаснет сам. Понятность > фичи. */
 function firstStepsCard(){
   if(localStorage.getItem('cockpit_fs_done'))return '';
@@ -7155,12 +7201,14 @@ function renderAccessPanel(){
     <div class="accsec">Команда · роли</div>
     ${teamRows.map(t=>{const rr=t.role==='owner'?'owner':t.role==='member'?'member':'admin';const me=(t.email||'').toLowerCase()===myEmail;
       const tRank=({owner:3,full:3,admin:2,member:1})[t.role]||3;const canEdit=myRank>tRank; // строго выше — иерархия
-      return `<div class="accrow"><span class="ae">${esc(t.email)}</span><span class="an">${esc(t.name||'')}${me?' (вы)':''}</span>
+      return `<div class="accrow"><span class="ae">${esc(shownEmail(t.email))}</span><span class="an">${esc(t.name||'')}${me?' (вы)':''}</span>
       <select class="fsel" data-trole="${esc(t.email)}" ${canEdit?'':'disabled'} title="${canEdit?'Роль решает, что человек видит':'Менять роль может только тот, кто выше'}"><option value="owner" ${rr==='owner'?'selected':''}>👑 Владелец</option><option value="admin" ${rr==='admin'?'selected':''}>Админ</option><option value="member" ${rr==='member'?'selected':''}>Участник</option></select>
       ${!me&&canEdit?`<span class="ax" data-rmteam="${esc(t.email)}" title="Отозвать доступ и уведомить в Telegram">✕</span>`:''}</div>`;}).join('')}
+    <button class="btn primary acc-invite" id="accInvite">${icon('send',15)} Пригласить по ссылке</button>
+    <div class="accsub" style="margin:10px 0 6px">или по email — войдёт кодом из письма:</div>
     <div class="accadd"><input class="inp" id="accTeamEmail" type="email" placeholder="email нового члена команды">
       <input class="inp" id="accTeamName" placeholder="Имя" style="max-width:130px">
-      <button class="btn primary" id="accTeamAdd">＋ В команду</button></div>`:''}
+      <button class="btn" id="accTeamAdd">＋ В команду</button></div>`:''}
     <div class="accsec">Гости проекта «${esc(S.projectName)}»</div>
     <div class="accsub" style="margin:2px 0 8px">Гостевой доступ выдаётся на конкретный проект. Нужен другой — переключи проект наверху и вернись сюда.</div>
     ${guestRows.length?guestRows.map(g=>`<div class="accrow"><span class="ae">${esc(g.email)}</span>
@@ -7175,6 +7223,7 @@ function renderAccessPanel(){
   {const pt=$('#accProjToggle');if(pt)pt.onclick=()=>setProjectOpen(S.open===false);}
   $$('#accessPanel [data-trole]').forEach(sel=>sel.onchange=()=>setTeamRole(sel.dataset.trole,sel.value));
   const ta=$('#accTeamAdd');if(ta)ta.onclick=()=>addTeamMember($('#accTeamEmail').value,$('#accTeamName').value);
+  const ai=$('#accInvite');if(ai)ai.onclick=openInvite;
   const ga=$('#accGuestAdd');if(ga)ga.onclick=()=>grantAccess($('#accGuestEmail').value,$('#accGuestRole').value);
   $$('#accessPanel [data-rmteam]').forEach(b=>b.onclick=()=>removeTeamMember(b.dataset.rmteam));
   $$('#accessPanel [data-rmguest]').forEach(b=>b.onclick=()=>revokeAccess(b.dataset.rmguest));
@@ -9073,12 +9122,16 @@ function webmailUrl(email){
   g.innerHTML=`<div class="gatecard"><div class="gatelogo">${logoMarkSVG(22)}</div><h1>WANDO</h1>
     <div class="gp">${t('Внутренний рабочий инструмент команды. Доска откроется только после входа.')}</div>
     ${inTMA?`<div class="gp" style="margin-top:10px;background:rgba(167,139,250,.10);border:1px solid var(--line);border-radius:12px;padding:11px 13px;font-size:12.5px;text-align:left">${t('📱 <b>Первый вход — один раз, прямо здесь.</b><br>Введи email, вернись сюда с кодом из письма. Telegram привяжется сам, и дальше кнопка <b>☰ WANDO</b> будет открывать доску сразу.')}</div>`:''}
+    ${joinPending()?`<div class="gp gate-inv">${t('🤝 <b>Тебя пригласили в команду.</b> Войди — и ты сразу внутри.')}</div>`:''}
+    ${inTMA?'':`<button class="btn primary gate-tg" id="gateTg">${icon('send',16)} ${t('Войти через Telegram')}</button>
+    <div class="gate-or"><span>${t('или по почте')}</span></div>`}
     <input class="inp gateinp" id="gateEmail" type="email" placeholder="${t('ваш email')}" autocomplete="email" value="${esc(email||'')}">
-    <button class="btn primary" id="gateSend" style="width:100%;justify-content:center;margin-top:10px">${t('Прислать код для входа')}</button>
-    <div class="gatefoot">${t('Доступ только для участников команды.<br>Вход и регистрация — по коду из письма, без пароля.')}</div></div>`;
+    <button class="btn ${inTMA?'primary':''}" id="gateSend" style="width:100%;justify-content:center;margin-top:10px">${t('Прислать код для входа')}</button>
+    <div class="gatefoot">${t('Доступ только для участников команды.<br>Без пароля: Telegram или код из письма.')}</div></div>`;
+  {const tb=$('#gateTg');if(tb)tb.onclick=()=>tgWebLogin(tb);}
   const send=()=>{const em=($('#gateEmail').value||'').trim();if(!em){toast(t('Введи email'),'⚠');return;}gateSend(em);};
   $('#gateSend').onclick=send;$('#gateEmail').onkeydown=e=>{if(e.key==='Enter')send();};
-  setTimeout(()=>{const i=$('#gateEmail');if(i)i.focus();},60);
+  if(inTMA)setTimeout(()=>{const i=$('#gateEmail');if(i)i.focus();},60); /* на сайте первым — Telegram, поле не перехватывает фокус */
 }
 /* Повторная отправка на таймере: у почты Supabase лимит писем в час, и человек,
    жмущий «ещё раз» пять раз подряд, сам себя лишает входа на этот час. */
@@ -9160,6 +9213,40 @@ async function tmaAutoLink(){
         setTimeout(()=>toast('Telegram привязан — дальше ☰ WANDO открывает доску сразу','🔗'),1200);}}
   }catch(_){/* не критично — вход почтой уже прошёл */}
 }
+/* ROCH #1399: вход на сайт через Telegram. Код + секрет живут только в этом браузере; бот спрашивает «Войти? Да/Нет»,
+   tma-auth отдаёт сессию один раз и только знающему секрет. Ссылку на бота открываем СРАЗУ в жесте (iOS режет window.open после await) */
+function rndCode(n){const a='abcdefghijkmnpqrstuvwxyz23456789';return Array.from(crypto.getRandomValues(new Uint8Array(n)),b=>a[b%32]).join('');}
+let _tgLoginStop=null;
+async function tgWebLogin(btn){
+  if(!sb||!CFG.url)return;
+  if(_tgLoginStop)_tgLoginStop();
+  const code=rndCode(20),secret=rndCode(32);
+  window.open('https://t.me/wando_tasks_bot?start=login_'+code,'_blank');
+  const poll=()=>fetch(CFG.url+'/functions/v1/tma-auth',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({kind:'login_poll',code,secret})}).then(r=>r.json()).catch(()=>({}));
+  const lab=btn.innerHTML;btn.disabled=true;btn.innerHTML=icon('clock',16)+' '+t('Подтверди вход в Telegram…');
+  let stop=false;_tgLoginStop=()=>{stop=true;btn.disabled=false;btn.innerHTML=lab;_tgLoginStop=null;};
+  const t0=Date.now();await poll();
+  while(!stop&&Date.now()-t0<180000){
+    await new Promise(r=>setTimeout(r,2000));if(stop)return;
+    const d=await poll();
+    if(d.state==='ok'&&d.token_hash){const {error}=await sb.auth.verifyOtp({type:'email',token_hash:d.token_hash});
+      if(error){toast(t('Вход не прошёл — попробуй ещё раз'),'⚠');break;}_tgLoginStop=null;return;} /* дальше докрутит onAuthStateChange */
+    if(d.state==='denied'){toast(t('Вход отклонён в Telegram'),'🚫');break;}
+    if(d.state==='expired'||d.error){toast(t('Ссылка входа устарела — нажми ещё раз'),'⌛');break;}
+  }
+  if(_tgLoginStop)_tgLoginStop();
+}
+/* ROCH #1399: ?join=<код> — приглашение для тех, кто без Telegram: запоминаем до входа, гасим сразу после */
+function joinPending(){try{return sessionStorage.getItem('cockpit_join')||'';}catch(e){return '';}}
+(function(){const m=location.search.match(/[?&]join=([A-Za-z0-9]{8,32})/);if(!m)return;
+  try{sessionStorage.setItem('cockpit_join',m[1]);}catch(e){}history.replaceState(null,'',location.pathname);})();
+async function redeemJoinWeb(){const code=joinPending();if(!code||!cloudOn||!sb)return false;
+  try{sessionStorage.removeItem('cockpit_join');}catch(e){}
+  const tk=await aiToken();if(!tk)return false;
+  try{const r=await fetch(CFG.url+'/functions/v1/tma-auth',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+tk},body:JSON.stringify({kind:'join_web',code,name:meName()})}).then(x=>x.json());
+    if(r&&r.ok){toast((r.already?'Ты уже в команде':'Ты в команде')+' «'+(r.wsName||'WANDO')+'»','🤝');if(!r.already){setTimeout(()=>location.reload(),900);return true;}}
+    else toast((r&&r.err)||'Приглашение не сработало','⚠');}catch(e){toast('Приглашение не сработало — попроси новую ссылку','⚠');}
+  return false;}
 async function tmaLogin(){
   const init=tmaInitData();if(!init||!sb)return false;
   try{
@@ -9190,7 +9277,9 @@ async function cloudInit(){
     else if(!cloudOn)showGate();
   }catch(e){if(!cloudOn)showGate();}
 }
-async function onLoggedIn(){cloudOn=true;closeAuth();hideGate();updateCloudBadge();await cloudSync();subscribeRealtime();loadIntake();loadAccess();crmLoad();
+async function onLoggedIn(){cloudOn=true;closeAuth();hideGate();updateCloudBadge();
+  if(joinPending()&&await redeemJoinWeb())return; /* ROCH #1399: по приглашению — сначала в команду, без онбординга основателя */
+  await cloudSync();subscribeRealtime();loadIntake();loadAccess();crmLoad();
   if(tmaInitData())tmaAutoLink(); // вошёл почтой в Mini App → связываем Telegram на будущее
   // есть настоящие проекты в облаке → человек онбоожен ПО ОПРЕДЕЛЕНИЮ
   // (флаги localStorage теряются на новом девайсе/в TMA — не мучаем мастером)
@@ -9222,6 +9311,8 @@ async function onLoggedIn(){cloudOn=true;closeAuth();hideGate();updateCloudBadge
   // deep-link из TG: ?t=PID:TID → открыть задачу (якоря в сообщениях бота)
   {const m=location.search.match(/[?&]t=([\w-]+):([\w-]+)/);
    if(m){history.replaceState(null,'',location.pathname);setTimeout(()=>openDeepLink(m[1],m[2]),400);}}
+  {const mp=location.search.match(/[?&]p=([\w-]+)/); /* ROCH #1399: из приглашения — сразу в тот проект, куда позвали */
+   if(mp){history.replaceState(null,'',location.pathname);setTimeout(()=>{try{if(mp[1]!==S.id&&reg.list.find(p=>p.id===mp[1]))switchProject(mp[1]);}catch(e){}},400);}}
 } // Telegram — обязательный шаг: гейт сам дождётся очереди
 /* ROCH #1391: открыть задачу по ссылке — из сообщения бота (?t=PID:TID) и из пуш-уведомления (sw.js шлёт postMessage открытому окну) */
 function openDeepLink(pid,tid){try{if(pid!==S.id&&reg.list.find(p=>p.id===pid))switchProject(pid);
@@ -9704,13 +9795,7 @@ $('#palQ').onkeydown=e=>{
 };
 $('#palScrim').onclick=e=>{if(e.target===$('#palScrim'))closePalette();};
 {const pi=$('#palIcon');if(pi)pi.innerHTML=icon('search',17);}
-{const ic=$('#inviteCopy');if(ic)ic.onclick=()=>{
-  const t=['Привет! Подключаю тебя к WANDO — нашему командному центру задач.',
-    '','1. Открой https://cock-pit.com и войди по своей почте (я уже добавил тебя в команду) — без пароля, по ссылке из письма.',
-    '2. На сайте нажми «Подключить Telegram» — один тап, и бот @wando_tasks_bot твой.',
-    '3. Дальше просто наговаривай задачи боту голосом — «созвон завтра 2ч» — остальное сделаем мы.',
-    '','Утром бот присылает только ТВОИ задачи. Слово «настройки» боту — если хочешь что-то отключить.'].join('\n');
-  navigator.clipboard.writeText(t);toast('Приглашение скопировано — отправь партнёру','✓');};}
+{const ic=$('#inviteCopy');if(ic)ic.onclick=openInvite;} /* ROCH #1399: вместо устаревшего текста «войди по ссылке из письма» — ссылка-приглашение */
 
 /* ============================ КЛИЕНТЫ (CRM) ============================
    Клиенты фаундера и сделки: воронка на языке «что дальше», следующий шаг с датой,

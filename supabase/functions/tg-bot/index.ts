@@ -14,6 +14,7 @@
 // ВАЖНО: «Verify JWT» у функции — ВЫКЛ.
 // ============================================================================
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { redeemInvite, tgEmail } from "../_shared/invite.ts";
 
 const BOT = Deno.env.get("TELEGRAM_BOT_TOKEN") ?? "";
 const BOT_ID = Number(BOT.split(":")[0]) || 0; // id бота = первая часть токена; для проверки авторства reply
@@ -155,6 +156,86 @@ async function bindByCode(chatId: number, name: string, code: string): Promise<s
 }
 
 // ---------- Ф3: self-serve — новое пространство по email ----------
+// ROCH #1398: self-serve только с ПОДТВЕРЖДЁННОЙ почтой. Раньше бот создавал пространство на любой присланный email без проверки:
+// чужую свободную почту можно было занять, а к существующей учётке (не в команде, например удалённой) — привязать свой Telegram
+// и войти в Mini App под ней (tma-auth пускает по tg_links). Теперь: email → код из письма (то же письмо, что при входе на сайте) → 6 цифр в бот.
+// OTP-клиент отдельный и без сессии: verifyOtp на общем service-клиенте подменил бы его права правами пользователя.
+const sbOtp = () => createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_ANON_KEY") ?? "", { auth: { persistSession: false, autoRefreshToken: false } });
+async function selfServeStart(chatId: number, name: string, email: string): Promise<string> {
+  const em = email.toLowerCase();
+  const { data: existing } = await sb.from("team").select("email").ilike("email", em).limit(1);
+  if (existing?.length) return `Этот email уже в пространстве WANDO. Если это ты — привяжись с сайта ${SITE} («Подключить Telegram») или ключом <code>/key cpk_…</code>`;
+  const { error } = await sbOtp().auth.signInWithOtp({ email: em, options: { shouldCreateUser: true } });
+  if (error) return "⚠ Не смог отправить код: " + esc(error.message) + "\nПопробуй через минуту или войди на " + SITE;
+  await sb.from("workspace_meta").upsert({ k: "selfserve:" + chatId, workspace_id: "main", v: { email: em, name, ts: Date.now(), tries: 0 } });
+  return `📬 Отправил код на <b>${esc(em)}</b>.\nПришли сюда <b>6 цифр</b> из письма — и пространство готово.\n<i>Не тот адрес — просто пришли другой email.</i>`;
+}
+async function selfServeVerify(chatId: number, name: string, code: string): Promise<string | null> {
+  const key = "selfserve:" + chatId;
+  const { data } = await sb.from("workspace_meta").select("v").eq("k", key).maybeSingle();
+  const p = data?.v as Record<string, any> | undefined;
+  if (!p?.email) return null;
+  if (Date.now() - Number(p.ts ?? 0) > 15 * 60000) { await sb.from("workspace_meta").delete().eq("k", key); return "⌛ Код устарел — пришли email ещё раз"; }
+  if (Number(p.tries ?? 0) >= 5) { await sb.from("workspace_meta").delete().eq("k", key); return "Слишком много попыток — пришли email ещё раз"; }
+  const { error } = await sbOtp().auth.verifyOtp({ email: p.email, token: code, type: "email" });
+  if (error) {
+    await sb.from("workspace_meta").update({ v: { ...p, tries: Number(p.tries ?? 0) + 1 } }).eq("k", key);
+    return "✕ Код не подошёл — проверь последнее письмо или пришли email заново";
+  }
+  await sb.from("workspace_meta").delete().eq("k", key);
+  return await selfServe(chatId, p.name || name, p.email);
+}
+// ROCH #1399: приглашение ссылкой t.me/бот?start=join_<код>. Telegram уже привязан → добавляем в команду его почту;
+// нет → учётка по Telegram без почты (tg<chat_id>@tg.cock-pit.com), team + tg_links + участник проекта.
+// Дальше «Открыть WANDO» → Mini App → tma-auth впускает по tg_links. 2 тапа, 0 писем.
+async function joinByInvite(chatId: number, from: Record<string, any>, code: string) {
+  const tgName = [from?.first_name, from?.last_name].filter(Boolean).join(" ") || "Участник";
+  const link = await getLink(chatId);
+  const email = link?.email ?? tgEmail(chatId);
+  if (!link) { try { await sb.auth.admin.createUser({ email, email_confirm: true, user_metadata: { tg_id: chatId, name: tgName } }); } catch (_) { /* уже есть — ок */ } }
+  const r = await redeemInvite(sb, code, { email, name: link?.name ?? tgName });
+  if (!r.ok) { await say(chatId, "⚠ " + esc(r.err ?? "приглашение не сработало")); return; }
+  if (!link) {
+    const { error } = await sb.from("tg_links").upsert({ chat_id: chatId, email, name: tgName, token_hash: "invite", revoked: false, workspace: r.ws, workspace_id: r.ws });
+    if (error) { await say(chatId, "⚠ В команду добавил, но вход не настроился: " + esc(error.message)); return; }
+  }
+  _wsCache[email] = r.ws;
+  try {
+    await TG("setChatMenuButton", { chat_id: chatId, menu_button: { type: "web_app", text: "WANDO", web_app: { url: APP_URL } } });
+  } catch (_) { /* не критично */ }
+  const where = r.projectName ? ` — ${esc(r.byName)} позвал(а) тебя в «${esc(r.projectName)}»` : "";
+  await TG("sendMessage", { chat_id: chatId, parse_mode: "HTML", disable_web_page_preview: true,
+    text: `${r.already ? "👋 Ты уже в команде" : "👋 Ты в команде"} <b>${esc(r.wsName || "WANDO")}</b>${where}.\n\nЖми <b>Открыть WANDO</b> — ты уже вошёл. Задачи можно писать и сюда: текстом или голосом 🎙`,
+    reply_markup: { inline_keyboard: [[{ text: "Открыть WANDO", web_app: { url: APP_URL + (r.pid ? "/?p=" + r.pid : "") } }]] } });
+  if (!r.already) await capTell(r.by, `🎉 <b>${esc(link?.name ?? tgName)}</b> принял(а) приглашение${r.projectName ? ` в «${esc(r.projectName)}»` : ""} — теперь на него/неё можно ставить задачи`);
+}
+
+// ROCH #1399: вход на сайт через Telegram — подтверждение в боте. Без «Да» сессия не выдаётся (tma-auth login_poll)
+function uaShort(ua: string): string {
+  const os = /iPhone|iPad/.test(ua) ? "iPhone/iPad" : /Android/.test(ua) ? "Android" : /Mac OS X|Macintosh/.test(ua) ? "Mac" : /Windows/.test(ua) ? "Windows" : /Linux/.test(ua) ? "Linux" : "";
+  const br = /Edg\//.test(ua) ? "Edge" : /YaBrowser/.test(ua) ? "Яндекс Браузер" : /Firefox\//.test(ua) ? "Firefox" : /Chrome\//.test(ua) ? "Chrome" : /Safari\//.test(ua) ? "Safari" : "браузер";
+  return os ? `${br} на ${os}` : br;
+}
+async function webLoginAsk(chatId: number, code: string) {
+  const link = await getLink(chatId);
+  if (!link) { await say(chatId, `Этот Telegram ещё не привязан к WANDO. Войди по ссылке-приглашению команды или по почте на ${SITE}`); return; }
+  const { data } = await sb.from("workspace_meta").select("v").eq("k", "weblogin:" + code).maybeSingle();
+  const v = data?.v as Record<string, any> | undefined;
+  if (!v || Date.now() - Number(v.ts ?? 0) > 5 * 60000) { await say(chatId, "⌛ Ссылка входа устарела — нажми «Войти через Telegram» на сайте ещё раз"); return; }
+  await sayInline(chatId, `🔐 <b>Войти в WANDO в браузере?</b>\n${esc(uaShort(String(v.ua ?? "")))} · как <b>${esc(link.name ?? link.email)}</b>\n\n<i>Если ты сам сейчас не нажимал «Войти через Telegram» — жми «Нет».</i>`,
+    [[{ text: "✓ Да, это я", callback_data: "lgy:" + code }, { text: "Нет", callback_data: "lgn:" + code }]]);
+}
+async function webLoginDecide(chatId: number, messageId: number, link: Link, code: string, yes: boolean) {
+  const key = "weblogin:" + code;
+  const { data } = await sb.from("workspace_meta").select("v").eq("k", key).maybeSingle();
+  const v = data?.v as Record<string, any> | undefined;
+  const text = !v ? "⌛ Ссылка входа устарела — начни вход на сайте заново"
+    : yes ? "✅ Вход подтверждён — вернись в браузер" : "🚫 Вход отклонён. Если это был не ты — ничего не случилось, сессию никто не получил";
+  if (v) await sb.from("workspace_meta").update({ v: { ...v, state: yes ? "yes" : "no", email: yes ? link.email : null } }).eq("k", key);
+  await TG("editMessageText", { chat_id: chatId, message_id: messageId, text, parse_mode: "HTML" });
+}
+
+// вызывается ТОЛЬКО из selfServeVerify — после подтверждения почты
 async function selfServe(chatId: number, name: string, email: string): Promise<string> {
   const em = email.toLowerCase();
   const { data: existing } = await sb.from("team").select("email,workspace_id").ilike("email", em).maybeSingle();
@@ -1457,6 +1538,7 @@ Deno.serve(async (req) => {
     let handled = false;
     if (link) {
       if (CAP_ACTS.has(act)) { await capCallback(cb, chatId, link, act, id, arg); return new Response("ok"); }
+      if (act === "lgy" || act === "lgn") { await TG("answerCallbackQuery", { callback_query_id: cb.id }); await webLoginDecide(chatId, cb.message.message_id, link, id, act === "lgy"); return new Response("ok"); }
       if (act === "acc" || act === "accto") {
         if (!(await isTeam(link.email))) result = "Решает команда 🙂";
         else {
@@ -1651,6 +1733,8 @@ Deno.serve(async (req) => {
     if (/^\/start/.test(text)) {
       const payload = text.replace(/^\/start\s*/, "").trim();
       if (payload === "plan") { await sendPlan(chatId); return new Response("ok"); }
+      if (/^join_[A-Za-z0-9]{8,32}$/.test(payload)) { await joinByInvite(chatId, msg.from ?? {}, payload.slice(5)); return new Response("ok"); }
+      if (/^login_[A-Za-z0-9]{16,40}$/.test(payload)) { await webLoginAsk(chatId, payload.slice(6)); return new Response("ok"); }
       if (/^bind_[A-Za-z0-9_-]{10,}$/.test(payload)) {
         await say(chatId, await bindByCode(chatId, name, payload.slice(5)));
         return new Response("ok");
@@ -1677,7 +1761,9 @@ Deno.serve(async (req) => {
       const link = await getLink(chatId);
       if (!link) {
         const em = text.match(/^[\w.+-]+@[\w-]+\.[\w.]{2,}$/);
-        if (em) { await say(chatId, await selfServe(chatId, name, em[0])); return new Response("ok"); }
+        if (em) { await say(chatId, await selfServeStart(chatId, name, em[0])); return new Response("ok"); }
+        const code = text.replace(/\s+/g, "").match(/^\d{6}$/);
+        if (code) { const r = await selfServeVerify(chatId, name, code[0]); if (r) { await say(chatId, r); return new Response("ok"); } }
         await say(chatId, "Пришли свой <b>email</b> — создам тебе личное пространство 🚀\nИли привяжись к команде: " + SITE + " → «Подключить Telegram», либо <code>/key cpk_…</code>");
         return new Response("ok");
       }

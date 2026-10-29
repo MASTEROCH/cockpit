@@ -231,3 +231,21 @@ test('приёмка: разбор бота и файлы переезжают �
   });
   expect(r).toEqual({ title: 'Согласовать макеты', who: true, end: true, pr: 'high', files: 1, desc: 'из пересланного', est: 0.5 });
 });
+
+// ROCH #1399: приглашение ссылкой — запись в workspace_meta с правильным пространством/проектом и ссылка на бота; заглушки почты не показываются
+test('приглашение ссылкой и скрытие почты-заглушки', async ({ page }) => {
+  await boot(page);
+  const r = await page.evaluate(async () => {
+    let row = null;
+    sb = { from: () => ({ insert: async (x) => { row = x; return { error: null }; } }) };
+    myWsCached = async () => 'ws_test'; window.open = () => null;
+    await openInvite();
+    const go = document.querySelector('#invModal [data-invtg]');
+    const code = (row.k || '').replace('invite:', '');
+    return { key: /^invite:[a-z0-9]{12}$/.test(row.k), ws: row.v.ws, proj: row.v.project === S.id, by: row.v.by, max: row.v.max,
+      days: Math.round((row.v.exp - Date.now()) / 864e5), link: decodeURIComponent(go.dataset.invtg).includes('start=join_' + code),
+      shown: document.querySelector('#invScrim').classList.contains('show'),
+      tg: shownEmail('tg123@tg.cock-pit.com'), real: shownEmail('a@b.com') };
+  });
+  expect(r).toEqual({ key: true, ws: 'ws_test', proj: true, by: 'romi4rv23@gmail.com', max: 20, days: 7, link: true, shown: true, tg: 'через Telegram', real: 'a@b.com' });
+});
