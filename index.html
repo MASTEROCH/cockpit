@@ -3108,6 +3108,27 @@ html{touch-action:manipulation}
 .kpi{text-align:left;font:inherit;color:inherit;cursor:pointer;transition:transform .15s,border-color .15s}
 .kpi:hover{border-color:var(--line2)}.kpi:active{transform:scale(.97)}
 .m-rm{background:none!important;border:0!important;color:#ef4444!important;font-weight:600}
+/* ROCH #1412: «Поделиться» и роли в проекте */
+#mseg .mshare{margin-left:auto;display:inline-flex;align-items:center;gap:6px;color:var(--txt);border:1px solid var(--line)!important}
+.sh-list{display:flex;flex-direction:column;gap:6px}
+.sh-row{margin-bottom:0}
+.accrow.acc-grid.sh-row{grid-template-columns:30px minmax(0,1fr) 140px 30px}
+.sh-role{width:100%;padding-left:12px;padding-right:24px}
+@media (max-width:680px){
+  .accrow.acc-grid.sh-row{grid-template-columns:30px minmax(0,1fr) 28px;row-gap:8px;column-gap:10px}
+  .sh-row>.av{grid-row:1/3;align-self:start;margin-top:2px}
+  .sh-row>.acc-who{grid-column:2;grid-row:1}
+  .sh-row>.sh-role,.sh-row>.sh-fixed{grid-column:2/4;grid-row:2;width:100%;text-align:left}
+  .sh-row>.ax,.sh-row>.ax-sp{grid-column:3;grid-row:1}
+}
+@media (max-width:420px){.inv-role{flex-direction:column;align-items:stretch;gap:8px}.inv-role .am-seg{display:grid;grid-template-columns:1fr 1fr;width:100%;box-sizing:border-box}.inv-role>span{text-align:left}.inv-role .am-seg button{padding:8px 10px}}
+.sh-fixed{font-size:12.5px;font-weight:600;color:var(--mut);text-align:center}
+.sh-role{border-radius:999px;font-size:13px}
+.sh-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.sh-links .btn{justify-content:center;gap:6px;min-height:44px;font-size:13px}
+@media (max-width:420px){.sh-links{grid-template-columns:1fr}}
+.am-acc{border-radius:999px;font-size:12px;padding:5px 24px 5px 10px;min-width:118px}
+body.ro.rc main::before{content:'Ты комментатор в этом проекте — комментировать можно, менять задачи нельзя'}
+body.ro.rc #drawer #dCmtIn,body.ro.rc #drawer #dCmtBtn{pointer-events:auto;opacity:1}
 /* «Клиенты ждут шага» на «Сегодня» */
 .crmnow{border-radius:20px;padding:12px 12px 8px;margin-bottom:14px;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-soft)}
 .crmnow-h{display:flex;align-items:center;gap:8px;padding:0 4px 8px;color:var(--mut);font-size:13px}
@@ -3490,6 +3511,7 @@ body.no-invite #teamInvite,body.no-invite #addMember2,body.no-invite .m-invite{d
 <div class="modal-scrim" id="crmScrim"><div class="modal crmmodal" id="crmModal"></div></div>
 <div class="modal-scrim" id="repScrim"><div class="modal repsheet" id="repModal"></div></div>
 <div class="modal-scrim" id="invScrim"><div class="modal invsheet" id="invModal"></div></div>
+<div class="modal-scrim" id="shareScrim"><div class="modal invsheet" id="shareModal"></div></div>
 <div class="modal-scrim" id="lpScrim"><div class="modal lpsheet" id="lpModal"></div></div>
 <div class="modal-scrim" id="hkScrim"><div class="modal hksheet" id="hkModal"></div></div>
 <div id="focusView" class="focusview" hidden><div id="focusBody" class="focusbody"></div></div>
@@ -4060,8 +4082,10 @@ function render(){try{ensureMeInProject();applyMoneyGate();applyReadOnly();}catc
   $('#sbStats').textContent=`${_T.length} задач · ${_T.filter(t=>t.status==='done').length} готово · ${S.tasks.filter(isOverdue).length} просроч.`;
   {const ms=$('#mseg');if(ms){const items=segItems(view,isTeam);
     ms.style.display=items?'':'none';ms.classList.toggle('mseg-day',!!items&&(view==='now'||view==='intake'));
-    if(items){ms.innerHTML=items.map(([v,n,c])=>`<button class="${view===v?'on':''}${v==='mprojects'?' mback':''}" data-v="${v}">${v==='mprojects'?icon('chevL',15):''}<span>${n}</span>${c?`<em>${c>99?'99+':c}</em>`:''}</button>`).join('');
-      $$('#mseg button').forEach(b=>b.onclick=()=>{haptic&&haptic('sel');setView(b.dataset.v);});}}}
+    if(items){ms.innerHTML=items.map(([v,n,c])=>`<button class="${view===v?'on':''}${v==='mprojects'?' mback':''}" data-v="${v}">${v==='mprojects'?icon('chevL',15):''}<span>${n}</span>${c?`<em>${c>99?'99+':c}</em>`:''}</button>`).join('')
+        +(VGROUP[view]==='proj'&&view!=='mprojects'&&view!=='all'&&cloudOn?`<button class="mshare" data-share>${icon('users',15)}<span>Поделиться</span></button>`:''); /* ROCH #1412: доступ — из самого проекта, как в Asana */
+      $$('#mseg button[data-v]').forEach(b=>b.onclick=()=>{haptic&&haptic('sel');setView(b.dataset.v);});
+      {const sh=ms.querySelector('[data-share]');if(sh)sh.onclick=()=>openProjectShare();}}}}
   updateInboxBadge();
   syncFilterUI();
   if(view==='now')renderNow();
@@ -4964,26 +4988,27 @@ function shownEmail(e){return isTgEmail(e)?'через Telegram':(e||'');}
 const INV_PAL=['#a78bfa','#f472b6','#38bdf8','#34d399','#fbbf24','#fb923c','#94a3b8','#e879f9'];
 async function openInvite(opts){opts=opts||{};
   if(!cloudOn||!sb){toast('Пригласить можно после входа в облако','🤝');return;}
-  if(!canInvite()){toast('Приглашать могут владелец и админы — попроси их','🔐');return;}
+  if(!canInvite()&&!(opts.guest&&canManageProject())){toast('Приглашать могут владелец и админы — попроси их','🔐');return;}
   /* ROCH #1401: «Открытка» (канон POSTCARD) — клиент шлёт ТОЛЬКО id проекта; код, ссылки и карточку строит сервер */
   const tk=await aiToken();if(!tk){toast('Нужен вход','⚠');return;}
   let r=null;
   try{r=await fetch(CFG.url+'/functions/v1/tma-auth',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+tk},
-    body:JSON.stringify({kind:'invite',project_id:(opts.projects&&opts.projects.length&&!opts.projects.includes(S.id))?opts.projects[0]:S.id,by_name:meName(),member_id:opts.mid||'',projects:opts.projects||[],role:opts.role||'member',initData:window._isTMA?tmaInitData():''})}).then(x=>x.json());}catch(e){}
+    body:JSON.stringify({kind:'invite',project_id:(opts.projects&&opts.projects.length&&!opts.projects.includes(S.id))?opts.projects[0]:S.id,by_name:meName(),member_id:opts.mid||'',projects:opts.projects||[],role:opts.role||'member',guest:!!opts.guest,access:opts.access||'edit',initData:window._isTMA?tmaInitData():''})}).then(x=>x.json());}catch(e){}
   if(!r||!r.link){toast((r&&r.error)||'Не получилось создать приглашение — проверь сеть','⚠');return;}
   const tg=r.link,web=r.web,msg=r.text;
   const WA=window.Telegram&&Telegram.WebApp;
   const card=!!(r.prepared_id&&WA&&typeof WA.shareMessage==='function'&&WA.isVersionAtLeast&&WA.isVersionAtLeast('8.0')); /* версии сравнивает только SDK */
   const m=$('#invModal');const pre={color:INV_PAL[0],photo:''};
-  m.innerHTML=`<div class="inv-h"><b>${opts.name?'Профиль готов — отправь ссылку':'Пригласить в команду'}</b><span>${opts.name?esc(opts.name)+' войдёт и сразу всё увидит':'в «'+esc(S.projectName)+'» · ссылка живёт 7 дней'}</span><button class="iconbtn" data-invx aria-label="Закрыть">${icon('x',16)}</button></div>
-    ${roleRank(teamRoleOf(myEmail))>=3?`<div class="inv-role"><span>Пригласить как</span><div class="am-seg"><button class="${opts.role!=='admin'?'on':''}" data-invrole="member">Участник</button><button class="${opts.role==='admin'?'on':''}" data-invrole="admin">Админ</button></div></div>
+  m.innerHTML=`<div class="inv-h"><b>${opts.guest?'Гость в «'+esc(S.projectName)+'»':opts.name?'Профиль готов — отправь ссылку':'Пригласить в команду'}</b><span>${opts.name?esc(opts.name)+' войдёт и сразу всё увидит':'в «'+esc(S.projectName)+'» · ссылка живёт 7 дней'}</span><button class="iconbtn" data-invx aria-label="Закрыть">${icon('x',16)}</button></div>
+    ${opts.guest?`<div class="inv-role"><span>Гость может</span><div class="am-seg"><button class="${opts.access!=='view'?'on':''}" data-invacc="edit">Вести задачи</button><button class="${opts.access==='view'?'on':''}" data-invacc="view">Только смотреть</button></div></div><div class="inv-alt">Гость видит только этот проект — без команды, клиентов и денег.</div>`:''}
+    ${!opts.guest&&roleRank(teamRoleOf(myEmail))>=3?`<div class="inv-role"><span>Пригласить как</span><div class="am-seg"><button class="${opts.role!=='admin'?'on':''}" data-invrole="member">Участник</button><button class="${opts.role==='admin'?'on':''}" data-invrole="admin">Админ</button></div></div>
     ${opts.role==='admin'?'<div class="inv-alt">Админ сможет звать своих людей и настраивать доступы участникам. Админов назначаешь только ты.</div>':''}`:''}
     <div class="inv-steps"><div><span>1</span>партнёр нажимает ссылку</div><div><span>2</span>Start в боте</div><div><span>3</span>«Открыть WANDO» — и он внутри</div></div>
     ${card?`<button class="btn primary inv-go" data-invcard>${icon('send',16)} Отправить открытку</button>`
       :`<button class="btn primary inv-go" data-invtg="${esc(tgShareUrl(tg,msg))}">${icon('send',16)} Отправить в Telegram</button>`}
     <div class="inv-row"><input class="inp" readonly value="${esc(tg)}"><button class="btn" data-invcopy="${esc(tg)}">Скопировать</button></div>
     ${navigator.share?`<button class="btn inv-share" data-invshare>Поделиться…</button>`:''}
-    ${opts.mid?'':`<details class="inv-pre"><summary>${icon('edit',15)} Заполнить профиль за него <span>необязательно — иначе он заполнит сам</span></summary>
+    ${opts.mid||opts.guest?'':`<details class="inv-pre"><summary>${icon('edit',15)} Заполнить профиль за него <span>необязательно — иначе он заполнит сам</span></summary>
       <div class="inv-form">
         <div class="inv-top"><button class="inv-av" data-invph style="background:${INV_PAL[0]}" aria-label="Фото">${icon('upload',18)}</button><input type="file" accept="image/*" hidden id="invPhoto">
           <div class="inv-fields"><input class="inp" id="invName" placeholder="Имя и фамилия" autocomplete="off"><input class="inp" id="invRole" placeholder="Должность — например, дизайнер" autocomplete="off"></div></div>
@@ -4994,7 +5019,7 @@ async function openInvite(opts){opts=opts||{};
         <button class="btn inv-save" data-invsave>Сохранить и получить ссылку</button>
       </div></details>`}
     <div class="inv-alt">Без Telegram? <button class="lnk" data-invcopy="${esc(web)}">Ссылка для браузера</button> — войдёт по почте и сразу окажется в команде. Или <button class="lnk" data-invmail>добавь по email</button>.</div>
-    ${opts.mid?'':`<div class="inv-alt">Человек не будет заходить? <button class="lnk" data-invblank>Добавить карточку без входа</button> — только чтобы ставить на него задачи.</div>`}`;
+    ${opts.mid||opts.guest?'':`<div class="inv-alt">Человек не будет заходить? <button class="lnk" data-invblank>Добавить карточку без входа</button> — только чтобы ставить на него задачи.</div>`}`;
   m.onclick=e=>{if(e.target.closest('[data-invcard]')){try{WA.shareMessage(r.prepared_id,ok=>{if(ok){toast('Открытка отправлена — ждём партнёра','✓');$('#invScrim').classList.remove('show');}});}catch(_){window.open(tgShareUrl(tg,msg),'_blank');}return;}
     const g=e.target.closest('[data-invtg]');if(g){window.open(g.dataset.invtg,'_blank');return;} /* <button>, не <a>: ссылка красила текст главной кнопки цветом ссылок */
     const c=e.target.closest('[data-invcopy]');
@@ -5003,6 +5028,7 @@ async function openInvite(opts){opts=opts||{};
     if(e.target.closest('[data-invx]')){$('#invScrim').classList.remove('show');return;}
     if(e.target.closest('[data-invblank]')){$('#invScrim').classList.remove('show');addBlankMember();return;}
     const ir=e.target.closest('[data-invrole]');if(ir){if((opts.role||'member')!==ir.dataset.invrole)openInvite({...opts,role:ir.dataset.invrole});return;}
+    const ia=e.target.closest('[data-invacc]');if(ia){if((opts.access||'edit')!==ia.dataset.invacc)openInvite({...opts,access:ia.dataset.invacc});return;}
     const pc=e.target.closest('[data-invp]');if(pc){pc.classList.toggle('on');return;}
     const cc=e.target.closest('[data-invc]');if(cc){m.querySelectorAll('[data-invc]').forEach(b=>b.classList.toggle('on',b===cc));pre.color=cc.dataset.invc;const av=m.querySelector('[data-invph]');if(av&&!pre.photo)av.style.background=pre.color;return;}
     if(e.target.closest('[data-invph]')){$('#invPhoto').click();return;}
@@ -5016,6 +5042,41 @@ async function openInvite(opts){opts=opts||{};
   $('#invScrim').onclick=e=>{if(e.target.id==='invScrim')e.target.classList.remove('show');};
   $('#invScrim').classList.add('show');haptic('sel');
 }
+/* ROCH #1412: «Поделиться» — главный экран доступа к проекту: кто видит (вся команда / только участники), люди с ролями,
+   гости, «позвать» (из команды тапом, новых и гостей — ссылкой). Менять — админ проекта; база (триггер) не даст обойти */
+async function openProjectShare(){
+  if(!cloudOn){toast('Доступы живут в облаке — войди сначала','🔐');return;}
+  if(iSeeAllProjects()&&!allGuestRows.length)try{await loadGuests();}catch(e){}
+  const can=canManageProject(),open=S.open!==false,m=$('#shareModal');
+  const wsAll=teamRows.filter(t=>roleRank(t.role)>=2);
+  const people=(S.members||[]).filter(x=>x.email&&!wsAll.some(t=>(t.email||'').toLowerCase()===(x.email||'').toLowerCase()));
+  const guests=(allGuestRows.length?allGuestRows.filter(g=>g.project_id===S.id):guestRows)||[];
+  const notIn=teamRows.filter(t=>roleRank(t.role)<2&&!(S.members||[]).some(x=>(x.email||'').toLowerCase()===(t.email||'').toLowerCase()));
+  const sel=(cur,attr,id,opts)=>`<select class="fsel sh-role" ${attr}="${esc(id)}" ${can?'':'disabled'}>${opts.map(([k,n])=>`<option value="${k}" ${k===cur?'selected':''}>${n}</option>`).join('')}</select>`;
+  m.innerHTML=`<div class="inv-h"><b>Поделиться «${esc(S.projectName)}»</b><span>${can?'ты управляешь доступом к проекту':'смотреть может каждый участник, менять — админ проекта'}</span><button class="iconbtn" data-shx aria-label="Закрыть">${icon('x',16)}</button></div>
+    <div class="inv-role"><span>Кто видит проект</span><div class="am-seg"><button class="${open?'on':''}" data-shopen="1" ${can?'':'disabled'}>Вся команда</button><button class="${open?'':'on'}" data-shopen="0" ${can?'':'disabled'}>Участники</button></div></div>
+    <div class="sh-list">
+      ${wsAll.map(t=>`<div class="accrow acc-grid sh-row">${personAv(t.email,t.name,30)}<span class="acc-who"><b>${esc(t.name||shownEmail(t.email))}</b><span>${roleRank(t.role)>=3?'владелец':'админ'} · всегда админ проекта</span></span><span class="sh-fixed">Админ</span><span class="ax-sp"></span></div>`).join('')}
+      ${people.map(x=>`<div class="accrow acc-grid sh-row">${avatarOf(x,30)}<span class="acc-who"><b>${esc(x.name)}</b><span>${esc(shownEmail(x.email))}</span></span>${sel(x.access||'edit','data-shacc',x.id,ACC)}${can?`<button class="ax" data-shrm="${x.id}" aria-label="Убрать из проекта">${icon('x',15)}</button>`:'<span class="ax-sp"></span>'}</div>`).join('')}
+      ${guests.map(g=>`<div class="accrow acc-grid sh-row">${personAv(g.email,'',30)}<span class="acc-who"><b>${esc(shownEmail(g.email))}</b><span>гость · только этот проект</span></span>${sel(g.role==='viewer'?'view':'edit','data-shg',g.email,[['edit','Редактор'],['view','Наблюдатель']])}${can?`<button class="ax" data-shgrm="${esc(g.email)}" aria-label="Закрыть доступ">${icon('x',15)}</button>`:'<span class="ax-sp"></span>'}</div>`).join('')}
+    </div>
+    ${can?`<div class="inv-lab">Позвать в проект</div>
+      ${notIn.length?`<div class="inv-projs">${notIn.map(t=>`<button class="inv-chip" data-shadd="${esc(t.email)}">＋ ${esc(t.name||shownEmail(t.email))}</button>`).join('')}</div>`:''}
+      <div class="sh-links">${canInvite()?`<button class="btn" data-shinv>${icon('send',15)} Новый человек — ссылкой</button>`:''}<button class="btn" data-shguest>${icon('send',15)} Гость — только этот проект</button></div>`:''}`;
+  m.onclick=async e=>{const q=(a)=>e.target.closest(a);
+    if(q('[data-shx]')){$('#shareScrim').classList.remove('show');return;}
+    const op=q('[data-shopen]');if(op&&can){S.open=op.dataset.shopen==='1';save();render();openProjectShare();toast(S.open?'Проект видит вся команда':'Только участники проекта и админы','🔐');return;}
+    const rm=q('[data-shrm]');if(rm&&can){const x=member(rm.dataset.shrm);if(!x)return;if(S.tasks.some(t=>t.assigneeId===x.id&&t.status!=='done')){toast('На '+x.name+' есть открытые задачи — сначала передай их','⚠');return;}
+      S.members=S.members.filter(y=>y.id!==x.id);save();render();openProjectShare();toast(x.name+' больше не в проекте','👋');return;}
+    const ad=q('[data-shadd]');if(ad&&can){const t=teamRows.find(r=>(r.email||'').toLowerCase()===ad.dataset.shadd.toLowerCase())||{};
+      S.members.push({id:uid('m'),name:t.name||ad.dataset.shadd.split('@')[0],email:ad.dataset.shadd.toLowerCase(),access:'edit',role:'',color:INV_PAL[S.members.length%INV_PAL.length],capacity:30});save();render();openProjectShare();return;}
+    const gr=q('[data-shgrm]');if(gr&&can){await revokeAccess(gr.dataset.shgrm);await loadGuests();openProjectShare();return;}
+    if(q('[data-shinv]')){$('#shareScrim').classList.remove('show');openInvite({projects:[S.id]});return;}
+    if(q('[data-shguest]')){$('#shareScrim').classList.remove('show');openInvite({guest:true});return;}};
+  m.onchange=async e=>{const a=e.target.closest('[data-shacc]');if(a&&can){const x=member(a.dataset.shacc);if(x){x.access=a.value;save();render();toast(x.name+' — '+accName(a.value).toLowerCase(),'🔐');}return;}
+    const g=e.target.closest('[data-shg]');if(g&&can){try{await sb.from('project_access').upsert({project_id:S.id,email:g.dataset.shg,role:g.value==='view'?'viewer':'member',granted_by:myEmail});toast('Роль гостя обновлена','🔐');}catch(_){} }};
+  $('#shareScrim').onclick=e=>{if(e.target.id==='shareScrim')e.target.classList.remove('show');};
+  $('#shareScrim').classList.add('show');haptic('sel');}
 function inviteFromChecklist(){openInvite();}
 /* Чеклист новичка: 3 шага до «ага-момента», гаснет сам. Понятность > фичи. */
 function firstStepsCard(){
@@ -7382,8 +7443,17 @@ function myTeamRow(){return teamRows.find(t=>(t.email||'').toLowerCase()===(myEm
 function canMoney(){if(!cloudOn||!isTeam||!accessReady)return true;const r=myTeamRow();if(!r)return true;return roleRank(r.role)>=2||r.money!==false;}
 /* ROCH #1402: гость «только просмотр» — режим чтения: правка недоступна в интерфейсе, а не «тихо осталась на устройстве».
    База (RLS) и так не примет — интерфейс говорит правду заранее */
-function isReadOnly(){return !isTeam&&cloudOn&&myGrantRole[S.id]==='viewer';}
-function applyReadOnly(){document.body.classList.toggle('ro',isReadOnly());}
+/* ROCH #1412: роли в проекте «как в Asana»: Админ проекта · Редактор · Комментатор · Наблюдатель (data.members[].access).
+   Владелец и админы пространства — всегда админ проекта; гости — из project_access (ведёт = редактор, смотрит = наблюдатель) */
+const ACC=[['admin','Админ проекта'],['edit','Редактор'],['comment','Комментатор'],['view','Наблюдатель']];
+const accName=a=>(ACC.find(x=>x[0]===a)||ACC[1])[1];
+function myProjectAccess(){if(!cloudOn)return 'admin';
+  if(!isTeam){return myGrantRole[S.id]==='viewer'?'view':'edit';}
+  if(!accessReady||roleRank(teamRoleOf(myEmail))>=2)return 'admin';
+  const m=(S.members||[]).find(x=>(x.email||'').toLowerCase()===myEmail);return m?(m.access||'edit'):(S.open===false?'view':'edit');}
+function canManageProject(){return myProjectAccess()==='admin';}
+function isReadOnly(){return cloudOn&&['view','comment'].includes(myProjectAccess());}
+function applyReadOnly(){const a=cloudOn?myProjectAccess():'admin';document.body.classList.toggle('ro',a==='view'||a==='comment');document.body.classList.toggle('rc',a==='comment');}
 let _pushErrAt=0;
 function pushDenied(msg){if(Date.now()-_pushErrAt<8000)return;_pushErrAt=Date.now();toast(msg,'⚠');}
 /* ROCH #1410: приглашать могут владелец и админы (так решает сервер) — участнику кнопку не показываем, а не отказываем после нажатия */
@@ -7414,7 +7484,8 @@ function accessMatrixHTML(){
     const cells=ps.map(({p,d})=>{const open=d.open!==false,inP=(d.members||[]).some(m=>(m.email||'').toLowerCase()===em);
       if(all)return `<td><span class="am-all" title="Владелец и админы видят все проекты">все</span></td>`;
       if(open)return `<td><span class="am-all" title="Проект открыт всей команде">✓</span></td>`;
-      return `<td><button class="am-chk ${inP?'on':''}" data-amcell="${p.id}" data-em="${esc(em)}" aria-pressed="${inP}" aria-label="${inP?'Убрать из проекта':'Дать доступ'}">${inP?icon('check',14):''}</button></td>`;}).join('');
+      const mm=(d.members||[]).find(m=>(m.email||'').toLowerCase()===em);
+      return `<td><select class="fsel am-acc" data-amacc="${p.id}" data-em="${esc(em)}"><option value="">—</option>${ACC.map(([k,n])=>`<option value="${k}" ${mm&&(mm.access||'edit')===k?'selected':''}>${n}</option>`).join('')}</select></td>`;}).join('');
     const money=all?`<span class="am-all">всегда</span>`:`<button class="am-tg ${t.money!==false?'on':''}" data-ammoney="${esc(em)}" data-v="${t.money!==false?'1':'0'}" aria-label="Клиенты и деньги"><i></i></button>`;
     return `<tr><th class="am-who"><div class="am-who-in">${personAv(t.email,t.name,28)}<div><b>${esc(t.name||shownEmail(t.email))}</b><span>${({owner:'владелец',full:'админ',admin:'админ',member:'участник'})[t.role]||'участник'}</span></div></div></th>${cells}<td class="am-m">${money}</td></tr>`;}).join('');
   /* мобайл: широкая таблица → карточки. Сверху проекты с переключателем, ниже человек = карточка с чипами проектов */
@@ -7443,6 +7514,12 @@ function matrixToggle(pid,em){const x=matrixProjects().find(z=>z.p.id===pid);if(
   else{const t=teamRows.find(r=>(r.email||'').toLowerCase()===em)||{};const pal=['#a78bfa','#f472b6','#38bdf8','#34d399','#fbbf24','#fb923c'];
     d.members.push({id:uid('m'),name:t.name||em.split('@')[0],email:em,role:'',color:pal[d.members.length%pal.length],capacity:30});}
   persistProj(d,pid);renderAccessPanel();if(pid===S.id)render();}
+function matrixSetAccess(pid,em,acc){const x=matrixProjects().find(z=>z.p.id===pid);if(!x)return;const d=x.d;d.members=d.members||[];
+  const i=d.members.findIndex(m=>(m.email||'').toLowerCase()===em);
+  if(!acc){if(i>=0){const m=d.members[i];if((d.tasks||[]).some(t=>t.assigneeId===m.id&&t.status!=='done')){toast('На '+m.name+' есть открытые задачи — сначала передай их','⚠');renderAccessPanel();return;}d.members.splice(i,1);}}
+  else if(i>=0)d.members[i].access=acc;
+  else{const t=teamRows.find(r=>(r.email||'').toLowerCase()===em)||{};d.members.push({id:uid('m'),name:t.name||em.split('@')[0],email:em,access:acc,role:'',color:INV_PAL[d.members.length%INV_PAL.length],capacity:30});}
+  persistProj(d,pid);renderAccessPanel();if(pid===S.id)render();toast(acc?accName(acc):'Без доступа','🔐');}
 async function setTeamMoney(em,on){if(!sb)return;const {error}=await sb.from('team').update({money:!!on}).ilike('email',em);
   if(error){toast(/money/.test(error.message)?'Нужна миграция access.sql — права на деньги появятся после неё':'Не получилось: '+error.message,'⚠');return;}
   const r=teamRows.find(t=>(t.email||'').toLowerCase()===em);if(r)r.money=!!on;toast(on?'Видит клиентов и деньги':'Клиенты и деньги скрыты','🔐');renderAccessPanel();}
@@ -7542,6 +7619,7 @@ function renderAccessPanel(){
   $$('#accessPanel [data-trole]').forEach(sel=>sel.onchange=()=>setTeamRole(sel.dataset.trole,sel.value));
   $$('#accessPanel [data-amopen]').forEach(b=>b.onclick=()=>matrixSetOpen(b.dataset.amopen,b.dataset.v==='1'));
   $$('#accessPanel [data-amcell]').forEach(b=>b.onclick=()=>matrixToggle(b.dataset.amcell,b.dataset.em));
+  $$('#accessPanel [data-amacc]').forEach(sl=>sl.onchange=()=>matrixSetAccess(sl.dataset.amacc,sl.dataset.em,sl.value));
   $$('#accessPanel [data-ammoney]').forEach(b=>b.onclick=()=>setTeamMoney(b.dataset.ammoney,b.dataset.v!=='1'));
   const ta=$('#accTeamAdd');if(ta)ta.onclick=()=>addTeamMember($('#accTeamEmail').value,$('#accTeamName').value);
   const ai=$('#accInvite');if(ai)ai.onclick=openInvite;
@@ -9738,10 +9816,21 @@ async function onLoggedIn(){cloudOn=true;closeAuth();hideGate();updateCloudBadge
    if(mp){history.replaceState(null,'',location.pathname+location.hash);setTimeout(()=>{try{if(mp[1]!==S.id&&reg.list.find(p=>p.id===mp[1]))switchProject(mp[1]);}catch(e){}},400);}}
 } // Telegram — обязательный шаг: гейт сам дождётся очереди
 /* ROCH #1391: открыть задачу по ссылке — из сообщения бота (?t=PID:TID) и из пуш-уведомления (sw.js шлёт postMessage открытому окну) */
-function openDeepLink(pid,tid){try{if(pid!==S.id&&reg.list.find(p=>p.id===pid))switchProject(pid);
+function openDeepLink(pid,tid){try{if(cloudOn&&pid!==S.id&&!reg.list.find(p=>p.id===pid)){openNoAccess(pid);return;} /* ROCH #1412 */
+  if(pid!==S.id&&reg.list.find(p=>p.id===pid))switchProject(pid);
   setTimeout(()=>openTask(tid),pid!==S.id?250:0);}catch(e){}}
 if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{const d=e.data||{};
   if(d.type==='wando-open'){const m=String(d.url||'').match(/[?&]t=([\w-]+):([\w-]+)/);if(m)openDeepLink(m[1],m[2]);}});
+/* ROCH #1412: нет доступа — не тупик, а «Запросить доступ» (как в Asana): админам проекта и пространства уходит запрос с кнопками в боте */
+function openNoAccess(pid){const m=$('#shareModal');
+  m.innerHTML=`<div class="inv-h"><b>Нет доступа к проекту</b><span>его видят только участники</span><button class="iconbtn" data-shx aria-label="Закрыть">${icon('x',16)}</button></div>
+    <div class="inv-alt">Попроси доступ — админ проекта получит запрос в Telegram и откроет его одним тапом.</div>
+    <button class="btn primary inv-go" data-askacc>${icon('send',15)} Запросить доступ</button>`;
+  m.onclick=async e=>{if(e.target.closest('[data-shx]')){$('#shareScrim').classList.remove('show');return;}
+    if(e.target.closest('[data-askacc]')){const tk=await aiToken();if(!tk)return;
+      try{const r=await fetch(CFG.url+'/functions/v1/tma-auth',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+tk},body:JSON.stringify({kind:'access_request',project_id:pid,name:meName()})}).then(x=>x.json());
+        if(r&&r.ok){$('#shareScrim').classList.remove('show');toast('Запрос отправлен — придёт ответ в Telegram','🔑');}else toast((r&&r.error)||'Не получилось отправить запрос','⚠');}catch(_){toast('Не получилось — проверь сеть','⚠');}}};
+  $('#shareScrim').onclick=e=>{if(e.target.id==='shareScrim')e.target.classList.remove('show');};$('#shareScrim').classList.add('show');}
 /* ---- профиль при первом входе ---- */
 let profileDraft=null;
 function cropPhoto(f,cb){const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const s=160,c=document.createElement('canvas');c.width=s;c.height=s;const ctx=c.getContext('2d');const mn=Math.min(img.width,img.height),sx=(img.width-mn)/2,sy=(img.height-mn)/2;ctx.drawImage(img,sx,sy,mn,mn,0,0,s,s);cb(c.toDataURL('image/jpeg',0.82));};img.src=r.result;};r.readAsDataURL(f);}
@@ -9927,7 +10016,7 @@ function cloudPush(p,now){
      /^(Мой проект|Новый проект)?$/.test((p.projectName||'').trim())) return;
   p.updatedAt=Date.now();
   const row={id:p.id,name:p.projectName,emoji:(reg.list.find(x=>x.id===p.id)||{}).emoji||'📄',data:p,updated_by:me,updated_at:new Date().toISOString()};
-  if(p.id===S.id&&isReadOnly()){pushDenied('Только просмотр — изменения не сохраняются');return;}
+  if(p.id===S.id&&cloudOn&&myProjectAccess()==='view'){pushDenied('Ты наблюдатель в этом проекте — изменения не сохраняются');return;}
   const doit=async()=>{try{const snap=JSON.stringify(row.data);const {error}=await sb.from('projects').upsert(row);
     if(error){pushDenied('Не сохранилось в облако: '+(/row-level|permission|policy/i.test(error.message)?'нет прав на правку этого проекта':error.message));return;}
     saveBase(p.id,snap);}catch(e){console.warn('cloud push',e);pushDenied('Не сохранилось в облако — проверь сеть');}}; /* ROCH #1402: отказ базы больше не тихий */

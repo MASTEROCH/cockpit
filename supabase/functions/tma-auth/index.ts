@@ -2,7 +2,7 @@
 // Проверяем подпись initData ботом, находим юзера в tg_links → magiclink token.
 // Секреты: TELEGRAM_BOT_TOKEN (общий с tg-bot). Verify JWT: ВЫКЛ.
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { redeemInvite } from "../_shared/invite.ts";
+import { redeemInvite, isProjectAdmin } from "../_shared/invite.ts";
 
 const BOT = Deno.env.get("TELEGRAM_BOT_TOKEN") ?? "";
 const sb = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
@@ -49,7 +49,11 @@ async function makeInvite(req: Request, body: Record<string, any>) {
   if (!p) return json({ error: "проект не найден" }, 404);
   const { data: me } = await sb.from("team").select("name,role").ilike("email", email).eq("workspace_id", p.workspace_id).limit(1);
   const role = String(me?.[0]?.role || "full").toLowerCase();
-  if (!me?.length || !["owner", "full", "admin"].includes(role)) return json({ error: "Приглашать может владелец или админ пространства" }, 403);
+  const wsAdmin = !!me?.length && ["owner", "full", "admin"].includes(role);
+  // ROCH #1412: как в Asana — гостя в проект может позвать и админ проекта; в команду — только владелец/админ пространства
+  const guest = !!body.guest || (!wsAdmin && await isProjectAdmin(sb, email, p.id));
+  if (!wsAdmin && !(guest && await isProjectAdmin(sb, email, p.id))) return json({ error: "Звать в команду может владелец или админ; гостя в проект — админ проекта" }, 403);
+  const access = ["admin", "edit", "comment", "view"].includes(String(body.access)) ? String(body.access) : "edit";
   const code = rnd(12), exp = Date.now() + 7 * 864e5;
   // ROCH #1411: пригласить сразу админом может только владелец (админов назначает он один)
   const invRole = body.role === "admin" && role === "owner" ? "admin" : "member";
@@ -59,13 +63,14 @@ async function makeInvite(req: Request, body: Record<string, any>) {
     const { data: ps } = await sb.from("projects").select("id").eq("workspace_id", p.workspace_id).in("id", body.projects.map(String).slice(0, 30));
     projects = (ps ?? []).map((x: Record<string, any>) => x.id);
   }
-  const byName = String(body.by_name || me[0].name || email.split("@")[0]).slice(0, 60);
+  const byName = String(body.by_name || me?.[0]?.name || email.split("@")[0]).slice(0, 60);
   const { error } = await sb.from("workspace_meta").insert({ k: "invite:" + code, workspace_id: p.workspace_id,
-    v: { ws: p.workspace_id, project: p.id, by: email, byName, role: invRole, exp, max: body.member_id ? 1 : 20, uses: 0,
+    v: { ws: p.workspace_id, project: p.id, by: email, byName, role: guest ? "member" : invRole, access: guest && access !== "view" ? "edit" : access, ...(guest ? { guest: true } : {}), exp, max: body.member_id ? 1 : 20, uses: 0,
       ...(body.member_id ? { member: String(body.member_id).slice(0, 40) } : {}), ...(projects.length ? { projects } : {}) } }); // ROCH #1404: приглашение для карточки-заготовки — одноразовое
   if (error) return json({ error: error.message }, 500);
   const link = `https://t.me/${BOT_USER}?start=join_${code}`, web = `${SITE_URL}/?join=${code}`;
-  const text = `${byName} зовёт тебя ${invRole === "admin" ? "админом " : ""}в «${p.name}» в WANDO — нажми, и ты в команде`;
+  const text = guest ? `${byName} открыл(а) тебе проект «${p.name}» в WANDO — нажми, и ты внутри`
+    : `${byName} зовёт тебя ${invRole === "admin" ? "админом " : ""}в «${p.name}» в WANDO — нажми, и ты в команде`;
   let prepared_id: string | null = null;
   const tg = body.initData ? await verifyInitData(String(body.initData)) : null;
   if (tg?.id) {
@@ -79,6 +84,35 @@ async function makeInvite(req: Request, body: Record<string, any>) {
     else console.error("postcard: savePreparedInlineMessage failed", r?.description); // fail-loud: клиент покажет обычную ссылку
   }
   return json({ code, link, web, text, exp, prepared_id, role: invRole });
+}
+
+// ROCH #1412: «Запросить доступ» (как в Asana) — человек открыл ссылку на проект, которого не видит. Запрос — служебная запись,
+// бот шлёт админам пространства и проекта [Редактор] [Наблюдатель] [Отклонить]; решает бот (arq:<id>:…)
+async function accessRequest(req: Request, body: Record<string, any>) {
+  const jwt = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
+  const { data: u } = await sb.auth.getUser(jwt);
+  const email = u?.user?.email?.toLowerCase();
+  if (!email) return json({ error: "нужен вход" }, 401);
+  const { data: p } = await sb.from("projects").select("id,name,data,workspace_id").eq("id", String(body.project_id ?? "")).maybeSingle();
+  if (!p) return json({ error: "проект не найден" }, 404);
+  const id = rnd(10);
+  const name = String(body.name || email.split("@")[0]).slice(0, 60);
+  await sb.from("workspace_meta").insert({ k: "accessreq:" + id, workspace_id: p.workspace_id, v: { pid: p.id, email, name, ts: Date.now() } });
+  const { data: admins } = await sb.from("team").select("email,role").eq("workspace_id", p.workspace_id).in("role", ["owner", "admin", "full"]);
+  const to = new Set<string>([...(admins ?? []).map((a: Record<string, any>) => String(a.email).toLowerCase()),
+    ...((p.data?.members ?? []) as Record<string, any>[]).filter((m) => m?.access === "admin" && m?.email).map((m) => String(m.email).toLowerCase())]);
+  to.delete(email);
+  const { data: links } = await sb.from("tg_links").select("chat_id,email").eq("revoked", false);
+  let sent = 0;
+  for (const l of (links ?? []) as Record<string, any>[]) {
+    if (!to.has(String(l.email).toLowerCase())) continue;
+    await fetch(`https://api.telegram.org/bot${BOT}/sendMessage`, { method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ chat_id: l.chat_id, parse_mode: "HTML",
+        text: `🔑 <b>${escH(name)}</b> просит доступ к проекту «${escH(p.name)}»`,
+        reply_markup: { inline_keyboard: [[{ text: "Редактор", callback_data: `arq:${id}:edit` }, { text: "Наблюдатель", callback_data: `arq:${id}:view` }], [{ text: "Отклонить", callback_data: `arq:${id}:no` }]] } }) }).catch(() => null);
+    sent++;
+  }
+  return json({ ok: true, sent });
 }
 
 // ROCH #1399: вход на САЙТ через Telegram. Браузер заводит код + секрет (секрет живёт только в браузере, у нас — его хеш),
@@ -108,6 +142,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json();
     if (body.kind === "invite") return await makeInvite(req, body);
+    if (body.kind === "access_request") return await accessRequest(req, body);
     if (body.kind === "login_poll") return await loginPoll(String(body.code ?? ""), String(body.secret ?? ""), req.headers.get("user-agent") ?? "");
     if (body.kind === "join_web") { // ?join=<код> на сайте: вошёл по почте → гасим приглашение по его JWT
       const jwt = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");

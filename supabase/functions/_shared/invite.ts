@@ -22,14 +22,36 @@ export async function readInvite(sb: any, code: string): Promise<{ inv?: Record<
   // приглашать могут только Владелец / Админ этого пространства — проверка на сервере, кнопка в интерфейсе не в счёт
   const { data: by } = await sb.from("team").select("role").ilike("email", inv.by).eq("workspace_id", inv.ws).limit(1);
   const role = String(by?.[0]?.role || "full").toLowerCase();
-  if (!by?.length || !["owner", "full", "admin"].includes(role)) return { err: "Это приглашение больше не действует" };
+  const wsAdmin = !!by?.length && ["owner", "full", "admin"].includes(role);
+  // ROCH #1412: гостя в свой проект может позвать и админ проекта (как в Asana)
+  const projAdmin = !wsAdmin && inv.guest && inv.project ? await isProjectAdmin(sb, inv.by, inv.project) : false;
+  if (!wsAdmin && !projAdmin) return { err: "Это приглашение больше не действует" };
   if (inv.role === "admin" && role !== "owner") return { err: "Это приглашение больше не действует" }; // ROCH #1411: админов назначает только владелец
   return { inv };
 }
 
+export async function isProjectAdmin(sb: any, email: string, pid: string): Promise<boolean> {
+  const { data: p } = await sb.from("projects").select("data").eq("id", pid).maybeSingle();
+  return ((p?.data?.members ?? []) as any[]).some((m) => String(m?.email ?? "").toLowerCase() === String(email).toLowerCase() && m?.access === "admin");
+}
+const ACCESS = ["admin", "edit", "comment", "view"];
+
 export async function redeemInvite(sb: any, code: string, who: { email: string; name: string; tg?: number | string }) {
   const { inv, err } = await readInvite(sb, code);
   if (!inv) return { ok: false as const, err };
+  // ROCH #1412: гость (как guest в Asana) — только этот проект, без места в команде
+  if (inv.guest && inv.project) {
+    const em0 = who.email.toLowerCase();
+    const role = inv.access === "view" ? "viewer" : "member";
+    const { data: ex } = await sb.from("project_access").select("email").ilike("email", em0).eq("project_id", inv.project).limit(1);
+    if (ex?.length) await sb.from("project_access").update({ role }).ilike("email", em0).eq("project_id", inv.project);
+    else { const { error } = await sb.from("project_access").insert({ email: em0, project_id: inv.project, role, granted_by: inv.by });
+      if (error) return { ok: false as const, err: "Не получилось открыть доступ: " + error.message }; }
+    await sb.from("workspace_meta").update({ v: { ...inv, uses: Number(inv.uses ?? 0) + 1 } }).eq("k", "invite:" + code);
+    const { data: pj } = await sb.from("projects").select("name").eq("id", inv.project).maybeSingle();
+    return { ok: true as const, ws: inv.ws as string, wsName: "", pid: inv.project as string, projectName: (pj?.name ?? "") as string, by: inv.by as string, byName: (inv.byName ?? inv.by) as string, already: !!ex?.length, guest: true };
+  }
+  const access = ACCESS.includes(inv.access) ? inv.access : "edit";
   const em = who.email.toLowerCase();
   const name = (who.name || em.split("@")[0]).slice(0, 60);
   const { data: have } = await sb.from("team").select("email").ilike("email", em).eq("workspace_id", inv.ws).limit(1);
@@ -51,9 +73,9 @@ export async function redeemInvite(sb: any, code: string, who: { email: string; 
     const slot = inv.member ? d.members.find((m: any) => m?.id === inv.member && !m?.email) : null;
     let changed = false;
     // ROCH #1409: номер Telegram в карточке — второй ключ личности (узнаём и без почты)
-    if (slot) { slot.email = em; if (who.tg) slot.tg = Number(who.tg); if (!slot.name || /^Новый участник/.test(slot.name)) slot.name = name; changed = true; }
+    if (slot) { slot.email = em; if (who.tg) slot.tg = Number(who.tg); if (!slot.access) slot.access = access; if (!slot.name || /^Новый участник/.test(slot.name)) slot.name = name; changed = true; }
     else if (!d.members.some((m: any) => String(m?.email ?? "").toLowerCase() === em)) {
-      d.members.push({ id: inv.member || ("m" + Math.random().toString(36).slice(2, 8)), name, email: em, ...(who.tg ? { tg: Number(who.tg) } : {}), role: "", color: PALETTE[d.members.length % PALETTE.length], capacity: 30 });
+      d.members.push({ id: inv.member || ("m" + Math.random().toString(36).slice(2, 8)), name, email: em, ...(who.tg ? { tg: Number(who.tg) } : {}), access, role: "", color: PALETTE[d.members.length % PALETTE.length], capacity: 30 });
       changed = true;
     }
     if (changed) {

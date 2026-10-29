@@ -14,7 +14,7 @@
 // ВАЖНО: «Verify JWT» у функции — ВЫКЛ.
 // ============================================================================
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { redeemInvite, tgEmail } from "../_shared/invite.ts";
+import { redeemInvite, tgEmail, isProjectAdmin } from "../_shared/invite.ts";
 
 const BOT = Deno.env.get("TELEGRAM_BOT_TOKEN") ?? "";
 const BOT_ID = Number(BOT.split(":")[0]) || 0; // id бота = первая часть токена; для проверки авторства reply
@@ -205,7 +205,9 @@ async function joinByInvite(chatId: number, from: Record<string, any>, code: str
   } catch (_) { /* не критично */ }
   const where = r.projectName ? ` — ${esc(r.byName)} позвал(а) тебя в «${esc(r.projectName)}»` : "";
   await TG("sendMessage", { chat_id: chatId, parse_mode: "HTML", disable_web_page_preview: true,
-    text: `${r.already ? "👋 Ты уже в команде" : "👋 Ты в команде"} <b>${esc(r.wsName || "WANDO")}</b>${where}.\n\nЖми <b>Открыть WANDO</b> — ты уже вошёл. Задачи можно писать и сюда: текстом или голосом 🎙`,
+    text: (r as Record<string, any>).guest
+      ? `👋 Тебе открыт проект «${esc(r.projectName)}» — ${esc(r.byName)} позвал(а) тебя гостем.\n\nЖми <b>Открыть WANDO</b> — ты уже вошёл.`
+      : `${r.already ? "👋 Ты уже в команде" : "👋 Ты в команде"} <b>${esc(r.wsName || "WANDO")}</b>${where}.\n\nЖми <b>Открыть WANDO</b> — ты уже вошёл. Задачи можно писать и сюда: текстом или голосом 🎙`,
     reply_markup: { inline_keyboard: [[{ text: "Открыть WANDO", web_app: { url: APP_URL + (r.pid ? "/?p=" + r.pid : "") } }]] } });
   if (!r.already) await capTell(r.by, `🎉 <b>${esc(link?.name ?? tgName)}</b> принял(а) приглашение${r.projectName ? ` в «${esc(r.projectName)}»` : ""} — теперь на него/неё можно ставить задачи`);
 }
@@ -233,6 +235,45 @@ async function webLoginDecide(chatId: number, messageId: number, link: Link, cod
     : yes ? "✅ Вход подтверждён — вернись в браузер" : "🚫 Вход отклонён. Если это был не ты — ничего не случилось, сессию никто не получил";
   if (v) await sb.from("workspace_meta").update({ v: { ...v, state: yes ? "yes" : "no", email: yes ? link.email : null } }).eq("k", key);
   await TG("editMessageText", { chat_id: chatId, message_id: messageId, text, parse_mode: "HTML" });
+}
+
+// ROCH #1412: решение по «Запросить доступ» — только админ пространства или админ проекта
+async function accessDecide(cb: Record<string, any>, chatId: number, link: Link, id: string, how: string) {
+  const mid = cb.message.message_id as number;
+  const ack = (t: string) => TG("answerCallbackQuery", { callback_query_id: cb.id, text: t });
+  const key = "accessreq:" + id;
+  const { data: row } = await sb.from("workspace_meta").select("v").eq("k", key).maybeSingle();
+  const r = row?.v as Record<string, any> | undefined;
+  if (!r?.pid) { await ack("Запрос уже решён"); return; }
+  const { data: p } = await sb.from("projects").select("id,name,data,workspace_id").eq("id", r.pid).maybeSingle();
+  if (!p) { await ack("Проект не найден"); return; }
+  const { data: me } = await sb.from("team").select("role").ilike("email", link.email).eq("workspace_id", p.workspace_id).limit(1);
+  const wsAdmin = ["owner", "admin", "full"].includes(String(me?.[0]?.role ?? ""));
+  if (!wsAdmin && !(await isProjectAdmin(sb, link.email, p.id))) { await ack("Решает админ проекта"); return; }
+  await sb.from("workspace_meta").delete().eq("k", key);
+  if (how === "no") {
+    await capTell(r.email, `Запрос доступа к «${esc(p.name ?? "")}» отклонён`);
+    await TG("editMessageText", { chat_id: chatId, message_id: mid, parse_mode: "HTML", text: `✕ Отклонено: <b>${esc(r.name)}</b> → «${esc(p.name ?? "")}»` });
+    return;
+  }
+  const access = how === "view" ? "view" : "edit";
+  const { data: inTeam } = await sb.from("team").select("email").ilike("email", r.email).eq("workspace_id", p.workspace_id).limit(1);
+  if (inTeam?.length) {
+    const d = p.data ?? {}; d.members = d.members ?? [];
+    const m = (d.members as Record<string, any>[]).find((x) => String(x?.email ?? "").toLowerCase() === String(r.email).toLowerCase());
+    if (m) m.access = access;
+    else d.members.push({ id: "m" + Math.random().toString(36).slice(2, 8), name: r.name, email: r.email, access, role: "", color: "#a78bfa", capacity: 30 });
+    d.updatedAt = Date.now();
+    await sb.from("projects").update({ data: d, updated_at: new Date().toISOString(), updated_by: null }).eq("id", p.id);
+  } else {
+    const role = access === "view" ? "viewer" : "member";
+    const { data: ex } = await sb.from("project_access").select("email").ilike("email", r.email).eq("project_id", p.id).limit(1);
+    if (ex?.length) await sb.from("project_access").update({ role }).ilike("email", r.email).eq("project_id", p.id);
+    else await sb.from("project_access").insert({ email: r.email, project_id: p.id, role, granted_by: link.email });
+  }
+  await capTell(r.email, `🔓 Доступ к «<a href="${APP_URL}/?p=${p.id}">${esc(p.name ?? "")}</a>» открыт — ${access === "view" ? "наблюдатель" : "редактор"}`);
+  await ack("Готово ✓");
+  await TG("editMessageText", { chat_id: chatId, message_id: mid, parse_mode: "HTML", text: `✓ <b>${esc(r.name)}</b> → «${esc(p.name ?? "")}» · ${access === "view" ? "наблюдатель" : "редактор"}` });
 }
 
 // вызывается ТОЛЬКО из selfServeVerify — после подтверждения почты
@@ -1553,6 +1594,7 @@ Deno.serve(async (req) => {
     let handled = false;
     if (link) {
       if (CAP_ACTS.has(act)) { await capCallback(cb, chatId, link, act, id, arg); return new Response("ok"); }
+      if (act === "arq") { await accessDecide(cb, chatId, link, id, arg ?? "no"); return new Response("ok"); }
       if (act === "lgy" || act === "lgn") { await TG("answerCallbackQuery", { callback_query_id: cb.id }); await webLoginDecide(chatId, cb.message.message_id, link, id, act === "lgy"); return new Response("ok"); }
       if (act === "acc" || act === "accto") {
         if (!(await isTeam(link.email))) result = "Решает команда 🙂";

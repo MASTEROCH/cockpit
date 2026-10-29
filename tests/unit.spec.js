@@ -250,7 +250,7 @@ test('приглашение: клиент шлёт только id, ссылк�
       shown: document.querySelector('#invScrim').classList.contains('show'),
       tg: shownEmail('tg123@tg.cock-pit.com'), real: shownEmail('a@b.com') };
   });
-  expect(r).toEqual({ keys: 'by_name,initData,kind,member_id,project_id,projects,role', kind: 'invite', proj: true, share: true,
+  expect(r).toEqual({ keys: 'access,by_name,guest,initData,kind,member_id,project_id,projects,role', kind: 'invite', proj: true, share: true,
     copy: 'https://t.me/wando_tasks_bot?start=join_abc123def456', card: false, shown: true, tg: 'через Telegram', real: 'a@b.com' });
 });
 
@@ -369,4 +369,24 @@ test('приглашение админом: переключатель у вл�
     return { seg, sent: sent.join(','), segAdmin };
   });
   expect(r).toEqual({ seg: true, sent: 'member,admin,member', segAdmin: false });
+});
+
+// ROCH #1412: роли в проекте как в Asana — наблюдатель только смотрит, комментатор комментирует; матрица ставит роль; нет доступа — запрос
+test('роли в проекте: наблюдатель, комментатор, матрица, «Запросить доступ»', async ({ page }) => {
+  await boot(page);
+  const r = await page.evaluate(async () => {
+    accessReady = true; isTeam = true;
+    teamRows = [{ email: myEmail, role: 'member' }];
+    S.members = [{ id: 'm1', name: 'Я', email: myEmail, access: 'view' }, { id: 'm2', name: 'Икс', email: 'x@local.test' }];
+    render(); const view = [myProjectAccess(), document.body.classList.contains('ro'), document.body.classList.contains('rc')];
+    S.members[0].access = 'comment'; render(); const comment = [myProjectAccess(), document.body.classList.contains('ro'), document.body.classList.contains('rc')];
+    S.members[0].access = 'admin'; render(); const admin = [canManageProject(), document.body.classList.contains('ro')];
+    teamRows = [{ email: myEmail, role: 'owner' }, { email: 'x@local.test', role: 'member' }];
+    S.open = false; matrixSetAccess(S.id, 'x@local.test', 'comment'); const mx = (S.members.find(m => m.email === 'x@local.test') || {}).access;
+    aiToken = async () => 'tok'; let sent = null; window.fetch = async (u, o) => { sent = JSON.parse(o.body); return { json: async () => ({ ok: true }) }; };
+    openDeepLink('pNoSuch', 't1'); const shown = document.querySelector('#shareScrim').classList.contains('show');
+    document.querySelector('[data-askacc]').click(); await new Promise(r => setTimeout(r, 50));
+    return { view, comment, admin, mx, shown, kind: sent && sent.kind, pid: sent && sent.project_id };
+  });
+  expect(r).toEqual({ view: ['view', true, false], comment: ['comment', true, true], admin: [true, false], mx: 'comment', shown: true, kind: 'access_request', pid: 'pNoSuch' });
 });
