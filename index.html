@@ -490,10 +490,8 @@ header{background:rgba(18,21,31,.62);backdrop-filter:var(--blur);-webkit-backdro
 .tab.active{background:linear-gradient(180deg,rgba(255,255,255,.15),rgba(255,255,255,.05));box-shadow:var(--ghi),0 2px 8px rgba(0,0,0,.25)}
 /* «Сейчас» — дом: всегда полным цветом (инструменты приглушены до наведения), ⚡ акцентом, тонкий разделитель после */
 @media(min-width:821px){
-  .tabs .tab-home:not(.active){color:var(--txt)}
+  /* ROCH #1383: 4 равных места — у «Сегодня» больше нет особого цвета и разделителя (он отделял дом от 8 проектных вкладок) */
   .tabs .tab-home svg{color:var(--acc2)}
-  .tabs .tab-home{position:relative;margin-right:9px}
-  .tabs .tab-home::after{content:"";position:absolute;right:-5px;top:22%;height:56%;width:1px;background:var(--line)}
 }
 .logo{box-shadow:0 3px 10px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.22)}
 
@@ -919,7 +917,7 @@ a.btn.primary,a.btn.primary:visited{color:#fff}
 /* ROCH-канон: пинг-понг длинного текста — обрезанное медленно проезжает туда-обратно с паузами на краях */
 .pp-on{text-overflow:clip}
 .ppin{display:inline-block;white-space:nowrap;vertical-align:bottom}
-.pp-on .ppin{animation:ppslide var(--ppt,7s) ease-in-out 1.2s infinite alternate}
+.pp-on .ppin{animation:ppslide var(--ppt,7s) ease-in-out var(--ppw,1.2s) infinite alternate} /* --ppw: старт вразнобой — пять строк, поехавших разом, читаются как шум */
 @keyframes ppslide{0%,14%{transform:translateX(0)}86%,100%{transform:translateX(var(--ppd,0px))}}
 @media (prefers-reduced-motion: reduce){.pp-on .ppin{animation:none}}
 /* ═══ Слой движения: быстро, тактильно, дорого. Всё гаснет при reduced-motion ═══ */
@@ -2384,11 +2382,11 @@ body.light .crm-col{background:rgba(20,20,30,.025)}
   background:linear-gradient(145deg,color-mix(in srgb,var(--sc) 85%,#fff),var(--sc));box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
 .crm-av.big{width:52px;height:52px;border-radius:16px;font-size:19px}
 .crm-nm{flex:1;min-width:0;display:flex;flex-direction:column}
-.crm-nm b{font-size:14px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.crm-nm span{font-size:12px;color:var(--mut2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crm-nm>b{font-size:14px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crm-nm>span{font-size:12px;color:var(--mut2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .crm-amt{font-weight:700;font-size:13.5px;font-variant-numeric:tabular-nums;color:var(--txt)}
 .crm-next{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12.5px;color:var(--mut)}
-.crm-next span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crm-next>span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .crm-next i{font-style:normal;font-size:11.5px;color:var(--mut2);white-space:nowrap}
 .crm-next.late,.crm-next.late i{color:var(--bad)}
 .crm-next.none{color:var(--mut2);opacity:.75}
@@ -2422,7 +2420,7 @@ body.light .crm-col{background:rgba(20,20,30,.025)}
 .crm-noteadd{display:flex;gap:8px}
 .crm-tasks{display:flex;flex-direction:column;gap:6px}
 .crm-tasks button{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--glass-2);border-radius:12px;padding:9px 11px;text-align:left;color:var(--txt);font-size:13px}
-.crm-tasks button span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crm-tasks button>span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .crm-tasks button i{font-style:normal;color:var(--mut2);font-size:11.5px}
 .crm-tasks button.done{color:var(--mut2)}.crm-tasks button.done svg{color:var(--ok)}
 .crm-notes{display:flex;flex-direction:column;gap:2px;margin-top:8px;max-height:220px;overflow:auto}
@@ -2768,7 +2766,7 @@ body.light .ps-bars span{background:rgba(20,20,30,.1)}
 .ps-people{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
 .ps-person{display:flex;gap:12px;padding:14px;border-radius:20px;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box}
 .ps-person>div{display:flex;flex-direction:column;gap:4px;min-width:0}
-.ps-person b{font-size:16px}.ps-person span{font-size:13.5px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ps-person em{font-size:12.5px;color:var(--mut2);font-style:normal}
+.ps-person b{font-size:16px}.ps-person>div>span{font-size:13.5px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ps-person em{font-size:12.5px;color:var(--mut2);font-style:normal}
 .ps-acts{display:flex;gap:10px;flex-wrap:wrap}
 .ps-nav{display:flex;align-items:center;justify-content:center;gap:12px;padding-top:10px}
 .ps-arrow{width:52px;height:52px;border-radius:50%;border:1px solid transparent;cursor:pointer;color:var(--txt);font-size:24px;line-height:1;
@@ -2785,7 +2783,7 @@ body.light .ps-bars span{background:rgba(20,20,30,.1)}
 .ps-col{display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:22px;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box;min-width:0}
 .ps-col h3{margin:0 0 2px;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--mut2)}
 .ps-col.ok h3{color:var(--ok)}.ps-col.bad h3{color:var(--bad)}
-.ps-col span{font-size:clamp(14px,1.6vw,17px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ps-col>span{font-size:clamp(14px,1.6vw,17px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ps-col em{font-style:normal;font-size:13px;color:var(--mut2)}
 .ps-next{font-size:14px;color:var(--mut);text-align:right}
 @media (max-width:680px){.ps-cols{grid-template-columns:1fr}}
@@ -2795,7 +2793,7 @@ body.light .vlink{background:rgba(124,92,224,.1)}
 .vlink:hover{background:rgba(167,139,250,.28)}
 .vacts{display:flex;flex-direction:column;gap:6px;margin:6px 0 2px;max-width:92%}
 .vact{display:flex;align-items:center;gap:10px;padding:8px 8px 8px 12px;border-radius:14px;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box;font-size:13.5px}
-.vact span{flex:1;min-width:0}
+.vact>span{flex:1;min-width:0}
 .vact button{flex:0 0 auto;white-space:nowrap;border:none;border-radius:999px;padding:7px 13px;font-weight:650;font-size:12.5px;cursor:pointer;background:var(--inv-bg);color:var(--inv-fg);display:inline-flex;align-items:center;gap:5px}
 .vact.done{opacity:.7}.vact.done button{background:none;color:var(--ok)}
 .vmeta{font-size:11.5px;color:var(--mut2);margin:2px 0 10px 4px}
@@ -2825,7 +2823,7 @@ body.light .toast .tact{background:rgba(124,92,224,.12)}
 .dpc.empty .dpc-h{padding:0}
 .dpc-h b{color:var(--txt);font-weight:650;white-space:nowrap}.dpc-h svg{color:var(--acc2);flex:0 0 auto}
 .blk .dpc-h svg{color:var(--bad)}
-.dpc-h span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dpc-h>span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dpc-s{font-size:13.5px;color:var(--mut);line-height:1.45}
 .dpc-re{flex:0 0 auto;width:28px;height:28px;border-radius:50%;border:none;background:none;color:var(--mut2);display:grid;place-items:center;cursor:pointer}
 .dpc-re:hover{color:var(--txt);background:rgba(255,255,255,.06)}
@@ -2841,6 +2839,72 @@ body.light .toast .tact{background:rgba(124,92,224,.12)}
 .blk-dot{width:8px;height:8px;padding:0!important;border-radius:50%!important;background:var(--bad);flex:0 0 auto}
 .blk-more{font-size:12px;color:var(--mut2);padding:2px 6px 6px}
 @media (max-width:680px){.dpr em{display:none}.blk .dpr em{display:inline;max-width:40%;overflow:hidden;text-overflow:ellipsis}}
+/* «Решения» на «Сегодня» */
+.dec{border-radius:22px;padding:12px 12px 6px;margin-bottom:14px;border:1px solid transparent;
+  background:radial-gradient(120% 140% at 100% 0%,rgba(167,139,250,.12),transparent 60%) padding-box,var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-soft)}
+.dec.calm{display:flex;align-items:center;gap:10px;padding:14px 16px;color:var(--mut);font-size:14px}.dec.calm svg{color:var(--ok)}
+.decr{display:flex;align-items:center;gap:11px;padding:9px 4px;border-top:1px solid var(--line)}
+.dec .dpc-h+.decr{border-top:none}
+.dec-ic{flex:0 0 auto;width:32px;height:32px;border-radius:11px;display:grid;place-items:center;background:rgba(255,255,255,.07);color:var(--mut)}
+body.light .dec-ic{background:rgba(20,20,30,.05)}
+.dec-ic.bad{color:var(--bad);background:rgba(255,69,58,.13)}.dec-ic.acc{color:var(--acc2);background:rgba(167,139,250,.15)}
+.dec-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;cursor:pointer}
+.dec-tx>b{font-size:14px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dec-tx>span{font-size:12.5px;color:var(--mut2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dec-a{flex:0 0 auto;display:flex;gap:6px}
+.dec-a button{border:none;border-radius:999px;padding:7px 12px;font-weight:650;font-size:12.5px;white-space:nowrap;cursor:pointer;background:var(--inv-bg);color:var(--inv-fg);transition:transform .34s var(--spring)}
+.dec-a button.sec{background:rgba(255,255,255,.08);color:var(--txt)}body.light .dec-a button.sec{background:rgba(20,20,30,.06)}
+.dec-a button:active{transform:scale(.94);transition-duration:.06s}
+@media (max-width:680px){.dec-a button.sec{display:none}} /* на телефоне — одно главное действие, второе — тапом по строке */
+/* ROCH #1383: сегмент подэкранов — на всех ширинах. Десктоп: тихая строка под шапкой без стекла (контент ниже скроллится сам);
+   мобайл: стеклянная липкая полоса (правила в @media 680 выше). Выбранный — белая капсула, счётчик — тихая цифра */
+#mseg button{display:inline-flex;align-items:center;gap:6px}
+#mseg button em{font-style:normal;font-size:11px;font-weight:700;min-width:18px;height:18px;padding:0 5px;border-radius:9px;display:inline-grid;place-items:center;background:rgba(255,255,255,.1);color:var(--txt)}
+body.light #mseg button em{background:rgba(30,30,60,.08)}
+#mseg button.on em{background:var(--acc2);color:#fff}
+#mseg .mback{padding-left:9px;color:var(--mut)}
+#mseg .mback svg{margin-right:-2px}
+@media (min-width:681px){
+  .mseg{position:relative;top:auto;background:none;border-bottom:1px solid var(--line);padding:8px 20px;gap:4px;-webkit-backdrop-filter:none;backdrop-filter:none}
+  body.light .mseg{background:none}
+  #mseg button{border-radius:999px;border:1px solid transparent;background:none;color:var(--mut);font-weight:600;font-size:13px;padding:6px 13px}
+  #mseg button:hover{color:var(--txt);background:rgba(255,255,255,.05)}
+  body.light #mseg button:hover{background:rgba(30,30,60,.04)}
+  #mseg button.on{background:rgba(255,255,255,.12);color:var(--txt);box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+  body.light #mseg button.on{background:#fff;box-shadow:0 1px 3px rgba(30,30,60,.12)}
+}
+/* ROCH #1384: колонка Ганта под себя. Ширина — одна переменная --glw (раньше min/max на трёх брейкпойнтах).
+   Свёрнуто — полоса «статус + человек» 64 px: строки узнаются по цвету и лицу, полотно получает всю ширину */
+.gantt{--glw:320px}
+@media (max-width:900px){.gantt{--glw:190px}}
+@media (max-width:680px){.gantt{--glw:164px}}
+.gantt.gcol{--glw:64px}
+.gantt .gleft{width:var(--glw);min-width:0;max-width:none;box-sizing:border-box}
+.gantt.gcol-anim .gleft{transition:width .34s cubic-bezier(.22,1,.36,1)}
+.gcorner{justify-content:space-between}
+.gcorner .gct{overflow:hidden;text-overflow:clip;white-space:nowrap;min-width:0}
+.gcol-t{flex:0 0 auto;width:30px;height:30px;margin-right:-6px;border-radius:9px;border:0;background:none;color:var(--mut);display:grid;place-items:center;cursor:pointer;transition:background .15s,color .15s}
+.gcol-t:hover{background:rgba(255,255,255,.07);color:var(--txt)}
+body.light .gcol-t:hover{background:rgba(30,30,60,.06)}
+.gantt.gcol .gcorner{padding:0;justify-content:center}
+.gantt.gcol .gcol-t{margin:0}
+.gantt.gcol .gct,.gantt.gcol .grow .tt,.gantt.gcol .grow .est,.gantt.gcol .grow .blk,.gantt.gcol .ghint,.gantt.gcol .grow.addrow>span:not(.dot){display:none}
+.gantt.gcol .grow{justify-content:center;padding:0 6px;gap:6px}
+.gantt.gcol .grow.sec .chev{margin:0}
+/* длинное название в списке Ганта: без «…». Край мягко гаснет (ширину человек теперь задаёт сам), а строка под курсором
+   проезжает пинг-понгом. Двадцать строк, едущих разом, — шум, поэтому в таблице только по наведению */
+.grow .tt{text-overflow:clip;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent)}
+.grow .tt.pp-on .ppin{animation:none}
+.grow:hover .tt.pp-on .ppin{animation:ppslide var(--ppt,7s) ease-in-out .3s infinite alternate}
+/* ручка: невидима, пока не нужна; у края — тонкая линия и «таблетка», курсор ↔ (как в Link Desk) */
+.ggrip{position:absolute;top:0;bottom:0;right:-6px;width:12px;z-index:14;cursor:col-resize;touch-action:none;outline:0}
+.ggrip::after{content:'';position:absolute;top:0;bottom:0;left:5px;width:2px;border-radius:2px;background:var(--acc2);opacity:0;transition:opacity .18s}
+.ggrip::before{content:'';position:sticky;display:block;top:calc(50vh - 120px);margin-left:2px;width:8px;height:44px;border-radius:99px;background:var(--acc2);opacity:0;transform:scaleX(.5);transition:opacity .18s,transform .22s cubic-bezier(.22,1,.36,1)}
+.ggrip:hover::after,.ggrip:focus-visible::after,.g-resizing .ggrip::after{opacity:.75}
+.ggrip:hover::before,.ggrip:focus-visible::before,.g-resizing .ggrip::before{opacity:1;transform:none}
+body.col-resizing,body.col-resizing *{cursor:col-resize!important;-webkit-user-select:none!important;user-select:none!important}
+@media (hover:none){.ggrip{width:22px;right:-11px}.ggrip::after{left:10px;opacity:.35}.ggrip::before{margin-left:7px;opacity:.55;transform:none}}
+@media (prefers-reduced-motion:reduce){.gantt.gcol-anim .gleft{transition:none}}
 /* «Клиенты ждут шага» на «Сейчас» */
 .crmnow{border-radius:20px;padding:12px 12px 8px;margin-bottom:14px;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-soft)}
 .crmnow-h{display:flex;align-items:center;gap:8px;padding:0 4px 8px;color:var(--mut);font-size:13px}
@@ -2852,7 +2916,7 @@ body.light .toast .tact{background:rgba(124,92,224,.12)}
 .crmnow button:active{transform:scale(.98);transition-duration:.06s}
 .crmnow button i{width:8px;height:8px;border-radius:50%;background:var(--sc)}
 .crmnow button b{font-weight:600;white-space:nowrap}
-.crmnow button span{color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.crmnow button>span{color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .crmnow button em{font-style:normal;font-size:12px;color:var(--mut2);white-space:nowrap}
 .crmnow button em.late{color:var(--bad)}
 .crmnow button.more{display:block;color:var(--acc2);font-weight:600}
@@ -2901,6 +2965,32 @@ body.light .w3-w{color:rgba(20,24,40,calc(.04 + .03 * (5 - var(--z))))}
 @keyframes w3Roll{0%{transform:perspective(160px) translateX(0) rotateZ(0)}25%{transform:perspective(160px) translateX(-3px) rotateZ(-8deg)}55%{transform:perspective(160px) translateX(4px) rotateZ(6deg)}100%{transform:perspective(160px) rotateX(18deg) rotateY(-20deg)}}
 @keyframes w3Drop{0%{transform:perspective(160px) translateY(0)}30%{transform:perspective(160px) translateY(-6px) rotateX(-20deg)}55%{transform:perspective(160px) translateY(2px) scale(1.08,.9)}100%{transform:perspective(160px) rotateX(18deg) rotateY(-20deg)}}
 @media (prefers-reduced-motion:reduce){.w3,.tab:hover .w3,.mnav button.on .w3,.tab.active .w3{transform:none;transition:none}.w3.wake,.w3.wake .w3-w{animation:none}.w3-w{display:none}}
+/* ═══ ROCH #1385 · Система управления — один язык на весь продукт (Роч: «консистентность, а не сборная солянка»).
+   Замер 29.10: 22 вида кнопок, на одном «Сегодня» рядом белые капсулы («Решения») и белые прямоугольники r14 (наставник),
+   фильтры r12 рядом с сегментами-капсулами. Правило: всё, что НАЖИМАЮТ, — капсула; прямоугольник с радиусом карточки —
+   только у ПОВЕРХНОСТЕЙ (карточки, поля форм, зоны «＋ добавить»). Слой стоит последним — он и есть система. ═══ */
+.btn,.btn.big,.mh-go,.mh-done,.mh-snz,.fchip,.minibtn,.sgb,.wadd,button.lnk,.zoom button,.seg2 button,.toolbar .search,.cdel,.cping,.gcol-t,.cap-projs button,.cap-go,.cap-mic{border-radius:999px}
+.zoom{border-radius:999px}
+.seg2{border-radius:999px}
+.fchip{font-size:13px;font-weight:600}
+.toolbar .fsel{border-radius:999px;padding-left:13px}
+/* ROCH #1385: «Фокус» — капсула с шильдиком внутри. Шильдик съезжал за скругление (замер 375: кнопка 123, содержимое 131):
+   флекс по центру, поля 12, компактный шильдик; ≤ 360 шильдик уходит — место важнее цифры. ▶ — иконка: на iOS символ рисуется эмодзи */
+.mh-acts{gap:8px}
+.mh-acts .mh-go,.mh-acts .mh-done{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding-left:12px;padding-right:12px;flex:1 1 auto;min-width:0}
+.mh-go svg{flex:0 0 auto;margin-left:-2px}
+.mh-go small{margin-left:0;flex:0 0 auto;padding:2px 6px;font-size:11px;vertical-align:0}
+@media (max-width:360px){.mh-go small{display:none}}
+/* ROCH #1386: за любой открытой модалкой — один и тот же глубокий блюр (Роч: «чтобы UI не конфликтовал и не создавал шум»).
+   Было три разных подложки: модалки blur 10, шторки 3 px, палитра 5 px — сквозь них читался текст экрана и спорил с модалкой.
+   Теперь фон уходит в размытое пятно цвета, модалка — единственное, что читается. Плавающий Вандо не модальный — без подложки */
+:root{--scrim-bg:rgba(8,8,12,.5);--scrim-fx:blur(24px) saturate(1.15)}
+body.light{--scrim-bg:rgba(24,24,36,.24)}
+.modal-scrim,.pal-scrim,.scrim,body.light .modal-scrim,body.light .scrim{background:var(--scrim-bg);-webkit-backdrop-filter:var(--scrim-fx);backdrop-filter:var(--scrim-fx)}
+@media (prefers-reduced-transparency:reduce){
+  .modal-scrim,.pal-scrim,.scrim,body.light .modal-scrim,body.light .scrim{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(8,8,12,.86)}
+  body.light .modal-scrim,body.light .scrim,body.light .pal-scrim{background:rgba(236,236,242,.94)}
+}
 </style>
 </head>
 <body>
@@ -2925,15 +3015,11 @@ body.light .w3-w{color:rgba(20,24,40,calc(.04 + .03 * (5 - var(--z))))}
   </div>
 
   <div class="tabs" id="tabs">
-    <button class="tab tab-home active" data-v="now" data-icon="zap"><span>Сейчас</span></button>
-    <button class="tab" data-v="crm" data-icon="briefcase"><span>Клиенты</span> <span class="cnt" id="cntCrm" style="display:none">0</span></button>
-    <button class="tab" data-v="all" data-icon="layers"><span>Всё</span></button>
-    <button class="tab" data-v="gantt" data-icon="gantt"><span>Гант</span></button>
-    <button class="tab" data-v="board" data-icon="board"><span>Доска</span></button>
-    <button class="tab" data-v="week" data-icon="cal"><span>Неделя</span></button>
-    <button class="tab" data-v="backlog" data-icon="idea"><span>Бэклог</span> <span class="cnt" id="cntIdeas">0</span></button>
-    <button class="tab" data-v="team" data-icon="users"><span>Команда</span></button>
-    <button class="tab" data-v="intake" data-icon="inbox"><span>Приёмка</span> <span class="cnt" id="cntIntake" style="display:none">0</span></button>
+    <!-- ROCH #1383: 9 вкладок → 4 места. Подэкраны (Доска/Гант/Неделя/Бэклог/Все проекты, Мой день/Приёмка) — сегментом под шапкой (#mseg) -->
+    <button class="tab tab-home active" data-v="now" data-g="now" data-icon="zap"><span>Сегодня</span> <span class="cnt" id="cntIntake" style="display:none">0</span></button>
+    <button class="tab" data-v="board" data-g="proj" data-icon="layers"><span>Проекты</span><span class="cnt" id="cntIdeas" style="display:none">0</span></button>
+    <button class="tab" data-v="crm" data-g="crm" data-icon="briefcase"><span>Клиенты</span> <span class="cnt" id="cntCrm" style="display:none">0</span></button>
+    <button class="tab" data-v="team" data-g="team" data-icon="users"><span>Команда</span></button>
   </div>
   <button class="iconbtn" id="btnUndo" title="Отменить (⌘Z / Ctrl+Z)" style="font-size:16px">↩</button><button class="iconbtn" id="btnRedo" title="Вернуть (⌘⇧Z / Ctrl+Shift+Z)" style="font-size:16px">↪</button><button class="iconbtn" id="btnHist" data-icon="clock" title="История проекта — все закрытые задачи, с фильтрами и возвратом"></button><button class="iconbtn" id="btnSearch" data-icon="search" title="Поиск и команды (⌘K)"></button>
   <button class="iconbtn" id="btnNew" data-icon="plus" title="Новая задача"></button>
@@ -3077,7 +3163,7 @@ body.light .w3-w{color:rgba(20,24,40,calc(.04 + .03 * (5 - var(--z))))}
     </span>
     <div class="spacer"></div>
     <button class="btn" id="dClose">Закрыть</button>
-    <button class="btn" id="dFocus" title="Начать работу над этой задачей — таймер фокуса">▶ Фокус</button>
+    <button class="btn" id="dFocus" title="Начать работу над этой задачей — таймер фокуса"><span data-icon="play"></span> Фокус</button>
     <button class="btn primary" id="dDoneNext" title="Закрыть задачу — и сразу следующий шаг">✓ Готово</button>
   </div>
 </aside>
@@ -3350,6 +3436,8 @@ function avatarOf(m,sz){if(!m)return '';const s=sz?`width:${sz}px;height:${sz}px
   return `<span class="av" style="${s}background:${m.color}" title="${esc(m.name)}">${initials(m.name)}</span>`;}
 function esc(s){return (s+'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 const ICONS={
+  sidebar:'<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9.5 4v16"/>',
+  chevL:'<path d="m15 18-6-6 6-6"/>',
  plus:'<path d="M12 5v14M5 12h14"/>',
  bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
  sun:'<circle cx="12" cy="12" r="4.3"/><path d="M12 1.5v2M12 20.5v2M3.5 12h-2M22.5 12h-2M5.6 5.6 4.2 4.2M19.8 19.8l-1.4-1.4M18.4 5.6l1.4-1.4M4.2 19.8l1.4-1.4"/>',
@@ -3701,7 +3789,7 @@ function render(){
   if(view!=='board')renderBulkBar();
   $('#banner').classList.toggle('hide',!S.demo||bannerDismissed);
   // гость (не в team): Приёмка и админ-действия скрыты — доступ режет и RLS
-  {const ti=document.querySelector('.tab[data-v="intake"]');if(ti)ti.style.display=isTeam?'':'none';
+  {
    const mi=$('#mnavIntake');if(mi){if(isTeam){mi.dataset.mv='intake';
        const n=(typeof intakeRows!=='undefined'&&intakeRows)?intakeRows.length:0;
        mi.innerHTML='<i>'+icon3('inbox')+(n?'<b class="mbadge">'+(n>9?'9+':n)+'</b>':'')+'</i><span>Приёмка</span>';}
@@ -3709,12 +3797,10 @@ function render(){
    if(!isTeam&&view==='intake'){setView('now');return;}}
   const _T=S.tasks.filter(t=>!t.isMilestone);
   $('#sbStats').textContent=`${_T.length} задач · ${_T.filter(t=>t.status==='done').length} готово · ${S.tasks.filter(isOverdue).length} просроч.`;
-  {const ms=$('#mseg');if(ms){const pv=['board','gantt','week','backlog','team'];
-    const show=pv.includes(view)&&window.innerWidth<=680;
-    ms.style.display=show?'':'none';
-    if(show){ms.innerHTML=[['mprojects','‹ Проекты'],['board','▦ Доска'],['gantt','📊 Гант'],['week','🗓 Неделя'],['backlog','💡 Бэклог'],['team','👥 Команда']]
-      .map(([v,n])=>`<button class="${view===v?'on':''}" data-v="${v}">${n}</button>`).join('');
-      $$('#mseg button').forEach(b=>b.onclick=()=>setView(b.dataset.v));}}}
+  {const ms=$('#mseg');if(ms){const items=segItems(view,isTeam);
+    ms.style.display=items?'':'none';ms.classList.toggle('mseg-day',!!items&&VGROUP[view]==='now');
+    if(items){ms.innerHTML=items.map(([v,n,c])=>`<button class="${view===v?'on':''}${v==='mprojects'?' mback':''}" data-v="${v}">${v==='mprojects'?icon('chevL',15):''}<span>${n}</span>${c?`<em>${c>99?'99+':c}</em>`:''}</button>`).join('');
+      $$('#mseg button').forEach(b=>b.onclick=()=>{haptic&&haptic('sel');setView(b.dataset.v);});}}}
   updateInboxBadge();
   syncFilterUI();
   if(view==='now')renderNow();
@@ -3743,7 +3829,8 @@ window.addEventListener('online',()=>{const sd=$('#syncDot');if(sd)sd.classList.
 /* ROCH: пинг-понг обрезанного текста — везде, где текст не влез (вместо вечного «…») */
 const PP_SEL='.trow .tn,.mtask .tn,.pbadge,.wsub,.mr-t,.nh-up-t,.nh-crumb,.lbn,.rl,.wct,#projLabel'
   /* всё, что добавлено 28–29.10: длинное не обрезается «…», а проезжает (Роч: «пинг-понг для длинного текста») */
-  +',.toast .tmsg,.dpt,.dpc-h span,.crm-nm b,.crm-nm span,.crm-next span,.crm-colh em,.crmnow button span,.crm-tasks button span,.cs-chip b,.ps-rt,.ps-col span,.ps-person span,.bn-txt';
+  +',.grow .tt,.dec-tx b,.dec-tx span,.toast .tmsg,.dpt,.dpc-h span,.crm-nm b,.crm-nm span,.crm-next span,.crm-colh em,.crmnow button span,.crm-tasks button span,.cs-chip b,.ps-rt,.ps-col span,.ps-person span,.bn-txt';
+let _ppN=0;
 function applyPingpong(root){
   try{(root||document).querySelectorAll(PP_SEL).forEach(el=>{
     if(el._ppDone)return;el._ppDone=1;
@@ -3754,14 +3841,23 @@ function applyPingpong(root){
     el.appendChild(sp);el.classList.add('pp-on');
     el.style.setProperty('--ppd',(-ov-4)+'px');
     el.style.setProperty('--ppt',Math.min(14,Math.max(5,ov/16))+'s');
+    el.style.setProperty('--ppw',(1.2+(_ppN++%4)*1.7).toFixed(1)+'s');
   });}catch(e){}
 }
 /* подсветка нижнего нава: экраны проекта живут под «Проекты». Зовётся и при загрузке — раньше
    первый экран открывался без подсвеченной вкладки, пока человек не тапнул */
 function syncMnav(v){const mvMap={board:'mprojects',gantt:'mprojects',week:'mprojects',backlog:'mprojects',team:'mprojects',all:'mprojects',intake:'now'};
   const hv=mvMap[v]||v;$$('.mnav [data-mv]').forEach(b=>b.classList.toggle('on',b.dataset.mv===hv));}
-function setView(v){view=v;if(typeof track==='function')track('view:'+v);
-  syncMnav(v);if(v==='gantt')ganttNeedsScroll=true;$$('.tab').forEach(t=>t.classList.toggle('active',t.dataset.v===v));
+/* ROCH #1383: экраны сгруппированы в 4 места. Вкладка подсвечивается по группе; «Проекты» открывают тот подэкран, где был */
+const VGROUP={now:'now',intake:'now',board:'proj',gantt:'proj',week:'proj',backlog:'proj',all:'proj',mprojects:'proj',crm:'crm',team:'team'};
+function lastPView(){try{const v=localStorage.getItem('cockpit_pview');return ['board','gantt','week','backlog','all'].includes(v)?v:'board';}catch(e){return 'board';}}
+function segItems(v,isTeam){const mob=window.innerWidth<=680,g=VGROUP[v];
+  if(g==='now')return isTeam?[['now','Мой день'],['intake','Приёмка',(typeof intakeRows!=='undefined'&&intakeRows)?intakeRows.length:0]]:null;
+  if(mob){/* мобайл: Команда живёт под «Проектами» (в нижнем наве 4 места), «Все проекты» = сам список проектов */
+    return ['board','gantt','week','backlog','team'].includes(v)?[['mprojects','Проекты'],['board','Доска'],['gantt','Гант'],['week','Неделя'],['backlog','Бэклог',S.ideas.length],['team','Команда']]:null;}
+  return g==='proj'?[['board','Доска'],['gantt','Гант'],['week','Неделя'],['backlog','Бэклог',S.ideas.length],['all','Все проекты']]:null;}
+function setView(v){view=v;if(['board','gantt','week','backlog','all'].includes(v)){try{localStorage.setItem('cockpit_pview',v);}catch(e){}}if(typeof track==='function')track('view:'+v);
+  syncMnav(v);if(v==='gantt')ganttNeedsScroll=true;$$('.tab').forEach(t=>t.classList.toggle('active',t.dataset.g===(VGROUP[v]||v)));
   $$('.view').forEach(el=>el.classList.toggle('active',el.id==='v-'+v));render();movePlate();}
 /* плашка вкладок (рецепт ДВИЖЕНИЕ, стили .tplate): одна подложка едет к выбранной, а не каждая вкладка красится сама */
 function movePlate(instant){const box=$('#tabs');if(!box)return;let pl=box.querySelector('.tplate');
@@ -4524,7 +4620,7 @@ function renderNowMobile(ctx){
       <div class="mh-why">почему: ${whyNext(next,energy).join(' · ')}</div>
       <div class="mh-acts">
         ${running&&focus.tid===next.id?`<div class="focusrun"><span class="fdot"></span><span id="focusClock" class="fclock">00:00</span><button class="btn" id="focusStop">■</button></div>`
-          :`<button class="mh-go" id="focusStart">▶ Фокус${next.spent?`<small>${next.spent}ч</small>`:''}</button>`}
+          :`<button class="mh-go" id="focusStart">${icon('play',14)}<span>Фокус</span>${next.spent?`<small>${next.spent}ч</small>`:''}</button>`}
         <button class="mh-done" data-done="${next.id}">✓ Готово</button>
         <button class="mh-snz" data-snzhero="${next.id}" data-pid="${nextPid}" aria-label="Отложить до завтра">${icon('moon',20)}</button>
       </div></div>`
@@ -4612,7 +4708,8 @@ function firstStepsCard(){
    Раньше цепочка была ИЛИ: одна просроченная задача (то есть всегда) съедала слот,
    и денежный сигнал не показывался в проде никогда. Теперь деньги идут первыми,
    совет по гигиене плана остаётся под ними. */
-function assistCard(){return intakeNowCard()+dayPlanCard()+blockersCard()+cashPulse()+crmNowCard()+(selfHealCard()||mentorCard());}
+/* «Сегодня» = главная задача → РЕШЕНИЯ (один ранжированный список вместо стопки карточек) → план дня → деньги одной строкой */
+function assistCard(){return decisionsCard()+dayPlanCard()+mentorCard()+cashPulse();} // наставник (перегрузка и т.п.) — свой совет с действием; просрочки ушли в «Решения»
 /* заявки команды — на «Сегодня», а не отдельной вкладкой внизу: внизу теперь «Клиенты». Нет заявок — нет карточки */
 function intakeNowCard(){const n=(typeof intakeRows!=='undefined'&&intakeRows)?intakeRows.length:0;if(!n||!isTeam)return '';
   return `<button class="intnow" data-goview="intake">${icon('inbox',18)}<b>${n} ${plural(n,'заявка ждёт','заявки ждут','заявок ждут')} решения</b><span>Разобрать →</span></button>`;}
@@ -4659,23 +4756,23 @@ function mentorCard(){try{
   const prog=T.filter(x=>x.status==='progress').length;
   const urg=T.filter(x=>x.priority==='urgent'||x.priority==='high').length;
   if(!tip&&daySum>10&&!cool('overload'))tip={k:'overload',t:'На сегодня набралось '+daySum+'ч — это не день, а завал',
-    s:'Навык №1: реальный день — 6–8 часов. Всё, что сверху, честнее перенести сразу, чем сорвать.',a:'🌤 Разгрузить до 8ч'};
+    s:'Навык №1: реальный день — 6–8 часов. Всё, что сверху, честнее перенести сразу, чем сорвать.',a:'Разгрузить до 8ч'};
   if(!tip&&prog>=5&&!cool('focus'))tip={k:'focus',t:prog+' задач «в работе» одновременно — фокус размазан',
-    s:'Навык фокуса: реально двигаются 1–2 задачи. Остальные пусть ждут в очереди — ничего не потеряется.',a:'🎯 Оставить 2 в фокусе'};
+    s:'Навык фокуса: реально двигаются 1–2 задачи. Остальные пусть ждут в очереди — ничего не потеряется.',a:'Оставить 2 в фокусе'};
   if(!tip&&urg>=4&&urg/T.length>=.6&&!cool('allurgent'))tip={k:'allurgent',t:'Почти всё помечено срочным — значит, срочного нет',
-    s:'Навык приоритета: важных задач одновременно — не больше трёх. Остальные — обычные, и это нормально.',a:'⚖️ Оставить 3 важных'};
+    s:'Навык приоритета: важных задач одновременно — не больше трёх. Остальные — обычные, и это нормально.',a:'Оставить 3 важных'};
   if(!tip&&S.members.length>1&&!cool('delegate')){const cnt={};T.forEach(x=>{if(x.assigneeId)cnt[x.assigneeId]=(cnt[x.assigneeId]||0)+1;});
     const vals=Object.values(cnt),mx=Math.max(0,...vals);
     if(T.length>=6&&mx/T.length>=.7)tip={k:'delegate',t:'Один человек тянет '+Math.round(mx/T.length*100)+'% задач',
-      s:'Навык делегирования: перекос выжигает одного и расслабляет остальных. Перераспредели заранее, не в дедлайн.',a:'🤝 Посмотреть загрузку'};}
+      s:'Навык делегирования: перекос выжигает одного и расслабляет остальных. Перераспредели заранее, не в дедлайн.',a:'Посмотреть загрузку'};}
   if(!tip&&!cool('cashout')){const noOut=S.tasks.filter(x=>x.cash&&x.status==='done'&&!x.cashOutcome);
     if(noOut.length>=2){mentorCard._arg=noOut[0].id;
       tip={k:'cashout',t:noOut.length+' денежные задачи закрыты, а итог не отмечен',
-        s:'Навык обратной связи: отметь, дошли ли деньги — WANDO начнёт учиться, какие задачи реально двигают кассу именно у тебя.',a:'💰 Отметить итоги'};}}
+        s:'Навык обратной связи: отметь, дошли ли деньги — WANDO начнёт учиться, какие задачи реально двигают кассу именно у тебя.',a:'Отметить итоги'};}}
   if(!tip&&!cool('milestone')){const ms=S.tasks.find(x=>x.isMilestone&&x.status!=='done'&&parseD(x.end)<parseD(t));
     if(ms){const days=Math.round((parseD(t)-parseD(ms.end))/dayMs);mentorCard._arg=ms.id;
       tip={k:'milestone',t:'Веха «'+ms.title.slice(0,40)+'» прошла '+days+' '+plural(days,'день','дня','дней')+' назад',
-        s:'Навык ведения: веха либо закрывается с праздником, либо осознанно сдвигается. Висящая веха обесценивает все остальные сроки.',a:'🚩 Открыть веху'};}}
+        s:'Навык ведения: веха либо закрывается с праздником, либо осознанно сдвигается. Висящая веха обесценивает все остальные сроки.',a:'Открыть веху'};}}
   if(!tip&&!cool('silent')){
     for(const p of reg.list.filter(x=>!x.archived&&x.id!==S.id)){
       const d=loadProj(p.id);if(!d)continue;
@@ -4683,7 +4780,7 @@ function mentorCard(){try{
       const last=Math.max(+d.updatedAt||0,((d.activity||[])[0]||{}).ts||0);
       if(last&&now-last>14*86400000){const days=Math.round((now-last)/86400000);mentorCard._arg=p.id;
         tip={k:'silent',t:(p.emoji||'📄')+' '+p.name+' молчит уже '+days+' '+plural(days,'день','дня','дней'),
-          s:'Навык ведения: проект без движения гниёт незаметно. Один маленький шаг сегодня — или честная заморозка в архив.',a:'👀 Открыть проект'};break;}}}
+          s:'Навык ведения: проект без движения гниёт незаметно. Один маленький шаг сегодня — или честная заморозка в архив.',a:'Открыть проект'};break;}}}
   if(!tip)return '';
   return `<div class="mentorcard"><span class="mi">${icon('sparkles',20)}</span><div class="mb2">
     <div class="ml">Вандо · наставник</div>
@@ -6428,6 +6525,42 @@ function openInlineAdd(el){
   };
   inp.onblur=()=>{if(!inp.value.trim()&&autoAddSec===sec){autoAddSec=null;if(view==='gantt')renderGantt();}};
 }
+/* ROCH #1384: левая колонка Ганта — под себя (рецепт Link Desk .colgrip): потянул край — ширина, двойной клик — как было,
+   ← → с клавиатуры; кнопка-панель в углу (и клавиша \) сворачивает в полосу «статус + человек»; утянул уже 110 px — свернулась сама.
+   Ширина и свёрнутость хранятся отдельно для телефона и десктопа: на 375 px и на 1440 px «удобно» — разное */
+const GLW_MIN=140,GLW_COL=64;
+function glwKey(){return 'cockpit_glw:'+(window.innerWidth<=680?'m':'d');}
+function ganttCol(){try{return localStorage.getItem('cockpit_gcol:'+(window.innerWidth<=680?'m':'d'))==='1';}catch(e){return false;}}
+function glwMax(){return Math.max(GLW_MIN+40,Math.min(560,Math.round(window.innerWidth*(window.innerWidth<=680?.62:.5))));}
+function ganttApplyW(wrap){wrap=wrap||$('#gantt');if(!wrap)return;const col=ganttCol();wrap.classList.toggle('gcol',col);
+  let w=0;try{w=+localStorage.getItem(glwKey())||0;}catch(e){}
+  if(w&&!col)wrap.style.setProperty('--glw',Math.max(GLW_MIN,Math.min(glwMax(),w))+'px');else wrap.style.removeProperty('--glw');}
+function ganttSetCol(on){try{localStorage.setItem('cockpit_gcol:'+(window.innerWidth<=680?'m':'d'),on?'1':'0');}catch(e){}
+  const wrap=$('#gantt');if(!wrap)return;wrap.classList.add('gcol-anim');ganttApplyW(wrap);
+  const b=wrap.querySelector('[data-gcol]');if(b){const l=(on?'Развернуть':'Свернуть')+' список задач';b.setAttribute('aria-label',l);}
+  setTimeout(()=>{wrap.classList.remove('gcol-anim');if(view==='gantt')render();},380);haptic('sel');}
+(function ganttGrip(){let drag=null;
+  const setW=w=>{const wrap=$('#gantt');if(!wrap)return w;w=Math.round(Math.min(glwMax(),w));wrap.style.setProperty('--glw',Math.max(GLW_COL,w)+'px');return w;};
+  document.addEventListener('pointerdown',e=>{const g=e.target.closest&&e.target.closest('.ggrip');if(!g||e.button>0)return;e.preventDefault();
+    const wrap=$('#gantt'),l=wrap.querySelector('.gleft');if(ganttCol()){try{localStorage.setItem('cockpit_gcol:'+(window.innerWidth<=680?'m':'d'),'0');}catch(_){}wrap.classList.remove('gcol');}
+    drag={x:e.clientX,w:l.getBoundingClientRect().width,last:l.getBoundingClientRect().width,g};try{g.setPointerCapture(e.pointerId);}catch(_){}
+    wrap.classList.add('g-resizing');document.body.classList.add('col-resizing');});
+  document.addEventListener('pointermove',e=>{if(!drag)return;drag.last=setW(drag.w+e.clientX-drag.x);});
+  const end=e=>{if(!drag)return;const d=drag;drag=null;const wrap=$('#gantt');
+    if(e&&e.type==='pointerup'&&e.clientX!=null)d.last=d.w+e.clientX-d.x;
+    if(d.last<110){wrap.style.removeProperty('--glw');ganttSetCol(true);}
+    else{const w=Math.max(GLW_MIN,Math.min(glwMax(),Math.round(d.last)));try{localStorage.setItem(glwKey(),String(w));}catch(_){}setW(w);setTimeout(()=>{if(view==='gantt')render();},130);}
+    const eat=ev=>{ev.stopPropagation();ev.preventDefault();};window.addEventListener('click',eat,true);
+    setTimeout(()=>{window.removeEventListener('click',eat,true);wrap&&wrap.classList.remove('g-resizing');document.body.classList.remove('col-resizing');},120);};
+  document.addEventListener('pointerup',end);document.addEventListener('pointercancel',end);
+  document.addEventListener('dblclick',e=>{if(!(e.target.closest&&e.target.closest('.ggrip')))return;try{localStorage.removeItem(glwKey());}catch(_){}ganttSetCol(false);});
+  document.addEventListener('keydown',e=>{
+    if(e.target.closest&&e.target.closest('.ggrip')&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){e.preventDefault();const l=$('#gantt .gleft');if(!l)return;
+      const w=Math.max(GLW_MIN,Math.min(glwMax(),l.getBoundingClientRect().width+(e.key==='ArrowRight'?16:-16)));try{localStorage.setItem(glwKey(),String(w));}catch(_){}if(ganttCol())ganttSetCol(false);setW(w);return;}
+    if(e.key==='\\'&&view==='gantt'&&!e.metaKey&&!e.ctrlKey&&!/^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName||''))&&!e.target.isContentEditable){e.preventDefault();ganttSetCol(!ganttCol());}});
+  document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-gcol]');if(!b)return;e.stopPropagation();ganttSetCol(!ganttCol());});
+  window.addEventListener('resize',()=>{if(view==='gantt')ganttApplyW();});
+})();
 function renderGantt(){
   if(window.innerWidth<=680&&!localStorage.getItem('cockpit_gantt_mob'))setTimeout(()=>{
     if(document.querySelector('.scrim.show'))return;localStorage.setItem('cockpit_gantt_mob','1');
@@ -6465,7 +6598,7 @@ function renderGantt(){
     head+=`<div class="gday ${we?'we':''} ${td?'istoday':''}" style="width:${DAY}px">${DAY>=30?`<span class="dw">${WD[wd]}</span>`:''}<span class="dn">${d.getUTCDate()}</span></div>`;}
   head+='</div></div>';
 
-  let left='<div class="gcorner">📊 Задачи · сроки</div>';
+  let left=`<div class="gcorner"><span class="gct">Задачи · сроки</span><button class="gcol-t" data-gcol aria-label="${ganttCol()?'Развернуть':'Свернуть'} список задач" title="${ganttCol()?'Развернуть':'Свернуть'} список · потяни край — ширина под себя">${icon('sidebar',16)}</button></div>`;
   let body='<div class="gbody" style="width:'+(days*DAY)+'px">';
   let bg='<div class="gbg">';
   for(let i=0;i<days;i++){const wd=new Date(min+i*dayMs).getUTCDay();bg+=`<div class="gcol ${wd===0||wd===6?'we':''}" style="width:${DAY}px"></div>`;}
@@ -6527,7 +6660,8 @@ function renderGantt(){
     body+=`<div class="today" style="left:${tx}px"></div>`;}
   body+='</div>';
 
-  wrap.innerHTML=`<div class="gleft">${left}</div><div class="gright">${head}${body}</div>`;
+  ganttApplyW(wrap);
+  wrap.innerHTML=`<div class="gleft">${left}<div class="ggrip" role="separator" aria-orientation="vertical" aria-label="Ширина списка задач" tabindex="0" title="Потяни — шире или уже · двойной клик — как было"></div></div><div class="gright">${head}${body}</div>`;
   $$('#gantt .grow.sec').forEach(el=>el.querySelector('.tt').onclick=()=>{collapsed[el.dataset.sec]=!collapsed[el.dataset.sec];renderGantt();});
   $$('#gantt .tt[data-task]').forEach(el=>el.onclick=()=>openTask(el.dataset.task));
   $$('#gantt .bar[data-task]').forEach(el=>wireBar(el,min,DAY));
@@ -7542,7 +7676,7 @@ $('#dDoneNext').onclick=()=>{if(!curTask)return;const t=curTask;
       if(nx.pid!==S.id){switchProject(nx.pid);setTimeout(()=>startFocus(nx.id),160);}else startFocus(nx.id);});},3600);};
 
 /* ============================ TABS / TOPBAR / FILTERS ============================ */
-$('#tabs').onclick=e=>{const b=e.target.closest('.tab');if(b)setView(b.dataset.v);};
+$('#tabs').onclick=e=>{const b=e.target.closest('.tab');if(!b)return;if(b.dataset.g==='proj'){if(VGROUP[view]!=='proj'||view==='mprojects')setView(lastPView());}else if(VGROUP[view]!==b.dataset.g)setView(b.dataset.v);};
 $('#btnNew').onclick=()=>{const t=newTask();save();if(view==='backlog'||view==='team')setView('gantt');render();openTask(t.id);};
 
 function syncFilterUI(){
@@ -8536,7 +8670,7 @@ function vandoWeeklyTip(){
   const last=+(localStorage.getItem('cockpit_vando_tip')||0);
   if(Date.now()-last<7*dayMs)return;
   const u=usageStats();const views=['now','all','gantt','board','week','backlog','team','intake'];
-  const named={now:'Сейчас',all:'Всё',gantt:'Гант',board:'Доска',week:'Неделя',backlog:'Бэклог',team:'Команда',intake:'Приёмка'};
+  const named={now:'Сегодня',all:'Всё',gantt:'Гант',board:'Доска',week:'Неделя',backlog:'Бэклог',team:'Команда',intake:'Приёмка'};
   const used=views.map(v=>({v,n:u['view:'+v]||0})).sort((a,b)=>b.n-a.n);
   const total=used.reduce((a,x)=>a+x.n,0);
   if(total<30)return; // мало данных — не умничаем
@@ -9347,7 +9481,7 @@ function buildPaletteIndex(){
       title:r.name,sub:r.red?'🔴 горим — зайти':`🟠 ${r.ov} ${plural(r.ov,'просрочка','просрочки','просрочек')} — зайти`,
       kw:r.name+' риск здоровье проект проседает',
       run:()=>{if(r.p.id!==S.id)switchProject(r.p.id);else setView('board');}});});
-  const NAV=[['now','zap','Сейчас'],['board','board','Доска'],['gantt','gantt','Гант'],['week','cal','Неделя'],['backlog','idea','Бэклог'],['team','users','Команда'],['intake','inbox','Приёмка'],['all','layers','Все проекты']];
+  const NAV=[['now','zap','Сегодня'],['board','board','Доска'],['gantt','gantt','Гант'],['week','cal','Неделя'],['backlog','idea','Бэклог'],['team','users','Команда'],['intake','inbox','Приёмка'],['all','layers','Все проекты']];
   NAV.forEach(([v,ic,name])=>items.push({type:'Переход',icon:icon(ic,17),title:name,sub:'раздел',kw:name+' раздел перейти открыть',run:()=>setView(v)}));
   const ACT=[
     // grp: AI | Создать | Планирование | Команда | Делёжка | Настройки
@@ -9724,6 +9858,47 @@ document.addEventListener('click',e=>{
   const d=e.target.closest('[data-dpdone]');if(d){e.stopPropagation();const [pid,tid]=d.dataset.dpdone.split('|');const t=dpTaskBy({pid,tid});
     if(t&&t.status!=='done'){const un=markDone(pid,tid);celebrateAt(e);render();toast('Готово','✅','Отменить',un);}return;}
   const o=e.target.closest('[data-dpopen]');if(o){const [pid,tid]=o.dataset.dpopen.split('|');if(pid!==S.id){switchProject(pid);setTimeout(()=>openTask(tid),150);}else openTask(tid);}});
+/* ===== РЕШЕНИЯ — «5 решений вместо 10 карточек» (Роч, 29.10: «чудо-инструмент, а не перегруженная хуета») =====
+   Все сигналы — блокеры, согласования, клиенты, просрочки, заявки, «ждёшь кого-то», задачи без исполнителя —
+   сводятся в один список по важности; у каждого 1–2 действия в тап. Разобрал пять — день под контролем. */
+let _decActs=[];
+function decisionsList(){
+  const out=[],lead=iSeeAllProjects();
+  const projs=reg.list.filter(p=>!p.archived).map(p=>({p,d:p.id===S.id?S:loadProj(p.id)})).filter(x=>x.d);
+  const open=(pid,tid)=>()=>{if(pid!==S.id){switchProject(pid);setTimeout(()=>openTask(tid),150);}else openTask(tid);};
+  const nudge=(pid,t,who,msg)=>pid===S.id&&cloudOn&&who&&who.email?[['Пнуть',()=>{tgNotify('comment',Object.assign({},t,{assigneeId:who.id}),'🔔 '+meName()+': '+msg);toast('Напомнил '+who.name+' в Telegram','🔔');}]]:[];
+  let unassigned=0;
+  projs.forEach(({p,d})=>{const T=(d.tasks||[]).filter(t=>!t.isMilestone&&t.status!=='done'),mine=myMemberIn(d),mid=mine&&mine.id;
+    T.forEach(t=>{const isMine=mid&&t.assigneeId===mid,held=T.filter(x=>(x.deps||[]).includes(t.id)).length;
+      if(isMine&&held)out.push({pr:90,ic:'alert',tone:'bad',t:t.title,why:'держит '+held+' '+plural(held,'задачу','задачи','задач')+' команды',
+        acts:[['Фокус',()=>{if(p.id!==S.id)switchProject(p.id);setTimeout(()=>startFocus(t.id,p.id),p.id!==S.id?160:0);}],['Открыть',open(p.id,t.id)]]});
+      if(isMine&&t.approval)out.push({pr:85,ic:'check',tone:'acc',t:t.title,why:'ждёт твоего решения',acts:[['Решить',open(p.id,t.id)]]});
+      if(isMine){const dep=(t.deps||[]).map(id=>T.find(x=>x.id===id)).find(Boolean);
+        if(dep&&dep.assigneeId!==mid){const w=(d.members||[]).find(m=>m.id===dep.assigneeId);
+          out.push({pr:55,ic:'clock',t:t.title,why:'ждёт «'+dep.title+'»'+(w?' · '+w.name:''),acts:nudge(p.id,dep,w,'твоя «'+dep.title+'» держит мою задачу').concat([['Открыть',open(p.id,dep.id)]])});}
+        else if(t.waitingOn&&t.waitingOn!==mid){const w=(d.members||[]).find(m=>m.id===t.waitingOn);
+          if(w)out.push({pr:50,ic:'clock',t:t.title,why:'ты ждёшь: '+w.name,acts:nudge(p.id,t,w,'жду от тебя шаг по «'+t.title+'»').concat([['Открыть',open(p.id,t.id)]])});}}
+      if(lead&&!t.assigneeId&&(t.priority==='urgent'||t.priority==='high'||(t.end&&daysLeft(t)<=3)))unassigned++;});});
+  const ov=S.tasks.filter(t=>!t.isMilestone&&isOverdue(t));
+  if(ov.length>1)out.push({pr:75,ic:'sync',tone:'bad',t:ov.length+' '+plural(ov.length,'задача просрочена','задачи просрочены','задач просрочено'),why:ov.slice(0,2).map(t=>t.title).join(' · '),
+    acts:[['На сегодня',()=>healOverdue('today')],['На неделю',()=>healOverdue('week')]],tap:()=>{filter={q:'',assignee:'',mine:false,overdue:true};setView('board');}});
+  if(lead)crmLive().filter(c=>crmIsOpen(c)&&c.next&&c.next.text&&c.next.date&&c.next.date<=todayISO()).sort((a,b)=>a.next.date<b.next.date?-1:1).slice(0,3)
+    .forEach(c=>out.push({pr:crmLate(c)?80:70,ic:'briefcase',tone:crmLate(c)?'bad':'',t:c.name+' — '+c.next.text,why:'клиент ждёт · '+crmDate(c.next.date),acts:[['Открыть',()=>openClient(c.id)]]}));
+  const ni=(typeof intakeRows!=='undefined'&&intakeRows)?intakeRows.length:0;
+  if(ni&&isTeam)out.push({pr:60,ic:'inbox',tone:'acc',t:ni+' '+plural(ni,'заявка ждёт','заявки ждут','заявок ждут')+' решения',why:'взять в работу или отклонить',acts:[['Разобрать',()=>setView('intake')]]});
+  if(unassigned)out.push({pr:40,ic:'users',t:unassigned+' '+plural(unassigned,'важная задача','важные задачи','важных задач')+' без исполнителя',why:'раздай, пока не сгорели',acts:[['Раздать',()=>setView('board')]]});
+  return out.sort((a,b)=>b.pr-a.pr);}
+function decisionsCard(){const L=decisionsList();_decActs=[];
+  if(!L.length)return `<div class="dec calm">${icon('check',16)}<span>Решений не ждёт ничего — работай по плану</span></div>`;
+  const reg_=f=>{_decActs.push(f);return _decActs.length-1;};
+  return `<div class="dec"><div class="dpc-h">${icon('zap',16)}<b>Решения</b><span>${L.length} ${plural(L.length,'ждёт','ждут','ждут')} тебя</span></div>
+    ${L.slice(0,5).map(x=>{/* тап по строке — только открыть, никогда не менять данные: у просрочек последнее действие сдвигает сроки */
+      const tap=x.tap||(x.acts.find(a=>/Открыть|Разобрать|Раздать|Решить/.test(a[0]))||x.acts[0])[1];
+      return `<div class="decr"><span class="dec-ic ${x.tone||''}">${icon(x.ic,15)}</span>
+        <div class="dec-tx" data-dec="${reg_(tap)}"><b>${esc(x.t)}</b><span>${esc(x.why)}</span></div>
+        <div class="dec-a">${x.acts.slice(0,2).map((a,k)=>`<button data-dec="${reg_(a[1])}" class="${k?'sec':''}">${esc(a[0])}</button>`).join('')}</div></div>`;}).join('')}
+    ${L.length>5?`<div class="blk-more">и ещё ${L.length-5} — после этих</div>`:''}</div>`;}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-dec]');if(!b)return;const f=_decActs[+b.dataset.dec];if(f){haptic('sel');f();}});
 /* заявка из «Приёмки» → клиент: имя из заявки, текст — первой заметкой */
 function intakeToClient(id){const r=(typeof intakeRows!=='undefined'?intakeRows:[]).find(x=>x.id===id);if(!r)return;
   const p=parseQuick(r.text);crmNew({name:(p.title||r.text||'').slice(0,80),source:'intake',
