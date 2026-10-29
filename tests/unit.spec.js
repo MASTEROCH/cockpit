@@ -169,7 +169,7 @@ test('вложенность: 3 уровня, глубина-кап, каска�
 test('упоминания: кого нашли и кому уходит уведомление', async ({ page }) => {
   await boot(page);
   const r = await page.evaluate(() => {
-    S.members = [{ id: 'a', name: 'Я Сам', email: 'me@local.test' }, { id: 'b', name: 'Анна Ли', email: 'b@local.test' },
+    S.members = [{ id: 'a', name: 'Я Сам', email: myEmail }, { id: 'b', name: 'Анна Ли', email: 'b@local.test' }, // ROCH #1407: «я» — по почте входа
       { id: 'c', name: 'Анна', email: 'c@local.test' }, { id: 'd', name: 'Марина Ковалёва', email: 'd@local.test' }];
     me = 'a';
     const f = t => mentionsIn(t).map(m => m.id).sort().join(',');
@@ -308,4 +308,25 @@ test('доступы: деньги, только просмотр, матриц�
     return { noMoney, money, ro, added: S.members.some(m => m.email === 'x@local.test'), rank: [roleRank('owner'), roleRank('full'), roleRank('member'), roleRank('')].join(',') };
   });
   expect(r).toEqual({ noMoney: true, money: true, ro: true, added: true, rank: '3,2,1,1' });
+});
+
+// ROCH #1407: «нажал на свой аватар — открылся профиль Дэна». После входа «я» — только по почте; нет меня в проекте коллеги — добавляюсь своим профилем
+test('кто я: по почте, без чужого профиля', async ({ page }) => {
+  await boot(page);
+  const r = await page.evaluate(() => {
+    const myMail = 'roch@local.test';
+    // мой профиль в другом проекте
+    reg.list.push({ id: 'pMine', name: 'Мой', emoji: '🚀' });
+    localStorage.setItem(pkey('pMine'), JSON.stringify({ projectName: 'Мой', members: [{ id: 'm1', name: 'Роман', email: myMail, photo: 'data:image/png;base64,AA', color: '#38bdf8' }], tasks: [], sections: [{ id: 's1', name: 'x' }] }));
+    // проект коллеги: m1 = Дэн, меня нет
+    S.members = [{ id: 'm1', name: 'Дэн', email: 'den@local.test', color: '#a78bfa' }];
+    localStorage.setItem('cockpit_me', 'm1');
+    cloudOn = true; myEmail = myMail; accessReady = true; isTeam = true; teamRows = [{ email: myMail, role: 'owner' }];
+    const before = myId();
+    render();
+    const me = member(myId());
+    return { before, name: me && me.name, email: me && me.email, photo: !!(me && me.photo), den: S.members.find(m => m.id === 'm1').name, owner: isOwner() };
+  });
+  expect(r.before).toBe('u:roch@local.test');
+  expect(r).toMatchObject({ name: 'Роман', email: 'roch@local.test', photo: true, den: 'Дэн', owner: true });
 });

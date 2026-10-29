@@ -3214,6 +3214,7 @@ input.mname-in{padding:10px 14px;margin-top:12px}
 input.mrole-in{padding:9px 14px;margin-top:8px;font-size:14px}
 input.mname-in:focus,input.mrole-in:focus{border-color:var(--acc2)}
 input.mname-in:hover,input.mrole-in:hover{border-color:var(--line2)}
+.set-item[hidden]{display:none!important}
 </style>
 </head>
 <body>
@@ -3628,11 +3629,26 @@ function redo(){if(!redoStack.length){toast('Нечего возвращать',
   if(cloudOn)cloudPush(S);undoing=false;
   if($('#drawer').classList.contains('show'))closeDrawer();
   render();toast('Действие возвращено','↪️');}
+/* ROCH #1407: КТО Я — после входа ТОЛЬКО по почте. Раньше, если меня не было в участниках проекта, брался номер из другого
+   проекта (cockpit_me: «m1» в Testoran = Роч, а в «Мой проект» Дэна «m1» = Дэн) или первый участник — и Роч открывал профиль Дэна,
+   мог переписать его имя/фото, а «на меня» уходило Дэну. Теперь: нет меня в проекте → ensureMeInProject добавит, до тех пор — никто */
 function myId(){
-  if(myEmail){const m=S.members.find(x=>(x.email||'').toLowerCase()===myEmail);if(m)return m.id;}
+  if(myEmail){const m=S.members.find(x=>(x.email||'').toLowerCase()===myEmail);if(m)return m.id;
+    if(cloudOn)return 'u:'+myEmail;}
   const id=localStorage.getItem('cockpit_me');if(id&&member(id))return id;
   return (S.members[0]||{}).id||CURRENT_USER;}
-function isOwner(){return (S.members[0]||{}).id===myId();}
+/* владелец участников проекта — в облаке это роль в команде (владелец/админ), а не «первая строчка списка» */
+function isOwner(){if(cloudOn&&myEmail&&accessReady&&isTeam&&roleRank(teamRoleOf(myEmail))>=2)return true;return (S.members[0]||{}).id===myId();}
+/* открыл проект, где меня нет среди участников (создал коллега), — добавляю себя с МОИМ профилем из других проектов */
+const _meJoined=new Set();
+function ensureMeInProject(){try{if(!cloudOn||!myEmail||S.demo||!accessReady||!isTeam||isReadOnly()||_meJoined.has(S.id))return;_meJoined.add(S.id);
+  if((S.members||[]).some(x=>(x.email||'').toLowerCase()===myEmail))return;
+  let src=null;for(const p of reg.list){if(p.id===S.id)continue;const d=loadProj(p.id);const m=d&&(d.members||[]).find(x=>(x.email||'').toLowerCase()===myEmail);if(m){src=m;break;}}
+  const tu=tmaUser(),pal=['#a78bfa','#f472b6','#38bdf8','#34d399','#fbbf24','#fb923c'];
+  S.members=S.members||[];
+  S.members.push({id:uid('m'),name:(src&&src.name)||(tu&&[tu.first_name,tu.last_name].filter(Boolean).join(' '))||myEmail.split('@')[0],
+    email:myEmail,photo:(src&&src.photo)||'',color:(src&&src.color)||pal[S.members.length%pal.length],role:(src&&src.role)||'',capacity:(src&&src.capacity)||30});
+  save();}catch(e){}}
 function canEditMember(m){return !!m&&(m.id===myId()||isOwner());}
 const meName=()=>(member(myId())||{}).name||'Я';
 /* КТО Я на самом деле — в Mini App личность даёт Telegram (всегда реальный человек, открывший app),
@@ -4008,7 +4024,7 @@ function closeMonth(){
 function applyAccent(){const a=S.accent,r=document.documentElement;
   if(a&&/^#[0-9a-f]{6}$/i.test(a)){r.style.setProperty('--acc2',a);r.style.setProperty('--acc',shade(a,20));r.style.setProperty('--acc3',shade(a,-28));}
   else{r.style.removeProperty('--acc2');r.style.removeProperty('--acc');r.style.removeProperty('--acc3');}}
-function render(){try{applyMoneyGate();applyReadOnly();}catch(e){}
+function render(){try{ensureMeInProject();applyMoneyGate();applyReadOnly();}catch(e){}
   $('#cntIdeas').textContent=S.ideas.length;
   {const pl=$('#projLabel');if(pl){pl.textContent=S.projectName;pl._ppDone=0;pl.classList.remove('pp-on');}}
   $('#projEmoji').textContent=(reg.list.find(p=>p.id===S.id)||{}).emoji||'🚀';
@@ -5542,7 +5558,7 @@ function closeSettings(){$('#setScrim').classList.remove('show');}
 $('#setScrim').onclick=e=>{if(e.target===$('#setScrim'))closeSettings();};
 function settingsPhoto(m){const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.onchange=()=>{const f=inp.files[0];if(f)cropPhoto(f,d=>{m.photo=d;save();render();renderSettings();});};inp.click();}
 function renderSettings(){
-  const me=member(myId());if(!me){toast('Профиль не найден','⚙️');return;}
+  ensureMeInProject();const me=member(myId());if(!me){toast('Профиль не найден','⚙️');return;}
   const theme=themeNow();
   const sound=localStorage.getItem('cockpit_sound')!=='0';
   const av=me.photo?`<span class="set-bigav" style="background-image:url('${me.photo}')"></span>`:`<span class="set-bigav" style="background:${me.color}">${initials(me.name||'Я')}</span>`;
@@ -5561,7 +5577,7 @@ function renderSettings(){
      <div class="set-item"><span>Звук при «Готово»</span><button class="btn" id="setSound">${sound?'🔔 Вкл':'🔇 Выкл'}</button></div>
      <div class="set-item"><span>Цвет проекта «${esc(S.projectName)}»</span><button class="btn" id="setAccent">🎨 Выбрать</button></div>
      <div class="set-sec">Команда и Claude</div>
-     <div class="set-item"><span>Вы в команде</span><select class="inp" id="setWho" style="width:auto;min-width:130px">${S.members.map(m=>`<option value="${m.id}" ${m.id===myId()?'selected':''}>${esc(m.name)}</option>`).join('')}</select></div>
+     <div class="set-item" ${cloudOn&&myEmail?'hidden':''}><span>Вы в команде</span><select class="inp" id="setWho" style="width:auto;min-width:130px">${S.members.map(m=>`<option value="${m.id}" ${m.id===myId()?'selected':''}>${esc(m.name)}</option>`).join('')}</select></div>
      <div class="set-item"><span>Тариф и оплата</span><button class="btn" id="setBill">⭐ Открыть</button></div>
      <div class="set-item"><span>Telegram-бот (голос, пуши, бриф)</span><button class="btn" id="setTg">${icon('send',14)} Подключить</button></div>
      <div class="set-item"><span>Подключить Claude (MCP)</span><button class="btn" id="setConnect">🔌 Открыть</button></div>
