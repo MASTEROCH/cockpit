@@ -1719,8 +1719,13 @@ body.light .vando-panel{background:var(--sheen),rgba(255,255,255,.97)}
   /* нижний лист по контенту — без мёртвой пустоты на пол-экрана */
   .capsheet{width:100vw;height:auto;max-height:92dvh;max-width:none;border-radius:22px 22px 0 0;display:flex;flex-direction:column;margin-top:auto}
   .cap-b{flex:0 1 auto;overflow:auto;padding-top:18px}
+  /* ROCH #1395: клавиатура съедает высоту — строки чипов не сжимаются в полоски (у ряда с overflow min-height = 0),
+     вместо этого тело листа прокручивается; поле ввода на низком экране ниже, чтобы чипы и проект оставались видны */
+  .cap-b>*{flex-shrink:0}
+  .cap-b{-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
   #capIn{font-size:18px} /* ≥16px — iOS не зумит; плейсхолдер не перекрикивает заголовок */
 }
+@media (max-width:680px) and (max-height:620px){#capIn{min-height:64px}.cap-b{gap:10px;padding-top:14px}} /* открыта клавиатура */
 @media (max-width:680px){
   #fAssignee,#boardModeCtl,#bSelect,#fReset,#fOver{display:none!important}
   .toolbar{padding:8px 12px;gap:7px}
@@ -3027,7 +3032,9 @@ body.light{--scrim-bg:rgba(24,24,36,.24)}
 
   <div class="tabs" id="tabs">
     <!-- ROCH #1387: 9 вкладок → 4 места. Подэкраны (Доска/Гант/Неделя/Бэклог/Все проекты, Мой день/Приёмка) — сегментом под шапкой (#mseg) -->
-    <button class="tab tab-home active" data-v="now" data-g="now" data-icon="zap"><span>Сегодня</span> <span class="cnt" id="cntIntake" style="display:none">0</span></button>
+    <button class="tab tab-home active" data-v="now" data-g="now" data-icon="zap"><span>Сегодня</span></button>
+    <!-- ROCH #1396: Роч «не могу найти приёмку» — входящие (куда бот кладёт неразобранное) — своё место, как Inbox у Linear. Только у команды -->
+    <button class="tab" data-v="intake" data-g="intake" data-icon="inbox" style="display:none"><span>Приёмка</span> <span class="cnt" id="cntIntake" style="display:none">0</span></button>
     <button class="tab" data-v="board" data-g="proj" data-icon="layers"><span>Проекты</span><span class="cnt" id="cntIdeas" style="display:none">0</span></button>
     <button class="tab" data-v="crm" data-g="crm" data-icon="briefcase"><span>Клиенты</span> <span class="cnt" id="cntCrm" style="display:none">0</span></button>
     <button class="tab" data-v="team" data-g="team" data-icon="users"><span>Команда</span></button>
@@ -3587,8 +3594,13 @@ function toast(msg,ic='✓',actLabel,actFn){const t=$('#toast');
   t.classList.toggle('top',over);t.classList.toggle('has-act',!!actLabel);
   t.classList.remove('show');void t.offsetWidth; // перезапуск полоски отсчёта и въезда
   t.classList.add('show');setTimeout(()=>applyPingpong(t),40); /* не rAF: в фоновой вкладке он не срабатывает */
-  clearTimeout(toast._);toast._=setTimeout(()=>t.classList.remove('show'),actLabel?5500:2400); /* ROCH #1393: эта строка однажды уехала в хвост //-комментария — тосты висели вечно */
+  clearTimeout(toast._);toast._=setTimeout(()=>t.classList.remove('show'),actLabel?5500:2400); /* ROCH #1394: эта строка однажды уехала в хвост //-комментария — тосты висели вечно */
   if(actLabel){t.querySelector('.tact').onclick=()=>{t.classList.remove('show');actFn&&actFn();};}}
+/* ROCH #1395: открылась шторка/модалка — подсказка без действия уходит (она про экран ПОД шторкой и ложилась поверх листа),
+   а тост с «Вернуть» поднимается над шторкой: откат терять нельзя */
+{const mo=new MutationObserver(ms=>{if(!ms.some(m=>m.target.classList.contains('show')))return;const t=$('#toast');
+   if(!t||!t.classList.contains('show'))return;if(t.querySelector('.tact'))t.classList.add('top');else t.classList.remove('show');});
+ document.querySelectorAll('.modal-scrim,.scrim,#drawer').forEach(el=>mo.observe(el,{attributes:true,attributeFilter:['class']}));}
 /* «Готово» — тихая печать успеха (success-ripple, ROCH Motion; стили .okfx): кольцо и галка рисуются, три волны.
    Конфетти на ежедневное действие — шум (арт-дирекция ROCH), салют остался для больших моментов: big=true. */
 function celebrate(x,y,big){
@@ -3802,7 +3814,7 @@ function render(){
   if(view!=='board')renderBulkBar();
   $('#banner').classList.toggle('hide',!S.demo||bannerDismissed);
   // гость (не в team): Приёмка и админ-действия скрыты — доступ режет и RLS
-  {
+  {const ti=document.querySelector('.tab[data-v="intake"]');if(ti)ti.style.display=isTeam?'':'none';
    const mi=$('#mnavIntake');if(mi){if(isTeam){mi.dataset.mv='intake';
        const n=(typeof intakeRows!=='undefined'&&intakeRows)?intakeRows.length:0;
        mi.innerHTML='<i>'+icon3('inbox')+(n?'<b class="mbadge">'+(n>9?'9+':n)+'</b>':'')+'</i><span>Приёмка</span>';}
@@ -3811,7 +3823,7 @@ function render(){
   const _T=S.tasks.filter(t=>!t.isMilestone);
   $('#sbStats').textContent=`${_T.length} задач · ${_T.filter(t=>t.status==='done').length} готово · ${S.tasks.filter(isOverdue).length} просроч.`;
   {const ms=$('#mseg');if(ms){const items=segItems(view,isTeam);
-    ms.style.display=items?'':'none';ms.classList.toggle('mseg-day',!!items&&VGROUP[view]==='now');
+    ms.style.display=items?'':'none';ms.classList.toggle('mseg-day',!!items&&(view==='now'||view==='intake'));
     if(items){ms.innerHTML=items.map(([v,n,c])=>`<button class="${view===v?'on':''}${v==='mprojects'?' mback':''}" data-v="${v}">${v==='mprojects'?icon('chevL',15):''}<span>${n}</span>${c?`<em>${c>99?'99+':c}</em>`:''}</button>`).join('');
       $$('#mseg button').forEach(b=>b.onclick=()=>{haptic&&haptic('sel');setView(b.dataset.v);});}}}
   updateInboxBadge();
@@ -3862,10 +3874,10 @@ function applyPingpong(root){
 function syncMnav(v){const mvMap={board:'mprojects',gantt:'mprojects',week:'mprojects',backlog:'mprojects',team:'mprojects',all:'mprojects',intake:'now'};
   const hv=mvMap[v]||v;$$('.mnav [data-mv]').forEach(b=>b.classList.toggle('on',b.dataset.mv===hv));}
 /* ROCH #1387: экраны сгруппированы в 4 места. Вкладка подсвечивается по группе; «Проекты» открывают тот подэкран, где был */
-const VGROUP={now:'now',intake:'now',board:'proj',gantt:'proj',week:'proj',backlog:'proj',all:'proj',mprojects:'proj',crm:'crm',team:'team'};
+const VGROUP={now:'now',intake:'intake',board:'proj',gantt:'proj',week:'proj',backlog:'proj',all:'proj',mprojects:'proj',crm:'crm',team:'team'};
 function lastPView(){try{const v=localStorage.getItem('cockpit_pview');return ['board','gantt','week','backlog','all'].includes(v)?v:'board';}catch(e){return 'board';}}
 function segItems(v,isTeam){const mob=window.innerWidth<=680,g=VGROUP[v];
-  if(g==='now')return isTeam?[['now','Мой день'],['intake','Приёмка',(typeof intakeRows!=='undefined'&&intakeRows)?intakeRows.length:0]]:null;
+  if(g==='now'||g==='intake')return isTeam&&mob?[['now','Мой день'],['intake','Приёмка',(typeof intakeRows!=='undefined'&&intakeRows)?intakeRows.length:0]]:null;
   if(mob){/* мобайл: Команда живёт под «Проектами» (в нижнем наве 4 места), «Все проекты» = сам список проектов */
     return ['board','gantt','week','backlog','team'].includes(v)?[['mprojects','Проекты'],['board','Доска'],['gantt','Гант'],['week','Неделя'],['backlog','Бэклог',S.ideas.length],['team','Команда']]:null;}
   return g==='proj'?[['board','Доска'],['gantt','Гант'],['week','Неделя'],['backlog','Бэклог',S.ideas.length],['all','Все проекты']]:null;}
@@ -5558,6 +5570,9 @@ $('#btnInbox').onclick=openInbox;$('#inboxClose').onclick=closeInbox;
 let intakeRows=[], intakeReady=true, intakeWorkspace='default';
 function intakePending(){return intakeRows.length;}
 function updateIntakeBadge(){const c=$('#cntIntake');if(c){c.textContent=intakeRows.length;c.style.display=intakeRows.length?'':'none';}
+  {const hi=document.querySelector('.mnav [data-mv="now"] i');if(hi){let b=hi.querySelector('.mbadge');const n=isTeam?intakeRows.length:0; /* ROCH #1396: Приёмка живёт под «Сегодня» — её число видно с любого экрана */
+    if(!n){if(b)b.remove();}else{if(!b){b=document.createElement('b');b.className='mbadge';hi.appendChild(b);}b.textContent=n>9?'9+':n;}}}
+  if($('#mseg')&&(view==='now'||view==='intake'))render();
   const mi=$('#mnavIntake');if(mi&&mi.dataset.mv==='intake'){const n=intakeRows.length;
     mi.innerHTML='<i>'+icon3('inbox')+(n?'<b class="mbadge">'+(n>9?'9+':n)+'</b>':'')+'</i><span>Приёмка</span>';}
   updateInboxBadge();}
@@ -5571,12 +5586,21 @@ async function loadIntake(){
 function projectMatch(target){if(!target)return null;
   let p=reg.list.find(x=>x.id===target);if(p)return p.id;
   p=reg.list.find(x=>(x.name||'').toLowerCase()===String(target).toLowerCase());return p?p.id:null;}
+/* ROCH #1394: заявка из бота уже разобрана ИИ (intake.meta) — берём готовое: название, кому, срок, важность, файлы.
+   Исполнитель — только если проект тот же, что разобрал бот (id людей живут внутри проекта) */
+function intakeParse(r,pid){const m=r.meta||{};
+  if(!m.title){const p=parseQuick(r.text);if(!p.title)p.title=r.text;if(m.files&&m.files.length)p.files=m.files;return p;}
+  const end=m.end||isoIn(7),td=todayISO(); /* без срока — через неделю, как в боте: «запланировать», а не «горит» */
+  return {title:m.title,assignee:m.pid===pid?(m.assigneeId||null):null,start:end<td?end:td,end,prio:m.priority||'med',
+    est:m.minutes?Math.max(.1,Math.round(m.minutes/6)/10):0,files:m.files||[],description:m.description||''};}
+function intakeExtras(t,p){if(p.files&&p.files.length)t.files=(t.files||[]).concat(p.files);if(p.description&&!t.description)t.description=p.description;
+  if(p.assignee&&!t.assigneeId)t.assigneeId=p.assignee;}
 function addTaskToProject(pid,p,status){
-  if(pid===S.id){const t=applyQuick(newTask(p.title),p);t.status=status;save();return t.id;}
+  if(pid===S.id){const t=applyQuick(newTask(p.title),p);t.status=status;intakeExtras(t,p);save();return t.id;}
   const data=loadProj(pid);if(!data)return null;migrate(data);
   const t={id:uid('t'),title:p.title||'Задача',sectionId:(data.sections[0]||{}).id,assigneeId:p.assignee||null,
     start:p.start||todayISO(),end:p.end||p.start||todayISO(),status,estimate:p.est||0,spent:0,priority:p.prio||'med',
-    description:'',comments:[],isMilestone:false,deps:[],createdTs:Date.now()};
+    description:'',comments:[],isMilestone:false,deps:[],createdTs:Date.now()};intakeExtras(t,p);
   data.tasks.push(t);data.activity=data.activity||[];data.activity.unshift({ts:Date.now(),who:meName(),icon:'➕',text:'из приёмки: «'+t.title+'»'});
   data.updatedAt=Date.now();localStorage.setItem(pkey(pid),JSON.stringify(data));if(cloudOn)cloudPush(data,true);return t.id;}
 async function decideIntake(id,status,extra){
@@ -5635,7 +5659,7 @@ async function aiSplitIntake(id,btn){
 function acceptIntake(id,backlog){
   const r=intakeRows.find(x=>x.id===id);if(!r)return;
   const pid=intakePid(id);if(!pid)return;
-  const p=parseQuick(r.text);if(!p.title)p.title=r.text;
+  const p=intakeParse(r,pid);
   const tid=addTaskToProject(pid,p,backlog?'backlog':'todo');
   decideIntake(id,backlog?'backlog':'accepted',{target_project:pid,result_task_id:tid});
   const pm=projMeta(pid);toast((backlog?'В бэклог':'Задача')+' → '+((pm&&pm.emoji)||'📄')+' '+((pm&&pm.name)||'проект')+' ✓',backlog?'📥':'✓');
@@ -5643,7 +5667,7 @@ function acceptIntake(id,backlog){
 function editIntake(id){
   const r=intakeRows.find(x=>x.id===id);if(!r)return;
   const pid=intakePid(id);if(!pid)return;
-  const p=parseQuick(r.text);if(!p.title)p.title=r.text;
+  const p=intakeParse(r,pid);
   const tid=addTaskToProject(pid,p,'todo');
   decideIntake(id,'accepted',{target_project:pid,result_task_id:tid});
   if(pid!==S.id){switchProject(pid);setTimeout(()=>openTask(tid),120);}else{setView('board');openTask(tid);}
@@ -6046,12 +6070,14 @@ function renderWeek(){
     return `<div class="wcol ${cls||''}${empty?' wfree':''}" data-day="${key}">
       <div class="wcolh" title="${key==='over'?'перетащи задачу в день — изменится срок':sub||''}"><span>${label}</span>${sub?`<span class="wsub">${sub}</span>`:''}<span class="wcnt">${items.length||''}</span>${key!=='over'&&key!=='later'?`<button class="wadd" data-wadd="${key}">＋ задача</button>`:''}</div>
       ${empty?'':`<div class="wcolb">${items.map(card).join('')}</div>`}</div>`;};
-  const wt=weekOffset===0?'Эта неделя':weekOffset===1?'Следующая неделя':weekOffset===-1?'Прошлая неделя':md(wstart)+'–'+md(wend);
+  /* ROCH #1396: центр навигации называет ВЫБРАННУЮ неделю (было вечное «Сегодня», а подпись дублировала диапазон «09.11–15.11 · 09.11–15.11») */
+  const nW=Math.abs(weekOffset),wt=weekOffset===0?'Эта неделя':weekOffset===1?'Следующая неделя':weekOffset===-1?'Прошлая неделя'
+    :weekOffset>1?'Через '+nW+' '+plural(nW,'неделю','недели','недель'):nW+' '+plural(nW,'неделю','недели','недель')+' назад';
   let cols='';if(by.over.length)cols+=col('over','Просрочено','',' over');
   days.forEach((d,i)=>cols+=col(d,WD[i],md(d),d===tISO?'today':''));
   if(by.later.length)cols+=col('later','Позже','за неделей','');
-  el.innerHTML=`<div class="whead"><h2 style="margin:0;font-size:18px">Моя неделя</h2><span class="wt">${wt} · ${md(wstart)}–${md(wend)}</span>
-      <div class="wnav"><button class="btn" id="wPrev">←</button><button class="btn" id="wToday">Сегодня</button><button class="btn" id="wNext">→</button>
+  el.innerHTML=`<div class="whead"><h2 style="margin:0;font-size:18px">Моя неделя</h2><span class="wt">${md(wstart)}–${md(wend)}${weekOffset===0?' · сегодня '+md(tISO):''}</span>
+      <div class="wnav"><button class="btn" id="wPrev">←</button><button class="btn${weekOffset===0?' on':''}" id="wToday" title="${weekOffset?'Вернуться к этой неделе':'Ты на этой неделе'}">${weekOffset?icon('sync',13)+' ':''}${wt}</button><button class="btn" id="wNext">→</button>
       <button class="btn primary" id="wSmart" title="Вандо разложит задачи всех проектов по дням — по ёмкости и зависимостям">${icon('sparkles',13)} Умная неделя</button></div></div>
     <div class="wgrid">${cols}</div>
     <div style="font-size:12px;color:var(--mut2);margin-top:10px">Это твои задачи по всем проектам на неделю. Перетаскивай между днями — меняешь срок. Клик — открыть.</div>`;

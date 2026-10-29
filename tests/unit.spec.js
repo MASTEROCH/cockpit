@@ -201,14 +201,33 @@ test('матрица важности: квадранты и перенос', as
   expect(r).toEqual({ start: 'drop', cash: 'plan', soon: 'now', moves: 'drop,give,plan,now', lanes: 4 });
 });
 
-// ROCH #1393: таймер скрытия однажды уехал в хвост //-комментария — тосты висели на экране вечно (жалоба Роча из Mini App)
+// ROCH #1394: таймер скрытия однажды уехал в хвост //-комментария — тосты висели на экране вечно (жалоба Роча из Mini App)
 test('тост без действия исчезает сам, с действием — живёт дольше', async ({ page }) => {
   await boot(page);
+  // проверяем СВОЁ сообщение: демо может показать свою отложенную подсказку, и это не должно ронять тест
+  const mine = txt => page.locator('#toast.show .tmsg', { hasText: txt });
   await page.evaluate(() => toast('Синхронизировано с командой', '☁️'));
-  await expect(page.locator('#toast')).toHaveClass(/show/);
-  await expect(page.locator('#toast')).not.toHaveClass(/show/, { timeout: 4000 });
+  await expect(mine('Синхронизировано')).toHaveCount(1);
+  await expect(mine('Синхронизировано')).toHaveCount(0, { timeout: 4000 });
   await page.evaluate(() => toast('Удалено', '🗑', 'Вернуть', () => {}));
   await page.waitForTimeout(3000);
-  await expect(page.locator('#toast')).toHaveClass(/show/);
-  await expect(page.locator('#toast')).not.toHaveClass(/show/, { timeout: 4500 });
+  await expect(mine('Удалено')).toHaveCount(1); // подсказка без действия не имеет права затереть «Вернуть»
+  await expect(mine('Удалено')).toHaveCount(0, { timeout: 4500 });
+});
+
+// ROCH #1394: заявка из бота уже разобрана ИИ — приёмка в приложении берёт готовое (кому, срок, важность, файлы), а не парсит текст заново
+test('приёмка: разбор бота и файлы переезжают в задачу', async ({ page }) => {
+  await boot(page);
+  const r = await page.evaluate(() => {
+    const who = S.members[1];
+    const end = isoIn(3);
+    intakeRows = [{ id: 'i1', text: 'сырой текст', status: 'pending', target_project: S.id,
+      meta: { stage: 'suggest', pid: S.id, title: 'Согласовать макеты', assigneeId: who.id, end, priority: 'high', minutes: 30,
+        description: 'из пересланного', files: [{ name: 'a.jpg', path: 'ws/intake/i1/1_a.jpg', size: 10, type: 'image/jpeg' }] } }];
+    intakePid = () => S.id; decideIntake = () => {};
+    acceptIntake('i1');
+    const t = S.tasks[S.tasks.length - 1];
+    return { title: t.title, who: t.assigneeId === who.id, end: t.end === end, pr: t.priority, files: (t.files || []).length, desc: t.description, est: t.estimate };
+  });
+  expect(r).toEqual({ title: 'Согласовать макеты', who: true, end: true, pr: 'high', files: 1, desc: 'из пересланного', est: 0.5 });
 });
