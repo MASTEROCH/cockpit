@@ -3586,7 +3586,8 @@ function toast(msg,ic='✓',actLabel,actFn){const t=$('#toast');
   const over=!!document.querySelector('.modal-scrim.show,#drawer.show,#present.show,#focusView:not([hidden]),#vandoPanel.show,#lpScrim.show');
   t.classList.toggle('top',over);t.classList.toggle('has-act',!!actLabel);
   t.classList.remove('show');void t.offsetWidth; // перезапуск полоски отсчёта и въезда
-  t.classList.add('show');setTimeout(()=>applyPingpong(t),40); // не rAF: в фоновой вкладке он не срабатываетclearTimeout(toast._);toast._=setTimeout(()=>t.classList.remove('show'),actLabel?5500:2400);
+  t.classList.add('show');setTimeout(()=>applyPingpong(t),40); /* не rAF: в фоновой вкладке он не срабатывает */
+  clearTimeout(toast._);toast._=setTimeout(()=>t.classList.remove('show'),actLabel?5500:2400); /* ROCH #1393: эта строка однажды уехала в хвост //-комментария — тосты висели вечно */
   if(actLabel){t.querySelector('.tact').onclick=()=>{t.classList.remove('show');actFn&&actFn();};}}
 /* «Готово» — тихая печать успеха (success-ripple, ROCH Motion; стили .okfx): кольцо и галка рисуются, три волны.
    Конфетти на ежедневное действие — шум (арт-дирекция ROCH), салют остался для больших моментов: big=true. */

@@ -200,3 +200,15 @@ test('матрица важности: квадранты и перенос', as
   });
   expect(r).toEqual({ start: 'drop', cash: 'plan', soon: 'now', moves: 'drop,give,plan,now', lanes: 4 });
 });
+
+// ROCH #1393: таймер скрытия однажды уехал в хвост //-комментария — тосты висели на экране вечно (жалоба Роча из Mini App)
+test('тост без действия исчезает сам, с действием — живёт дольше', async ({ page }) => {
+  await boot(page);
+  await page.evaluate(() => toast('Синхронизировано с командой', '☁️'));
+  await expect(page.locator('#toast')).toHaveClass(/show/);
+  await expect(page.locator('#toast')).not.toHaveClass(/show/, { timeout: 4000 });
+  await page.evaluate(() => toast('Удалено', '🗑', 'Вернуть', () => {}));
+  await page.waitForTimeout(3000);
+  await expect(page.locator('#toast')).toHaveClass(/show/);
+  await expect(page.locator('#toast')).not.toHaveClass(/show/, { timeout: 4500 });
+});
