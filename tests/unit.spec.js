@@ -164,3 +164,39 @@ test('вложенность: 3 уровня, глубина-кап, каска�
   });
   for (const [k, v] of Object.entries(r)) expect(v, k).toBe(true);
 });
+
+// ROCH #1391: @упоминания — полные имена с границей слова, уникальное первое слово; уведомляем упомянутых, но не себя и не исполнителя
+test('упоминания: кого нашли и кому уходит уведомление', async ({ page }) => {
+  await boot(page);
+  const r = await page.evaluate(() => {
+    S.members = [{ id: 'a', name: 'Я Сам', email: 'me@local.test' }, { id: 'b', name: 'Анна Ли', email: 'b@local.test' },
+      { id: 'c', name: 'Анна', email: 'c@local.test' }, { id: 'd', name: 'Марина Ковалёва', email: 'd@local.test' }];
+    me = 'a';
+    const f = t => mentionsIn(t).map(m => m.id).sort().join(',');
+    const out = { full: f('@Анна Ли глянь'), both: f('@Анна Ли и @Анна'), first: f('@марина, срочно'), border: f('@Аннушка'), mail: f('a@b.com') };
+    const sent = []; const orig = tgNotifyTo; tgNotifyTo = (m, kind) => { sent.push(m.id + ':' + kind); };
+    notifyMentions({ id: 't', title: 'T', assigneeId: 'd' }, '@Я Сам @Анна @Марина Ковалёва');
+    tgNotifyTo = orig; out.sent = sent.join(',');
+    return out;
+  });
+  expect(r).toEqual({ full: 'b', both: 'b,c', first: 'd', border: '', mail: '', sent: 'c:mention' });
+});
+
+// ROCH #1392: матрица — срочность из срока, важность из приоритета/денег/клиента; перенос меняет ровно нужную ось
+test('матрица важности: квадранты и перенос', async ({ page }) => {
+  await boot(page);
+  const r = await page.evaluate(() => {
+    const t = S.tasks.find(x => !x.isMilestone);
+    t.status = 'todo'; t.priority = 'med'; t.cash = false; t.clientId = null; t.start = todayISO(); t.end = isoIn(30);
+    S.tasks.forEach(x => { x.deps = (x.deps || []).filter(d => d !== t.id); });
+    const out = { start: quadOf(t) };
+    t.cash = true; out.cash = quadOf(t);
+    t.end = isoIn(1); out.soon = quadOf(t);
+    out.moves = ['drop', 'give', 'plan', 'now'].map(q => { moveToQuad(t, q); return quadOf(t); }).join(',');
+    setView('board'); boardMode = 'matrix'; render();
+    out.lanes = document.querySelectorAll('#board .mq').length;
+    boardMode = 'status';
+    return out;
+  });
+  expect(r).toEqual({ start: 'drop', cash: 'plan', soon: 'now', moves: 'drop,give,plan,now', lanes: 4 });
+});

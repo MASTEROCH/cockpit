@@ -490,7 +490,7 @@ header{background:rgba(18,21,31,.62);backdrop-filter:var(--blur);-webkit-backdro
 .tab.active{background:linear-gradient(180deg,rgba(255,255,255,.15),rgba(255,255,255,.05));box-shadow:var(--ghi),0 2px 8px rgba(0,0,0,.25)}
 /* «Сейчас» — дом: всегда полным цветом (инструменты приглушены до наведения), ⚡ акцентом, тонкий разделитель после */
 @media(min-width:821px){
-  /* ROCH #1383: 4 равных места — у «Сегодня» больше нет особого цвета и разделителя (он отделял дом от 8 проектных вкладок) */
+  /* ROCH #1387: 4 равных места — у «Сегодня» больше нет особого цвета и разделителя (он отделял дом от 8 проектных вкладок) */
   .tabs .tab-home svg{color:var(--acc2)}
 }
 .logo{box-shadow:0 3px 10px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.22)}
@@ -2856,7 +2856,7 @@ body.light .dec-ic{background:rgba(20,20,30,.05)}
 .dec-a button.sec{background:rgba(255,255,255,.08);color:var(--txt)}body.light .dec-a button.sec{background:rgba(20,20,30,.06)}
 .dec-a button:active{transform:scale(.94);transition-duration:.06s}
 @media (max-width:680px){.dec-a button.sec{display:none}} /* на телефоне — одно главное действие, второе — тапом по строке */
-/* ROCH #1383: сегмент подэкранов — на всех ширинах. Десктоп: тихая строка под шапкой без стекла (контент ниже скроллится сам);
+/* ROCH #1387: сегмент подэкранов — на всех ширинах. Десктоп: тихая строка под шапкой без стекла (контент ниже скроллится сам);
    мобайл: стеклянная липкая полоса (правила в @media 680 выше). Выбранный — белая капсула, счётчик — тихая цифра */
 #mseg button{display:inline-flex;align-items:center;gap:6px}
 #mseg button em{font-style:normal;font-size:11px;font-weight:700;min-width:18px;height:18px;padding:0 5px;border-radius:9px;display:inline-grid;place-items:center;background:rgba(255,255,255,.1);color:var(--txt)}
@@ -2873,7 +2873,7 @@ body.light #mseg button em{background:rgba(30,30,60,.08)}
   #mseg button.on{background:rgba(255,255,255,.12);color:var(--txt);box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
   body.light #mseg button.on{background:#fff;box-shadow:0 1px 3px rgba(30,30,60,.12)}
 }
-/* ROCH #1384: колонка Ганта под себя. Ширина — одна переменная --glw (раньше min/max на трёх брейкпойнтах).
+/* ROCH #1388: колонка Ганта под себя. Ширина — одна переменная --glw (раньше min/max на трёх брейкпойнтах).
    Свёрнуто — полоса «статус + человек» 64 px: строки узнаются по цвету и лицу, полотно получает всю ширину */
 .gantt{--glw:320px}
 @media (max-width:900px){.gantt{--glw:190px}}
@@ -2905,6 +2905,17 @@ body.light .gcol-t:hover{background:rgba(30,30,60,.06)}
 body.col-resizing,body.col-resizing *{cursor:col-resize!important;-webkit-user-select:none!important;user-select:none!important}
 @media (hover:none){.ggrip{width:22px;right:-11px}.ggrip::after{left:10px;opacity:.35}.ggrip::before{margin-left:7px;opacity:.55;transform:none}}
 @media (prefers-reduced-motion:reduce){.gantt.gcol-anim .gleft{transition:none}}
+/* ROCH #1392: матрица — те же дорожки, что «По людям», сеткой 2×2; глагол квадранта со скрина Роча — тихой подписью */
+.board.matrix{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+.board.matrix .lane{min-width:0}
+.mq-dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+.mq-v{font-size:12px;font-weight:600;color:var(--mut);margin-left:auto}
+.mq .lanl{margin-left:8px}
+.mq .lcard .av{width:20px;height:20px;font-size:9px}
+.board.matrix .laneb{flex-direction:column;flex-wrap:nowrap;gap:6px}
+.board.matrix .lcard{width:100%;max-width:none;box-sizing:border-box;display:flex;align-items:center;gap:8px}
+.board.matrix .lct{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:clip;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent)}
+.board.matrix .le{flex:0 0 auto}
 /* «Клиенты ждут шага» на «Сейчас» */
 .crmnow{border-radius:20px;padding:12px 12px 8px;margin-bottom:14px;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-soft)}
 .crmnow-h{display:flex;align-items:center;gap:8px;padding:0 4px 8px;color:var(--mut);font-size:13px}
@@ -2965,7 +2976,7 @@ body.light .w3-w{color:rgba(20,24,40,calc(.04 + .03 * (5 - var(--z))))}
 @keyframes w3Roll{0%{transform:perspective(160px) translateX(0) rotateZ(0)}25%{transform:perspective(160px) translateX(-3px) rotateZ(-8deg)}55%{transform:perspective(160px) translateX(4px) rotateZ(6deg)}100%{transform:perspective(160px) rotateX(18deg) rotateY(-20deg)}}
 @keyframes w3Drop{0%{transform:perspective(160px) translateY(0)}30%{transform:perspective(160px) translateY(-6px) rotateX(-20deg)}55%{transform:perspective(160px) translateY(2px) scale(1.08,.9)}100%{transform:perspective(160px) rotateX(18deg) rotateY(-20deg)}}
 @media (prefers-reduced-motion:reduce){.w3,.tab:hover .w3,.mnav button.on .w3,.tab.active .w3{transform:none;transition:none}.w3.wake,.w3.wake .w3-w{animation:none}.w3-w{display:none}}
-/* ═══ ROCH #1385 · Система управления — один язык на весь продукт (Роч: «консистентность, а не сборная солянка»).
+/* ═══ ROCH #1389 · Система управления — один язык на весь продукт (Роч: «консистентность, а не сборная солянка»).
    Замер 29.10: 22 вида кнопок, на одном «Сегодня» рядом белые капсулы («Решения») и белые прямоугольники r14 (наставник),
    фильтры r12 рядом с сегментами-капсулами. Правило: всё, что НАЖИМАЮТ, — капсула; прямоугольник с радиусом карточки —
    только у ПОВЕРХНОСТЕЙ (карточки, поля форм, зоны «＋ добавить»). Слой стоит последним — он и есть система. ═══ */
@@ -2974,14 +2985,14 @@ body.light .w3-w{color:rgba(20,24,40,calc(.04 + .03 * (5 - var(--z))))}
 .seg2{border-radius:999px}
 .fchip{font-size:13px;font-weight:600}
 .toolbar .fsel{border-radius:999px;padding-left:13px}
-/* ROCH #1385: «Фокус» — капсула с шильдиком внутри. Шильдик съезжал за скругление (замер 375: кнопка 123, содержимое 131):
+/* ROCH #1389: «Фокус» — капсула с шильдиком внутри. Шильдик съезжал за скругление (замер 375: кнопка 123, содержимое 131):
    флекс по центру, поля 12, компактный шильдик; ≤ 360 шильдик уходит — место важнее цифры. ▶ — иконка: на iOS символ рисуется эмодзи */
 .mh-acts{gap:8px}
 .mh-acts .mh-go,.mh-acts .mh-done{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding-left:12px;padding-right:12px;flex:1 1 auto;min-width:0}
 .mh-go svg{flex:0 0 auto;margin-left:-2px}
 .mh-go small{margin-left:0;flex:0 0 auto;padding:2px 6px;font-size:11px;vertical-align:0}
 @media (max-width:360px){.mh-go small{display:none}}
-/* ROCH #1386: за любой открытой модалкой — один и тот же глубокий блюр (Роч: «чтобы UI не конфликтовал и не создавал шум»).
+/* ROCH #1390: за любой открытой модалкой — один и тот же глубокий блюр (Роч: «чтобы UI не конфликтовал и не создавал шум»).
    Было три разных подложки: модалки blur 10, шторки 3 px, палитра 5 px — сквозь них читался текст экрана и спорил с модалкой.
    Теперь фон уходит в размытое пятно цвета, модалка — единственное, что читается. Плавающий Вандо не модальный — без подложки */
 :root{--scrim-bg:rgba(8,8,12,.5);--scrim-fx:blur(24px) saturate(1.15)}
@@ -3015,7 +3026,7 @@ body.light{--scrim-bg:rgba(24,24,36,.24)}
   </div>
 
   <div class="tabs" id="tabs">
-    <!-- ROCH #1383: 9 вкладок → 4 места. Подэкраны (Доска/Гант/Неделя/Бэклог/Все проекты, Мой день/Приёмка) — сегментом под шапкой (#mseg) -->
+    <!-- ROCH #1387: 9 вкладок → 4 места. Подэкраны (Доска/Гант/Неделя/Бэклог/Все проекты, Мой день/Приёмка) — сегментом под шапкой (#mseg) -->
     <button class="tab tab-home active" data-v="now" data-g="now" data-icon="zap"><span>Сегодня</span> <span class="cnt" id="cntIntake" style="display:none">0</span></button>
     <button class="tab" data-v="board" data-g="proj" data-icon="layers"><span>Проекты</span><span class="cnt" id="cntIdeas" style="display:none">0</span></button>
     <button class="tab" data-v="crm" data-g="crm" data-icon="briefcase"><span>Клиенты</span> <span class="cnt" id="cntCrm" style="display:none">0</span></button>
@@ -3047,8 +3058,9 @@ body.light{--scrim-bg:rgba(24,24,36,.24)}
     <button class="fchip" id="fOver">Просрочено</button>
     <button class="fchip" id="fQuick" title="Правило двух минут: полчаса и меньше">⚡ Быстрые</button>
     <div class="seg2" id="boardModeCtl" style="display:none">
-      <button class="sgb on" data-bm="status">▦ Статусы</button>
-      <button class="sgb" data-bm="people">👥 По людям</button>
+      <button class="sgb on" data-bm="status">Статусы</button>
+      <button class="sgb" data-bm="people">По людям</button>
+      <button class="sgb" data-bm="matrix" title="Матрица Эйзенхауэра: срочность — из срока, важность — из приоритета, денег, клиента">Важность</button>
     </div>
     <button class="fchip" id="bSelect" style="display:none">☑ Выбрать</button>
     <div class="spacer"></div>
@@ -3848,7 +3860,7 @@ function applyPingpong(root){
    первый экран открывался без подсвеченной вкладки, пока человек не тапнул */
 function syncMnav(v){const mvMap={board:'mprojects',gantt:'mprojects',week:'mprojects',backlog:'mprojects',team:'mprojects',all:'mprojects',intake:'now'};
   const hv=mvMap[v]||v;$$('.mnav [data-mv]').forEach(b=>b.classList.toggle('on',b.dataset.mv===hv));}
-/* ROCH #1383: экраны сгруппированы в 4 места. Вкладка подсвечивается по группе; «Проекты» открывают тот подэкран, где был */
+/* ROCH #1387: экраны сгруппированы в 4 места. Вкладка подсвечивается по группе; «Проекты» открывают тот подэкран, где был */
 const VGROUP={now:'now',intake:'now',board:'proj',gantt:'proj',week:'proj',backlog:'proj',all:'proj',mprojects:'proj',crm:'crm',team:'team'};
 function lastPView(){try{const v=localStorage.getItem('cockpit_pview');return ['board','gantt','week','backlog','all'].includes(v)?v:'board';}catch(e){return 'board';}}
 function segItems(v,isTeam){const mob=window.innerWidth<=680,g=VGROUP[v];
@@ -4232,9 +4244,23 @@ async function renderGuestView(){
 if(window._guestTok)setTimeout(renderGuestView,60);
 async function aiToken(){try{const {data}=await sb.auth.getSession();return data&&data.session&&data.session.access_token;}catch(e){return null;}}
 /* пуш члену команды в TG (назначение/коммент) — fire-and-forget, молча */
-async function tgNotify(kind,t,extra){try{
+/* ROCH #1391: @упоминание = «от тебя что-то нужно». Ищем полные имена (длинные первыми, чтобы «@Анна Ли» не съела «@Анна»),
+   и одно первое слово имени, если оно у команды уникально — люди пишут «@Марина», а не «@Марина Ковалёва» */
+function mentionsIn(text){if(!text||text.indexOf('@')<0)return [];
+  const ms=(S.members||[]).filter(m=>m&&m.name);let low=' '+text.toLowerCase()+' ';const out=[];
+  const re=k=>new RegExp('@'+k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(?![\\p{L}\\d])','gu'); /* граница: «@Анжеликака» — не Анжелика */
+  ms.slice().sort((a,b)=>b.name.length-a.name.length).forEach(m=>{const r=re(m.name.toLowerCase());if(r.test(low)){out.push(m);low=low.replace(re(m.name.toLowerCase()),' ');}});
+  ms.forEach(m=>{if(out.includes(m))return;const f=m.name.split(/\s+/)[0].toLowerCase();if(f.length<2)return;
+    if(ms.filter(x=>x.name.split(/\s+/)[0].toLowerCase()===f).length!==1)return;
+    if(re(f).test(low))out.push(m);});
+  return out;}
+/* упомянутым — кроме себя и исполнителя (ему уже ушло «коммент»/«назначено») */
+function notifyMentions(t,text,except){mentionsIn(text).forEach(m=>{if(!m.email||m.id===myId()||m.id===t.assigneeId)return;
+  if(except&&except.has(m.id))return;tgNotifyTo(m,'mention',t,text);});}
+async function tgNotify(kind,t,extra){if(t)return tgNotifyTo(member(t.assigneeId),kind,t,extra);}
+async function tgNotifyTo(m,kind,t,extra){try{
   if(!cloudOn||!sb||!t)return;
-  const m=member(t.assigneeId);if(!m||!m.email)return;
+  if(!m||!m.email)return;
   if((m.email||'').toLowerCase()===(myEmail||'').toLowerCase())return;
   const token=await aiToken();if(!token)return;
   fetch(CFG.url+'/functions/v1/ai-review',{method:'POST',
@@ -6525,7 +6551,7 @@ function openInlineAdd(el){
   };
   inp.onblur=()=>{if(!inp.value.trim()&&autoAddSec===sec){autoAddSec=null;if(view==='gantt')renderGantt();}};
 }
-/* ROCH #1384: левая колонка Ганта — под себя (рецепт Link Desk .colgrip): потянул край — ширина, двойной клик — как было,
+/* ROCH #1388: левая колонка Ганта — под себя (рецепт Link Desk .colgrip): потянул край — ширина, двойной клик — как было,
    ← → с клавиатуры; кнопка-панель в углу (и клавиша \) сворачивает в полосу «статус + человек»; утянул уже 110 px — свернулась сама.
    Ширина и свёрнутость хранятся отдельно для телефона и десктопа: на 375 px и на 1440 px «удобно» — разное */
 const GLW_MIN=140,GLW_COL=64;
@@ -6760,6 +6786,41 @@ function renderBulkBar(){
   $('#bbDel').onclick=()=>{if(!confirm('Удалить выбранные ('+boardSel.size+')?'))return;const ids=new Set(boardSel);trashPush(S,S.tasks.filter(t=>ids.has(t.id)));S.tasks=S.tasks.filter(t=>!ids.has(t.id));S.tasks.forEach(t=>t.deps=t.deps.filter(d=>!ids.has(d)));logAct('🗑','массово удалено '+ids.size);boardSel.clear();save();renderBoard();toast('Удалено','🗑');};
   $('#bbClear').onclick=()=>{boardSel.clear();boardSelOn=false;renderBoard();};
 }
+/* ROCH #1392: матрица Эйзенхауэра (Роч, скрин: «срочное ≠ важное»). Человек не размечает дважды:
+   СРОЧНО считается из срока (≤ 2 дня или просрочено), ВАЖНО — из приоритета (высокий/срочно), денег, клиента, «держит других».
+   Приоритет «низкий» — явное «не важно», он перебивает деньги/клиента: так перетаскивание в нижний ряд всегда срабатывает */
+function holdsOthers(t){return S.tasks.some(x=>x.status!=='done'&&(x.deps||[]).includes(t.id));}
+function isUrgentT(t){return !t.isMilestone&&t.status!=='done'&&!!t.end&&daysLeft(t)<=2;}
+function isImportantT(t){if(t.priority==='high'||t.priority==='urgent')return true;if(t.priority==='low')return false;return !!(t.cash||t.clientId||holdsOthers(t));}
+function quadOf(t){const i=isImportantT(t),u=isUrgentT(t);return i&&u?'now':i?'plan':u?'give':'drop';}
+const QUADS=[{k:'now',n:'Важное и срочное',v:'Сделать сейчас',c:'#f87171'},{k:'plan',n:'Важное, не срочное',v:'Запланировать',c:'#a78bfa'},
+  {k:'give',n:'Срочное, не важное',v:'Отдать',c:'#fbbf24'},{k:'drop',n:'Не важное, не срочное',v:'Убрать',c:'#6b7186'}];
+function isoIn(n){return fmtD(parseD(todayISO())+n*dayMs);}
+/* перенос между квадрантами = понятное изменение одной оси: важность → приоритет, срочность → срок (сегодня / через неделю) */
+function moveToQuad(t,q){const ch=[];const wantI=q==='now'||q==='plan',wantU=q==='now'||q==='give';
+  if(wantI!==isImportantT(t)){t.priority=wantI?'high':'low';ch.push(wantI?'приоритет высокий':'приоритет низкий');}
+  if(wantU!==isUrgentT(t)){t.end=wantU?todayISO():isoIn(7);if(parseD(t.start)>parseD(t.end))t.start=t.end;ch.push(wantU?'срок сегодня':'срок через неделю');}
+  return ch;}
+function renderBoardMatrix(){renderBulkBar();
+  const b=$('#board');b.className='board people matrix';b.innerHTML='';
+  const open=S.tasks.filter(t=>!t.isMilestone&&t.status!=='done'&&passFilter(t));
+  QUADS.forEach(Q=>{const tasks=open.filter(t=>quadOf(t)===Q.k).sort((a,b)=>relScore(b)-relScore(a));
+    const lane=document.createElement('div');lane.className='lane mq mq-'+Q.k;lane.dataset.q=Q.k;
+    lane.innerHTML=`<div class="laneh"><span class="mq-dot" style="background:${Q.c}"></span><span class="lanen">${Q.n}</span><span class="mq-v">${Q.v}</span><span class="lanl">${tasks.length}</span></div><div class="laneb"></div>`;
+    const body=lane.querySelector('.laneb');
+    tasks.forEach(t=>{const c=document.createElement('div');c.className='lcard';c.draggable=true;c.dataset.id=t.id;const ov=isOverdue(t);
+      c.innerHTML=`<span class="pip" style="background:${stMap[t.status].c}"></span><span class="lct">${esc(t.title)}</span>${t.assigneeId?avatar(t.assigneeId):''}${ov?'<span class="le" style="color:var(--bad)">просрочено</span>':t.end?`<span class="le">${daysLeft(t)===0?'сегодня':daysLeft(t)===1?'завтра':fmtRu(t.end)}</span>`:''}`;
+      c.onclick=()=>openTask(t.id);
+      c.ondragstart=()=>{dragCard=t.id;c.classList.add('dragging');};
+      c.ondragend=()=>{c.classList.remove('dragging');dragCard=null;};
+      body.appendChild(c);});
+    if(!tasks.length)body.innerHTML=`<div class="colempty">${Q.k==='now'?'Горящего нет — хороший день':'— пусто —'}</div>`;
+    lane.ondragover=e=>{e.preventDefault();lane.classList.add('drop');};
+    lane.ondragleave=()=>lane.classList.remove('drop');
+    lane.ondrop=e=>{e.preventDefault();lane.classList.remove('drop');if(!dragCard)return;const t=task(dragCard);if(!t||quadOf(t)===Q.k)return;
+      const ch=moveToQuad(t,Q.k);logAct('🧭','«'+t.title+'» → '+Q.v.toLowerCase());save();renderBoardMatrix();toast(Q.v+': '+ch.join(', '),'🧭');};
+    b.appendChild(lane);});
+}
 function renderBoardPeople(){renderBulkBar();
   const b=$('#board');b.className='board people';b.innerHTML='';
   const lanes=[...S.members.map(m=>({id:m.id,m})),{id:'',m:null}];
@@ -6810,6 +6871,7 @@ function renderBoard(){
   setTimeout(()=>{if(window._justMoved){const el=document.querySelector(`.card[data-id="${window._justMoved}"]`);
     if(el){el.classList.add('justmoved');setTimeout(()=>el.classList.remove('justmoved'),650);}window._justMoved=null;}},30);
   if(boardMode==='people'){boardSelOn=false;return renderBoardPeople();}
+  if(boardMode==='matrix'){boardSelOn=false;return renderBoardMatrix();}
   const b=$('#board');b.className='board'+(boardSelOn?' selecting':'');b.innerHTML='';
   STATUSES.forEach(st=>{
     const col=document.createElement('div');col.className='col';col.dataset.st=st.k;
@@ -7367,8 +7429,10 @@ function autoGrow(el){
 
 $('#dTitle').oninput=e=>{if(curTask){curTask.title=e.target.value;autoGrow(e.target);}};
 $('#dTitle').onblur=()=>{if(curTask){if(!curTask.title.trim())curTask.title='Без названия';save();}};
+let _descMent=null;
 $('#dDesc').oninput=e=>{if(curTask)curTask.description=e.target.value;};
-$('#dDesc').onblur=()=>{if(curTask)save();};
+$('#dDesc').onfocus=()=>{_descMent=new Set(mentionsIn(curTask&&curTask.description||'').map(m=>m.id));};
+$('#dDesc').onblur=()=>{if(curTask){save();notifyMentions(curTask,curTask.description||'',_descMent);_descMent=null;}}; // в описании — только НОВЫЕ упоминания
 $('#dSection').onchange=e=>{if(curTask){curTask.sectionId=e.target.value;save();}};
 $('#dStart').onchange=e=>{if(curTask){curTask.start=e.target.value;if(parseD(curTask.end)<parseD(curTask.start))curTask.end=curTask.start;save();}};
 $('#dEnd').onchange=e=>{if(curTask){const _old=curTask.end;curTask.end=e.target.value;if(parseD(curTask.end)<parseD(curTask.start))curTask.start=curTask.end;save();askShiftReason(curTask,_old,curTask.end);}};
@@ -7648,7 +7712,7 @@ $$('#dQDates button').forEach(b=>b.onclick=()=>{if(!curTask)return;
   toast('Срок → '+d.slice(8)+'.'+d.slice(5,7),'📅');askShiftReason(curTask,_old,d);});
 $('#dSubIn').onkeydown=e=>{if(e.key==='Enter')addSub();};
 function addComment(){const v=$('#dCmtIn').value.trim();if(!v||!curTask)return;
-  curTask.comments.push({text:v,author:meName(),authorId:myId(),when:'сейчас',ts:Date.now()});logAct('💬','коммент к «'+curTask.title+'»');$('#dCmtIn').value='';save();tgNotify('comment',curTask,v);renderComments(curTask);}
+  curTask.comments.push({text:v,author:meName(),authorId:myId(),when:'сейчас',ts:Date.now()});logAct('💬','коммент к «'+curTask.title+'»');$('#dCmtIn').value='';save();tgNotify('comment',curTask,v);notifyMentions(curTask,v);renderComments(curTask);}
 $('#dDelete').onclick=()=>{if(!curTask)return;const t=curTask;const idx=S.tasks.indexOf(t);
   const desc=descendants(t.id);
   if(desc.length&&!confirm('Удалить «'+t.title+'» вместе с '+desc.length+' подзадач(ами)?'))return;
@@ -9118,10 +9182,13 @@ async function onLoggedIn(){cloudOn=true;closeAuth();hideGate();updateCloudBadge
   shareCapture(); // «поделиться» из другого приложения → лист захвата (PWA share-target)
   // deep-link из TG: ?t=PID:TID → открыть задачу (якоря в сообщениях бота)
   {const m=location.search.match(/[?&]t=([\w-]+):([\w-]+)/);
-   if(m){history.replaceState(null,'',location.pathname);
-     setTimeout(()=>{try{if(m[1]!==S.id&&reg.list.find(p=>p.id===m[1]))switchProject(m[1]);
-       setTimeout(()=>openTask(m[2]),m[1]!==S.id?250:0);}catch(e){}},400);}}
+   if(m){history.replaceState(null,'',location.pathname);setTimeout(()=>openDeepLink(m[1],m[2]),400);}}
 } // Telegram — обязательный шаг: гейт сам дождётся очереди
+/* ROCH #1391: открыть задачу по ссылке — из сообщения бота (?t=PID:TID) и из пуш-уведомления (sw.js шлёт postMessage открытому окну) */
+function openDeepLink(pid,tid){try{if(pid!==S.id&&reg.list.find(p=>p.id===pid))switchProject(pid);
+  setTimeout(()=>openTask(tid),pid!==S.id?250:0);}catch(e){}}
+if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{const d=e.data||{};
+  if(d.type==='wando-open'){const m=String(d.url||'').match(/[?&]t=([\w-]+):([\w-]+)/);if(m)openDeepLink(m[1],m[2]);}});
 /* ---- профиль при первом входе ---- */
 let profileDraft=null;
 function cropPhoto(f,cb){const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const s=160,c=document.createElement('canvas');c.width=s;c.height=s;const ctx=c.getContext('2d');const mn=Math.min(img.width,img.height),sx=(img.width-mn)/2,sy=(img.height-mn)/2;ctx.drawImage(img,sx,sy,mn,mn,0,0,s,s);cb(c.toDataURL('image/jpeg',0.82));};img.src=r.result;};r.readAsDataURL(f);}
@@ -9887,6 +9954,11 @@ function decisionsList(){
   const ni=(typeof intakeRows!=='undefined'&&intakeRows)?intakeRows.length:0;
   if(ni&&isTeam)out.push({pr:60,ic:'inbox',tone:'acc',t:ni+' '+plural(ni,'заявка ждёт','заявки ждут','заявок ждут')+' решения',why:'взять в работу или отклонить',acts:[['Разобрать',()=>setView('intake')]]});
   if(unassigned)out.push({pr:40,ic:'users',t:unassigned+' '+plural(unassigned,'важная задача','важные задачи','важных задач')+' без исполнителя',why:'раздай, пока не сгорели',acts:[['Раздать',()=>setView('board')]]});
+  /* ROCH #1392: язык матрицы — «срочное, но не важное» на мне = отдать. Только в текущем проекте и если есть кому */
+  {const me=myId(),others=(S.members||[]).filter(m=>m.id!==me);
+   const give=me&&others.length?S.tasks.filter(t=>t.assigneeId===me&&quadOf(t)==='give'):[];
+   if(give.length)out.push({pr:45,ic:'users',t:give.length===1?'«'+give[0].title+'» — срочно, но не важно':'Срочное, не важное: '+give.length+' '+plural(give.length,'задача','задачи','задач')+' на тебе',
+     why:'матрица: такое отдают, а себе оставляют важное',acts:[['Отдать',()=>openLP(give[0].id,S.id)],['Все',()=>{setView('board');boardMode='matrix';$$('#boardModeCtl .sgb').forEach(x=>x.classList.toggle('on',x.dataset.bm==='matrix'));render();}]]});}
   return out.sort((a,b)=>b.pr-a.pr);}
 function decisionsCard(){const L=decisionsList();_decActs=[];
   if(!L.length)return `<div class="dec calm">${icon('check',16)}<span>Решений не ждёт ничего — работай по плану</span></div>`;

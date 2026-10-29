@@ -104,7 +104,7 @@ test.describe('Мобайл', () => {
   test('нижний нав и сегмент «‹ Проекты» на месте', async ({ page }) => {
     await boot(page, `setView('board');`);
     await expect(page.locator('.mnav')).toBeVisible();
-    await expect(page.locator('#mseg .mback', { hasText: 'Проекты' })).toBeVisible(); // «‹» теперь иконка, не символ (ROCH #1383)
+    await expect(page.locator('#mseg .mback', { hasText: 'Проекты' })).toBeVisible(); // «‹» теперь иконка, не символ (ROCH #1387)
   });
 
   // long-press живёт на карточке ДОСКИ; «Сегодня» по спеке редизайна работает свайпом

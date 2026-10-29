@@ -181,11 +181,12 @@ serve(async (req) => {
     if (!email || !(await allowed(email))) return json({ error: "Доступ только для команды" }, 403);
 
     const key = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!key) return json({ error: "ANTHROPIC_API_KEY не задан в секретах функции" }, 500);
 
     const body = await req.json();
     const { project, mode, goal, messages, context } = body;
     const FREE_MODES = mode === "notify" || mode === "billing";
+    // уведомления и тариф работают без ИИ — отсутствие ключа Anthropic не должно глушить «тебя назначили / упомянули»
+    if (!key && !FREE_MODES) return json({ error: "ANTHROPIC_API_KEY не задан в секретах функции" }, 500);
     if (!FREE_MODES && !(await planOk(email))) {
       return json({ error: "Вандо-ИИ доступен в тарифе Founder ⭐ — открой /plan у @wando_tasks_bot" }, 402);
     }
@@ -217,12 +218,18 @@ serve(async (req) => {
       if (!toEmail || !taskTitle) return json({ ok: false });
       if (String(toEmail).toLowerCase() === email) return json({ ok: true, skip: "self" });
       if (!(await allowed(String(toEmail).toLowerCase()))) return json({ ok: false, reason: "not_team" });
+      // получатель — из того же пространства, что и отправитель (раньше проверялось только «есть в team», то есть в ЛЮБОМ пространстве)
+      const wsOf = async (e: string) => ((await sbs.from("team").select("workspace_id").ilike("email", e)).data ?? []).map((r: any) => r.workspace_id ?? "main");
+      const [wsMe, wsTo] = await Promise.all([wsOf(email), wsOf(String(toEmail).toLowerCase())]);
+      if (wsMe.length && !wsTo.some((w: string) => wsMe.includes(w))) return json({ ok: false, reason: "other_ws" });
       const { data: wl } = await sbs.from("tg_links").select("chat_id").ilike("email", toEmail).eq("revoked", false).maybeSingle();
       if (!wl) return json({ ok: false, reason: "no_tg" });
       const BOT = Deno.env.get("TELEGRAM_BOT_TOKEN") ?? "";
       if (!BOT) return json({ ok: false, reason: "no_bot" });
       const a = `<a href="https://cock-pit.com/?t=${esc2(projectId)}:${esc2(taskId)}">${esc2(taskTitle)}</a>`;
-      const msg = kind === "comment"
+      const msg = kind === "mention"
+        ? `📣 <b>${esc2(byName)}</b> упомянул(а) тебя в «${a}» <i>(${esc2(projectName)})</i>:\n${esc2(String(text ?? "").slice(0, 300))}\n\n<i>↩︎ ответь — текст станет комментом</i>`
+        : kind === "comment"
         ? `💬 <b>${esc2(byName)}</b> — коммент в «${a}» <i>(${esc2(projectName)})</i>:\n${esc2(String(text ?? "").slice(0, 300))}\n\n<i>↩︎ ответь на это сообщение — текст попадёт в комменты задачи</i>`
         : `👤 <b>${esc2(byName)}</b> назначил(а) на тебя: «${a}» <i>(${esc2(projectName)})</i>\n\n<i>↩︎ ответь — текст станет комментом</i>`;
       await fetch(`https://api.telegram.org/bot${BOT}/sendMessage`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ chat_id: wl.chat_id, text: msg, parse_mode: "HTML", disable_web_page_preview: true }) });

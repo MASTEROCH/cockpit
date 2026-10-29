@@ -525,6 +525,45 @@ async function notifyTaskLanded(proj: Record<string, any>, task: Record<string, 
     await say(l.chat_id, `🆕 <b>${esc(byName)}</b> добавил задачу в ${proj.emoji ?? "📄"} <b>${esc(proj.name ?? "")}</b>:\n«${esc(task.title)}»`);
   }
 }
+// ROCH #1391: @упоминание — тот же алгоритм, что mentionsIn в index.html: полные имена длинными первыми с границей слова,
+// плюс первое слово имени, если оно у команды уникально («@Марина» вместо «@Марина Ковалёва»)
+function mentionedIn(text: string, members: Record<string, any>[]): Record<string, any>[] {
+  if (!text || !text.includes("@")) return [];
+  const ms = members.filter((m) => m && m.name);
+  const re = (k: string) => new RegExp("@" + k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?![\\p{L}\\d])", "gu");
+  let low = " " + text.toLowerCase() + " ";
+  const out: Record<string, any>[] = [];
+  [...ms].sort((a, b) => b.name.length - a.name.length).forEach((m) => {
+    const k = String(m.name).toLowerCase();
+    if (re(k).test(low)) { out.push(m); low = low.replace(re(k), " "); }
+  });
+  const first = (m: Record<string, any>) => String(m.name).split(/\s+/)[0].toLowerCase();
+  ms.forEach((m) => {
+    if (out.includes(m)) return;
+    const f = first(m);
+    if (f.length < 2 || ms.filter((x) => first(x) === f).length !== 1) return;
+    if (re(f).test(low)) out.push(m);
+  });
+  return out;
+}
+// коммент ответом в Telegram — раньше сохранялся молча. Теперь как в приложении: исполнителю «коммент», упомянутым «упомянул(а)»
+async function notifyTaskComment(proj: Record<string, any>, task: Record<string, any>, text: string, byName: string, byEmail: string) {
+  const members = (((proj.data ?? {}).members) ?? []) as Record<string, any>[];
+  const to = new Map<string, "comment" | "mention">();
+  const asg = members.find((m) => m.id === task.assigneeId);
+  if (asg?.email) to.set(String(asg.email).toLowerCase(), "comment");
+  mentionedIn(text, members).forEach((m) => { if (m.email) to.set(String(m.email).toLowerCase(), "mention"); });
+  to.delete((byEmail ?? "").toLowerCase());
+  if (!to.size) return;
+  const { data: links } = await sb.from("tg_links").select("*").eq("revoked", false);
+  const a = `<a href="${APP_URL}/?t=${esc(proj.id)}:${esc(task.id)}">${esc(task.title)}</a>`;
+  for (const l of ((links ?? []) as Link[])) {
+    const kind = to.get(l.email.toLowerCase());
+    if (!kind) continue;
+    const head = kind === "mention" ? `📣 <b>${esc(byName)}</b> упомянул(а) тебя в «${a}»` : `💬 <b>${esc(byName)}</b> — коммент в «${a}»`;
+    await say(l.chat_id, `${head} <i>(${esc(proj.name ?? "")})</i>:\n${esc(text.slice(0, 300))}\n\n<i>↩︎ ответь — текст станет комментом</i>`, { disable_web_page_preview: true });
+  }
+}
 async function notifyDecision(rec: Record<string, any>) {
   if ((rec.decided_by ?? "").toLowerCase() === (rec.by_email ?? "").toLowerCase()) return; // сам себе не шлём
   const { data: link } = await sb.from("tg_links").select("*").ilike("email", rec.by_email).eq("revoked", false).maybeSingle();
@@ -1259,8 +1298,21 @@ Deno.serve(async (req) => {
       return new Response("ok");
     }
 
-    const text: string = (msg.text ?? "").trim();
-    if (!text) return new Response("ok");
+    // ROCH #1391: в личке берём подпись к фото/файлу и пересланное — раньше всё, кроме голого текста, молча пропадало.
+    // Пересланное помечаем «↪ от X:» — оно идёт в Приёмку как КОНТЕНТ и никогда не исполняется как команда (/start bind_… в чужом сообщении)
+    const fo = msg.forward_origin as Record<string, any> | undefined;
+    const fwdFrom: string | null = fo
+      ? (fo.sender_user ? [fo.sender_user.first_name, fo.sender_user.last_name].filter(Boolean).join(" ")
+        : fo.sender_user_name ?? fo.sender_chat?.title ?? fo.chat?.title ?? "переслано")
+      : msg.forward_from ? [msg.forward_from.first_name, msg.forward_from.last_name].filter(Boolean).join(" ")
+      : msg.forward_sender_name ?? msg.forward_from_chat?.title ?? null;
+    const hasMedia = !!(msg.photo || msg.document || msg.video || msg.animation);
+    const raw: string = (msg.text ?? msg.caption ?? "").trim();
+    const text: string = fwdFrom && raw ? `↪ от ${fwdFrom}: ${raw}` : raw;
+    if (!text) {
+      if (hasMedia && await getLink(chatId)) await say(chatId, "📎 Файл без подписи пока не беру. Пришли его с подписью «что и кому» — например: <i>«Марине до пятницы, макеты»</i>");
+      return new Response("ok");
+    }
 
     // --- ответ на сообщение бота о задаче → комментарий в задачу ---
     const rp = msg.reply_to_message;
@@ -1303,6 +1355,7 @@ Deno.serve(async (req) => {
         p.data.updatedAt = Date.now();
         const { error } = await sb.from("projects").update({ data: p.data, updated_at: new Date().toISOString(), updated_by: null }).eq("id", p.id);
         await say(chatId, error ? "⚠ Не сохранилось: " + esc(error.message) : `💬 Коммент к «${esc(t.title)}» сохранён — команда увидит его в карточке задачи`);
+        if (!error) { try { await notifyTaskComment(p, t, text, link.name ?? link.email, link.email); } catch (_) { /* уведомление не ломает сохранение */ } }
         return new Response("ok");
       }
     }
