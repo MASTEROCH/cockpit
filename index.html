@@ -3215,6 +3215,9 @@ input.mrole-in{padding:9px 14px;margin-top:8px;font-size:14px}
 input.mname-in:focus,input.mrole-in:focus{border-color:var(--acc2)}
 input.mname-in:hover,input.mrole-in:hover{border-color:var(--line2)}
 .set-item[hidden]{display:none!important}
+body.no-invite #teamInvite,body.no-invite #addMember2,body.no-invite .m-invite{display:none!important} /* ROCH #1410 */
+.inv-role{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;color:var(--mut);font-weight:600}
+.inv-role .am-seg button{font-size:13px;padding:6px 14px}
 </style>
 </head>
 <body>
@@ -4961,17 +4964,20 @@ function shownEmail(e){return isTgEmail(e)?'через Telegram':(e||'');}
 const INV_PAL=['#a78bfa','#f472b6','#38bdf8','#34d399','#fbbf24','#fb923c','#94a3b8','#e879f9'];
 async function openInvite(opts){opts=opts||{};
   if(!cloudOn||!sb){toast('Пригласить можно после входа в облако','🤝');return;}
+  if(!canInvite()){toast('Приглашать могут владелец и админы — попроси их','🔐');return;}
   /* ROCH #1401: «Открытка» (канон POSTCARD) — клиент шлёт ТОЛЬКО id проекта; код, ссылки и карточку строит сервер */
   const tk=await aiToken();if(!tk){toast('Нужен вход','⚠');return;}
   let r=null;
   try{r=await fetch(CFG.url+'/functions/v1/tma-auth',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+tk},
-    body:JSON.stringify({kind:'invite',project_id:(opts.projects&&opts.projects.length&&!opts.projects.includes(S.id))?opts.projects[0]:S.id,by_name:meName(),member_id:opts.mid||'',projects:opts.projects||[],initData:window._isTMA?tmaInitData():''})}).then(x=>x.json());}catch(e){}
+    body:JSON.stringify({kind:'invite',project_id:(opts.projects&&opts.projects.length&&!opts.projects.includes(S.id))?opts.projects[0]:S.id,by_name:meName(),member_id:opts.mid||'',projects:opts.projects||[],role:opts.role||'member',initData:window._isTMA?tmaInitData():''})}).then(x=>x.json());}catch(e){}
   if(!r||!r.link){toast((r&&r.error)||'Не получилось создать приглашение — проверь сеть','⚠');return;}
   const tg=r.link,web=r.web,msg=r.text;
   const WA=window.Telegram&&Telegram.WebApp;
   const card=!!(r.prepared_id&&WA&&typeof WA.shareMessage==='function'&&WA.isVersionAtLeast&&WA.isVersionAtLeast('8.0')); /* версии сравнивает только SDK */
   const m=$('#invModal');const pre={color:INV_PAL[0],photo:''};
   m.innerHTML=`<div class="inv-h"><b>${opts.name?'Профиль готов — отправь ссылку':'Пригласить в команду'}</b><span>${opts.name?esc(opts.name)+' войдёт и сразу всё увидит':'в «'+esc(S.projectName)+'» · ссылка живёт 7 дней'}</span><button class="iconbtn" data-invx aria-label="Закрыть">${icon('x',16)}</button></div>
+    ${roleRank(teamRoleOf(myEmail))>=3?`<div class="inv-role"><span>Пригласить как</span><div class="am-seg"><button class="${opts.role!=='admin'?'on':''}" data-invrole="member">Участник</button><button class="${opts.role==='admin'?'on':''}" data-invrole="admin">Админ</button></div></div>
+    ${opts.role==='admin'?'<div class="inv-alt">Админ сможет звать своих людей и настраивать доступы участникам. Админов назначаешь только ты.</div>':''}`:''}
     <div class="inv-steps"><div><span>1</span>партнёр нажимает ссылку</div><div><span>2</span>Start в боте</div><div><span>3</span>«Открыть WANDO» — и он внутри</div></div>
     ${card?`<button class="btn primary inv-go" data-invcard>${icon('send',16)} Отправить открытку</button>`
       :`<button class="btn primary inv-go" data-invtg="${esc(tgShareUrl(tg,msg))}">${icon('send',16)} Отправить в Telegram</button>`}
@@ -4996,6 +5002,7 @@ async function openInvite(opts){opts=opts||{};
     if(e.target.closest('[data-invshare]')){navigator.share({text:msg,url:tg}).catch(()=>{});return;}
     if(e.target.closest('[data-invx]')){$('#invScrim').classList.remove('show');return;}
     if(e.target.closest('[data-invblank]')){$('#invScrim').classList.remove('show');addBlankMember();return;}
+    const ir=e.target.closest('[data-invrole]');if(ir){if((opts.role||'member')!==ir.dataset.invrole)openInvite({...opts,role:ir.dataset.invrole});return;}
     const pc=e.target.closest('[data-invp]');if(pc){pc.classList.toggle('on');return;}
     const cc=e.target.closest('[data-invc]');if(cc){m.querySelectorAll('[data-invc]').forEach(b=>b.classList.toggle('on',b===cc));pre.color=cc.dataset.invc;const av=m.querySelector('[data-invph]');if(av&&!pre.photo)av.style.background=pre.color;return;}
     if(e.target.closest('[data-invph]')){$('#invPhoto').click();return;}
@@ -5003,7 +5010,7 @@ async function openInvite(opts){opts=opts||{};
       const pids=[...m.querySelectorAll('[data-invp].on')].map(b=>b.dataset.invp);if(!pids.length){toast('Отметь хотя бы один проект','⚠');return;}
       const mid=uid('m'),role=($('#invRole').value||'').trim();
       pids.forEach(pid=>{const d=pid===S.id?S:loadProj(pid);if(!d)return;d.members=d.members||[];d.members.push({id:mid,name,role,color:pre.color,photo:pre.photo||'',email:'',capacity:30});persistProj(d,pid);});
-      render();openInvite({mid,name,projects:pids});return;}
+      render();openInvite({mid,name,projects:pids,role:opts.role});return;}
     if(e.target.closest('[data-invmail]')){$('#invScrim').classList.remove('show');setView('team');setTimeout(()=>{const i=$('#accTeamEmail');if(i){i.scrollIntoView({block:'center',behavior:'smooth'});i.focus();}},260);}};
   {const f=$('#invPhoto');if(f)f.onchange=()=>{const x=f.files&&f.files[0];if(!x)return;cropPhoto(x,url=>{pre.photo=url;const av=m.querySelector('[data-invph]');if(av){av.style.background=`center/cover url('${url}')`;av.innerHTML='';}});};}
   $('#invScrim').onclick=e=>{if(e.target.id==='invScrim')e.target.classList.remove('show');};
@@ -5573,7 +5580,7 @@ function renderSettings(){
        <div class="set-photobtns"><button class="minibtn" id="setPhoto">📷 Фото</button>${me.photo?'<button class="minibtn" id="setPhotoDel">убрать</button>':''}</div>
      </div></div>
      <div class="colorrow" id="setColors" style="margin-top:14px">${COLORS.map(c=>`<span class="cdot ${me.color===c?'on':''}" data-c="${c}" style="background:${c}"></span>`).join('')}</div>
-     ${cloudOn&&isTeam?`<button class="btn primary set-invite" id="setInvite">${icon('send',15)} Пригласить в команду</button>`:''}
+     ${canInvite()?`<button class="btn primary set-invite" id="setInvite">${icon('send',15)} Пригласить в команду</button>`:''}
      <div class="set-sec">Оформление</div>
      <div class="set-item"><span>Тема</span><button class="btn" id="setTheme">${theme==='light'?'☀️ Светлая':'🌙 Тёмная'}</button></div>
      ${langBeta()?`<div class="set-item"><span>${t('Язык')}<br><span style="font-size:11px;color:var(--mut2)">превью: перевод ещё не полный</span></span><select class="inp" id="setLang" style="width:auto;min-width:120px">${Object.keys(LANGS).map(k=>`<option value="${k}" ${k===LANG?'selected':''}>${LANGS[k]}</option>`).join('')}</select></div>`:''}
@@ -7379,7 +7386,9 @@ function isReadOnly(){return !isTeam&&cloudOn&&myGrantRole[S.id]==='viewer';}
 function applyReadOnly(){document.body.classList.toggle('ro',isReadOnly());}
 let _pushErrAt=0;
 function pushDenied(msg){if(Date.now()-_pushErrAt<8000)return;_pushErrAt=Date.now();toast(msg,'⚠');}
-function applyMoneyGate(){const ok=canMoney();document.body.classList.toggle('no-money',!ok);if(!ok&&view==='crm')setView('now');}
+/* ROCH #1410: приглашать могут владелец и админы (так решает сервер) — участнику кнопку не показываем, а не отказываем после нажатия */
+function canInvite(){if(!cloudOn||!isTeam)return false;if(!accessReady)return true;return roleRank(teamRoleOf(myEmail))>=2;}
+function applyMoneyGate(){document.body.classList.toggle('no-invite',cloudOn&&accessReady&&!canInvite());const ok=canMoney();document.body.classList.toggle('no-money',!ok);if(!ok&&view==='crm')setView('now');}
 function teamRoleOf(email){const r=(teamRows.find(t=>(t.email||'').toLowerCase()===(email||'').toLowerCase())||{}).role;return r||'';}
 function iSeeAllProjects(){if(!accessReady||!isTeam)return true;return roleRank(teamRoleOf(myEmail))>=2;}
 function canSeeProject(p){if(!p)return false;if(iSeeAllProjects())return true;const d=p.id===S.id?S:loadProj(p.id);return !d||d.open!==false||!!myMemberIn(d)||myGrantSet.has(p.id);}

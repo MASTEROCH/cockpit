@@ -23,6 +23,7 @@ export async function readInvite(sb: any, code: string): Promise<{ inv?: Record<
   const { data: by } = await sb.from("team").select("role").ilike("email", inv.by).eq("workspace_id", inv.ws).limit(1);
   const role = String(by?.[0]?.role || "full").toLowerCase();
   if (!by?.length || !["owner", "full", "admin"].includes(role)) return { err: "Это приглашение больше не действует" };
+  if (inv.role === "admin" && role !== "owner") return { err: "Это приглашение больше не действует" }; // ROCH #1411: админов назначает только владелец
   return { inv };
 }
 
@@ -34,8 +35,10 @@ export async function redeemInvite(sb: any, code: string, who: { email: string; 
   const { data: have } = await sb.from("team").select("email").ilike("email", em).eq("workspace_id", inv.ws).limit(1);
   const already = !!have?.length;
   if (!already) {
-    const { error } = await sb.from("team").insert({ email: em, name, workspace_id: inv.ws, role: "member" });
+    const { error } = await sb.from("team").insert({ email: em, name, workspace_id: inv.ws, role: inv.role === "admin" ? "admin" : "member" });
     if (error) return { ok: false as const, err: "Не получилось добавить в команду: " + error.message };
+  } else if (inv.role === "admin") { // уже в команде участником — приглашение админом повышает
+    await sb.from("team").update({ role: "admin" }).ilike("email", em).eq("workspace_id", inv.ws).eq("role", "member");
   }
   // участник проекта — чтобы на него сразу можно было ставить задачи. ROCH #1404: проектов может быть несколько
   // (профиль заполнили за него и отметили проекты); карточка-заготовка (inv.member) в каждом проекте получает его вход

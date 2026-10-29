@@ -51,6 +51,8 @@ async function makeInvite(req: Request, body: Record<string, any>) {
   const role = String(me?.[0]?.role || "full").toLowerCase();
   if (!me?.length || !["owner", "full", "admin"].includes(role)) return json({ error: "Приглашать может владелец или админ пространства" }, 403);
   const code = rnd(12), exp = Date.now() + 7 * 864e5;
+  // ROCH #1411: пригласить сразу админом может только владелец (админов назначает он один)
+  const invRole = body.role === "admin" && role === "owner" ? "admin" : "member";
   // ROCH #1404: профиль заполнили за него и отметили проекты — берём только проекты того же пространства
   let projects: string[] = [];
   if (Array.isArray(body.projects) && body.projects.length) {
@@ -59,11 +61,11 @@ async function makeInvite(req: Request, body: Record<string, any>) {
   }
   const byName = String(body.by_name || me[0].name || email.split("@")[0]).slice(0, 60);
   const { error } = await sb.from("workspace_meta").insert({ k: "invite:" + code, workspace_id: p.workspace_id,
-    v: { ws: p.workspace_id, project: p.id, by: email, byName, role: "member", exp, max: body.member_id ? 1 : 20, uses: 0,
+    v: { ws: p.workspace_id, project: p.id, by: email, byName, role: invRole, exp, max: body.member_id ? 1 : 20, uses: 0,
       ...(body.member_id ? { member: String(body.member_id).slice(0, 40) } : {}), ...(projects.length ? { projects } : {}) } }); // ROCH #1404: приглашение для карточки-заготовки — одноразовое
   if (error) return json({ error: error.message }, 500);
   const link = `https://t.me/${BOT_USER}?start=join_${code}`, web = `${SITE_URL}/?join=${code}`;
-  const text = `${byName} зовёт тебя в «${p.name}» в WANDO — нажми, и ты в команде`;
+  const text = `${byName} зовёт тебя ${invRole === "admin" ? "админом " : ""}в «${p.name}» в WANDO — нажми, и ты в команде`;
   let prepared_id: string | null = null;
   const tg = body.initData ? await verifyInitData(String(body.initData)) : null;
   if (tg?.id) {
@@ -76,7 +78,7 @@ async function makeInvite(req: Request, body: Record<string, any>) {
     if (r?.ok) prepared_id = r.result?.id ?? null;
     else console.error("postcard: savePreparedInlineMessage failed", r?.description); // fail-loud: клиент покажет обычную ссылку
   }
-  return json({ code, link, web, text, exp, prepared_id });
+  return json({ code, link, web, text, exp, prepared_id, role: invRole });
 }
 
 // ROCH #1399: вход на САЙТ через Telegram. Браузер заводит код + секрет (секрет живёт только в браузере, у нас — его хеш),

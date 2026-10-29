@@ -250,7 +250,7 @@ test('приглашение: клиент шлёт только id, ссылк�
       shown: document.querySelector('#invScrim').classList.contains('show'),
       tg: shownEmail('tg123@tg.cock-pit.com'), real: shownEmail('a@b.com') };
   });
-  expect(r).toEqual({ keys: 'by_name,initData,kind,member_id,project_id,projects', kind: 'invite', proj: true, share: true,
+  expect(r).toEqual({ keys: 'by_name,initData,kind,member_id,project_id,projects,role', kind: 'invite', proj: true, share: true,
     copy: 'https://t.me/wando_tasks_bot?start=join_abc123def456', card: false, shown: true, tg: 'через Telegram', real: 'a@b.com' });
 });
 
@@ -341,4 +341,32 @@ test('кто я: в Mini App — по номеру Telegram', async ({ page }) =
     return myId();
   });
   expect(r).toBe('m7');
+});
+
+// ROCH #1410: приглашать — владелец и админ; участнику кнопка не показывается
+test('приглашать могут владелец и админ, участник — нет', async ({ page }) => {
+  await boot(page);
+  const r = await page.evaluate(() => {
+    accessReady = true; isTeam = true;
+    const at = role => { teamRows = [{ email: myEmail, role }]; render(); return [canInvite(), document.body.classList.contains('no-invite')]; };
+    return { owner: at('owner'), admin: at('admin'), member: at('member') };
+  });
+  expect(r).toEqual({ owner: [true, false], admin: [true, false], member: [false, true] });
+});
+
+// ROCH #1411: пригласить сразу админом — только владелец; переключатель видит только он
+test('приглашение админом: переключатель у владельца', async ({ page }) => {
+  await boot(page);
+  const r = await page.evaluate(async () => {
+    const sent = []; aiToken = async () => 'tok'; window.open = () => null;
+    window.fetch = async (u, o) => { sent.push(JSON.parse(o.body).role); return { json: async () => ({ link: 'https://t.me/wando_tasks_bot?start=join_abc123def456', web: 'w', text: 't', prepared_id: null }) }; };
+    accessReady = true; isTeam = true;
+    teamRows = [{ email: myEmail, role: 'owner' }]; await openInvite();
+    const seg = !!document.querySelector('#invModal [data-invrole="admin"]');
+    document.querySelector('#invModal [data-invrole="admin"]').click(); await new Promise(r => setTimeout(r, 50));
+    teamRows = [{ email: myEmail, role: 'admin' }]; await openInvite();
+    const segAdmin = !!document.querySelector('#invModal [data-invrole]');
+    return { seg, sent: sent.join(','), segAdmin };
+  });
+  expect(r).toEqual({ seg: true, sent: 'member,admin,member', segAdmin: false });
 });
