@@ -2559,7 +2559,7 @@ body.light .mnav .mplus::after{background:rgba(124,92,224,.16)}
 @keyframes plusRing{to{transform:rotate(1turn)}}
 @media (prefers-reduced-motion:reduce){.mnav .mplus::before{animation:none;background:rgba(244,114,182,.35);filter:none}}
 /* ===== сплэш: «знак рождается из света» =====
-   Живёт ~0.7с — сцена читается целиком: аврора бренда дышит (те же три пятна, что в «＋»), белый знак
+   Живёт ~1,9с (ROCH #1419, Роч, 29.10: «проскакивает, не успеваю рассмотреть» — при 0,72с блик обрывался на середине), тап — пропустить. Сцена читается целиком: аврора бренда дышит (те же три пятна, что в «＋»), белый знак
    проявляется из размытия (единственный кино-момент экрана, focusBlurResolve ROCH Motion), буквы сходятся
    из разрядки, блик проходит по слову один раз, по капсуле бежит свет — без фальшивых процентов. */
 #bootVeil{background:var(--bg);overflow:hidden;transition:opacity .5s var(--ease),visibility .5s,filter .5s var(--ease)}
@@ -2574,20 +2574,20 @@ body.light .bv-aur{opacity:.38}
 @keyframes bvAur{from{transform:scale(.6);opacity:0}}
 .bv-inner{position:relative;gap:18px;animation:none}
 .bv-logo,body.light .bv-logo{width:auto;height:auto;border-radius:0;background:none;box-shadow:none;
-  animation:bvMark .62s cubic-bezier(.22,1,.36,1) both}
+  animation:bvMark .8s cubic-bezier(.22,1,.36,1) both}
 .bv-logo svg{width:auto;height:40px;filter:drop-shadow(0 6px 24px rgba(167,139,250,.55))}
 body.light .bv-logo svg{filter:brightness(0) drop-shadow(0 6px 24px rgba(124,92,224,.35));opacity:.88}
 @keyframes bvMark{from{opacity:0;filter:blur(14px);transform:translateY(10px) scale(.9)}to{opacity:1;filter:none;transform:none}}
 .bv-word{font-size:15px;font-weight:700;letter-spacing:.42em;padding-left:.42em;color:transparent;
   background:linear-gradient(100deg,var(--mut2) 0%,var(--txt) 40%,#fff 50%,var(--txt) 60%,var(--mut2) 100%);background-size:250% 100%;
   -webkit-background-clip:text;background-clip:text;
-  animation:bvWord .7s .12s cubic-bezier(.22,1,.36,1) both,bvSheen 1.1s .3s ease-out both}
+  animation:bvWord .85s .25s cubic-bezier(.22,1,.36,1) both,bvSheen 1.1s .6s ease-out both}
 body.light .bv-word{background-image:linear-gradient(100deg,var(--mut2) 0%,var(--txt) 40%,#7C5CE0 50%,var(--txt) 60%,var(--mut2) 100%)}
 @keyframes bvWord{from{opacity:0;letter-spacing:.9em;padding-left:.9em;filter:blur(4px)}to{opacity:1}}
 @keyframes bvSheen{from{background-position:100% 0}to{background-position:0 0}}
-.bv-bar{width:96px;height:3px;border-radius:999px;background:rgba(255,255,255,.08);animation:bvWord .5s .2s var(--ease) both}
+.bv-bar{width:96px;height:3px;border-radius:999px;background:rgba(255,255,255,.08);animation:bvWord .5s .45s var(--ease) both}
 body.light .bv-bar{background:rgba(20,20,30,.08)}
-.bv-bar::after{width:46%;background:linear-gradient(90deg,transparent,#f472b6,#a78bfa,#fb923c,transparent);animation:bvBar .9s var(--ease) infinite}
+.bv-bar::after{width:46%;background:linear-gradient(90deg,transparent,#f472b6,#a78bfa,#fb923c,transparent);animation:bvBar 1s .45s var(--ease) infinite}
 @media (prefers-reduced-motion:reduce){.bv-aur,.bv-logo,.bv-word,.bv-bar,.bv-bar::after{animation:none}}
 /* карточка задачи: закрыть — крестиком в шапке (как у шторок iOS), подвал на телефоне — один ряд «⋯ · Фокус · Готово».
    Раньше разделитель занимал всю ширину и подвал разъезжался в три ряда, «⋯» — кнопкой во всю ширину */
@@ -10633,7 +10633,7 @@ movePlate(true);syncMnav(view);updateCrmCount();
       x.classList.remove('wake');void x.offsetWidth;x.classList.add('wake');clearTimeout(x._wt);x._wt=setTimeout(()=>x.classList.remove('wake'),1100);});},true);
 })();
 {const bl=$('#brandLogo');if(bl)bl.innerHTML=logoMarkSVG(17,true); /* в HUD — белый знак без плитки (Роч, 28.10) */const gbl=$('#gateBootLogo');if(gbl)gbl.innerHTML=logoMarkSVG(22);}
-{const bvl=$('#bootVeilLogo');if(bvl)bvl.innerHTML=logoMarkSVG(40,true);const veil=$('#bootVeil');if(veil){const rm=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;const hide=()=>{veil.classList.add('gone');setTimeout(()=>{try{veil.remove();}catch(e){}},600);};setTimeout(hide, rm?150:(tmaInitData()?450:720));}}
+{const bvl=$('#bootVeilLogo');if(bvl)bvl.innerHTML=logoMarkSVG(40,true);const veil=$('#bootVeil');if(veil){const rm=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;const hide=()=>{veil.classList.add('gone');setTimeout(()=>{try{veil.remove();}catch(e){}},600);};const t=setTimeout(hide, rm?400:1900);setTimeout(()=>veil.addEventListener('pointerdown',()=>{clearTimeout(t);hide();},{once:true}),300);}}
 setFavicon();
 applyTheme();
 document.documentElement.setAttribute('lang',LANG);
