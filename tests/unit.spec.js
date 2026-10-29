@@ -232,20 +232,80 @@ test('приёмка: разбор бота и файлы переезжают �
   expect(r).toEqual({ title: 'Согласовать макеты', who: true, end: true, pr: 'high', files: 1, desc: 'из пересланного', est: 0.5 });
 });
 
-// ROCH #1399: приглашение ссылкой — запись в workspace_meta с правильным пространством/проектом и ссылка на бота; заглушки почты не показываются
-test('приглашение ссылкой и скрытие почты-заглушки', async ({ page }) => {
+// ROCH #1401: «Открытка» (канон POSTCARD) — приложение шлёт серверу ТОЛЬКО id проекта, ссылку и текст берёт из ответа сервера;
+// вне Telegram — обычный шеринг со ссылкой сервера; почта-заглушка не показывается
+test('приглашение: клиент шлёт только id, ссылку даёт сервер', async ({ page }) => {
   await boot(page);
   const r = await page.evaluate(async () => {
-    let row = null;
-    sb = { from: () => ({ insert: async (x) => { row = x; return { error: null }; } }) };
-    myWsCached = async () => 'ws_test'; window.open = () => null;
+    let sent = null;
+    aiToken = async () => 'tok'; window.open = () => null;
+    window.fetch = async (url, opt) => { sent = JSON.parse(opt.body); return { json: async () => ({
+      code: 'abc123def456', link: 'https://t.me/wando_tasks_bot?start=join_abc123def456', web: 'https://cock-pit.com/?join=abc123def456',
+      text: 'Роч зовёт тебя', prepared_id: null }) }; };
     await openInvite();
     const go = document.querySelector('#invModal [data-invtg]');
-    const code = (row.k || '').replace('invite:', '');
-    return { key: /^invite:[a-z0-9]{12}$/.test(row.k), ws: row.v.ws, proj: row.v.project === S.id, by: row.v.by, max: row.v.max,
-      days: Math.round((row.v.exp - Date.now()) / 864e5), link: decodeURIComponent(go.dataset.invtg).includes('start=join_' + code),
+    return { keys: Object.keys(sent).sort().join(','), kind: sent.kind, proj: sent.project_id === S.id,
+      share: decodeURIComponent(go.dataset.invtg).includes('start=join_abc123def456'),
+      copy: document.querySelector('#invModal .inv-row input').value, card: !!document.querySelector('#invModal [data-invcard]'),
       shown: document.querySelector('#invScrim').classList.contains('show'),
       tg: shownEmail('tg123@tg.cock-pit.com'), real: shownEmail('a@b.com') };
   });
-  expect(r).toEqual({ key: true, ws: 'ws_test', proj: true, by: 'romi4rv23@gmail.com', max: 20, days: 7, link: true, shown: true, tg: 'через Telegram', real: 'a@b.com' });
+  expect(r).toEqual({ keys: 'by_name,initData,kind,member_id,project_id,projects', kind: 'invite', proj: true, share: true,
+    copy: 'https://t.me/wando_tasks_bot?start=join_abc123def456', card: false, shown: true, tg: 'через Telegram', real: 'a@b.com' });
+});
+
+// ROCH #1403: связи — круг не даём, каскад сроков, «можно начинать» / «готово» участникам; участники — комменты и @
+test('связанные задачи: круг, каскад, разблокировка', async ({ page }) => {
+  await boot(page);
+  const r = await page.evaluate(async () => {
+    const [a, b, c] = S.tasks.filter(t => !t.isMilestone).slice(0, 3);
+    [a, b, c].forEach(t => { t.deps = []; t.status = 'todo'; });
+    S.tasks.forEach(t => { if (![a, b, c].includes(t)) t.deps = (t.deps || []).filter(d => ![a.id, b.id, c.id].includes(d)); });
+    b.deps = [a.id]; c.deps = [b.id];
+    const loop = depPath(c.id, a.id);                       // a ← b ← c: связь «a ждёт c» замкнула бы круг
+    a.start = '2026-11-01'; a.end = '2026-11-05'; b.start = '2026-11-03'; b.end = '2026-11-04'; c.start = '2026-11-05'; c.end = '2026-11-06';
+    const plan = cascadePlan(a).map(m => m.x === b ? 'b+' + m.sh : 'c+' + m.sh).join(',');
+    const sent = []; const orig = tgNotifyTo; tgNotifyTo = (m, kind, t) => sent.push(kind + ':' + (t === b ? 'b' : t === a ? 'a' : '?') + ':' + m.id);
+    const w = S.members.find(m => m.id !== a.assigneeId && m.id !== myId());
+    b.assigneeId = S.members[1].id; a.watchers = [w.id];
+    a.status = 'done'; histAdd(a, 'статус → Готово'); await new Promise(r => setTimeout(r, 20));
+    tgNotifyTo = orig;
+    return { loop, plan, unblock: sent.some(x => x.startsWith('unblock:b:')), done: sent.includes('done:a:' + w.id) };
+  });
+  expect(r).toEqual({ loop: true, plan: 'b+3,c+3', unblock: true, done: true }); // b: 03→06 (после 05), c: 05→08 (после нового конца b 07)
+});
+
+test('участники задачи: позвали, @ добавляет, коммент уходит исполнителю и участникам', async ({ page }) => {
+  await boot(page);
+  const r = await page.evaluate(() => {
+    const t = S.tasks.find(x => !x.isMilestone); const [, p1, p2, p3] = S.members;
+    S.members.forEach((m, i) => { m.email = m.email || ('m' + i + '@local.test'); });
+    t.assigneeId = p1.id; t.watchers = [];
+    const sent = []; const orig = tgNotifyTo; tgNotifyTo = (m, kind) => sent.push(kind + ':' + m.id);
+    addWatcher(t, p2.id, true);
+    notifyComment(t, 'глянь @' + p3.name);
+    tgNotifyTo = orig;
+    return { watchers: t.watchers.slice().sort().join(','), sent: sent.sort().join(',') };
+  });
+  const ids = await page.evaluate(() => S.members.map(m => m.id));
+  expect(r.watchers).toBe([ids[2], ids[3]].sort().join(','));
+  expect(r.sent).toBe(['comment:' + ids[1], 'comment:' + ids[2], 'mention:' + ids[3], 'watch:' + ids[2]].sort().join(','));
+});
+
+// ROCH #1402: доступы — без права на деньги скрыты клиенты; гость «только просмотр» — режим чтения; матрица добавляет в закрытый проект
+test('доступы: деньги, только просмотр, матрица', async ({ page }) => {
+  await boot(page);
+  const r = await page.evaluate(() => {
+    accessReady = true; isTeam = true;
+    teamRows = [{ email: myEmail, role: 'member', money: false }];
+    render(); const noMoney = document.body.classList.contains('no-money');
+    teamRows[0].money = true; render(); const money = !document.body.classList.contains('no-money');
+    isTeam = false; myGrantRole = { [S.id]: 'viewer' }; render(); const ro = document.body.classList.contains('ro');
+    isTeam = true; myGrantRole = {}; render();
+    S.open = false; S.members = S.members.filter(m => m.email !== 'x@local.test');
+    teamRows = [{ email: myEmail, role: 'owner' }, { email: 'x@local.test', role: 'member', name: 'Икс' }];
+    matrixToggle(S.id, 'x@local.test');
+    return { noMoney, money, ro, added: S.members.some(m => m.email === 'x@local.test'), rank: [roleRank('owner'), roleRank('full'), roleRank('member'), roleRank('')].join(',') };
+  });
+  expect(r).toEqual({ noMoney: true, money: true, ro: true, added: true, rank: '3,2,1,1' });
 });

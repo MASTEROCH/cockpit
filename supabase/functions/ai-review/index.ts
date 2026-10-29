@@ -227,7 +227,15 @@ serve(async (req) => {
       const BOT = Deno.env.get("TELEGRAM_BOT_TOKEN") ?? "";
       if (!BOT) return json({ ok: false, reason: "no_bot" });
       const a = `<a href="https://cock-pit.com/?t=${esc2(projectId)}:${esc2(taskId)}">${esc2(taskTitle)}</a>`;
-      const msg = kind === "mention"
+      // ROCH #1403: участники задачи и связи — свои тексты (раньше всё, кроме mention/comment, уходило шаблоном «назначил»)
+      const tail = `\n\n<i>↩︎ ответь — текст станет комментом</i>`;
+      const msg = kind === "watch"
+        ? `👀 <b>${esc2(byName)}</b> позвал(а) тебя в задачу «${a}» <i>(${esc2(projectName)})</i> — будешь видеть обновления${tail}`
+        : kind === "unblock"
+        ? `🔓 Можно начинать «${a}» <i>(${esc2(projectName)})</i>\n${esc2(String(text ?? "").slice(0, 200))}${tail}`
+        : kind === "done"
+        ? `✅ <b>${esc2(byName)}</b> закрыл(а) «${a}» <i>(${esc2(projectName)})</i>`
+        : kind === "mention"
         ? `📣 <b>${esc2(byName)}</b> упомянул(а) тебя в «${a}» <i>(${esc2(projectName)})</i>:\n${esc2(String(text ?? "").slice(0, 300))}\n\n<i>↩︎ ответь — текст станет комментом</i>`
         : kind === "comment"
         ? `💬 <b>${esc2(byName)}</b> — коммент в «${a}» <i>(${esc2(projectName)})</i>:\n${esc2(String(text ?? "").slice(0, 300))}\n\n<i>↩︎ ответь на это сообщение — текст попадёт в комменты задачи</i>`

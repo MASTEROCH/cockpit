@@ -327,18 +327,29 @@ async function wsByEmail(email: string): Promise<string> {
 }
 
 // ---------- проекты / сводки ----------
-async function myProjects(email: string) {
+// ROCH #1402: бот видит ровно то, что приложение и база (RLS): владелец/админ — все проекты пространства; участник — открытые
+// и те, где он в участниках; гость — выданные. Гость «только просмотр» в проекте ничего не меняет (canWrite=false).
+async function myProjects(email: string): Promise<{ team: boolean; rows: Record<string, any>[] }> {
   const team = await isTeam(email);
   const ws = await wsByEmail(email);
+  const em = email.toLowerCase();
   let q = sb.from("projects").select("id,name,emoji,data,updated_at").eq("workspace_id", ws).order("updated_at", { ascending: false });
+  let grants: Record<string, string> = {};
   if (!team) {
-    const { data: acc } = await sb.from("project_access").select("project_id").ilike("email", email);
-    const ids = (acc ?? []).map((a: Record<string, string>) => a.project_id);
+    const { data: acc } = await sb.from("project_access").select("project_id,role").ilike("email", email);
+    grants = Object.fromEntries((acc ?? []).map((a: Record<string, string>) => [a.project_id, a.role || "member"]));
+    const ids = Object.keys(grants);
     if (!ids.length) return { team, rows: [] as Record<string, any>[] };
     q = q.in("id", ids);
   }
   const { data } = await q;
-  const rows = (data ?? []).filter((p: Record<string, any>) => !(p.data?.demo === true) && !(p.data?.archived === true));
+  let rank = 3;
+  if (team) { const { data: tr } = await sb.from("team").select("role").ilike("email", email).eq("workspace_id", ws).limit(1);
+    rank = ({ owner: 3, full: 2, admin: 2, member: 1 } as Record<string, number>)[String(tr?.[0]?.role ?? "")] ?? 1; }
+  const rows = (data ?? []).filter((p: Record<string, any>) => !(p.data?.demo === true) && !(p.data?.archived === true))
+    .filter((p: Record<string, any>) => !team || rank >= 2 || p.data?.open !== false
+      || ((p.data?.members ?? []) as Record<string, any>[]).some((m) => String(m?.email ?? "").toLowerCase() === em))
+    .map((p: Record<string, any>) => ({ ...p, canWrite: team || grants[p.id] === "member" }) as Record<string, any>);
   return { team, rows };
 }
 function taskList(p: Record<string, any>) { return ((p.data?.tasks ?? []) as Record<string, any>[]).filter((t) => !t.isMilestone); }
@@ -465,6 +476,8 @@ async function acceptIntake(intakeId: string, by: Link, projectId?: string): Pro
   const p = parseTask(row.text); if (!p.title) p.title = row.text.slice(0, 140);
   const proj = await pickProjectStrict(projectId || row.target_project || p.project, await wsByEmail(by.email));
   if (!proj) return ""; // не угадываем — спросим кнопками
+  // ROCH #1402: принять можно только в проект, который этот человек видит и где может писать
+  if (!(await myProjects(by.email)).rows.some((r: Record<string, any>) => r.id === proj.id && r.canWrite)) return "⚠ Нет доступа к проекту «" + esc(proj.name ?? "") + "»";
   const d = proj.data ?? {};
   d.tasks = d.tasks ?? []; d.sections = d.sections?.length ? d.sections : [{ id: "s1", name: "Задачи" }]; d.members = d.members ?? [];
   let assigneeId: string | null = null;
@@ -635,6 +648,8 @@ async function notifyTaskComment(proj: Record<string, any>, task: Record<string,
   const to = new Map<string, "comment" | "mention">();
   const asg = members.find((m) => m.id === task.assigneeId);
   if (asg?.email) to.set(String(asg.email).toLowerCase(), "comment");
+  // ROCH #1403: участники задачи (позвали в задачу) тоже получают комменты
+  ((task.watchers ?? []) as string[]).forEach((id) => { const w = members.find((m) => m.id === id); if (w?.email) to.set(String(w.email).toLowerCase(), "comment"); });
   mentionedIn(text, members).forEach((m) => { if (m.email) to.set(String(m.email).toLowerCase(), "mention"); });
   to.delete((byEmail ?? "").toLowerCase());
   if (!to.size) return;
@@ -1302,7 +1317,7 @@ async function capHandle(chatId: number, link: Link, pack: CapPack) {
   const text = ([instr, content].filter(Boolean).join("\n\n") || (pack.files.length ? "📎 " + pack.files.map((f) => f.name).join(", ") : "")).slice(0, 2000);
   if (!text) return;
   const ws = await wsByEmail(link.email);
-  const { rows: projs } = await myProjects(link.email);
+  const projs = (await myProjects(link.email)).rows.filter((p: Record<string, any>) => p.canWrite); // ROCH #1402: только куда можно писать
   const parsed = instr ? await capParse(link, pack, projs) : null;
   const dec = capDecide(parsed, projs, link);
   const mine = !!dec?.asg && String(dec.asg.email ?? "").toLowerCase() === link.email.toLowerCase();
@@ -1715,6 +1730,9 @@ Deno.serve(async (req) => {
       if (ref) {
         const link = await getLink(chatId);
         if (!link) { await say(chatId, "Сначала привяжи ключ: <code>/key cpk_…</code> (см. /help)"); return new Response("ok"); }
+        // ROCH #1402: коммент — только если проект виден и в нём можно писать (гость «только просмотр» — нет)
+        const vis = (await myProjects(link.email)).rows.find((r: Record<string, any>) => r.id === ref.pid);
+        if (!vis || !vis.canWrite) { await say(chatId, vis ? "👀 У тебя в этом проекте только просмотр — коммент не сохранил" : "⚠ Нет доступа к этому проекту"); return new Response("ok"); }
         const { data: p } = await sb.from("projects").select("id,name,emoji,data").eq("id", ref.pid).maybeSingle();
         const t = p && ((p.data?.tasks ?? []) as Record<string, any>[]).find((x) => x.id === ref.tid);
         if (!t) { await say(chatId, "⚠ Задача не нашлась — возможно, удалена"); return new Response("ok"); }

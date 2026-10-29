@@ -37,21 +37,28 @@ export async function redeemInvite(sb: any, code: string, who: { email: string; 
     const { error } = await sb.from("team").insert({ email: em, name, workspace_id: inv.ws, role: "member" });
     if (error) return { ok: false as const, err: "Не получилось добавить в команду: " + error.message };
   }
-  // участник проекта — чтобы на него сразу можно было ставить задачи
-  let pid: string | null = inv.project ?? null, projectName = "";
-  if (pid) {
-    const { data: p } = await sb.from("projects").select("id,name,data,workspace_id").eq("id", pid).maybeSingle();
-    if (p && p.workspace_id === inv.ws) {
-      const d = p.data ?? {}; d.members = d.members ?? [];
-      if (!d.members.some((m: any) => String(m?.email ?? "").toLowerCase() === em)) {
-        d.members.push({ id: "m" + Math.random().toString(36).slice(2, 8), name, email: em, role: "", color: PALETTE[d.members.length % PALETTE.length], capacity: 30 });
-        d.activity = d.activity ?? [];
-        d.activity.unshift({ ts: Date.now(), who: name, icon: "👋", text: "вошёл(ла) в команду по приглашению" });
-        d.updatedAt = Date.now();
-        await sb.from("projects").update({ data: d, updated_at: new Date().toISOString(), updated_by: null }).eq("id", p.id);
-      }
-      projectName = p.name ?? "";
-    } else pid = null;
+  // участник проекта — чтобы на него сразу можно было ставить задачи. ROCH #1404: проектов может быть несколько
+  // (профиль заполнили за него и отметили проекты); карточка-заготовка (inv.member) в каждом проекте получает его вход
+  const pids = [...new Set([inv.project, ...((inv.projects ?? []) as string[])].filter(Boolean))] as string[];
+  let pid: string | null = null, projectName = "";
+  for (const id of pids) {
+    const { data: p } = await sb.from("projects").select("id,name,data,workspace_id").eq("id", id).maybeSingle();
+    if (!p || p.workspace_id !== inv.ws) continue;
+    const d = p.data ?? {}; d.members = d.members ?? [];
+    const slot = inv.member ? d.members.find((m: any) => m?.id === inv.member && !m?.email) : null;
+    let changed = false;
+    if (slot) { slot.email = em; if (!slot.name || /^Новый участник/.test(slot.name)) slot.name = name; changed = true; }
+    else if (!d.members.some((m: any) => String(m?.email ?? "").toLowerCase() === em)) {
+      d.members.push({ id: inv.member || ("m" + Math.random().toString(36).slice(2, 8)), name, email: em, role: "", color: PALETTE[d.members.length % PALETTE.length], capacity: 30 });
+      changed = true;
+    }
+    if (changed) {
+      d.activity = d.activity ?? [];
+      d.activity.unshift({ ts: Date.now(), who: name, icon: "👋", text: "вошёл(ла) в команду по приглашению" });
+      d.updatedAt = Date.now();
+      await sb.from("projects").update({ data: d, updated_at: new Date().toISOString(), updated_by: null }).eq("id", p.id);
+    }
+    if (!pid) { pid = p.id; projectName = p.name ?? ""; }
   }
   if (!already) await sb.from("workspace_meta").update({ v: { ...inv, uses: Number(inv.uses ?? 0) + 1 } }).eq("k", "invite:" + code);
   const { data: w } = await sb.from("workspaces").select("name").eq("id", inv.ws).maybeSingle();
