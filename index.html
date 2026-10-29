@@ -2546,6 +2546,18 @@ body.light .addcard{background:#fff}
   66%{--pa:38%;--pb:64%;--pc:18%}
   100%{--pa:80%;--pb:22%;--pc:60%}}
 @media (prefers-reduced-motion:reduce){.mnav .mplus{animation:none}}
+/* ROCH #1397: «＋» — бегущая обводка по контуру (Роч). Комета цветов самой кнопки (оранжевый → розовый → белая голова)
+   обходит круг за 3,2 с, под ней тихая дорожка; кольцо на 4 px снаружи — не съедает плюс. Вращается сам слой с conic-gradient
+   (transform дешевле @property-угла и работает в WebView Telegram), маска оставляет только кольцо 2 px */
+.mnav .mplus{position:relative;overflow:visible;isolation:isolate}
+.mnav .mplus::before,.mnav .mplus::after{content:'';position:absolute;inset:-4px;border-radius:50%;pointer-events:none;
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 calc(100% - 1.5px));mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 calc(100% - 1.5px))}
+.mnav .mplus::after{background:rgba(255,255,255,.12)}
+body.light .mnav .mplus::after{background:rgba(124,92,224,.16)}
+.mnav .mplus::before{z-index:1;background:conic-gradient(from 0deg,transparent 0 52%,rgba(251,146,60,.0) 52%,rgba(251,146,60,.85) 74%,#f472b6 90%,#fff 99%,transparent 100%);
+  filter:drop-shadow(0 0 3px rgba(244,114,182,.75));animation:plusRing 3.2s linear infinite}
+@keyframes plusRing{to{transform:rotate(1turn)}}
+@media (prefers-reduced-motion:reduce){.mnav .mplus::before{animation:none;background:rgba(244,114,182,.35);filter:none}}
 /* ===== сплэш: «знак рождается из света» =====
    Живёт ~0.7с — сцена читается целиком: аврора бренда дышит (те же три пятна, что в «＋»), белый знак
    проявляется из размытия (единственный кино-момент экрана, focusBlurResolve ROCH Motion), буквы сходятся
