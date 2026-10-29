@@ -390,3 +390,34 @@ test('роли в проекте: наблюдатель, комментатор
   });
   expect(r).toEqual({ view: ['view', true, false], comment: ['comment', true, true], admin: [true, false], mx: 'comment', shown: true, kind: 'access_request', pid: 'pNoSuch' });
 });
+
+test('карточка клиента: не уезжает вбок на телефоне, срок — капсула, фото ставится/убирается/возвращается (#1421)', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await boot(page);
+  const r = await page.evaluate(async () => {
+    const w = ms => new Promise(r => setTimeout(r, ms));
+    crmNew(); await w(150);
+    const m = $('#crmModal'), out = {};
+    out.noX = m.scrollWidth <= m.clientWidth;
+    out.rowsFit = [...m.querySelectorAll('.crm-nextrow>*,.crm-noteadd>*,.crm-sh-head>*')].every(e => e.getBoundingClientRect().right <= m.getBoundingClientRect().right + 0.5);
+    out.dateEmpty = $('.crm-date span').textContent;
+    const d = $('#cDate'); d.value = fmtD(parseD(todayISO()) + dayMs); d.dispatchEvent(new Event('change'));
+    out.dateSet = $('.crm-date span').textContent; out.dateCls = $('.crm-date').classList.contains('set');
+    $('#cName').value = 'Тест Клиент'; $('#cName').dispatchEvent(new Event('input'));
+    const c = CRM.find(x => x.id === crmCur);
+    // фото: только наш data:image попадает в разметку
+    c.photo = "x');background:url(javascript:alert(1))"; renderClient();
+    out.badRejected = !$('#crmModal .crm-av').classList.contains('ph') && !$('#cPhotoX');
+    const cv = document.createElement('canvas'); cv.width = cv.height = 8; c.photo = cv.toDataURL('image/jpeg', .8); renderClient();
+    out.photoShown = $('#crmModal .crm-av').classList.contains('ph') && !!$('#cPhotoX');
+    out.inCard = crmCard(c).includes('crm-av ph');
+    $('#cPhotoX').click(); await w(50);
+    out.removed = !c.photo && !$('#cPhotoX');
+    const tb = [...document.querySelectorAll('#toast button, .toast button')].find(b => /Вернуть/.test(b.textContent));
+    if (tb) tb.click(); await w(50);
+    out.restored = !!c.photo && !!$('#cPhotoX');
+    out.noX2 = m.scrollWidth <= m.clientWidth;
+    return out;
+  });
+  expect(r).toEqual({ noX: true, rowsFit: true, dateEmpty: 'Когда', dateSet: 'завтра', dateCls: true, badRejected: true, photoShown: true, inCard: true, removed: true, restored: true, noX2: true });
+});

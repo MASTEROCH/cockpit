@@ -2433,6 +2433,7 @@ body.light .crm-col{background:rgba(20,20,30,.025)}
 .crm-notes b{font-weight:600;color:var(--mut)}
 .crm-notes i{font-style:normal;color:var(--mut2);font-size:11.5px}
 .crm-notes .sys{color:var(--mut2)}.crm-notes .sys span{font-style:italic}
+.crm-notes>div:last-child{border-bottom:0}
 .crm-foot{display:flex;align-items:center;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
 .crm-foot #cDel{color:var(--bad)}
 /* баннер демо — одна строка на любой ширине: метка, фраза (уступает место первой, многоточием),
@@ -3158,7 +3159,48 @@ body.ro.rc #drawer #dCmtIn,body.ro.rc #drawer #dCmtBtn{pointer-events:auto;opaci
   .crm-sheet{padding:20px 16px calc(14px + var(--safe-bottom))}
   .crm-grid{grid-template-columns:1fr}
   .crm-nextrow{grid-template-columns:1fr 1fr}
-  .crm-nextrow .btn{grid-column:1/-1}
+  .crm-nextrow #cNext{grid-column:1/-1}
+}
+/* ===== карточка клиента по сетке (ROCH #1421, Роч 29.10: «экран не должен смещаться вбок, всё по сетке» + фото клиента)
+   Сдвиг вбок давал пустой date-инпут iOS: у него распорная ширина, ряд 1fr 1fr вылезал за край — и iOS прокручивал
+   всю шторку вбок, поймав фокус на имени. Теперь у каждой ячейки min-width:0, срок — капсула с подписью поверх
+   нативного выбора, шторка не прокручивается по горизонтали в принципе. Шапка — как приглашение (#1404):
+   фото слева, имя и компания в одной подложке (Роч: «неочевидно, что это редактируемые поля»). */
+.crmmodal{overflow-x:hidden;overscroll-behavior:contain}
+.crm-sheet,.crm-sheet .inp,.crm-grid>label,.crm-nextrow>*,.crm-noteadd>*{min-width:0}
+.crm-sh-head{align-items:center;gap:12px}
+.crm-sh-head>.iconbtn{align-self:flex-start;flex:0 0 auto}
+.crm-phw{position:relative;flex:0 0 auto}
+.crm-ph{display:block;border:0;padding:0;background:none;border-radius:20px;cursor:pointer;transition:transform .34s var(--spring)}
+.crm-ph:active{transform:scale(.94);transition-duration:.06s}
+.crm-ph .crm-av.big{width:64px;height:64px;border-radius:20px;font-size:22px}
+.crm-av.ph{background-size:cover;background-position:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+.crm-ph-b,.crm-ph-x{position:absolute;right:-5px;bottom:-5px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;
+  background:var(--panel2);color:var(--txt);border:2px solid var(--panel);box-shadow:0 2px 8px rgba(0,0,0,.3);font-style:normal}
+.crm-ph-x{top:-5px;bottom:auto;border:2px solid var(--panel);cursor:pointer;padding:0}
+.crm-namebox{flex:1;min-width:0;display:flex;flex-direction:column;border:1px solid var(--gbrd,var(--line));border-radius:16px;
+  background:rgba(12,14,20,.55);overflow:hidden;transition:border-color .2s}
+body.light .crm-namebox{background:rgba(255,255,255,.7)}
+.crm-namebox:focus-within{border-color:color-mix(in srgb,var(--acc2) 60%,transparent)}
+.crm-namebox input{min-width:0;padding:10px 14px}
+.crm-namebox input:focus-visible{outline:none;box-shadow:none}
+.crm-namebox .crm-title{font-size:18px;font-weight:700;padding-top:11px}
+.crm-namebox .crm-sub{font-size:15px;border-top:1px solid var(--line);padding-bottom:11px}
+.crm-date{position:relative;display:flex;align-items:center;gap:8px;color:var(--mut2);cursor:pointer;white-space:nowrap;overflow:hidden;border-radius:999px} /* нажимается — значит капсула, как «В задачи» рядом */
+.crm-date>svg{flex:0 0 auto}
+.crm-date>span{flex:1;min-width:0;overflow:hidden;text-overflow:clip}
+.crm-date.set{color:var(--txt)}
+.crm-date input{position:absolute;inset:0;width:100%;height:100%;min-width:0;opacity:0;border:0;padding:0;margin:0;-webkit-appearance:none;appearance:none;cursor:pointer}
+.crm-date:focus-within{border-color:color-mix(in srgb,var(--acc2) 60%,transparent)}
+.crm-nextrow .btn,.crm-noteadd .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.crm-noteadd .inp{flex:1}
+.crm-noteadd .btn{flex:0 0 auto}
+@media (max-width:680px){
+  .crm-namebox .crm-title{font-size:18px}
+  .crm-namebox .crm-sub{font-size:16px}
+  /* этапы — лента до краёв шторки, хвост уходит в прозрачность, а не обрубается */
+  .crm-stages{margin-left:-16px;margin-right:-16px;padding-left:16px;padding-right:28px;scroll-padding:0 16px;
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000 16px,#000 calc(100% - 44px),transparent);mask-image:linear-gradient(90deg,transparent,#000 16px,#000 calc(100% - 44px),transparent)}
 }
 
 /* ===== живые иконки навигации — приём AppHUB MASKA (#1321) =====
@@ -3753,6 +3795,7 @@ const ICONS={
  send:'<path d="M21.5 2.5 10.8 13.2M21.5 2.5 14.7 21.5l-3.9-8.3-8.3-3.9z"/>',
  download:'<path d="M12 3.5v11M7.5 10l4.5 4.5L16.5 10M4.5 20.5h15"/>',
  upload:'<path d="M12 14.5v-11M7.5 8 12 3.5 16.5 8M4.5 20.5h15"/>',
+ camera:'<path d="M14.5 4.5h-5L7.8 7H5a2 2 0 0 0-2 2v8.5a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2.8z"/><circle cx="12" cy="13" r="3.2"/>',
  alert:'<path d="M12 3.2 2.8 19.5h18.4z"/><path d="M12 9.8v4.4M12 17h.01"/>',
  gear:'<circle cx="12" cy="12" r="7.6"/><circle cx="12" cy="12" r="2.9"/><path d="M12 4.4V8M12 16v3.6M4.4 12H8M16 12h3.6M6.6 6.6l2.5 2.5M14.9 14.9l2.5 2.5M17.4 6.6l-2.5 2.5M9.1 14.9l-2.5 2.5"/>',
  fire:'<path d="M12 3c.5 3 3.5 4.2 3.5 8a3.5 3.5 0 0 1-7 0c0-1.2.5-2 1-2.6.2 1.4 1 2 1.7 2 .8 0 1.3-.7 1.3-1.7C13.5 6.7 12 5.5 12 3z"/><path d="M12 3c.5 3 3.5 4.2 3.5 8A3.5 3.5 0 0 1 12 21a5.5 5.5 0 0 1-5.5-5.5c0-4 3-5.5 3.5-9 .8 1.8 2.4 2.6 3 4"/>',
@@ -10352,9 +10395,13 @@ function updateCrmCount(){const n=crmLive().filter(crmLate).length;const b=$('#c
 function crmMoney(n){n=+n||0;return n?fmtMoney(n):'—';}
 function crmDate(d){if(!d)return '';const t=parseD(d),td=parseD(todayISO()),k=Math.round((t-td)/dayMs);
   return k===0?'сегодня':k===1?'завтра':k===-1?'вчера':k<0?(-k)+' дн назад':new Date(t).toLocaleDateString('ru-RU',{day:'numeric',month:'short'});}
+/* ROCH #1421: фото клиента — снимок 160px из cropPhoto, хранится в самой карточке (crm:<id>) */
+const crmPhotoOk=u=>/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(u||'');
+function crmAv(c,cls){return crmPhotoOk(c.photo)?`<span class="crm-av ph ${cls||''}" style="background-image:url('${c.photo}')"></span>`
+  :`<span class="crm-av ${cls||''}">${esc(initials((c.name||'?').trim())||'?')}</span>`;}
 function crmCard(c){const st=crmSt(c.stage),late=crmLate(c),ct=c.contact||{};
   return `<div class="crmcard" draggable="true" data-cid="${c.id}" style="--sc:${st.c}">
-    <div class="crm-top"><span class="crm-av">${esc(initials((c.name||'?').trim())||'?')}</span>
+    <div class="crm-top">${crmAv(c)}
       <div class="crm-nm"><b>${esc(c.name||'Без имени')}</b>${c.company?`<span>${esc(c.company)}</span>`:''}</div></div>
     <div class="crm-mid"><span class="crm-amt">${crmMoney(c.amount)}</span>${ct.tg||ct.phone||ct.email?`<span class="crm-ct">${ct.tg?icon('send',13):''}${ct.phone?icon('phone',13):''}${ct.email?icon('mail',13):''}</span>`:''}</div>
     ${c.next&&c.next.text?`<div class="crm-next${late?' late':''}">${icon('target',13)}<span>${esc(c.next.text)}</span>${c.next.date?`<i>${crmDate(c.next.date)}</i>`:''}</div>`:`<div class="crm-next none">${icon('target',13)}<span>Нет следующего шага</span></div>`}
@@ -10423,9 +10470,10 @@ function renderClient(){const c=CRM.find(x=>x.id===crmCur);if(!c)return;const st
   const tgU=(ct.tg||'').replace(/^@|^https?:\/\/t\.me\//,'').trim(),tel=(ct.phone||'').replace(/[^\d+]/g,'');
   const tks=crmTasks(c);
   $('#crmModal').innerHTML=`<div class="crm-sheet" style="--sc:${st.c}">
-    <div class="crm-sh-head"><span class="crm-av big">${esc(initials((c.name||'?').trim())||'?')}</span>
-      <div style="flex:1;min-width:0"><input class="crm-title" id="cName" placeholder="Имя клиента" value="${esc(c.name)}" maxlength="80">
-        <input class="crm-sub" id="cCompany" placeholder="Компания или проект" value="${esc(c.company||'')}" maxlength="80"></div>
+    <div class="crm-sh-head"><div class="crm-phw"><button class="crm-ph" id="cPhoto" aria-label="${crmPhotoOk(c.photo)?'Сменить фото':'Добавить фото'}">${crmAv(c,'big')}${crmPhotoOk(c.photo)?'':`<i class="crm-ph-b">${icon('camera',13)}</i>`}</button>
+        ${crmPhotoOk(c.photo)?`<button class="crm-ph-x" id="cPhotoX" aria-label="Убрать фото">${icon('x',11)}</button>`:''}</div>
+      <div class="crm-namebox"><input class="crm-title" id="cName" placeholder="Имя клиента" value="${esc(c.name)}" maxlength="80" autocomplete="off">
+        <input class="crm-sub" id="cCompany" placeholder="Компания или проект" value="${esc(c.company||'')}" maxlength="80" autocomplete="off"></div>
       <button class="iconbtn" id="cClose" aria-label="Закрыть">${icon('x',16)}</button></div>
     <div class="crm-stages">${CRM_ST.map(s=>`<button class="${s.k===c.stage?'on':''}" data-cs="${s.k}" style="--sc:${s.c}">${s.n}</button>`).join('')}</div>
     <div class="crm-grid">
@@ -10440,25 +10488,31 @@ function renderClient(){const c=CRM.find(x=>x.id===crmCur);if(!c)return;const st
       ${ct.email?`<a class="btn" href="mailto:${encodeURIComponent(ct.email)}">${icon('mail',15)} Письмо</a>`:''}
     </div>
     <div class="crm-sec">Следующий шаг</div>
-    <div class="crm-nextrow"><input class="inp" id="cNext" placeholder="Что сделать: отправить КП, созвон, выставить счёт…" value="${esc((c.next&&c.next.text)||'')}">
-      <input class="inp" id="cDate" type="date" value="${(c.next&&c.next.date)||''}">
+    <div class="crm-nextrow"><input class="inp" id="cNext" placeholder="Что сделать: КП, созвон, счёт" value="${esc((c.next&&c.next.text)||'')}">
+      <label class="inp crm-date ${(c.next&&c.next.date)?'set':''}">${icon('cal',15)}<span>${(c.next&&c.next.date)?crmDate(c.next.date):'Когда'}</span><input id="cDate" type="date" value="${(c.next&&c.next.date)||''}" aria-label="Срок шага"></label>
       <button class="btn" id="cToTask" title="Создать задачу с этим шагом в текущем проекте">${icon('check',15)} В задачи</button></div>
     ${tks.length?`<div class="crm-sec">Задачи по клиенту · ${tks.length}</div><div class="crm-tasks">${tks.map(x=>`<button data-ct="${x.pid}|${x.t.id}" class="${x.t.status==='done'?'done':''}">${x.t.status==='done'?icon('check',13):icon('target',13)}<span>${esc(x.t.title)}</span><i>${esc(x.pname)}</i></button>`).join('')}</div>`:''}
     <div class="crm-sec">Заметки</div>
-    <div class="crm-noteadd"><input class="inp" id="cNote" placeholder="Что обсудили, о чём договорились…"><button class="btn" id="cNoteAdd">Добавить</button></div>
+    <div class="crm-noteadd"><input class="inp" id="cNote" placeholder="О чём договорились"><button class="btn" id="cNoteAdd">Добавить</button></div>
     <div class="crm-notes">${(c.notes||[]).slice(0,30).map(n=>`<div class="${n.sys?'sys':''}"><b>${esc(n.author||'')}</b><span>${esc(n.text)}</span><i>${new Date(n.ts).toLocaleDateString('ru-RU',{day:'numeric',month:'short'})}</i></div>`).join('')||'<div class="sys"><span>Пока пусто — первая заметка появится здесь</span></div>'}</div>
     <div class="crm-foot"><button class="btn" id="cDel">Удалить</button><div class="spacer"></div><button class="btn primary" id="cDone">Готово</button></div>
   </div>`;
   setTimeout(()=>applyPingpong($('#crmModal')),60);
   const set=(f)=>{f();delete c._draft;clearTimeout(c._t);c._t=setTimeout(()=>crmPush(c),450);};
-  $('#cName').oninput=e=>set(()=>{c.name=e.target.value;const a=$('#crmModal .crm-av');if(a)a.textContent=initials(c.name.trim())||'?';});
+  $('#cName').oninput=e=>set(()=>{c.name=e.target.value;const a=$('#crmModal .crm-av');if(a&&!crmPhotoOk(c.photo))a.textContent=initials(c.name.trim())||'?';});
+  $('#cPhoto').onclick=()=>{const inp=document.createElement('input');inp.type='file';inp.accept='image/*';
+    inp.onchange=()=>{const f=inp.files&&inp.files[0];if(f)cropPhoto(f,d=>{set(()=>{c.photo=d;});renderClient();haptic('ok');});};inp.click();};
+  {const x=$('#cPhotoX');if(x)x.onclick=()=>{const was=c.photo;set(()=>{delete c.photo;});renderClient();
+    toast('Фото убрано','🗑','Вернуть',()=>{set(()=>{c.photo=was;});if(crmCur===c.id)renderClient();});};}
   $('#cCompany').oninput=e=>set(()=>c.company=e.target.value);
   $('#cAmt').oninput=e=>set(()=>c.amount=parseFloat(String(e.target.value).replace(/[^\d.,]/g,'').replace(',','.'))||0);
   $('#cTg').onchange=e=>set(()=>{ct.tg=e.target.value.trim();renderClient();});
   $('#cPhone').onchange=e=>set(()=>{ct.phone=e.target.value.trim();renderClient();});
   $('#cMail').onchange=e=>set(()=>{ct.email=e.target.value.trim();renderClient();});
   $('#cNext').oninput=e=>set(()=>{c.next=c.next||{};c.next.text=e.target.value;});
-  $('#cDate').onchange=e=>set(()=>{c.next=c.next||{};c.next.date=e.target.value;});
+  $('#cDate').onchange=e=>set(()=>{c.next=c.next||{};c.next.date=e.target.value;
+    const l=e.target.closest('.crm-date');l.classList.toggle('set',!!c.next.date);l.querySelector('span').textContent=c.next.date?crmDate(c.next.date):'Когда';});
+  $('#cDate').onclick=e=>{try{e.target.showPicker();}catch(_){}}; // десктоп: открыть календарь тапом по всей капсуле
   $$('#crmModal [data-cs]').forEach(b=>b.onclick=e=>{if(!(c.name||'').trim()){toast('Сначала имя клиента','⚠');$('#cName').focus();return;}delete c._draft;crmSetStage(c,b.dataset.cs,e);});
   const addNote=()=>{const v=($('#cNote').value||'').trim();if(!v)return;(c.notes=c.notes||[]).unshift({ts:Date.now(),author:meName(),text:v});delete c._draft;crmPush(c);renderClient();};
   $('#cNoteAdd').onclick=addNote;$('#cNote').onkeydown=e=>{if(e.key==='Enter')addNote();};
