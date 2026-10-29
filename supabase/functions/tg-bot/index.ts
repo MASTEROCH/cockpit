@@ -193,7 +193,7 @@ async function joinByInvite(chatId: number, from: Record<string, any>, code: str
   const link = await getLink(chatId);
   const email = link?.email ?? tgEmail(chatId);
   if (!link) { try { await sb.auth.admin.createUser({ email, email_confirm: true, user_metadata: { tg_id: chatId, name: tgName } }); } catch (_) { /* уже есть — ок */ } }
-  const r = await redeemInvite(sb, code, { email, name: link?.name ?? tgName });
+  const r = await redeemInvite(sb, code, { email, name: link?.name ?? tgName, tg: chatId });
   if (!r.ok) { await say(chatId, "⚠ " + esc(r.err ?? "приглашение не сработало")); return; }
   if (!link) {
     const { error } = await sb.from("tg_links").upsert({ chat_id: chatId, email, name: tgName, token_hash: "invite", revoked: false, workspace: r.ws, workspace_id: r.ws });

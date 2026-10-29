@@ -330,3 +330,15 @@ test('кто я: по почте, без чужого профиля', async ({ 
   expect(r.before).toBe('u:roch@local.test');
   expect(r).toMatchObject({ name: 'Роман', email: 'roch@local.test', photo: true, den: 'Дэн', owner: true });
 });
+
+// ROCH #1409: «пользователь и доступы — и без почты, по Telegram»: в Mini App узнаём по номеру Telegram в карточке
+test('кто я: в Mini App — по номеру Telegram', async ({ page }) => {
+  await boot(page);
+  const r = await page.evaluate(() => {
+    tmaUser = () => ({ id: 555, first_name: 'Марина' });
+    S.members = [{ id: 'm1', name: 'Дэн', email: 'den@local.test' }, { id: 'm7', name: 'Марина', email: 'tg555@tg.cock-pit.com', tg: 555 }];
+    cloudOn = true; myEmail = 'other@local.test';
+    return myId();
+  });
+  expect(r).toBe('m7');
+});

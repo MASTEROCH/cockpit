@@ -26,7 +26,7 @@ export async function readInvite(sb: any, code: string): Promise<{ inv?: Record<
   return { inv };
 }
 
-export async function redeemInvite(sb: any, code: string, who: { email: string; name: string }) {
+export async function redeemInvite(sb: any, code: string, who: { email: string; name: string; tg?: number | string }) {
   const { inv, err } = await readInvite(sb, code);
   if (!inv) return { ok: false as const, err };
   const em = who.email.toLowerCase();
@@ -47,9 +47,10 @@ export async function redeemInvite(sb: any, code: string, who: { email: string; 
     const d = p.data ?? {}; d.members = d.members ?? [];
     const slot = inv.member ? d.members.find((m: any) => m?.id === inv.member && !m?.email) : null;
     let changed = false;
-    if (slot) { slot.email = em; if (!slot.name || /^Новый участник/.test(slot.name)) slot.name = name; changed = true; }
+    // ROCH #1409: номер Telegram в карточке — второй ключ личности (узнаём и без почты)
+    if (slot) { slot.email = em; if (who.tg) slot.tg = Number(who.tg); if (!slot.name || /^Новый участник/.test(slot.name)) slot.name = name; changed = true; }
     else if (!d.members.some((m: any) => String(m?.email ?? "").toLowerCase() === em)) {
-      d.members.push({ id: inv.member || ("m" + Math.random().toString(36).slice(2, 8)), name, email: em, role: "", color: PALETTE[d.members.length % PALETTE.length], capacity: 30 });
+      d.members.push({ id: inv.member || ("m" + Math.random().toString(36).slice(2, 8)), name, email: em, ...(who.tg ? { tg: Number(who.tg) } : {}), role: "", color: PALETTE[d.members.length % PALETTE.length], capacity: 30 });
       changed = true;
     }
     if (changed) {

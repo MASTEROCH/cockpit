@@ -3633,8 +3633,10 @@ function redo(){if(!redoStack.length){toast('Нечего возвращать',
    проекта (cockpit_me: «m1» в Testoran = Роч, а в «Мой проект» Дэна «m1» = Дэн) или первый участник — и Роч открывал профиль Дэна,
    мог переписать его имя/фото, а «на меня» уходило Дэну. Теперь: нет меня в проекте → ensureMeInProject добавит, до тех пор — никто */
 function myId(){
-  if(myEmail){const m=S.members.find(x=>(x.email||'').toLowerCase()===myEmail);if(m)return m.id;
-    if(cloudOn)return 'u:'+myEmail;}
+  if(myEmail){const m=S.members.find(x=>(x.email||'').toLowerCase()===myEmail);if(m)return m.id;}
+  /* ROCH #1409: в Mini App личность подтверждает Telegram — узнаём по номеру Telegram в карточке, даже без почты */
+  {const tu=tmaUser();if(tu&&tu.id){const m=S.members.find(x=>x.tg&&+x.tg===+tu.id);if(m)return m.id;}}
+  if(myEmail&&cloudOn)return 'u:'+myEmail;
   const id=localStorage.getItem('cockpit_me');if(id&&member(id))return id;
   return (S.members[0]||{}).id||CURRENT_USER;}
 /* владелец участников проекта — в облаке это роль в команде (владелец/админ), а не «первая строчка списка» */
@@ -3642,12 +3644,13 @@ function isOwner(){if(cloudOn&&myEmail&&accessReady&&isTeam&&roleRank(teamRoleOf
 /* открыл проект, где меня нет среди участников (создал коллега), — добавляю себя с МОИМ профилем из других проектов */
 const _meJoined=new Set();
 function ensureMeInProject(){try{if(!cloudOn||!myEmail||S.demo||!accessReady||!isTeam||isReadOnly()||_meJoined.has(S.id))return;_meJoined.add(S.id);
-  if((S.members||[]).some(x=>(x.email||'').toLowerCase()===myEmail))return;
+  const tu=tmaUser();
+  if((S.members||[]).some(x=>(x.email||'').toLowerCase()===myEmail||(tu&&x.tg&&+x.tg===+tu.id)))return;
   let src=null;for(const p of reg.list){if(p.id===S.id)continue;const d=loadProj(p.id);const m=d&&(d.members||[]).find(x=>(x.email||'').toLowerCase()===myEmail);if(m){src=m;break;}}
-  const tu=tmaUser(),pal=['#a78bfa','#f472b6','#38bdf8','#34d399','#fbbf24','#fb923c'];
+  const pal=['#a78bfa','#f472b6','#38bdf8','#34d399','#fbbf24','#fb923c'];
   S.members=S.members||[];
   S.members.push({id:uid('m'),name:(src&&src.name)||(tu&&[tu.first_name,tu.last_name].filter(Boolean).join(' '))||myEmail.split('@')[0],
-    email:myEmail,photo:(src&&src.photo)||'',color:(src&&src.color)||pal[S.members.length%pal.length],role:(src&&src.role)||'',capacity:(src&&src.capacity)||30});
+    email:myEmail,...(tu&&tu.id?{tg:+tu.id}:{}),photo:(src&&src.photo)||(tu&&tu.photo_url)||'',color:(src&&src.color)||pal[S.members.length%pal.length],role:(src&&src.role)||'',capacity:(src&&src.capacity)||30});
   save();}catch(e){}}
 function canEditMember(m){return !!m&&(m.id===myId()||isOwner());}
 const meName=()=>(member(myId())||{}).name||'Я';
