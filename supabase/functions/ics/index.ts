@@ -21,9 +21,22 @@ Deno.serve(async (req) => {
   if (!tok || tok.revoked) return new Response("key not found", { status: 403 });
   const email = String(tok.email).toLowerCase();
 
-  const { data: t } = await sb.from("team").select("workspace_id").ilike("email", email).maybeSingle();
-  const ws = t?.workspace_id ?? "main";
-  const { data: projs } = await sb.from("projects").select("id,name,emoji,data").eq("workspace_id", ws);
+  // ROCH #1423: только своё пространство и только видимые проекты (раньше: чужак получал вехи HQ через запасное 'main',
+  // участник — вехи закрытых проектов). Гость — только проекты, куда его позвали.
+  const { data: t } = await sb.from("team").select("workspace_id,role").eq("email", email).maybeSingle();
+  const { data: grants } = await sb.from("project_access").select("project_id").eq("email", email);
+  const gids = (grants ?? []).map((g: { project_id: string }) => g.project_id);
+  const seesAll = ["owner", "admin", "full"].includes(String(t?.role ?? "").toLowerCase());
+  let projs: Array<Record<string, any>> = [];
+  if (t?.workspace_id) {
+    const { data } = await sb.from("projects").select("id,name,emoji,data").eq("workspace_id", t.workspace_id);
+    projs = (data ?? []).filter((p: Record<string, any>) => seesAll || p.data?.open !== false ||
+      ((p.data?.members ?? []) as Array<Record<string, any>>).some((m) => String(m?.email ?? "").toLowerCase() === email));
+  }
+  if (gids.length) {
+    const { data } = await sb.from("projects").select("id,name,emoji,data").in("id", gids);
+    for (const p of data ?? []) if (!projs.some((x) => x.id === p.id)) projs.push(p);
+  }
 
   const lines: string[] = [
     "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//WANDO//RU", "CALSCALE:GREGORIAN",

@@ -9,7 +9,7 @@ const FILE = 'file://' + path.resolve(__dirname, '..', 'index.html');
 const BOOT = `localStorage.clear();S=migrate(seed());S.demo=false;
   reg.list=[{id:S.id,name:S.projectName,emoji:'🚀'}];reg.active=S.id;saveReg();
   localStorage.setItem(pkey(S.id),JSON.stringify(S));
-  me=(S.members[0]||{}).id;localStorage.setItem('cockpit_me',me);myEmail='romi4rv23@gmail.com';cloudOn=true;isTeam=true;
+  me=(S.members[0]||{}).id;localStorage.setItem('cockpit_me',me);myEmail='romi4rv23@gmail.com';cloudOn=true;isTeam=true;accessLegacy=true;
   hideGate();showGate=function(){};render();`;
 
 // Мобильный «Сегодня» — отдельная вёрстка (MOBILE_REDESIGN.md): .mhero вместо .now-hero.

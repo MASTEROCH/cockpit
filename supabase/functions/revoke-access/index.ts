@@ -18,10 +18,12 @@ async function emailFromJwt(auth: string | null): Promise<string | null> {
   } catch { return null; }
 }
 const RANK: Record<string, number> = { owner: 3, full: 2, admin: 2, member: 1 };
+// ROCH #1423: ilike без экранирования считал «_» и «%» шаблоном — a_b@x.com задевал и a.b@x.com
+const exact = (s: string) => s.replace(/[\\%_]/g, (m) => "\\" + m);
 async function rankOf(email: string): Promise<{ rank: number; ws: string | null; name: string | null }> {
-  const { data } = await sbs.from("team").select("role,workspace_id,name").ilike("email", email).maybeSingle();
+  const { data } = await sbs.from("team").select("role,workspace_id,name").ilike("email", exact(email)).maybeSingle();
   if (!data) return { rank: 0, ws: null, name: null };
-  return { rank: RANK[String(data.role || "full")] ?? 0, ws: data.workspace_id ?? "main", name: data.name ?? null };
+  return { rank: RANK[String(data.role || "full").toLowerCase()] ?? 0, ws: data.workspace_id ?? null, name: data.name ?? null };
 }
 
 Deno.serve(async (req: Request) => {
@@ -41,14 +43,17 @@ Deno.serve(async (req: Request) => {
     // Строго ниже себя: равного/вышестоящего убрать нельзя (иерархия Роча).
     if (me.rank <= them.rank) return json({ error: "убрать можно только строго ниже себя по доступу" }, 403);
     // В рамках своего воркспейса (нельзя трогать чужую компанию).
-    if (me.ws && them.ws && me.ws !== them.ws) return json({ error: "чужой воркспейс" }, 403);
+    if (!me.ws || me.ws !== them.ws) return json({ error: "чужой воркспейс" }, 403);
 
     // Взять связку ДО удаления — чтобы отправить уведомление.
-    const { data: link } = await sbs.from("tg_links").select("chat_id").ilike("email", target).eq("revoked", false).maybeSingle();
+    const { data: link } = await sbs.from("tg_links").select("chat_id").ilike("email", exact(target)).eq("revoked", false).maybeSingle();
 
-    await sbs.from("team").delete().ilike("email", target);
-    await sbs.from("tg_links").update({ revoked: true }).ilike("email", target);
-    await sbs.from("project_access").delete().ilike("email", target);
+    await sbs.from("team").delete().ilike("email", exact(target)).eq("workspace_id", me.ws);
+    await sbs.from("tg_links").update({ revoked: true }).ilike("email", exact(target));
+    await sbs.from("intake_tokens").update({ revoked: true }).ilike("email", exact(target)); // ключи API (MCP, календарь) — тоже
+    { const { data: pids } = await sbs.from("projects").select("id").eq("workspace_id", me.ws);
+      const ids = (pids ?? []).map((p: { id: string }) => p.id);
+      if (ids.length) await sbs.from("project_access").delete().ilike("email", exact(target)).in("project_id", ids); }
 
     let notified = false;
     if (link?.chat_id && BOT) {

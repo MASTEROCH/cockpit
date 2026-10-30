@@ -3,6 +3,7 @@
 // Секреты: TELEGRAM_BOT_TOKEN (общий с tg-bot). Verify JWT: ВЫКЛ.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { redeemInvite, isProjectAdmin } from "../_shared/invite.ts";
+import { projSelect, saveProjectData } from "../_shared/projects.ts";
 
 const BOT = Deno.env.get("TELEGRAM_BOT_TOKEN") ?? "";
 const sb = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
@@ -93,7 +94,7 @@ async function accessRequest(req: Request, body: Record<string, any>) {
   const { data: u } = await sb.auth.getUser(jwt);
   const email = u?.user?.email?.toLowerCase();
   if (!email) return json({ error: "нужен вход" }, 401);
-  const { data: p } = await sb.from("projects").select("id,name,data,workspace_id").eq("id", String(body.project_id ?? "")).maybeSingle();
+  const { data: p } = await projSelect(sb, "id,name,data,workspace_id").eq("id", String(body.project_id ?? "")).maybeSingle();
   if (!p) return json({ error: "проект не найден" }, 404);
   const id = rnd(10);
   const name = String(body.name || email.split("@")[0]).slice(0, 60);

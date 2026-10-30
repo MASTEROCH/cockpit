@@ -1,3 +1,4 @@
+import { projSelect, saveProjectData } from "./projects.ts";
 // WANDO · приглашение в команду ссылкой (ROCH #1399).
 // Одна логика погашения для бота (t.me/…?start=join_<код>) и сайта (cock-pit.com/?join=<код>) — правила в одном месте.
 // Приглашение — строка workspace_meta `invite:<код>` = { ws, project, by, byName, role, exp, max, uses }; создаёт его приложение.
@@ -31,7 +32,7 @@ export async function readInvite(sb: any, code: string): Promise<{ inv?: Record<
 }
 
 export async function isProjectAdmin(sb: any, email: string, pid: string): Promise<boolean> {
-  const { data: p } = await sb.from("projects").select("data").eq("id", pid).maybeSingle();
+  const { data: p } = await projSelect(sb, "data").eq("id", pid).maybeSingle();
   return ((p?.data?.members ?? []) as any[]).some((m) => String(m?.email ?? "").toLowerCase() === String(email).toLowerCase() && m?.access === "admin");
 }
 const ACCESS = ["admin", "edit", "comment", "view"];
@@ -67,7 +68,7 @@ export async function redeemInvite(sb: any, code: string, who: { email: string; 
   const pids = [...new Set([inv.project, ...((inv.projects ?? []) as string[])].filter(Boolean))] as string[];
   let pid: string | null = null, projectName = "";
   for (const id of pids) {
-    const { data: p } = await sb.from("projects").select("id,name,data,workspace_id").eq("id", id).maybeSingle();
+    const { data: p } = await projSelect(sb, "id,name,data,workspace_id").eq("id", id).maybeSingle();
     if (!p || p.workspace_id !== inv.ws) continue;
     const d = p.data ?? {}; d.members = d.members ?? [];
     const slot = inv.member ? d.members.find((m: any) => m?.id === inv.member && !m?.email) : null;
@@ -82,7 +83,7 @@ export async function redeemInvite(sb: any, code: string, who: { email: string; 
       d.activity = d.activity ?? [];
       d.activity.unshift({ ts: Date.now(), who: name, icon: "👋", text: "вошёл(ла) в команду по приглашению" });
       d.updatedAt = Date.now();
-      await sb.from("projects").update({ data: d, updated_at: new Date().toISOString(), updated_by: null }).eq("id", p.id);
+      await saveProjectData(sb, p.id, d);
     }
     if (!pid) { pid = p.id; projectName = p.name ?? ""; }
   }

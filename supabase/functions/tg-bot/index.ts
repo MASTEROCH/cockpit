@@ -15,6 +15,7 @@
 // ============================================================================
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { redeemInvite, tgEmail, isProjectAdmin } from "../_shared/invite.ts";
+import { projSelect, saveProjectData } from "../_shared/projects.ts";
 
 const BOT = Deno.env.get("TELEGRAM_BOT_TOKEN") ?? "";
 const BOT_ID = Number(BOT.split(":")[0]) || 0; // id бота = первая часть токена; для проверки авторства reply
@@ -135,11 +136,18 @@ async function isTeam(email: string): Promise<boolean> {
   const { data } = await sb.from("team").select("email").ilike("email", email).maybeSingle();
   return !!data;
 }
+async function boundToOther(chatId: number, email: string): Promise<string | null> {
+  const { data: cur } = await sb.from("tg_links").select("email,revoked").eq("chat_id", chatId).maybeSingle();
+  if (cur && !cur.revoked && String(cur.email || "").toLowerCase() !== String(email || "").toLowerCase())
+    return `⚠ Этот Telegram уже подключён к другой учётке. Чтобы подключить новую, сначала отправь /unlink.`;
+  return null;
+}
 async function bindKey(chatId: number, name: string, raw: string): Promise<string> {
   if (!/^cpk_[A-Za-z0-9_-]{10,}$/.test(raw)) return "⚠ Не похоже на ключ. Формат: <code>/key cpk_…</code>";
   const hash = await sha256hex(raw);
   const { data: tok } = await sb.from("intake_tokens").select("email,workspace,revoked").eq("token_hash", hash).maybeSingle();
-  if (!tok || tok.revoked) return `⚠ Ключ не найден или отозван. Сгенерируй новый: ${SITE} → ⋯ → «Подключить Claude».`;
+  if (!tok || tok.revoked) return `⚠ Ключ не найден или отозван. Сгенерируй новый: ${SITE} → Настройки → «Ключ API».`;
+  { const busy = await boundToOther(chatId, tok.email); if (busy) return busy; }
   await sb.from("tg_links").upsert({ chat_id: chatId, email: tok.email, name, token_hash: hash, workspace: tok.workspace, revoked: false });
   return `✅ Привязано: <b>${esc(tok.email)}</b>\nПиши задачи текстом или голосом 🎙 — всё улетит в Приёмку.`;
 }
@@ -150,6 +158,7 @@ async function bindByCode(chatId: number, name: string, code: string): Promise<s
   if (Date.now() - new Date(bc.created_at).getTime() > 15 * 60_000) {
     return `⚠ Код истёк (живёт 15 минут). Открой ${SITE} и нажми «Подключить Telegram» ещё раз.`;
   }
+  { const busy = await boundToOther(chatId, bc.email); if (busy) return busy; }
   await sb.from("tg_links").upsert({ chat_id: chatId, email: bc.email, name, token_hash: bc.token_hash, workspace: bc.workspace, revoked: false });
   await sb.from("tg_bind_codes").update({ used: true }).eq("code", code);
   return `✅ <b>Telegram подключён: ${esc(bc.email)}</b>\n\nТеперь просто пиши задачи — текстом или голосом 🎙\nКнопки снизу: 🔥 Что горит · 📊 Статус · 📥 Приёмка\n\nВернись на сайт — он уже увидел привязку ✨`;
@@ -245,7 +254,7 @@ async function accessDecide(cb: Record<string, any>, chatId: number, link: Link,
   const { data: row } = await sb.from("workspace_meta").select("v").eq("k", key).maybeSingle();
   const r = row?.v as Record<string, any> | undefined;
   if (!r?.pid) { await ack("Запрос уже решён"); return; }
-  const { data: p } = await sb.from("projects").select("id,name,data,workspace_id").eq("id", r.pid).maybeSingle();
+  const { data: p } = await projSelect(sb, "id,name,data,workspace_id").eq("id", r.pid).maybeSingle();
   if (!p) { await ack("Проект не найден"); return; }
   const { data: me } = await sb.from("team").select("role").ilike("email", link.email).eq("workspace_id", p.workspace_id).limit(1);
   const wsAdmin = ["owner", "admin", "full"].includes(String(me?.[0]?.role ?? ""));
@@ -264,7 +273,7 @@ async function accessDecide(cb: Record<string, any>, chatId: number, link: Link,
     if (m) m.access = access;
     else d.members.push({ id: "m" + Math.random().toString(36).slice(2, 8), name: r.name, email: r.email, access, role: "", color: "#a78bfa", capacity: 30 });
     d.updatedAt = Date.now();
-    await sb.from("projects").update({ data: d, updated_at: new Date().toISOString(), updated_by: null }).eq("id", p.id);
+    await saveProjectData(sb, p.id, d);
   } else {
     const role = access === "view" ? "viewer" : "member";
     const { data: ex } = await sb.from("project_access").select("email").ilike("email", r.email).eq("project_id", p.id).limit(1);
@@ -364,7 +373,7 @@ async function wsByEmail(email: string): Promise<string> {
   const k = (email || "").toLowerCase();
   if (_wsCache[k]) return _wsCache[k];
   const { data } = await sb.from("team").select("workspace_id").ilike("email", email).maybeSingle();
-  return _wsCache[k] = (data?.workspace_id) ?? "main";
+  return _wsCache[k] = (data?.workspace_id) ?? ""; // ROCH #1423: не в команде — пространства нет (раньше было 'main' = чужая очередь HQ)
 }
 
 // ---------- проекты / сводки ----------
@@ -374,7 +383,7 @@ async function myProjects(email: string): Promise<{ team: boolean; rows: Record<
   const team = await isTeam(email);
   const ws = await wsByEmail(email);
   const em = email.toLowerCase();
-  let q = sb.from("projects").select("id,name,emoji,data,updated_at").eq("workspace_id", ws).order("updated_at", { ascending: false });
+  let q = projSelect(sb, "id,name,emoji,data,updated_at").eq("workspace_id", ws).order("updated_at", { ascending: false });
   let grants: Record<string, string> = {};
   if (!team) {
     const { data: acc } = await sb.from("project_access").select("project_id,role").ilike("email", email);
@@ -476,6 +485,7 @@ async function captureReply(chatId: number, link: Link, intakeId: string, text: 
 }
 async function createIntake(link: Link, text: string, source: string): Promise<{ id: string | null; err?: string }> {
   const _ws = await wsByEmail(link.email);
+  if (!_ws) return { id: null, err: "Ты гость проекта — задачи в Приёмку ставит команда. Пиши комментарием к задаче в WANDO." };
   const { data, error } = await sb.from("intake").insert({ workspace_id: _ws,
     by_email: link.email, by_name: link.name ?? link.email.split("@")[0],
     source, workspace: link.workspace, text: text.slice(0, 2000), status: "pending",
@@ -489,10 +499,13 @@ async function createIntake(link: Link, text: string, source: string): Promise<{
 // Тихие догадки = каша; система знает или спрашивает.
 async function pickProjectStrict(target: string | null, ws?: string) {
   if (!target) return null;
-  const { data } = await sb.from("projects").select("id,name,emoji,data,workspace_id").order("updated_at", { ascending: false });
+  if (ws !== undefined && !ws) return null; // ROCH #1423: не в команде — не ищем по чужим пространствам
+  let q = projSelect(sb, "id,name,emoji,data,workspace_id");
+  if (ws) q = q.eq("workspace_id", ws); // фильтр в запросе, а не после выгрузки всех проектов всех пространств
+  const { data } = await q.order("updated_at", { ascending: false });
   const rows = (data ?? []).filter((p: Record<string, any>) => !(p.data?.demo === true) && !(p.data?.archived === true) && (!ws || p.workspace_id === ws));
   const t = target.toLowerCase();
-  return rows.find((p) => p.id === target) || rows.find((p) => (p.name ?? "").toLowerCase() === t) || rows.find((p) => (p.name ?? "").toLowerCase().includes(t)) || null;
+  return rows.find((p: Record<string, any>) => p.id === target) || rows.find((p: Record<string, any>) => (p.name ?? "").toLowerCase() === t) || rows.find((p: Record<string, any>) => (p.name ?? "").toLowerCase().includes(t)) || null;
 }
 // кнопки «Куда?» — проекты пользователя, его последний выбор первым (бот учится)
 async function projectButtons(email: string, intakeId: string, prefix: string, lastProject?: string | null) {
@@ -539,7 +552,7 @@ async function acceptIntake(intakeId: string, by: Link, projectId?: string): Pro
   d.activity = d.activity ?? [];
   d.activity.unshift({ ts: Date.now(), who: (by.name ?? by.email) + " · TG", icon: "📥", text: "из приёмки: «" + task.title + "»" });
   d.updatedAt = Date.now();
-  const { error } = await sb.from("projects").update({ data: d, updated_at: new Date().toISOString(), updated_by: null }).eq("id", proj.id);
+  const { error } = await saveProjectData(sb, proj.id, d);
   if (error) return "⚠ Не удалось создать задачу: " + esc(error.message);
   await sb.from("intake").update({ status: "accepted", decided_by: by.email, decided_at: new Date().toISOString(), target_project: proj.id, result_task_id: task.id }).eq("id", intakeId);
   try { await notifyTaskLanded(proj, task, by.name ?? by.email, [by.email, row.by_email]); } catch (_) { /* уведомление не должно ронять принятие */ }
@@ -795,7 +808,7 @@ async function myWaits(email: string) {
   return out;
 }
 async function pingWaiting(asker: Link, projectId: string, taskId: string): Promise<string> {
-  const { data: p } = await sb.from("projects").select("id,name,emoji,data").eq("id", projectId).maybeSingle();
+  const { data: p } = await projSelect(sb, "id,name,emoji,data").eq("id", projectId).maybeSingle();
   if (!p) return "⚠ Проект не найден";
   const t = ((p.data?.tasks ?? []) as Record<string, any>[]).find((x) => x.id === taskId);
   if (!t || t.status === "done") return "Задача уже закрыта ✨";
@@ -845,7 +858,7 @@ async function shiftMyTasks(email: string, targetISO: string): Promise<number> {
       p.data.updatedAt = Date.now();
       p.data.activity = p.data.activity ?? [];
       p.data.activity.unshift({ ts: Date.now(), who: email.split("@")[0] + " · TG", icon: "🌙", text: "вечерний разбор: перенос незакрытого" });
-      await sb.from("projects").update({ data: p.data, updated_at: new Date().toISOString(), updated_by: null }).eq("id", p.id);
+      await saveProjectData(sb, p.id, p.data);
     }
   }
   return n;
@@ -931,7 +944,7 @@ async function graveyardReview() {
 }
 // действия кладбища: работают по одной задаче, свежие данные читаем прямо перед правкой
 async function graveAct(link: Link, kind: "del" | "live", pid: string, tid: string): Promise<string> {
-  const { data: p } = await sb.from("projects").select("*").eq("id", pid).maybeSingle();
+  const { data: p } = await projSelect(sb, "*").eq("id", pid).maybeSingle();
   if (!p?.data) return "Проект не найден";
   const tasks = (p.data.tasks ?? []) as Record<string, any>[];
   const t = tasks.find((x) => x.id === tid);
@@ -963,7 +976,7 @@ async function graveAct(link: Link, kind: "del" | "live", pid: string, tid: stri
   }
   if (p.data.activity && p.data.activity.length > 150) p.data.activity.length = 150;
   p.data.updatedAt = Date.now();
-  await sb.from("projects").update({ data: p.data, updated_at: new Date().toISOString(), updated_by: null }).eq("id", pid);
+  await saveProjectData(sb, pid, p.data);
   return kind === "del"
     ? `⚰️ «${esc(t.title)}» — в корзине проекта 30 дней. Список стал честнее.`
     : `🔄 «${esc(t.title)}» воскрешена — срок ${t.end.slice(8)}.${t.end.slice(5, 7)}. Теперь не подведи её ещё раз 🙂`;
@@ -1127,13 +1140,20 @@ async function onMyChatMember(u: Record<string, any>) {
 }
 
 async function bindChat(chatId: number, title: string, code: string) {
-  const { data: row } = await sb.from("workspace_meta").select("v").eq("k", "chatbind:" + code).maybeSingle();
+  const { data: row } = await sb.from("workspace_meta").select("v,workspace_id").eq("k", "chatbind:" + code).maybeSingle();
   const v = (row?.v ?? null) as Record<string, any> | null;
-  if (!v || (v.exp && Date.now() > Number(v.exp))) {
+  // ROCH #1423: ws/email/pid в JSON пишет клиент — верим только строке и проверяем, что автор и проект из этого пространства
+  if (v && row?.workspace_id) {
+    v.ws = row.workspace_id;
+    const { data: tm } = await sb.from("team").select("email").ilike("email", String(v.email ?? "")).eq("workspace_id", v.ws).maybeSingle();
+    if (!tm) v.email = "";
+    if (v.pid) { const { data: pj } = await sb.from("projects").select("workspace_id").eq("id", v.pid).maybeSingle(); if (pj?.workspace_id !== v.ws) { v.pid = null; v.pname = ""; } }
+  }
+  if (!v || !row?.workspace_id || !v.email || (v.exp && Date.now() > Number(v.exp))) {
     await TG("sendMessage", { chat_id: chatId, text: "Код подключения устарел — возьми новый: WANDO → Приёмка → «Подключить рабочий чат»." });
     return;
   }
-  await sb.from("tg_chats").upsert({ chat_id: chatId, workspace_id: v.ws ?? "main", project_id: v.pid ?? null, title, added_by: String(v.email ?? ""), enabled: true });
+  await sb.from("tg_chats").upsert({ chat_id: chatId, workspace_id: v.ws, project_id: v.pid ?? null, title, added_by: String(v.email ?? ""), enabled: true });
   await sb.from("workspace_meta").delete().eq("k", "chatbind:" + code);
   await TG("sendMessage", { chat_id: chatId, text: `✅ WANDO подключён к «${title}». Пишите как обычно — соберу из переписки задачи и пришлю выжимку в личку. Сюда писать не буду.` });
   const { data: l } = await sb.from("tg_links").select("chat_id").ilike("email", String(v.email ?? "")).eq("revoked", false).maybeSingle();
@@ -1299,7 +1319,7 @@ function capDue(end: string | null): string {
 // карточка — одна строка «кому · срок · проект · файлы» и задача-ссылкой (reply на неё = коммент, tg:reply-якорь)
 async function capCard(row: Record<string, any>): Promise<{ text: string; kb: unknown[][] }> {
   const m = row.meta ?? {};
-  const { data: proj } = m.pid ? await sb.from("projects").select("id,name,emoji,data").eq("id", m.pid).maybeSingle() : { data: null as Record<string, any> | null };
+  const { data: proj } = m.pid ? await projSelect(sb, "id,name,emoji,data").eq("id", m.pid).maybeSingle() : { data: null as Record<string, any> | null };
   const mem = (((proj?.data?.members) ?? []) as Record<string, any>[]).find((x) => x.id === m.assigneeId);
   const who = mem ? esc(mem.name) : "без исполнителя";
   const pl = proj ? `${proj.emoji ?? "📄"} ${esc(proj.name ?? "")}` : "";
@@ -1326,7 +1346,7 @@ async function capShow(chatId: number, row: Record<string, any>, messageId?: num
 
 async function capCreateTask(link: Link, row: Record<string, any>): Promise<string | null> {
   const m = row.meta ?? {};
-  const { data: proj } = await sb.from("projects").select("id,name,emoji,data").eq("id", m.pid).maybeSingle();
+  const { data: proj } = await projSelect(sb, "id,name,emoji,data").eq("id", m.pid).maybeSingle();
   if (!proj) return "проект не найден";
   const d = proj.data ?? {};
   d.tasks = d.tasks ?? []; d.sections = d.sections?.length ? d.sections : [{ id: "s1", name: "Задачи" }]; d.members = d.members ?? [];
@@ -1341,7 +1361,7 @@ async function capCreateTask(link: Link, row: Record<string, any>): Promise<stri
   d.activity = d.activity ?? [];
   d.activity.unshift({ ts: Date.now(), who: (link.name ?? link.email) + " · TG", icon: "📥", text: "из бота: «" + task.title + "»" });
   d.updatedAt = Date.now();
-  const { error } = await sb.from("projects").update({ data: d, updated_at: new Date().toISOString(), updated_by: null }).eq("id", proj.id);
+  const { error } = await saveProjectData(sb, proj.id, d);
   if (error) return error.message;
   await sb.from("intake").update({ status: "accepted", decided_by: link.email, decided_at: new Date().toISOString(), target_project: proj.id, result_task_id: task.id }).eq("id", row.id);
   const asg = (d.members as Record<string, any>[]).find((x) => x.id === task.assigneeId);
@@ -1358,6 +1378,7 @@ async function capHandle(chatId: number, link: Link, pack: CapPack) {
   const text = ([instr, content].filter(Boolean).join("\n\n") || (pack.files.length ? "📎 " + pack.files.map((f) => f.name).join(", ") : "")).slice(0, 2000);
   if (!text) return;
   const ws = await wsByEmail(link.email);
+  if (!ws) { await say(chatId, "Ты гость проекта — задачи в Приёмку ставит команда. Пиши комментарием к задаче в WANDO."); return; }
   const projs = (await myProjects(link.email)).rows.filter((p: Record<string, any>) => p.canWrite); // ROCH #1402: только куда можно писать
   const parsed = instr ? await capParse(link, pack, projs) : null;
   const dec = capDecide(parsed, projs, link);
@@ -1412,12 +1433,12 @@ async function capCallback(cb: Record<string, any>, chatId: number, link: Link, 
   if (act === "cun") {
     if (row.status !== "accepted" || !m.tid) { await ack("Нечего отменять"); return; }
     if (Date.now() - Date.parse(row.decided_at ?? row.created_at ?? new Date().toISOString()) > 86400000) { await ack("Прошло больше суток — удали в приложении"); return; }
-    const { data: proj } = await sb.from("projects").select("id,data").eq("id", m.pid).maybeSingle();
+    const { data: proj } = await projSelect(sb, "id,data").eq("id", m.pid).maybeSingle();
     if (proj) {
       const d = proj.data ?? {};
       d.tasks = ((d.tasks ?? []) as Record<string, any>[]).filter((t) => t.id !== m.tid);
       d.updatedAt = Date.now();
-      await sb.from("projects").update({ data: d, updated_at: new Date().toISOString(), updated_by: null }).eq("id", proj.id);
+      await saveProjectData(sb, proj.id, d);
     }
     const paths = ((m.files ?? []) as Record<string, any>[]).map((f) => f.path).filter(Boolean);
     if (paths.length) { try { await sb.storage.from("task-files").remove(paths); } catch (_) { /* файлы — не повод не отменить */ } }
@@ -1426,7 +1447,7 @@ async function capCallback(cb: Record<string, any>, chatId: number, link: Link, 
   }
   if (act === "cto" || act === "cbk") {
     if (act === "cbk" || !m.pid) { await ack(); return capShow(chatId, row, mid); }
-    const { data: proj } = await sb.from("projects").select("data").eq("id", m.pid).maybeSingle();
+    const { data: proj } = await projSelect(sb, "data").eq("id", m.pid).maybeSingle();
     const ppl = (((proj?.data?.members) ?? []) as Record<string, any>[]).filter((x) => x.id && x.name && x.id !== m.assigneeId).slice(0, 8);
     const kb: unknown[][] = [];
     for (let i = 0; i < ppl.length; i += 2) kb.push(ppl.slice(i, i + 2).map((x) => ({ text: String(x.name).slice(0, 24), callback_data: `cas:${id}:${x.id}` })));
@@ -1435,7 +1456,7 @@ async function capCallback(cb: Record<string, any>, chatId: number, link: Link, 
     return TG("editMessageReplyMarkup", { chat_id: chatId, message_id: mid, reply_markup: { inline_keyboard: kb } });
   }
   if (act === "cas" && arg) {
-    const { data: proj } = await sb.from("projects").select("id,name,data").eq("id", m.pid).maybeSingle();
+    const { data: proj } = await projSelect(sb, "id,name,data").eq("id", m.pid).maybeSingle();
     const mem = (((proj?.data?.members) ?? []) as Record<string, any>[]).find((x) => x.id === arg);
     if (!proj || !mem) { await ack("Не нашёл человека"); return; }
     m.assigneeId = arg; row.meta = m;
@@ -1443,7 +1464,7 @@ async function capCallback(cb: Record<string, any>, chatId: number, link: Link, 
     if (row.status === "accepted") {
       const d = proj.data ?? {};
       const t = ((d.tasks ?? []) as Record<string, any>[]).find((x) => x.id === m.tid);
-      if (t) { t.assigneeId = arg; d.updatedAt = Date.now(); await sb.from("projects").update({ data: d, updated_at: new Date().toISOString(), updated_by: null }).eq("id", proj.id); }
+      if (t) { t.assigneeId = arg; d.updatedAt = Date.now(); await saveProjectData(sb, proj.id, d); }
       if (mem.email && String(mem.email).toLowerCase() !== link.email.toLowerCase())
         await capTell(mem.email, `👤 <b>${esc(link.name ?? link.email)}</b> назначил(а) на тебя: «<a href="${APP_URL}/?t=${proj.id}:${m.tid}">${esc(m.title ?? "")}</a>» <i>(${esc(proj.name ?? "")})</i>\n\n<i>↩︎ ответь — текст станет комментом</i>`);
     }
@@ -1454,7 +1475,7 @@ async function capCallback(cb: Record<string, any>, chatId: number, link: Link, 
 
 async function digestChat(c: Record<string, any>, msgs: Record<string, any>[]) {
   const { data: p } = c.project_id
-    ? await sb.from("projects").select("id,name,emoji,data").eq("id", c.project_id).maybeSingle()
+    ? await projSelect(sb, "id,name,emoji,data").eq("id", c.project_id).maybeSingle()
     : { data: null as Record<string, any> | null };
   const people = (((p?.data?.members) ?? []) as Record<string, any>[]).map((m) => m.name).filter(Boolean);
   const open = taskList(p ?? {}).filter((t) => t.status !== "done").map((t) => String(t.title)).slice(0, 80);
@@ -1552,12 +1573,23 @@ Deno.serve(async (req) => {
     return new Response("ok");
   }
 
-  if (SECRET && req.headers.get("x-telegram-bot-api-secret-token") !== SECRET) {
+  // ROCH #1423: без секрета — отказ (раньше пустой секрет пропускал любые поддельные обновления: вход по web-коду, «оплату»)
+  if (!SECRET || req.headers.get("x-telegram-bot-api-secret-token") !== SECRET) {
     return new Response("forbidden", { status: 403 });
   }
   let update: Record<string, any>;
   try { update = await req.json(); } catch { return new Response("ok"); }
+  // повторная доставка (Telegram шлёт снова, если мы ответили не 200) — второй раз не исполняем
+  if (typeof update.update_id === "number") {
+    const { error } = await sb.from("tg_updates").insert({ update_id: update.update_id });
+    if (error && /duplicate|23505/i.test(String(error.message) + String(error.code))) return new Response("ok");
+    if (Math.random() < 0.02) sb.from("tg_updates").delete().lt("ts", new Date(Date.now() - 3 * 86400_000).toISOString()).then(() => {}, () => {});
+  }
+  try { return await handleUpdate(update); }
+  catch (e) { console.error("tg-bot", e); return new Response("ok"); } // ошибка — не повод для повторной доставки
+});
 
+async function handleUpdate(update: Record<string, any>): Promise<Response> {
   // --- Stars: подтверждение и зачисление оплаты (Ф4) ---
   if (update.pre_checkout_query) {
     await TG("answerPreCheckoutQuery", { pre_checkout_query_id: update.pre_checkout_query.id, ok: true });
@@ -1644,7 +1676,7 @@ Deno.serve(async (req) => {
             d.updatedAt = Date.now();
             d.activity = d.activity ?? [];
             d.activity.unshift({ ts: Date.now(), who: (link.name ?? link.email) + " · TG", icon: "💡", text: "идея: «" + String(row.text).slice(0, 80) + "»" });
-            await sb.from("projects").update({ data: d, updated_at: new Date().toISOString(), updated_by: null }).eq("id", proj.id);
+            await saveProjectData(sb, proj.id, d);
             await sb.from("intake").update({ status: "backlog", decided_by: link.email, decided_at: new Date().toISOString(), target_project: proj.id }).eq("id", id);
             await rememberChoice(chatId, proj.id);
             result = `💡 В бэклоге идей ${proj.emoji ?? "📄"} <b>${esc(proj.name)}</b>: «${esc(String(row.text).slice(0, 100))}»`;
@@ -1775,7 +1807,7 @@ Deno.serve(async (req) => {
         // ROCH #1402: коммент — только если проект виден и в нём можно писать (гость «только просмотр» — нет)
         const vis = (await myProjects(link.email)).rows.find((r: Record<string, any>) => r.id === ref.pid);
         if (!vis || !vis.canWrite) { await say(chatId, vis ? "👀 У тебя в этом проекте только просмотр — коммент не сохранил" : "⚠ Нет доступа к этому проекту"); return new Response("ok"); }
-        const { data: p } = await sb.from("projects").select("id,name,emoji,data").eq("id", ref.pid).maybeSingle();
+        const { data: p } = await projSelect(sb, "id,name,emoji,data").eq("id", ref.pid).maybeSingle();
         const t = p && ((p.data?.tasks ?? []) as Record<string, any>[]).find((x) => x.id === ref.tid);
         if (!t) { await say(chatId, "⚠ Задача не нашлась — возможно, удалена"); return new Response("ok"); }
         t.comments = t.comments ?? [];
@@ -1783,7 +1815,7 @@ Deno.serve(async (req) => {
         p.data.activity = p.data.activity ?? [];
         p.data.activity.unshift({ ts: Date.now(), who: (link.name ?? link.email) + " · TG", icon: "💬", text: "коммент к «" + t.title + "»" });
         p.data.updatedAt = Date.now();
-        const { error } = await sb.from("projects").update({ data: p.data, updated_at: new Date().toISOString(), updated_by: null }).eq("id", p.id);
+        const { error } = await saveProjectData(sb, p.id, p.data);
         await say(chatId, error ? "⚠ Не сохранилось: " + esc(error.message) : `💬 Коммент к «${esc(t.title)}» сохранён — команда увидит его в карточке задачи`);
         if (!error) { try { await notifyTaskComment(p, t, text, link.name ?? link.email, link.email); } catch (_) { /* уведомление не ломает сохранение */ } }
         return new Response("ok");
@@ -1807,6 +1839,9 @@ Deno.serve(async (req) => {
       await say(chatId, link
         ? `С возвращением, <b>${esc(link.name ?? link.email)}</b>! 🎙 Пиши задачу текстом или голосом.\n\n👉 Кнопка <b>WANDO</b> слева от поля ввода (☰) открывает доску — вход подхватится сам, без почты.`
         : `Привет! Я — вход в <b>WANDO</b> (что делать).\n\n<b>Новый здесь?</b> Просто пришли свой email — создам тебе личное пространство за 5 секунд 🚀\n\nУже в команде? Открой <b>${SITE}</b> → «Подключить Telegram» (1 тап), либо ключом: <code>/key cpk_…</code>\n\n/help — подробнее`);
+    } else if (/^\/unlink\b/.test(text)) {
+      await sb.from("tg_links").update({ revoked: true }).eq("chat_id", chatId);
+      await say(chatId, "Telegram отвязан от учётки. Подключить снова — кнопка «Подключить Telegram» в WANDO.");
     } else if (/^\/help|^❓/.test(text)) {
       await say(chatId, HELP);
     } else if (/^\/plan|^⭐/.test(text)) {
@@ -1868,4 +1903,4 @@ Deno.serve(async (req) => {
     try { await say(chatId, "⚠ Что-то пошло не так: " + esc(m)); } catch { /* ignore */ }
   }
   return new Response("ok");
-});
+}

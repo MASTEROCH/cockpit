@@ -19,6 +19,7 @@
 // привязки работает прежний режим «искать везде»: он безопасен, пока в базе одна компания.
 // ============================================================================
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { projSelect, saveProjectData } from "../_shared/projects.ts";
 
 const sb = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
 const SECRET = Deno.env.get("GH_WEBHOOK_SECRET") ?? "";
@@ -52,10 +53,12 @@ Deno.serve(async (req) => {
   try { payload = JSON.parse(body); } catch { return new Response("ok"); }
   const repoFull = String(payload.repository?.full_name ?? "").trim().toLowerCase();
 
-  const { data: rows } = await sb.from("projects").select("id,data");
+  // ROCH #1423: без заголовка подписи — сразу отказ; проект ищем запросом по repo, а не выгрузкой всех проектов всех пространств
+  if (!sigHdr || !/^sha256=[0-9a-f]{64}$/.test(sigHdr)) return new Response("bad signature", { status: 401 });
+  const { data: rows } = repoFull ? await projSelect(sb, "id,data").ilike("data->>repo", repoFull) : { data: [] as Record<string, any>[] };
   // Проект, к которому привязан репозиторий (data.repo = "owner/name").
   const repoRow = repoFull
-    ? (rows ?? []).find((r) => String(r.data?.repo ?? "").trim().toLowerCase() === repoFull) ?? null
+    ? (rows ?? []).find((r: Record<string, any>) => String(r.data?.repo ?? "").trim().toLowerCase() === repoFull) ?? null
     : null;
 
   // Секрет проекта важнее общего. Общий секрет на всю базу означает, что при
@@ -138,7 +141,7 @@ Deno.serve(async (req) => {
   }
   for (const row of changed) {
     row.data.updatedAt = Date.now();
-    await sb.from("projects").update({ data: row.data, updated_at: new Date().toISOString(), updated_by: null }).eq("id", row.id);
+    await saveProjectData(sb, row.id, row.data);
   }
   return new Response(JSON.stringify({ ok: true, closed, mentioned, logged }), { headers: { "content-type": "application/json" } });
 });

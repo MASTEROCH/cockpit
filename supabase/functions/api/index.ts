@@ -8,6 +8,7 @@
 // Ключ хранится только хешем (sha256) в api_keys. «Verify JWT» — ВЫКЛ.
 // ============================================================================
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { projSelect, saveProjectData } from "../_shared/projects.ts";
 
 const sb = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
 const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "authorization, content-type" };
@@ -38,19 +39,19 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   const ws = await wsByKey(req.headers.get("authorization"));
   if (!ws) return json({ error: "invalid or missing api key" }, 401);
-  const rowsQ = () => sb.from("projects").select("id,data").eq("workspace_id", ws);
+  const rowsQ = () => projSelect(sb, "id,data").eq("workspace_id", ws);
 
   if (req.method === "GET") {
     const u = new URL(req.url);
     const op = u.searchParams.get("op") ?? "projects";
     const { data: rows } = await rowsQ();
     if (op === "projects") {
-      return json({ projects: (rows ?? []).map((r) => ({ id: r.id, name: r.data?.projectName ?? "", emoji: r.data?.emoji ?? "📄",
+      return json({ projects: (rows ?? []).map((r: Record<string, any>) => ({ id: r.id, name: r.data?.projectName ?? "", emoji: r.data?.emoji ?? "📄",
         tasks: (r.data?.tasks ?? []).filter((t: Record<string, any>) => !t.isMilestone).length,
         done: (r.data?.tasks ?? []).filter((t: Record<string, any>) => !t.isMilestone && t.status === "done").length })) });
     }
     if (op === "tasks") {
-      const row = (rows ?? []).find((r) => r.id === u.searchParams.get("project"));
+      const row = (rows ?? []).find((r: Record<string, any>) => r.id === u.searchParams.get("project"));
       if (!row) return json({ error: "project not found" }, 404);
       const st = u.searchParams.get("status");
       let ts = (row.data?.tasks ?? []).filter((t: Record<string, any>) => !t.isMilestone);
@@ -66,7 +67,7 @@ Deno.serve(async (req) => {
     const { data: rows } = await rowsQ();
 
     if (b.op === "create") {
-      const row = (rows ?? []).find((r) => r.id === b.project);
+      const row = (rows ?? []).find((r: Record<string, any>) => r.id === b.project);
       if (!row) return json({ error: "project not found" }, 404);
       const title = String(b.title ?? "").trim();
       if (!title) return json({ error: "title required" }, 400);
@@ -84,7 +85,7 @@ Deno.serve(async (req) => {
       d.activity = d.activity ?? []; d.activity.unshift({ ts: Date.now(), who: "API", icon: "🔌", text: `новая задача «${t.title}»` });
       if (d.activity.length > 150) d.activity.length = 150;
       d.updatedAt = Date.now();
-      await sb.from("projects").update({ data: d, updated_at: new Date().toISOString(), updated_by: null }).eq("id", row.id);
+      await saveProjectData(sb, row.id, d);
       return json({ ok: true, id: shortId(t.id), project: row.id }, 201);
     }
 
@@ -92,9 +93,9 @@ Deno.serve(async (req) => {
       if (!STATUSES.includes(b.status)) return json({ error: "status must be one of " + STATUSES.join("|") }, 400);
       const want = String(b.task ?? "").replace(/^#/, "").toUpperCase();
       // если задан project — ищем строго в нём (короткий #ID уникален лишь внутри проекта, не по воркспейсу)
-      const scoped = b.project ? (rows ?? []).filter((r) => r.id === b.project) : (rows ?? []);
+      const scoped = b.project ? (rows ?? []).filter((r: Record<string, any>) => r.id === b.project) : (rows ?? []);
       if (b.project && !scoped.length) return json({ error: "project not found" }, 404);
-      const matches = scoped.flatMap((row) => (row.data?.tasks ?? []).filter((x: Record<string, any>) => shortId(x.id) === want || x.id === b.task).map((t: Record<string, any>) => ({ row, t })));
+      const matches = scoped.flatMap((row: Record<string, any>) => (row.data?.tasks ?? []).filter((x: Record<string, any>) => shortId(x.id) === want || x.id === b.task).map((t: Record<string, any>) => ({ row, t })));
       if (matches.length > 1) return json({ error: "ambiguous id — pass \"project\" to disambiguate" }, 409);
       for (const { row, t } of matches) {
         t.status = b.status; t.statusTs = Date.now();
@@ -105,7 +106,7 @@ Deno.serve(async (req) => {
         row.data.activity.unshift({ ts: Date.now(), who: "API", icon: "🔌", text: `«${t.title}» → ${b.status}` });
         if (row.data.activity.length > 150) row.data.activity.length = 150;
         row.data.updatedAt = Date.now();
-        await sb.from("projects").update({ data: row.data, updated_at: new Date().toISOString(), updated_by: null }).eq("id", row.id);
+        await saveProjectData(sb, row.id, row.data);
         return json({ ok: true, id: want, status: b.status });
       }
       return json({ error: "task not found" }, 404);

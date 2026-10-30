@@ -216,6 +216,9 @@ serve(async (req) => {
       const esc2 = (x: unknown) => String(x ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
       const { kind, toEmail, byName, taskTitle, projectName, projectId, taskId, text } = body;
       if (!toEmail || !taskTitle) return json({ ok: false });
+      // ROCH #1423: id идут в ссылку и callback-кнопки — только [\w-], иначе «x&su=<chat>» уводил ответ в чужой чат
+      if ((projectId != null && !/^[\w-]{1,64}$/.test(String(projectId))) || (taskId != null && !/^[\w-]{1,64}$/.test(String(taskId))))
+        return json({ ok: false, reason: "bad_id" }, 400);
       if (String(toEmail).toLowerCase() === email) return json({ ok: true, skip: "self" });
       if (!(await allowed(String(toEmail).toLowerCase()))) return json({ ok: false, reason: "not_team" });
       // получатель — из того же пространства, что и отправитель (раньше проверялось только «есть в team», то есть в ЛЮБОМ пространстве)

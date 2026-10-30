@@ -9,6 +9,7 @@
 // Гость видит ровно одну задачу — ни проекта, ни команды. «Verify JWT» — ВЫКЛ.
 // ============================================================================
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { projSelect, saveProjectData } from "../_shared/projects.ts";
 
 const sb = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
 const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "authorization, content-type" };
@@ -30,7 +31,7 @@ async function emailFromJwt(auth: string | null): Promise<string | null> {
 async function shareRow(token: string) {
   const { data: sh } = await sb.from("task_shares").select("*").eq("token", token).eq("revoked", false).maybeSingle();
   if (!sh) return null;
-  const { data: p } = await sb.from("projects").select("id,data").eq("id", sh.project_id).maybeSingle();
+  const { data: p } = await projSelect(sb, "id,data").eq("id", sh.project_id).maybeSingle();
   const t = (p?.data?.tasks ?? []).find((x: Record<string, any>) => x.id === sh.task_id);
   return t ? { sh, p: p!, t } : null;
 }
@@ -64,7 +65,7 @@ Deno.serve(async (req) => {
       // строгое сравнение (не ilike — иначе email=«%» из подделанного payload матчит любого)
       const { data: member } = await sb.from("team").select("workspace_id").eq("email", email).maybeSingle();
       if (!member) return json({ error: "только для команды" }, 403);
-      const { data: p } = await sb.from("projects").select("id,data,workspace_id").eq("id", b.project).maybeSingle();
+      const { data: p } = await projSelect(sb, "id,data,workspace_id").eq("id", b.project).maybeSingle();
       // проект ОБЯЗАН быть в воркспейсе автора — иначе член команды A мог бы шарить задачи команды B
       if (!p || p.workspace_id !== member.workspace_id) return json({ error: "задача не найдена" }, 404);
       if (!(p.data?.tasks ?? []).some((x: Record<string, any>) => x.id === b.task)) return json({ error: "задача не найдена" }, 404);
@@ -90,7 +91,7 @@ Deno.serve(async (req) => {
       p.data.activity.unshift({ ts: Date.now(), who: name + " · гость", icon: "🌐", text: `коммент в «${t.title}»` });
       if (p.data.activity.length > 150) p.data.activity.length = 150;
       p.data.updatedAt = Date.now();
-      await sb.from("projects").update({ data: p.data, updated_at: new Date().toISOString(), updated_by: null }).eq("id", p.id);
+      await saveProjectData(sb, p.id, p.data);
       return json({ ok: true }, 201);
     }
     return json({ error: "unknown op" }, 400);

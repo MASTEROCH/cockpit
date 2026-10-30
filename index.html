@@ -2895,7 +2895,7 @@ body.light #mseg button em{background:rgba(30,30,60,.08)}
    Свёрнуто — полоса «статус + человек» 64 px: строки узнаются по цвету и лицу, полотно получает всю ширину */
 .gantt{--glw:320px}
 @media (max-width:900px){.gantt{--glw:190px}}
-@media (max-width:680px){.gantt{--glw:164px}}
+@media (max-width:680px){.gantt{--glw:clamp(164px,52vw,220px)}} /* QA 30.10: на 390 имени оставалось 58px — читалось «Составл»; теперь ~95px, ширину по-прежнему тянут ручкой */
 .gantt.gcol{--glw:64px}
 .gantt .gleft{width:var(--glw);min-width:0;max-width:none;box-sizing:border-box}
 .gantt.gcol-anim .gleft{transition:width .34s cubic-bezier(.22,1,.36,1)}
@@ -3130,6 +3130,34 @@ html{touch-action:manipulation}
 .am-acc{border-radius:999px;font-size:12px;padding:5px 24px 5px 10px;min-width:118px}
 body.ro.rc main::before{content:'Ты комментатор в этом проекте — комментировать можно, менять задачи нельзя'}
 body.ro.rc #drawer #dCmtIn,body.ro.rc #drawer #dCmtBtn{pointer-events:auto;opacity:1}
+/* ===== QA-проход 30.10 (ROCH #1423) — то, что нашёл обход 230 состояний (5 ширин × 2 темы × экраны и окна)
+   1. Шапка карточки задачи на 320: id + две кнопки + статус + крестик не помещались — крестик уезжал за край.
+   2. Горизонтальные ленты (сегменты, фильтры, чипы «＋») обрывались о край экрана — теперь край растворяется
+      с той стороны, где есть ещё (класс ставит edgeFade по прокрутке; лента без переполнения не трогается).
+   3. Зоны нажатия на телефоне: галка/пинг на карточке доски 22/17px, крестик карточки «Сегодня» 18px, «＋» недели 21px —
+      видимый размер прежний, зона нажатия расширена прозрачным ::before до ~40px; чипы-ряды — не ниже 34px. */
+@media (max-width:400px){
+  #drawer .dh{padding:12px 14px;gap:6px}
+  #drawer .dh>#dStatus{flex:0 1 auto;min-width:0;max-width:128px}
+}
+/* 4. Контраст (preflight TOKENGUARD): белая подпись на лавандовом --acc2 давала 2.7:1 — выбранные чипы на #7c5ce0 (≈4.6:1);
+      зелёные/оранжевые плашки в светлой теме — тёмный тон того же цвета вместо светлого текста на светлом. */
+.inv-chip.on,.amc-chip.on,.hist-chips button.on,.pr-auto.on,#mseg button.on em{background:#7c5ce0;border-color:transparent;color:#fff}
+body.light .youbadge,body.light .subbadge.all,body.light .accrow .arole.full{color:#0f7a4f}
+body.light .streak{color:#c2410c}
+#storeFull{position:fixed;left:50%;transform:translateX(-50%);top:calc(10px + var(--safe-top,0px));z-index:2147483000;width:min(560px,calc(100vw - 24px));
+  display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;padding:12px 14px;border-radius:18px;
+  background:color-mix(in srgb,var(--bad) 18%,var(--panel));border:1px solid color-mix(in srgb,var(--bad) 45%,transparent);box-shadow:var(--shadow);color:var(--txt)}
+#storeFull b{font-size:14px}#storeFull span{grid-column:1;font-size:13px;color:var(--mut);line-height:1.4}
+#storeFull button{grid-row:1/3;grid-column:2;border:0;border-radius:999px;padding:10px 16px;font-weight:700;background:var(--txt);color:var(--bg);cursor:pointer}
+.fadeX{--fl:0px;--fr:0px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 var(--fl),#000 calc(100% - var(--fr)),transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 var(--fl),#000 calc(100% - var(--fr)),transparent)}
+.fadeX.more-l{--fl:18px}.fadeX.more-r{--fr:30px}
+@media (pointer:coarse){
+  .fscard .fsx::before,.cm .cdone::before,.cm .qdone::before,.cping::before,.wcolh .wadd::before,.nh-up .nh-qd::before{content:'';position:absolute;inset:-10px}
+  .cm .cdone,.cm .qdone,.cping,.wcolh .wadd,.nh-up .nh-qd{position:relative}
+  .energyrow>button,.dec-a>button,#dSnooze>button,.am-seg>button,#boardModeCtl>button{min-height:34px}
+}
 /* «Клиенты ждут шага» на «Сегодня» */
 .crmnow{border-radius:20px;padding:12px 12px 8px;margin-bottom:14px;border:1px solid transparent;background:var(--lg-fill) padding-box,var(--lg-rim) border-box;box-shadow:var(--lg-soft)}
 .crmnow-h{display:flex;align-items:center;gap:8px;padding:0 4px 8px;color:var(--mut);font-size:13px}
@@ -3506,7 +3534,7 @@ body.no-invite #teamInvite,body.no-invite #addMember2,body.no-invite .m-invite{d
 <div class="menu" id="menu">
   <button data-act="palette"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg> Все команды и поиск <span style="margin-left:auto;color:var(--mut2)">⌘K</span></button>
   <button data-act="tg"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2.5 10.8 13.2M21.5 2.5 14.7 21.5l-3.9-8.3-8.3-3.9z"/></svg> Подключить Telegram</button>
-  <button data-act="connect"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6M15 2v6M7 8h10v3a5 5 0 0 1-10 0zM12 16v6"/></svg> Подключить Claude</button>
+  <button data-act="connect"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6M15 2v6M7 8h10v3a5 5 0 0 1-10 0zM12 16v6"/></svg> Ключ API · MCP</button>
   <button data-act="tour"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.3"/><path d="M9.2 9.2a3 3 0 0 1 5.6 1.1c0 2-3 2.5-3 4M12 17.2h.01"/></svg> Обучение · как всё устроено</button>
   <button data-act="settings"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7.6"/><circle cx="12" cy="12" r="2.9"/><path d="M12 4.4V8M12 16v3.6M4.4 12H8M16 12h3.6M6.6 6.6l2.5 2.5M14.9 14.9l2.5 2.5M17.4 6.6l-2.5 2.5M9.1 14.9l-2.5 2.5"/></svg> Настройки и профиль</button>
   <div class="sep"></div>
@@ -3647,13 +3675,38 @@ const LOCAL_DEV=(()=>{
   localStorage.setItem('cockpit_cfg',JSON.stringify({url:'local',anon:''}));
   return {mode,fresh};
 })();
+/* ROCH #1423: переполненная память устройства больше не обрывает save() до облачного пуша. Ошибка квоты гасится здесь
+   один раз для всех ~200 записей, а человек видит постоянную плашку; любые другие ошибки хранилища — как раньше. */
+let storeFull=false;
+(function(){try{const o=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){try{return o.call(this,k,v);}
+  catch(e){if(/quota/i.test((e&&e.name||'')+(e&&e.message||''))){onStoreFull();return;}throw e;}};}catch(e){}})();
+function onStoreFull(){if(storeFull)return;storeFull=true;
+  const b=document.createElement('div');b.id='storeFull';b.setAttribute('role','alert');
+  b.innerHTML='<b>Память устройства заполнена</b><span>Изменения уходят в облако, но не сохраняются на этом устройстве. Освободи место — копии старых проектов скачаются заново.</span><button type="button">Освободить</button>';
+  b.querySelector('button').onclick=()=>{try{Object.keys(localStorage).filter(k=>/^cockpit_b_/.test(k)&&k!=='cockpit_b_'+(S&&S.id)).forEach(k=>localStorage.removeItem(k));}catch(e){}location.reload();};
+  (document.body||document.documentElement).appendChild(b);}
+function lsSet(k,v){try{localStorage.setItem(k,v);return !storeFull;}catch(e){return false;}}
+/* данные из облака — в разметку только в безопасной форме (их может записать любой участник, в т.ч. в обход интерфейса) */
+const safeId=x=>x==null?x:String(x).replace(/[^\w:.-]/g,'');
+function safeEmoji(e){const t=String(e||'').replace(/[<>"'&\\`=]/g,'').slice(0,32);let g;
+  try{g=[...new Intl.Segmenter().segment(t)].map(x=>x.segment);}catch(_){g=Array.from(t);}return g.slice(0,2).join('')||'📄';} /* эмодзи — до двух графем (семья с ZWJ — одна) */
+const colorOk=c=>/^#[0-9a-f]{3,8}$/i.test(c||'');
+const photoOk=u=>/^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(u||'')||/^https:\/\/(t\.me|[\w-]+\.telegram\.org|[\w-]+\.supabase\.co)\/[\w\/.%~+=-]*$/.test(u||'');
+function cleanProj(p){if(!p||typeof p!=='object')return p;
+  if(p.emoji!=null)p.emoji=safeEmoji(p.emoji);
+  (p.members||[]).forEach(m=>{if(!m)return;m.id=safeId(m.id);if(m.color&&!colorOk(m.color))m.color=COLORS[0];if(m.photo&&!photoOk(m.photo))delete m.photo;});
+  (p.sections||[]).forEach(x=>{if(x)x.id=safeId(x.id);});
+  (p.tasks||[]).forEach(t=>{if(!t)return;t.id=safeId(t.id);t.assigneeId=safeId(t.assigneeId);t.sectionId=safeId(t.sectionId);t.parentId=safeId(t.parentId);
+    if(Array.isArray(t.deps))t.deps=t.deps.map(safeId);if(Array.isArray(t.watchers))t.watchers=t.watchers.map(safeId);});
+  (p.ideas||[]).forEach(x=>{if(x)x.id=safeId(x.id);});
+  return p;}
 /* ---- multi-project registry ---- */
 const LS_REG='cockpit_reg';
 const pkey=id=>'cockpit_p_'+id;
-function loadReg(){try{return JSON.parse(localStorage.getItem(LS_REG));}catch(e){return null;}}
+function loadReg(){try{const r=JSON.parse(localStorage.getItem(LS_REG));if(r&&Array.isArray(r.list))r.list.forEach(e=>{if(e){e.id=safeId(e.id);e.emoji=safeEmoji(e.emoji);}});return r;}catch(e){return null;}}
 function saveReg(){localStorage.setItem(LS_REG,JSON.stringify(reg));}
-function loadProj(id){try{return JSON.parse(localStorage.getItem(pkey(id)));}catch(e){return null;}}
-function migrate(p){if(!p)return p;p.ui=p.ui||{zoom:38};if(!p.ui.zoom)p.ui.zoom=38;if(p.demo===undefined)p.demo=false;
+function loadProj(id){try{return cleanProj(JSON.parse(localStorage.getItem(pkey(id))));}catch(e){return null;}}
+function migrate(p){if(!p)return p;cleanProj(p);p.ui=p.ui||{zoom:38};if(!p.ui.zoom)p.ui.zoom=38;if(p.demo===undefined)p.demo=false;
   (p.members||[]).forEach(m=>{if(m.points===undefined)m.points=1000;});  /* стартовый капитал: экономика мотивирует, но никогда не блокирует */
   if(!p.id)p.id='p'+Math.random().toString(36).slice(2,8);p.ideas=p.ideas||[];p.tasks=p.tasks||[];p.members=p.members||[];p.sections=p.sections||[{id:'s1',name:'Задачи'}];
   p.tasks.forEach(t=>{if(!t.deps)t.deps=[];if(t.comments==null)t.comments=[];if(t.parentId===undefined)t.parentId=null;});
@@ -3675,7 +3728,30 @@ if(!reg){
 let undoStack=[],redoStack=[],lastSnap=null,undoing=false;
 function snap(){const u=S.updatedAt;S.updatedAt=0;const s=JSON.stringify(S);S.updatedAt=u;return s;}
 function resetUndo(){undoStack=[];lastSnap=snap();}
-function save(){S.updatedAt=Date.now();const cur=snap();
+/* ROCH #1423: права проекта держит точка сохранения, а не пятнадцать входов (клавиши, палитра, перетаскивание, Вандо…).
+   Наблюдатель: правка откатывается к сохранённому, вид (зум, свёрнутые секции) живёт только в памяти.
+   Комментатор: проходят комментарии, подписка и «готово» по СВОИМ задачам — остальное откатывается. */
+function roMode(pid){if(!cloudOn)return null;
+  if(!pid||pid===S.id){const a=myProjectAccess();return a==='view'||a==='comment'?a:null;}
+  if(accessReady&&isTeam&&roleRank(teamRoleOf(myEmail))>=2)return null;
+  if(!isTeam)return myGrantRole[pid]==='viewer'?'view':null;
+  const d=loadProj(pid),m=d&&(d.members||[]).find(x=>(x.email||'').toLowerCase()===myEmail);
+  if(m&&(m.access==='view'||m.access==='comment'))return m.access;
+  return !m&&d&&d.open===false?'view':null;}
+function roAllowed(mode,before,after){if(!before||!after)return false;
+  const me_=(after.members||[]).find(x=>myEmail&&(x.email||'').toLowerCase()===myEmail),meId=me_?me_.id:myId();
+  const core=(p,loose)=>JSON.stringify({n:p.projectName,o:p.open,s:p.sections,i:p.ideas,m:(p.members||[]).map(x=>[x.id,x.email,x.access,x.name,x.role]),
+    t:(p.tasks||[]).map(t=>{const c=Object.assign({},t);if(loose){delete c.comments;delete c.watchers;delete c.hist;
+      if(t.assigneeId===meId){delete c.status;delete c.statusTs;delete c.spent;delete c.doneTs;}}return c;})});
+  if(core(before,false)===core(after,false))return true;
+  return mode==='comment'&&core(before,true)===core(after,true);}
+let _roAt=0;function roToast(mode){if(Date.now()-_roAt<4000)return;_roAt=Date.now();
+  toast(mode==='comment'?'Ты комментатор в этом проекте — можно комментировать и отмечать свои задачи':'Ты наблюдатель в этом проекте — только просмотр','👁');}
+function save(){
+  {const mode=roMode(S.id);if(mode){const back=migrate(loadProj(S.id)); /* сравниваем с сохранённым, прогнанным той же миграцией — иначе её поля (deps:[] и т.п.) считались бы правкой */
+    if(back&&!roAllowed(mode,back,S)){S=migrate(back);resetUndo();roToast(mode);setTimeout(render,0);return;}
+    if(mode==='view'||(back&&roAllowed('view',back,S))){lastSnap=snap();return;}}}  // смотреть — не значит сохранять
+  S.updatedAt=Date.now();const cur=snap();
   if(!undoing&&lastSnap!==null&&cur!==lastSnap){undoStack.push(lastSnap);if(undoStack.length>40)undoStack.shift();redoStack=[];}
   lastSnap=cur;localStorage.setItem(pkey(S.id),JSON.stringify(S));const e=reg.list.find(p=>p.id===S.id);if(e)e.name=S.projectName;saveReg();if(cloudOn)cloudPush(S);}
 function undo(){if(!undoStack.length){toast('Нечего отменять','↩️');return;}
@@ -3732,7 +3808,7 @@ function myDisplayName(){
     return myEmail.split('@')[0];}
   return meName();
 }
-function myPhoto(){const u=tmaUser();if(u&&u.photo_url)return u.photo_url;const m=member(myId());return (m&&m.photo)||'';}
+function myPhoto(){const u=tmaUser();if(u&&photoOk(u.photo_url))return u.photo_url;const m=member(myId());return (m&&photoOk(m.photo)&&m.photo)||'';}
 const DEFAULT_CFG={url:'https://tonmsmxzmycimybzywqp.supabase.co',anon:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRvbm1zbXh6bXljaW15Ynp5d3FwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTE5NDksImV4cCI6MjA5NzQyNzk0OX0.c9ER6paD6GzUS_z40b2nv3d5jwEiREy9xXASAprrldM'};
 let CFG=null;try{CFG=JSON.parse(localStorage.getItem('cockpit_cfg'));}catch(e){}
 if(!CFG||!CFG.url)CFG=DEFAULT_CFG;
@@ -3743,6 +3819,7 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const parseD=s=>{const[y,m,d]=s.split('-').map(Number);return Date.UTC(y,m-1,d);};
 const fmtD=ms=>{const d=new Date(ms);return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;};
 const dayMs=86400000;
+const localISO=ms=>{const d=new Date(ms);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}; /* дата по часам человека, не по UTC: 00:00–04:00 Тбилиси иначе давало вчера */
 const todayISO=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
 const member=id=>S.members.find(m=>m.id===id);
 const task=id=>S.tasks.find(t=>t.id===id);
@@ -3751,9 +3828,9 @@ function avatar(id,cls=''){const m=member(id);if(!m)return '';
   if(m.photo)return `<span class="av ${cls}" style="background-image:url('${m.photo}');background-size:cover;background-position:center" title="${esc(m.name)}"></span>`;
   return `<span class="av ${cls}" style="background:${m.color}" title="${esc(m.name)}">${initials(m.name)}</span>`;}
 function avatarOf(m,sz){if(!m)return '';const s=sz?`width:${sz}px;height:${sz}px;`:'';
-  if(m.photo)return `<span class="av" style="${s}background-image:url('${m.photo}');background-size:cover;background-position:center" title="${esc(m.name)}"></span>`;
-  return `<span class="av" style="${s}background:${m.color}" title="${esc(m.name)}">${initials(m.name)}</span>`;}
-function esc(s){return (s+'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+  if(photoOk(m.photo))return `<span class="av" style="${s}background-image:url('${m.photo}');background-size:cover;background-position:center" title="${esc(m.name)}"></span>`;
+  return `<span class="av" style="${s}background:${colorOk(m.color)?m.color:COLORS[0]}" title="${esc(m.name)}">${esc(initials(m.name))}</span>`;}
+function esc(s){return (s+'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 const ICONS={
   sidebar:'<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9.5 4v16"/>',
   chevL:'<path d="m15 18-6-6 6-6"/>',
@@ -4153,7 +4230,7 @@ function render(){try{ensureMeInProject();applyMoneyGate();applyReadOnly();}catc
 window.addEventListener('offline',()=>{const sd=$('#syncDot');if(sd)sd.classList.add('offline');
   toast('Офлайн — всё сохраняется локально и улетит при сети','📴');});
 window.addEventListener('online',()=>{const sd=$('#syncDot');if(sd)sd.classList.remove('offline');
-  if(cloudOn&&typeof cloudSync==='function'){cloudSync();toast('Сеть вернулась — синхронизирую','☁️');}});
+  if(cloudOn&&typeof cloudCatchUp==='function'){cloudCatchUp();toast('Сеть вернулась — синхронизирую','☁️');}});
 /* ROCH: пинг-понг обрезанного текста — везде, где текст не влез (вместо вечного «…») */
 const PP_SEL='.trow .tn,.mtask .tn,.pbadge,.wsub,.mr-t,.nh-up-t,.nh-crumb,.lbn,.rl,.wct,#projLabel'
   /* всё, что добавлено 28–29.10: длинное не обрезается «…», а проезжает (Роч: «пинг-понг для длинного текста») */
@@ -4588,26 +4665,26 @@ async function tgNotifyTo(m,kind,t,extra){try{
       taskTitle:t.title,projectName:S.projectName,projectId:S.id,taskId:t.id,text:(extra||'').slice(0,300)})}).catch(()=>{});
 }catch(e){}}
 async function fetchBriefAdvice(btn){
-  if(!cloudOn||!sb){toast('Войди в облако — совет от Claude для команды','🤖');return;}
+  if(!cloudOn||!sb){toast('Войди — совет Вандо работает для команды','🤖');return;}
   const token=await aiToken();if(!token){toast('Нужен вход','🤖');return;}
   if(btn){btn.disabled=true;btn.innerHTML=icon('sparkles',14)+' Думаю…';}
-  const c=$('#briefClaude');if(c)c.innerHTML='<div class="emptymini">'+icon('sparkles',13)+' Claude смотрит проект…</div>';
+  const c=$('#briefClaude');if(c)c.innerHTML='<div class="emptymini">'+icon('sparkles',13)+' Вандо смотрит проект…</div>';
   try{const r=await fetch(CFG.url+'/functions/v1/ai-review',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+token},body:JSON.stringify({project:aiPayload()})});
     const res=normalizeAI(await r.json());
-    if(c)c.innerHTML=`<div class="airh">${icon('sparkles',13)} Совет от Claude</div>${res.summary?`<div class="aisummary" style="font-size:13px;padding:11px 13px">${esc(res.summary)}</div>`:''}${(res.suggestions||[]).slice(0,3).map(s=>`<div class="airow"><div class="aimain"><div class="aitt">${esc(s.taskTitle||({reestimate:'Переоценить',reprioritize:'Приоритет',reschedule:'Сдвинуть',reassign:'Переназначить'}[s.type]||''))}</div><div class="aire">${esc(s.reason||'')}</div></div></div>`).join('')}`;
+    if(c)c.innerHTML=`<div class="airh">${icon('sparkles',13)} Совет Вандо</div>${res.summary?`<div class="aisummary" style="font-size:13px;padding:11px 13px">${esc(res.summary)}</div>`:''}${(res.suggestions||[]).slice(0,3).map(s=>`<div class="airow"><div class="aimain"><div class="aitt">${esc(s.taskTitle||({reestimate:'Переоценить',reprioritize:'Приоритет',reschedule:'Сдвинуть',reassign:'Переназначить'}[s.type]||''))}</div><div class="aire">${esc(s.reason||'')}</div></div></div>`).join('')}`;
     // тот же разбор проактивно оседает на «Сегодня» — Claude как второй пилот
     const sg=(res.suggestions&&res.suggestions[0])?res.suggestions[0]:null;
     if(res.summary||sg)claudeNow[S.id]={summary:res.summary||'',risk:(res.risks&&res.risks[0])||'',sug:sg?((sg.taskTitle?('«'+sg.taskTitle+'»: '):'')+(sg.reason||'')):'',ts:Date.now()};
     localStorage.setItem('cockpit_brief_ai_date',todayISO());
-  }catch(e){if(c)c.innerHTML='<div class="emptymini">Claude недоступен сейчас</div>';}
-  if(btn){btn.disabled=false;btn.innerHTML=icon('sparkles',14)+' Совет от Claude';}
+  }catch(e){if(c)c.innerHTML='<div class="emptymini">Вандо сейчас недоступен — попробуй через минуту</div>';}
+  if(btn){btn.disabled=false;btn.innerHTML=icon('sparkles',14)+' Совет Вандо';}
 }
 let claudeNow={};
 function claudeNowCard(){const c=claudeNow[S.id];if(!c)return '';
-  return `<div class="claudecard"><span class="ci">${icon('sparkles',18)}</span><div><b>Claude:</b> ${esc(c.summary||'разбор готов')}
+  return `<div class="claudecard"><span class="ci">${icon('sparkles',18)}</span><div><b>Вандо:</b> ${esc(c.summary||'разбор готов')}
     ${c.risk?`<div class="cc-risk">⚠️ ${esc(c.risk)}</div>`:''}${c.sug?`<div class="cc-sug">💡 ${esc(c.sug)}</div>`:''}</div></div>`;}
 async function fetchClaudeInsight(btn){
-  if(!cloudOn||!sb){toast('Войди в облако (🔄 в шапке) — Claude-инсайты для команды','🤖');return;}
+  if(!cloudOn||!sb){toast('Войди — советы Вандо работают для команды','🤖');return;}
   let token;try{const {data}=await sb.auth.getSession();token=data&&data.session&&data.session.access_token;}catch(e){}
   if(!token){toast('Нужен вход в облако','🤖');return;}
   if(btn){btn.disabled=true;btn.innerHTML=icon('sparkles',14)+' Думаю…';}
@@ -4617,11 +4694,11 @@ async function fetchClaudeInsight(btn){
     tasks:S.tasks.map(t=>({title:t.title,status:stMap[t.status].n,assignee:nameOf(t.assigneeId),start:t.start,end:t.end,estimate:t.estimate||0,spent:t.spent||0,priority:prMap[t.priority].n,deps:(t.deps||[]).map(d=>{const x=task(d);return x?x.title:null;}).filter(Boolean),blocked:isBlocked(t),overdue:isOverdue(t),milestone:!!t.isMilestone}))};
   try{const r=await fetch(CFG.url+'/functions/v1/ai-review',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+token},body:JSON.stringify({project:payload})});
     const res=normalizeAI(await r.json());
-    if(!r.ok){toast('Claude недоступен сейчас','🤖');}
+    if(!r.ok){toast('Вандо сейчас недоступен — попробуй через минуту','🤖');}
     const sg=(res.suggestions&&res.suggestions[0])?res.suggestions[0]:null;
     claudeNow[S.id]={summary:res.summary||'',risk:(res.risks&&res.risks[0])||'',sug:sg?((sg.taskTitle?('«'+sg.taskTitle+'»: '):'')+(sg.reason||'')):'',ts:Date.now()};
-    if(view==='now')renderNow();else toast('Claude посмотрел проект 🤖','🤖','Открыть',()=>setView('now'));
-  }catch(e){toast('Ошибка запроса к Claude','🤖');}
+    if(view==='now')renderNow();else toast('Вандо посмотрел проект','🤖','Открыть',()=>setView('now'));
+  }catch(e){toast('Вандо не ответил — проверь связь и попробуй ещё раз','🤖');}
   if(btn){btn.disabled=false;btn.innerHTML=icon('sparkles',13)+' Разбор рисков';}
 }
 function renderNow(){
@@ -5081,7 +5158,7 @@ async function openInvite(opts){opts=opts||{};
       pids.forEach(pid=>{const d=pid===S.id?S:loadProj(pid);if(!d)return;d.members=d.members||[];d.members.push({id:mid,name,role,color:pre.color,photo:pre.photo||'',email:'',capacity:30});persistProj(d,pid);});
       render();openInvite({mid,name,projects:pids,role:opts.role});return;}
     if(e.target.closest('[data-invmail]')){$('#invScrim').classList.remove('show');setView('team');setTimeout(()=>{const i=$('#accTeamEmail');if(i){i.scrollIntoView({block:'center',behavior:'smooth'});i.focus();}},260);}};
-  {const f=$('#invPhoto');if(f)f.onchange=()=>{const x=f.files&&f.files[0];if(!x)return;cropPhoto(x,url=>{pre.photo=url;const av=m.querySelector('[data-invph]');if(av){av.style.background=`center/cover url('${url}')`;av.innerHTML='';}});};}
+  {const f=$('#invPhoto');if(f)f.onchange=()=>{const x=f.files&&f.files[0];if(!x)return;cropPhotoUp(x,url=>{pre.photo=url;const av=m.querySelector('[data-invph]');if(av){av.style.background=`center/cover url('${url}')`;av.innerHTML='';}});};}
   $('#invScrim').onclick=e=>{if(e.target.id==='invScrim')e.target.classList.remove('show');};
   $('#invScrim').classList.add('show');haptic('sel');
 }
@@ -5291,16 +5368,16 @@ function createPlanTasks(tasks){
 }
 function showPlanPrompt(goal,note){
   const p=planPrompt(goal);
-  $('#planOut').innerHTML=`<div class="cstep"><span class="cn">→</span><div style="flex:1">${note||'<b>Готовый промпт.</b> Скопируй и вставь своему Claude (с подключённым WANDO) — он создаст задачи в «Приёмке».'}</div></div>
+  $('#planOut').innerHTML=`<div class="cstep"><span class="cn">→</span><div style="flex:1">${note||'<b>Готовый промпт.</b> Скопируй его в любой ИИ-чат — или вернись через минуту, Вандо соберёт план сам.'}</div></div>
     <div class="codebox"><button class="btn copycfg" id="planCopy">Копировать</button><pre>${esc(p)}</pre></div>`;
-  $('#planCopy').onclick=()=>{navigator.clipboard.writeText(p);toast('Промпт скопирован — вставь в Claude','📋');};
+  $('#planCopy').onclick=()=>{navigator.clipboard.writeText(p);toast('Промпт скопирован','📋');};
 }
 let planDl='';
 async function runAiPlan(btn){
   let g=($('#planGoal').value||'').trim();if(!g){toast('Опиши, чего хочешь добиться','🧠');return;}
   if(planDl)g+='. Срок: '+planDl;
   const ctx=($('#planCtx')&&$('#planCtx').value||'').trim();if(ctx)g+='. Что уже есть и ограничения: '+ctx;
-  if(!cloudOn||!sb){showPlanPrompt(g,'<b>Нет облака.</b> Скопируй промпт и вставь своему Claude — он создаст задачи в «Приёмке».');return;}
+  if(!cloudOn||!sb){showPlanPrompt(g,'<b>Нужен вход.</b> Вандо собирает план для команды в облаке — войди, и план появится здесь.');return;}
   const token=await aiToken();if(!token){showPlanPrompt(g);return;}
   if(btn){btn.disabled=true;btn.textContent='Вандо планирует…';}
   $('#planOut').innerHTML='<div class="emptymini">Вандо раскладывает цель на задачи…</div>';
@@ -5313,8 +5390,8 @@ async function runAiPlan(btn){
       toast('Вандо создал '+n+' задач'+(lt?' · '+lt+' не критичны — в бэклог':''),'✓','Отменить',()=>undo());
       return;
     }
-    showPlanPrompt(g,'<b>Авто-генерация недоступна</b> (обнови Edge-функцию). Пока — скопируй промпт своему Claude:');
-  }catch(e){showPlanPrompt(g,'<b>Не дозвонился до Claude.</b> Скопируй промпт своему Claude:');}
+    showPlanPrompt(g,'<b>Вандо сейчас недоступен.</b> Попробуй через минуту — или скопируй промпт:');
+  }catch(e){showPlanPrompt(g,'<b>Вандо не ответил.</b> Проверь связь и попробуй ещё раз — или скопируй промпт:');}
   if(btn){btn.disabled=false;btn.textContent='Создать план';}
 }
 function renderPlan(){
@@ -5670,9 +5747,37 @@ function openAnalytics(){
 function openSettings(){renderSettings();$('#setScrim').classList.add('show');}
 function closeSettings(){$('#setScrim').classList.remove('show');}
 $('#setScrim').onclick=e=>{if(e.target===$('#setScrim'))closeSettings();};
-function settingsPhoto(m){const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.onchange=()=>{const f=inp.files[0];if(f)cropPhoto(f,d=>{m.photo=d;save();render();renderSettings();});};inp.click();}
+/* ROCH #1423: фото — файлом в хранилище «avatars», в данных короткая ссылка (data:URL ~15 КБ копировался в каждый проект
+   и упирался в 5 МБ памяти). Сначала превью мгновенно, потом ссылка; без облака или при ошибке остаётся data:URL. */
+async function uploadPhoto(dataUrl){if(!cloudOn||!sb||!myEmail)return dataUrl;
+  try{const ws=await myWorkspaceId();if(!ws)return dataUrl;const blob=await (await fetch(dataUrl)).blob();
+    const path=ws+'/'+uid('ph')+'.jpg';
+    const {error}=await sb.storage.from('avatars').upload(path,blob,{contentType:'image/jpeg',upsert:false,cacheControl:'31536000'});
+    if(error)return dataUrl;const {data}=sb.storage.from('avatars').getPublicUrl(path);
+    return data&&photoOk(data.publicUrl)?data.publicUrl:dataUrl;}catch(e){return dataUrl;}}
+function cropPhotoUp(f,cb){cropPhoto(f,d=>{cb(d);uploadPhoto(d).then(u=>{if(u!==d)cb(u,true);});});}
+function settingsPhoto(){const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.onchange=()=>{const f=inp.files[0];if(f)cropPhotoUp(f,d=>{saveMyProfile({photo:d});render();if($('#setScrim').classList.contains('show'))renderSettings();});};inp.click();}
+/* ROCH #1423: профиль один на человека. Раньше «Настройки» правили карточку только в открытом проекте — в остальных
+   проектах и в облачном profile:<email> оставались старые имя и фото; а если тебя нет среди участников открытого
+   проекта (наблюдатель, владелец в чужом проекте), «Настройки» открывались пустым экраном. */
+function myProfile(){let p={};try{p=JSON.parse(localStorage.getItem('cockpit_profile')||'{}')||{};}catch(e){}
+  const m=member(myId()),tu=tmaUser();
+  const base={name:(tu&&[tu.first_name,tu.last_name].filter(Boolean).join(' '))||(myEmail&&!isTgEmail(myEmail)?myEmail.split('@')[0]:'')||'Я',role:'',color:COLORS[0]};
+  return Object.assign(base,p,m?{name:m.name||p.name||base.name,role:m.role||'',color:m.color||p.color||base.color,photo:m.photo||''}:{});}
+function saveMyProfile(patch){
+  const prof=Object.assign(myProfile(),patch);
+  try{localStorage.setItem('cockpit_profile',JSON.stringify(Object.assign({},prof,{email:myEmail||''})));}catch(e){}
+  const apply=m=>{for(const k in patch){if(k==='photo'&&!patch[k])delete m.photo;else m[k]=patch[k];}};
+  const mine=m=>!!m&&(myEmail?(m.email||'').toLowerCase()===myEmail:m.id===myId());
+  // наблюдателю писать в проект нельзя (RLS) — там имя обновится, когда админ откроет доступ
+  if(!cloudOn||myProjectAccess()!=='view'){const ms=S.members.filter(mine);if(ms.length){ms.forEach(apply);save();}}
+  if(myEmail)reg.list.forEach(e=>{if(e.id===S.id)return;const d=loadProj(e.id);if(!d)return;
+    const ms=(d.members||[]).filter(m=>mine(m)&&m.access!=='view');if(!ms.length)return;
+    ms.forEach(apply);d.updatedAt=Date.now();try{localStorage.setItem(pkey(e.id),JSON.stringify(d));}catch(_){}if(cloudOn)cloudPush(d,true);});
+  if(cloudOn&&sb&&myEmail)myWorkspaceId().then(ws=>sb.from('workspace_meta').upsert({k:'profile:'+myEmail,v:Object.assign({},prof,{email:myEmail}),workspace_id:ws,updated_at:new Date().toISOString()})).catch(()=>{});
+  return prof;}
 function renderSettings(){
-  ensureMeInProject();const me=member(myId());if(!me){toast('Профиль не найден','⚙️');return;}
+  ensureMeInProject();const me=myProfile();
   const theme=themeNow();
   const sound=localStorage.getItem('cockpit_sound')!=='0';
   const av=me.photo?`<span class="set-bigav" style="background-image:url('${me.photo}')"></span>`:`<span class="set-bigav" style="background:${me.color}">${initials(me.name||'Я')}</span>`;
@@ -5690,11 +5795,11 @@ function renderSettings(){
      ${langBeta()?`<div class="set-item"><span>${t('Язык')}<br><span style="font-size:11px;color:var(--mut2)">превью: перевод ещё не полный</span></span><select class="inp" id="setLang" style="width:auto;min-width:120px">${Object.keys(LANGS).map(k=>`<option value="${k}" ${k===LANG?'selected':''}>${LANGS[k]}</option>`).join('')}</select></div>`:''}
      <div class="set-item"><span>Звук при «Готово»</span><button class="btn" id="setSound">${sound?'🔔 Вкл':'🔇 Выкл'}</button></div>
      <div class="set-item"><span>Цвет проекта «${esc(S.projectName)}»</span><button class="btn" id="setAccent">🎨 Выбрать</button></div>
-     <div class="set-sec">Команда и Claude</div>
+     <div class="set-sec">Команда и подключения</div>
      <div class="set-item" ${cloudOn&&myEmail?'hidden':''}><span>Вы в команде</span><select class="inp" id="setWho" style="width:auto;min-width:130px">${S.members.map(m=>`<option value="${m.id}" ${m.id===myId()?'selected':''}>${esc(m.name)}</option>`).join('')}</select></div>
      <div class="set-item"><span>Тариф и оплата</span><button class="btn" id="setBill">⭐ Открыть</button></div>
      <div class="set-item"><span>Telegram-бот (голос, пуши, бриф)</span><button class="btn" id="setTg">${icon('send',14)} Подключить</button></div>
-     <div class="set-item"><span>Подключить Claude (MCP)</span><button class="btn" id="setConnect">🔌 Открыть</button></div>
+     <div class="set-item"><span>Ключ API · MCP и календарь</span><button class="btn" id="setConnect">🔌 Открыть</button></div>
      <div class="set-item"><span>Репозиторий GitHub<br><span style="font-size:11px;color:var(--mut2)">коммиты сверяются с планом</span></span><input class="inp" id="setRepo" style="width:auto;min-width:165px" placeholder="owner/repo" value="${esc(S.repo||'')}"></div>
      ${S.repo?`<div class="set-item"><span>Секрет вебхука<br><span style="font-size:11px;color:var(--mut2)">свой на этот репозиторий — чужой коммит не тронет твои задачи</span></span><input class="inp" id="setRepoSec" type="password" style="width:auto;min-width:165px" placeholder="свой секрет" value="${esc(S.repoSecret||'')}"></div>`:''}
      <div class="set-sec">Данные и календарь</div>
@@ -5706,12 +5811,13 @@ function renderSettings(){
      <div class="set-grid2"><button class="btn" id="setExport" title="Все проекты одним файлом">${icon('download',14)} Скачать бэкап</button><button class="btn" id="setImport">${icon('upload',14)} Восстановить</button></div>
    </div>
    <div class="ob-foot">${isTeam?'<button class="btn danger" id="setReset" title="Удалить все проекты и начать заново">'+icon('alert',14)+' Полный сброс</button>':''}<div class="spacer"></div><button class="btn primary" id="setDone">Готово</button></div>`;
-  const upd=()=>{const n=$('#setName').value.trim();if(n)me.name=n;me.role=$('#setRole').value.trim();save();render();};
+  const upd=()=>{const n=$('#setName').value.trim(),r=$('#setRole').value.trim();if((n||me.name)===me.name&&r===(me.role||''))return;
+    Object.assign(me,saveMyProfile({name:n||me.name,role:r}));render();};
   $('#setName').onblur=upd;$('#setRole').onblur=upd;
-  $('#setPhoto').onclick=()=>settingsPhoto(me);
+  $('#setPhoto').onclick=()=>settingsPhoto();
   {const si=$('#setInvite');if(si)si.onclick=()=>{closeSettings();openInvite();};}
-  const pd=$('#setPhotoDel');if(pd)pd.onclick=()=>{delete me.photo;save();render();renderSettings();};
-  $$('#setColors .cdot').forEach(d=>d.onclick=()=>{me.color=d.dataset.c;save();render();renderSettings();});
+  const pd=$('#setPhotoDel');if(pd)pd.onclick=()=>{saveMyProfile({photo:''});render();renderSettings();};
+  $$('#setColors .cdot').forEach(d=>d.onclick=()=>{saveMyProfile({color:d.dataset.c});render();renderSettings();});
   {const sb2=$('#setBill');if(sb2)sb2.onclick=()=>{$('#setScrim').classList.remove('show');openBilling();};}
   {const rs=$('#setRepoSec');if(rs)rs.onblur=()=>{const v=rs.value.trim();
     if(v===(S.repoSecret||''))return;
@@ -5781,7 +5887,7 @@ async function aiReview(){
   if(!cloudOn||!sb){toast('Войди в облако (🔄 в шапке) — AI-разбор работает для команды','🧠');return;}
   let token;try{const {data}=await sb.auth.getSession();token=data&&data.session&&data.session.access_token;}catch(e){}
   if(!token){toast('Нужен вход в облако','🧠');return;}
-  $('#aiModal').innerHTML=`<div class="ob-body" style="text-align:center;padding:54px 24px"><div style="opacity:.9;color:var(--acc2)">${icon('sparkles',46)}</div><h2 style="margin:10px 0 4px">Анализирую доску…</h2><p>Claude смотрит задачи, эстимейты, загрузку и сроки</p></div>`;
+  $('#aiModal').innerHTML=`<div class="ob-body" style="text-align:center;padding:54px 24px"><div style="opacity:.9;color:var(--acc2)">${icon('sparkles',46)}</div><h2 style="margin:10px 0 4px">Анализирую доску…</h2><p>Вандо смотрит задачи, оценки, загрузку и сроки</p></div>`;
   $('#aiScrim').classList.add('show');
   const nameOf=id=>{const m=member(id);return m?m.name:null;};
   const payload={today:todayISO(),project:S.projectName,
@@ -5952,16 +6058,16 @@ function inboxUnread(){try{return inboxItems().filter(i=>i.unread).length;}catch
 function updateInboxBadge(){const b=$('#inboxDot');if(!b)return;const n=inboxUnread()+intakePending();b.style.display=n>0?'':'none';b.textContent=n>9?'9+':n;}
 function renderInbox(){
   const items=inboxItems();const inq=intakeRows;
-  const intakeBlock=inq.length?`<div class="inbsec">${icon('inbox',14)} На приёмке от Claude <span class="c">${inq.length}</span> <button class="minibtn" id="inboxToIntake" style="margin-left:auto">Вся очередь →</button></div>`
+  const intakeBlock=inq.length?`<div class="inbsec">${icon('inbox',14)} На приёмке <span class="c">${inq.length}</span> <button class="minibtn" id="inboxToIntake" style="margin-left:auto">Вся очередь →</button></div>`
     +inq.slice(0,6).map(r=>{const p=parseQuick(r.text);const m=p.assignee?member(p.assignee):null;return `<div class="inboxrow intake" data-iid="${r.id}">
       <div class="inhead"><span class="ii">${icon('inbox',16)}</span><div class="ib"><div class="it"><b>${esc(r.by_name||r.by_email)}</b> предлагает: «${esc(p.title||r.text)}»</div>
-      <div class="is">через Claude · ${relTime(new Date(r.created_at).getTime())}${m?' · '+esc(m.name):''}${p.est?' · '+p.est+'ч':''}${p.prio==='urgent'?' · ⚑срочно':p.prio==='high'?' · ⚑важно':''}</div></div></div>
+      <div class="is">из бота · ${relTime(new Date(r.created_at).getTime())}${m?' · '+esc(m.name):''}${p.est?' · '+p.est+'ч':''}${p.prio==='urgent'?' · ⚑срочно':p.prio==='high'?' · ⚑важно':''}</div></div></div>
       <div class="inacts"><button class="btn primary" data-iacc="${r.id}">✓ Добавить</button><button class="btn" data-iedit="${r.id}">✎ Открыть</button><span class="spacer"></span><button class="btn danger" data-irej="${r.id}">✕ Отклонить</button></div></div>`;}).join(''):'';
   $('#inboxBody').innerHTML=(intakeBlock||'')+(items.length?items.map(i=>`
     <div class="inboxrow item ${i.unread?'unread':''}" data-pid="${i.pid}" data-tid="${i.tid}">
       <span class="ii">${i.icon}</span>
       <div class="ib"><div class="it">${i.text}</div><div class="is">${i.sub} · ${relTime(i.ts)}</div></div>
-    </div>`).join(''):(intakeBlock?'':emptyState(aico('inbox'),'Пока пусто','Сюда прилетят комментарии к твоим задачам, упоминания @тебя и заявки от Claude — ничего не потеряется')));
+    </div>`).join(''):(intakeBlock?'':emptyState(aico('inbox'),'Пока пусто','Сюда прилетят комментарии к твоим задачам, упоминания @тебя и заявки из бота — ничего не потеряется')));
   const toIn=$('#inboxToIntake');if(toIn)toIn.onclick=()=>{closeInbox();setView('intake');};
   $$('#inboxBody [data-iacc]').forEach(b=>b.onclick=e=>{e.stopPropagation();acceptIntake(b.dataset.iacc,false);toast('Добавлено в «'+esc(S.projectName)+'» ✓','✓');});
   $$('#inboxBody [data-irej]').forEach(b=>b.onclick=e=>{e.stopPropagation();decideIntake(b.dataset.irej,'rejected');toast('Отклонено','✕');});
@@ -6091,16 +6197,16 @@ function projectSelectHTML(id,target){
     else html+=opt(t);});
   return `<select class="inp inoproj" id="iproj_${id}">${html}</select>`;
 }
-/* шпаргалка быстрых команд для Claude (фразы-триггеры) */
+/* шпаргалка: как писать боту (ROCH #1423 — вход один, бот; фразы-триггеры для Claude убраны) */
 const CHEAT_EXAMPLES=[
-  'WANDO: созвон с Димой завтра 2ч срочно',
-  'в WANDO: вёрстка лендинга с 22 по 28 июня 12ч @дима',
-  'WANDO, проект AppHub: настроить аналитику на 3 дня важно',
-  'Закинь в WANDO три задачи: проверить тексты, обновить лого, написать инвестору',
-  'Сделай из этого задачу в WANDO',
+  'Созвон с Димой завтра 2ч срочно',
+  'Марине до пятницы: обновить лого',
+  'Вёрстка лендинга с 22 по 28 июня 12ч @дима',
+  'В проект AppHub: настроить аналитику на 3 дня, важно',
+  'Три задачи: проверить тексты, обновить лого, написать инвестору',
 ];
 function cheatsheetHTML(){return `<div class="cheatbody">
-  <div class="cheatlead">Начни с триггера <b>«WANDO:»</b> или <b>«в&nbsp;WANDO:»</b> — дальше обычным языком. Клик по фразе — скопировать.</div>
+  <div class="cheatlead">Пиши боту обычным языком — он сам поймёт кому, срок и важность. Тап по фразе — скопировать.</div>
   <div class="cmdexs">${CHEAT_EXAMPLES.map(x=>`<button class="cmdex" data-copy="${esc(x)}">🗣 <span>${esc(x)}</span><i>копировать</i></button>`).join('')}</div>
   <div class="dict">
     <span><b>кому:</b> @имя · «для Димы»</span>
@@ -6109,29 +6215,29 @@ function cheatsheetHTML(){return `<div class="cheatbody">
     <span><b>важность:</b> !срочно · важно</span>
     <span><b>проект:</b> «в проект &lt;имя&gt;»</span>
   </div>
-  <div class="cheatfoot">💡 Можно голосом, пачкой задач сразу, или «сделай из этого задачу» после обсуждения — Claude сам сформулирует. Всё прилетит сюда на подтверждение.</div>
+  <div class="cheatfoot">💡 Можно голосом, пачкой задач сразу или переслать сообщение из чата с комментарием «Марине до пятницы» — бот сам сформулирует. Всё прилетит сюда на подтверждение.</div>
 </div>`;}
-function bindCheat(scope){$$(scope+' .cmdex').forEach(b=>b.onclick=()=>{navigator.clipboard.writeText(b.dataset.copy);toast('Скопировано — вставь в Claude','📋');});}
+function bindCheat(scope){$$(scope+' .cmdex').forEach(b=>b.onclick=()=>{navigator.clipboard.writeText(b.dataset.copy);toast('Скопировано — отправь боту','📋');});}
 function renderIntake(){
   const el=$('#intake');if(!el)return;
-  if(!cloudOn){el.innerHTML=`<div class="dhead"><h1>Приёмка</h1></div>`+emptyState(aico('plug'),'Нужен вход в облако','Приёмка работает для команды. Войди — задачи из бота и Claude будут прилетать сюда.',{label:'🔄 Войти в облако',act:'sync'});return;}
-  const connectBtn=`<button class="btn" id="intakeConnect">${icon('plug',15)} Подключить Claude</button>`;
+  if(!cloudOn){el.innerHTML=`<div class="dhead"><h1>Приёмка</h1></div>`+emptyState(aico('plug'),'Нужен вход в облако','Приёмка работает для команды. Войди — задачи из бота будут прилетать сюда.',{label:'🔄 Войти в облако',act:'sync'});return;}
+  const connectBtn=`<a class="btn" href="https://t.me/${TG_BOT}" target="_blank" rel="noopener">${icon('send',15)} Открыть бота</a>`;
   if(!intakeReady){el.innerHTML=`<div class="dhead"><h1>Приёмка</h1><span class="spacer"></span>${connectBtn}</div>`
-    +emptyState(aico('tools'),'Приёмник не активирован','Нужно один раз прогнать SQL в Supabase (supabase/intake.sql). Деплоить ничего не надо. После этого задачи из Claude появятся здесь.');
+    +emptyState(aico('tools'),'Приёмник не активирован','Нужно один раз прогнать SQL в Supabase (supabase/intake.sql). Деплоить ничего не надо. После этого задачи из бота появятся здесь.');
     const cb=$('#intakeConnect');if(cb)cb.onclick=openConnect;return;}
   el.innerHTML=`<div class="dhead" style="align-items:flex-start">
       <div style="flex:1;min-width:220px"><h1>Приёмка${intakeRows.length?` <span class="c" style="font-size:14px;vertical-align:3px">${intakeRows.length}</span>`:''}</h1>
-        <div class="sub" style="margin-top:4px;line-height:1.5">задачи из бота и Claude ждут решения: выбери проект и подтверди — станут задачами</div></div>
+        <div class="sub" style="margin-top:4px;line-height:1.5">задачи из бота ждут решения: выбери проект и подтверди — станут задачами</div></div>
       ${connectBtn}</div>
     <div class="chatstrip" id="intChats"></div>
-    <details class="cheat"><summary>Шпаргалка: быстрые команды для Claude и бота</summary>${cheatsheetHTML()}</details>`
+    <details class="cheat"><summary>Как писать боту — примеры фраз</summary>${cheatsheetHTML()}</details>`
     +((()=>{const ready=intakeRows.filter(r=>projectMatch(r.target_project));
       return ready.length>=2?`<button class="btn" id="intakeAll" style="margin-bottom:12px">✓ Принять все, где проект уже известен · ${ready.length}</button>`:'';})())
     +(intakeRows.length?`<div class="inolist">${intakeRows.map(r=>{
       const p=parseQuick(r.text);const m=p.assignee?member(p.assignee):null;
       const noTarget=!projectMatch(r.target_project);
       return `<div class="ino" data-id="${r.id}">
-        <div class="inohead"><span class="inoby"><b>${esc(r.by_name||r.by_email)}</b>${/^chat:/.test(r.source||'')?' · 💬 из рабочего чата':/telegram/i.test(r.source||'')?' из Telegram':' через Claude'}</span>
+        <div class="inohead"><span class="inoby"><b>${esc(r.by_name||r.by_email)}</b>${/^chat:/.test(r.source||'')?' · 💬 из рабочего чата':/telegram/i.test(r.source||'')?' из Telegram':' через API'}</span>
           ${r.source&&!/^chat:/.test(r.source)?`<span class="inosrc">${esc(r.source)}</span>`:''}<span class="inotime">${relTime(new Date(r.created_at).getTime())}</span></div>
         <div class="inotitle">${esc(p.title||r.text)}</div>
         <div class="inochips">
@@ -6159,7 +6265,7 @@ function renderIntake(){
           </div>
         </div>
       </div>`;}).join('')}</div>`
-    :emptyState(aico('inbox'),'Очередь пуста','Скажи своему Claude: «поставь в WANDO задачу…» — она прилетит сюда на подтверждение. Чисто? Возвращайся к делу.',{label:'⚡ К следующему шагу',act:'now'}));
+    :emptyState(aico('inbox'),'Очередь пуста','Перешли боту что угодно — сообщение, голосовое, файл — задача прилетит сюда на подтверждение. Чисто? Возвращайся к делу.',{label:'⚡ К следующему шагу',act:'now'}));
   const cb=$('#intakeConnect');if(cb)cb.onclick=openConnect;
   bindCheat('#intake');
   $$('#intake [data-more]').forEach(b=>b.onclick=e=>{e.stopPropagation();const m=$(`#intake .inomenu[data-menu="${b.dataset.more}"]`);
@@ -6425,7 +6531,7 @@ function renderBrief(){
      ${!evening&&empty?'<div class="emptymini" style="margin-top:14px">Чисто — ничего срочного. Можно спокойно планировать день 👌</div>':''}
      <div id="briefClaude" style="margin-top:6px"></div>
    </div>
-   <div class="ob-foot"><button class="btn" id="briefAi">${icon('sparkles',14)} Совет от Claude</button><div class="spacer"></div><button class="btn primary" id="briefClose">${evening?'Хорошего вечера':'За работу'}</button></div>`;
+   <div class="ob-foot"><button class="btn" id="briefAi">${icon('sparkles',14)} Совет Вандо</button><div class="spacer"></div><button class="btn primary" id="briefClose">${evening?'Хорошего вечера':'За работу'}</button></div>`;
   $('#briefClose').onclick=closeBrief;
   {const bx=$('#briefX');if(bx)bx.onclick=closeBrief;}
   $('#briefAi').onclick=()=>fetchBriefAdvice($('#briefAi'));
@@ -6595,6 +6701,9 @@ function wpNormalize(res,days,byId,daily){
     warnings:(res.warnings||[]).slice(0,3).map(w=>String(w).slice(0,160))};
 }
 async function runWeekPlan(btn){
+  /* QA 30.10: в пятницу/выходные у «Этой недели» остаётся ≤1 рабочего дня — расклад впихивал всё в один день.
+     Неделя на исходе → раскладываем следующую (стрелкой «←» можно вернуться к текущей). */
+  if(weekOffset===0&&weekDays(0).filter((d,i)=>d>=todayISO()&&i<5).length<2){weekOffset=1;if(view==='week')renderWeek();toast('Неделя на исходе — раскладываю следующую','🗓');}
   const days=weekDays(weekOffset),daily=wpDaily(),pool=wpPool(days);
   if(!pool.length){toast('Нечего раскладывать — открытых задач на тебе нет','🗓');return;}
   const byId={};pool.forEach(x=>{byId[x.id]=x;});
@@ -7422,6 +7531,7 @@ function addIdea(){const v=$('#ideaIn').value.trim();if(!v)return;S.ideas.push({
 /* ============================ TEAM ============================ */
 /* ============================ ДОСТУП И РОЛИ (team / project_access) ============================ */
 const SUPER_ADMIN='romi4rv23@gmail.com'; // супер-владелец HQ: заводит отдельные компании (воркспейсы)
+let accessLegacy=false; /* true только если таблицы team нет вовсе (старая база) — тогда все админы, как раньше */
 let isTeam=true, accessReady=false, teamRows=[], guestRows=[], allGuestRows=[], myGrantSet=new Set(), myGrantRole={}; // guestRows — гости ТЕКУЩЕГО проекта; myGrantSet — проекты, куда меня выдали (project_access)
 async function provisionCompany(name,ownerEmail){
   name=(name||'').trim();ownerEmail=(ownerEmail||'').trim().toLowerCase();
@@ -7445,15 +7555,21 @@ async function loadAccess(){
   try{
     const {data,error}=await sb.from('team').select('*').order('created_at'); /* * — колонка money может появиться позже кода */
     if(error)throw error;
-    teamRows=data||[];accessReady=true;
+    teamRows=data||[];accessReady=true;accessLegacy=false;
     isTeam=!!teamRows.find(t=>(t.email||'').toLowerCase()===myEmail);
     // таблица есть, но команда меня не знает и список видим (RLS) → значит я гость
     if(!teamRows.length)isTeam=false;
     // мои личные выдачи по проектам — чтобы клиент показывал ровно то, что отдаёт RLS
     try{const {data:g}=await sb.from('project_access').select('project_id,role').ilike('email',myEmail);
       myGrantSet=new Set((g||[]).map(x=>x.project_id));myGrantRole=Object.fromEntries((g||[]).map(x=>[x.project_id,x.role||'member']));}catch(_){myGrantSet=new Set();myGrantRole={};}
-  }catch(e){ // таблицы ещё нет (миграция team.sql не применена) — старое поведение
-    accessReady=false;isTeam=true;teamRows=[];myGrantSet=new Set();
+    try{localStorage.setItem('cockpit_acc:'+myEmail,JSON.stringify({teamRows:teamRows.map(t=>({email:t.email,name:t.name,role:t.role,money:t.money,workspace_id:t.workspace_id})),grants:myGrantRole,isTeam}));}catch(_){}
+  }catch(e){
+    if(/does not exist|42P01/i.test(((e&&e.message)||'')+((e&&e.code)||''))){accessLegacy=true;accessReady=false;isTeam=true;teamRows=[];myGrantSet=new Set();} // таблицы нет — старое поведение
+    else{ // ROCH #1423: сеть/сервер упали — права НЕ раскрываются: берём последние известные, иначе «участник»
+      let c=null;try{c=JSON.parse(localStorage.getItem('cockpit_acc:'+myEmail)||'null');}catch(_){}
+      if(c){teamRows=c.teamRows||[];myGrantRole=c.grants||{};myGrantSet=new Set(Object.keys(myGrantRole));isTeam=!!c.isTeam;accessReady=true;}
+      else{accessReady=false;accessLegacy=false;}
+      setTimeout(()=>{if(cloudOn&&!document.hidden)loadAccess();},15000);}
   }
   render();
 }
@@ -7483,7 +7599,7 @@ function roleRank(r){return ({owner:3,full:2,admin:2,member:1})[r]||1;}
 /* ROCH #1402: клиенты и деньги — владелец/админ + галочка «Клиенты и деньги» (team.money). Без права скрыты вкладка «Клиенты»,
    денежные кнопки и карточки; база (access.sql) сама не отдаёт crm:* — это не косметика, а второй замок */
 function myTeamRow(){return teamRows.find(t=>(t.email||'').toLowerCase()===(myEmail||'').toLowerCase())||null;}
-function canMoney(){if(!cloudOn||!isTeam||!accessReady)return true;const r=myTeamRow();if(!r)return true;return roleRank(r.role)>=2||r.money!==false;}
+function canMoney(){if(!cloudOn||!isTeam)return true;if(!accessReady)return accessLegacy;const r=myTeamRow();if(!r)return true;return roleRank(r.role)>=2||r.money!==false;}
 /* ROCH #1402: гость «только просмотр» — режим чтения: правка недоступна в интерфейсе, а не «тихо осталась на устройстве».
    База (RLS) и так не примет — интерфейс говорит правду заранее */
 /* ROCH #1412: роли в проекте «как в Asana»: Админ проекта · Редактор · Комментатор · Наблюдатель (data.members[].access).
@@ -7492,7 +7608,7 @@ const ACC=[['admin','Админ проекта'],['edit','Редактор'],['c
 const accName=a=>(ACC.find(x=>x[0]===a)||ACC[1])[1];
 function myProjectAccess(){if(!cloudOn)return 'admin';
   if(!isTeam){return myGrantRole[S.id]==='viewer'?'view':'edit';}
-  if(!accessReady||roleRank(teamRoleOf(myEmail))>=2)return 'admin';
+  if(!accessReady)return accessLegacy?'admin':'edit';if(roleRank(teamRoleOf(myEmail))>=2)return 'admin';
   const m=(S.members||[]).find(x=>(x.email||'').toLowerCase()===myEmail);return m?(m.access||'edit'):(S.open===false?'view':'edit');}
 function canManageProject(){return myProjectAccess()==='admin';}
 function isReadOnly(){return cloudOn&&['view','comment'].includes(myProjectAccess());}
@@ -7500,10 +7616,10 @@ function applyReadOnly(){const a=cloudOn?myProjectAccess():'admin';document.body
 let _pushErrAt=0;
 function pushDenied(msg){if(Date.now()-_pushErrAt<8000)return;_pushErrAt=Date.now();toast(msg,'⚠');}
 /* ROCH #1410: приглашать могут владелец и админы (так решает сервер) — участнику кнопку не показываем, а не отказываем после нажатия */
-function canInvite(){if(!cloudOn||!isTeam)return false;if(!accessReady)return true;return roleRank(teamRoleOf(myEmail))>=2;}
+function canInvite(){if(!cloudOn||!isTeam)return false;if(!accessReady)return accessLegacy;return roleRank(teamRoleOf(myEmail))>=2;}
 function applyMoneyGate(){document.body.classList.toggle('no-invite',cloudOn&&accessReady&&!canInvite());const ok=canMoney();document.body.classList.toggle('no-money',!ok);if(!ok&&view==='crm')setView('now');}
 function teamRoleOf(email){const r=(teamRows.find(t=>(t.email||'').toLowerCase()===(email||'').toLowerCase())||{}).role;return r||'';}
-function iSeeAllProjects(){if(!accessReady||!isTeam)return true;return roleRank(teamRoleOf(myEmail))>=2;}
+function iSeeAllProjects(){if(!isTeam)return true;if(!accessReady)return accessLegacy;return roleRank(teamRoleOf(myEmail))>=2;}
 function canSeeProject(p){if(!p)return false;if(iSeeAllProjects())return true;const d=p.id===S.id?S:loadProj(p.id);return !d||d.open!==false||!!myMemberIn(d)||myGrantSet.has(p.id);}
 function visibleProjects(){return reg.list.filter(p=>!p.archived&&canSeeProject(p));}
 async function setTeamRole(email,role){
@@ -7680,6 +7796,9 @@ function renderTeam(){
      Не сматчились (нет участника с твоей почтой) — выбрать можно ТОЛЬКО участника без email,
      и выбор закрепляется: его email становится твоим. Свободный выбор — только в локальном режиме без облака. */
   const bound=cloudOn&&myEmail&&S.members.find(x=>(x.email||'').toLowerCase()===myEmail);
+  /* ROCH #1423: в облаке «кто я» решают почта и Telegram (myId, ensureMeInProject) — выбора нет вовсе: через него
+     вошедший мог «стать» карточкой-заготовкой приглашённого и увести его место. Выбор живёт только без облака. */
+  {const w=$('#whoAmI').parentElement;if(w)w.style.display=cloudOn?'none':'';}
   if(bound){$('#whoAmI').innerHTML=`<option selected>${esc(bound.name)}</option>`;$('#whoAmI').disabled=true;$('#whoAmI').title='Вы определяетесь по почте входа: '+esc(myEmail);}
   else{
     $('#whoAmI').disabled=false;
@@ -7963,7 +8082,7 @@ function renderSubtasks(t){
 function addSub(){const v=($('#dSubIn').value||'').trim();if(!v||!curTask)return;if(!curTask.subtasks)curTask.subtasks=[];curTask.subtasks.push({id:uid('sb'),text:v,done:false});$('#dSubIn').value='';save();renderSubtasks(curTask);render();}
 function subTag(t){const s=t.subtasks||[];if(!s.length)return '';const d=s.filter(x=>x.done).length;return `<span class="subbadge${d===s.length?' all':''}">✓ ${d}/${s.length}</span>`;}
 function syncScrim(){const any=$('#drawer').classList.contains('show')||$('#mDrawer').classList.contains('show')||$('#inboxDrawer').classList.contains('show');$('#scrim').classList.toggle('show',any);}
-function applyPendingRemote(){if(pendingRemote[S.id]){S=migrate(pendingRemote[S.id]);delete pendingRemote[S.id];resetUndo();toast('Подтянул обновление партнёра','☁️');}}
+function applyPendingRemote(){} /* ROCH #1423: обновления сливаются сразу (adoptLocal), копить нечего */
 function closeDrawer(){$('#drawer').classList.remove('show');curTask=null;applyPendingRemote();syncScrim();render();}
 function autoGrow(el){
   if(!el)return;
@@ -8716,7 +8835,7 @@ const OB=[
   list:[['🎯','<b>Твой следующий шаг</b> — самое важное, с кнопкой «Фокус»'],['🩹','<b>Просрочки?</b> Один тап «→ На сегодня» — план снова честный'],['👀','<b>«Было без тебя»</b> — что сделал партнёр, пока тебя не было']]},
  {art:'📥',h:'Захват отовсюду → Приёмка',
   p:'Мысль не должна ждать, пока откроешь трекер. Кидай как удобно — всё падает в Приёмку, команда подтверждает одним тапом:',
-  list:[['⌨️','<b>Строка сверху</b> — «созвон с партнёром завтра 2ч срочно»'],['🎙','<b>Голосом боту</b> в Telegram — распознает и разберёт'],['🤖','<b>Из Claude</b> — «WANDO: поставь задачу…»'],['📁','Бот спросит «Куда?» одним тапом — и запомнит твой выбор']]},
+  list:[['⌨️','<b>Строка сверху</b> — «созвон с партнёром завтра 2ч срочно»'],['🎙','<b>Голосом боту</b> в Telegram — распознает и разберёт'],['📁','Бот спросит «Куда?» одним тапом — и запомнит твой выбор']]},
  {art:'📱',h:'Telegram-бот — WANDO в кармане',
   p:'@wando_tasks_bot — карманная версия всего инструмента:',
   list:[['🧭','<b>Мои задачи</b> · «задачи &lt;имя&gt;» · «проект &lt;название&gt;» — выжимки'],['✓','<b>Приёмка прямо в чате</b> — кнопки ✓/✕ создают задачи'],['☀️','<b>9:00 бриф</b>: твой день · <b>18:00 разбор</b>: перенос незакрытого одним тапом'],['🔔','<b>«Пингануть»</b> — бот вежливо дожимает за тебя']]},
@@ -8928,7 +9047,6 @@ function renderWiz(){
       <ul class="ob-list">
         <li><span class="k">🎙</span><span>Надиктовал боту — задача в Приёмке</span></li>
         <li><span class="k">📬</span><span>Новые заявки приходят пушем — решаешь не открывая сайт</span></li>
-        <li><span class="k">🔌</span><span>Claude тоже подключается: меню ⋯ → «Подключить Claude»</span></li>
       </ul>
     </div>
     <div class="ob-foot">${dots}<button class="wiz-skip" id="wizLater">Позже</button><div class="spacer"></div><button class="btn primary" id="wizConnect">✈️ Подключить Telegram</button></div>`;
@@ -9248,9 +9366,9 @@ function vandoContext(){
       members:(d.members||[]).map(m=>({name:m.name,role:m.role,capacity:m.capacity})),
       ideas:(d.ideas||[]).slice(0,15).map(i=>i.title),
       memory:(d.notes||[]).slice(-30).map(n=>({when:new Date(n.ts).toISOString().slice(0,10),who:n.who,note:n.text})),
-      history:(d.activity||[]).slice(0,20).map(a=>({when:new Date(a.ts||0).toISOString().slice(0,10),who:a.who,what:(a.icon||'')+' '+(a.text||'')}))};}).filter(Boolean);
+      history:(d.activity||[]).slice(0,20).map(a=>({when:localISO(a.ts||0),who:a.who,what:(a.icon||'')+' '+(a.text||'')}))};}).filter(Boolean);
   const c={today:todayISO(),me:meName(),role:lead?'lead':'member',screen:view,currentProject:S.projectName,team:teamRows.map(t=>t.name||t.email),projects:projs,usage:usageStats(),
-    tool:'WANDO — штаб фаундера: Сейчас, Клиенты (CRM), проекты (Доска/Гант/Неделя/Бэклог), Команда, Приёмка (заявки из бота, Claude и рабочих чатов), Telegram-бот, презентация для созвона.'};
+    tool:'WANDO — штаб фаундера: Сейчас, Клиенты (CRM), проекты (Доска/Гант/Неделя/Бэклог), Команда, Приёмка (заявки из бота и рабочих чатов), Telegram-бот, презентация для созвона.'};
   if(lead)c.clients=crmLive().map(x=>({id:x.id,name:x.name,company:x.company||null,stage:crmSt(x.stage).n,amount:+x.amount||0,
     next:x.next&&x.next.text?{text:x.next.text,date:x.next.date||null,late:crmLate(x)}:null}));
   return c;
@@ -9476,7 +9594,7 @@ function empireReport(){
   const weekAgo=Date.now()-7*dayMs,tISO=todayISO();
   const projs=reg.list.filter(p=>!p.archived).map(p=>({meta:p,data:p.id===S.id?S:loadProj(p.id)})).filter(x=>x.data&&(x.data.tasks||[]).some(t=>!t.isMilestone));
   const md=d=>d.slice(8)+'.'+d.slice(5,7);
-  const period=md(fmtD(Date.now()-6*dayMs))+'–'+md(tISO);
+  const period=md(fmtD(parseD(todayISO())-6*dayMs))+'–'+md(tISO);
   let done7=0,act=0,over=0,cash=0;const rows=[],focus=[];
   projs.forEach(({meta,data})=>{
     const T=(data.tasks||[]).filter(t=>!t.isMilestone);
@@ -9821,9 +9939,15 @@ async function cloudInit(){
     else if(!cloudOn)showGate();
   }catch(e){if(!cloudOn)showGate();}
 }
+/* ROCH #1423: на общем устройстве вошёл другой человек — чужие локальные проекты и клиенты не уезжают в его облако */
+function wipeLocalData(){try{Object.keys(localStorage).filter(k=>/^cockpit_(p_|b_|seen_|crm|rev$|profile|acc:|me$|reg$|welcomed|profile_done)/.test(k)).forEach(k=>localStorage.removeItem(k));}catch(e){}
+  const np=migrate(blankProject());reg={list:[{id:np.id,name:np.projectName,emoji:'🚀'}],active:np.id};lsSet(pkey(np.id),JSON.stringify(np));saveReg();S=np;CRM=[];resetUndo();}
 async function onLoggedIn(){cloudOn=true;closeAuth();hideGate();updateCloudBadge();
+  {let owner='';try{owner=localStorage.getItem('cockpit_owner')||'';}catch(e){}
+   if(myEmail&&owner&&owner!==myEmail)wipeLocalData();if(myEmail)lsSet('cockpit_owner',myEmail);}
   if(joinPending()&&await redeemJoinWeb())return; /* ROCH #1399: по приглашению — сначала в команду, без онбординга основателя */
-  await cloudSync();subscribeRealtime();loadIntake();loadAccess();crmLoad();
+  await loadAccess(); /* права — до первого пуша: синк уже знает, кто наблюдатель */
+  await cloudSync();subscribeRealtime();loadIntake();crmLoad();
   if(tmaInitData())tmaAutoLink(); // вошёл почтой в Mini App → связываем Telegram на будущее
   // есть настоящие проекты в облаке → человек онбоожен ПО ОПРЕДЕЛЕНИЮ
   // (флаги localStorage теряются на новом девайсе/в TMA — не мучаем мастером)
@@ -9998,13 +10122,13 @@ async function cloudSync(){
   // merge cloud↔local per project — трёхстороннее слияние, ничего не теряем
   rows.forEach(r=>{
     const local=loadProj(r.id),base=loadBase(r.id);
-    if(!local){localStorage.setItem(pkey(r.id),JSON.stringify(r.data));saveBase(r.id,r.data);return;}
+    if(!local){lsSet(pkey(r.id),JSON.stringify(r.data));saveBase(r.id,r.data);setRev(r.id,r.rev);return;}
     const js=x=>JSON.stringify(x);
     const lch=base?js(local)!==js(base):null, cch=base?js(r.data)!==js(base):null;
-    if(base&&!lch&&!cch)return;                                    // все согласны
+    if(base&&!lch&&!cch){setRev(r.id,r.rev);return;}               // все согласны
     if(base&&lch&&cch){                                            // правили оба → сливаем
       const merged=mergeProj(base,local,r.data);
-      localStorage.setItem(pkey(r.id),js(merged));cloudPush(merged,true);saveBase(r.id,merged);
+      lsSet(pkey(r.id),js(merged));saveBase(r.id,r.data);setRev(r.id,r.rev);cloudPush(merged,true);
       if(r.id===reg.active){
         if(_mergeConflicts.length){const two=_mergeConflicts.slice(0,2).map(t=>'«'+t.slice(0,40)+'»').join(', ');
           toast('Вы правили одновременно: '+two+(_mergeConflicts.length>2?' и ещё '+(_mergeConflicts.length-2):'')+' — взял свежую версию, проверь','⚡');}
@@ -10012,12 +10136,13 @@ async function cloudSync(){
       }
       _mergeConflicts=[];
       return;}
-    if(base&&lch){cloudPush(local,true);saveBase(r.id,local);return;}      // менялись только мы
-    if(base&&!lch&&cch){localStorage.setItem(pkey(r.id),js(r.data));saveBase(r.id,r.data);return;} // только облако
+    if(base&&lch){setRev(r.id,r.rev);cloudPush(local,true);return;}      // менялись только мы
+    if(base&&!lch&&cch){lsSet(pkey(r.id),js(r.data));saveBase(r.id,r.data);setRev(r.id,r.rev);return;} // только облако
     // базы нет (первый запуск на девайсе) — прежнее поведение newer-wins + заводим базу
-    const cloudT=(r.data&&r.data.updatedAt)||0, localT=(local&&local.updatedAt)||0;
-    if(localT>cloudT){cloudPush(local,true);saveBase(r.id,local);}
-    else{localStorage.setItem(pkey(r.id),js(r.data));saveBase(r.id,r.data);}
+    // базы нет (первый вход на этом устройстве): сливаем без базы — ничего не удаляется, спорное берёт свежая сторона
+    if(js(local)===js(r.data)){saveBase(r.id,r.data);setRev(r.id,r.rev);}
+    else{const merged=mergeProj({},local,r.data);lsSet(pkey(r.id),js(merged));saveBase(r.id,r.data);setRev(r.id,r.rev);
+      if(js(merged)!==js(r.data))cloudPush(merged,true);}
   });
   // локальные проекты, которых нет в облаке → отправляем (не теряем) ИЛИ чистим (после сброса)
   // ЗАЩИТА ОТ МУСОРА НОВИЧКА: пустой дефолтный «Мой проект» первого запуска НЕ публикуем
@@ -10040,7 +10165,7 @@ async function cloudSync(){
     reg.active=(reg.list[0]||{}).id;toast('Команда сделала полный сброс — легаси вычищено 🧹','🧹');}
   // reg = объединение облака и локально-уникальных (флаг архива сохраняем — он локальный)
   const prevArch={};reg.list.forEach(p=>{if(p.archived)prevArch[p.id]=true;});
-  const union=rows.map(r=>({id:r.id,name:r.name,emoji:r.emoji||'📄',archived:!!((r.data&&r.data.archived)||prevArch[r.id]),parentId:(r.data&&r.data.parentId)||null}));
+  const union=rows.map(r=>({id:safeId(r.id),name:r.name,emoji:safeEmoji(r.emoji),archived:!!((r.data&&r.data.archived)||prevArch[r.id]),parentId:(r.data&&r.data.parentId)||null}));
   reg.list.forEach(p=>{if(!cloudById[p.id])union.push(p);});
   if(union.length)reg.list=union;
   if(!reg.list.find(p=>p.id===reg.active))reg.active=(reg.list[0]||{}).id;
@@ -10048,54 +10173,131 @@ async function cloudSync(){
   resetUndo();saveReg();render();
   toast(rows.length?'Синхронизировано с командой':'Загрузил твои проекты в облако','☁️');
 }
-const _pt={};
-let rtSubbed=false, pendingRemote={};
+/* ===== СИНХРОНИЗАЦИЯ БЕЗ ПОТЕРЬ (ROCH #1423) =====
+   Было: пуш писал проект целиком — «кто сохранил последним, тот и прав»: проснувшийся телефон затирал всё,
+   что команда сделала, пока он спал; открытая карточка задачи откладывала чужое обновление и потом его теряла.
+   Стало: у строки projects есть rev (растёт триггером на любом обновлении — приложение, бот, функции).
+   Пишем «если rev не изменился»; не вышло → забираем свежую строку, сливаем 3-way (mergeProj) и пишем снова.
+   Свои отправки метим data._sv (вкладка+счётчик) — realtime пропускает только их, второе устройство того же
+   аккаунта видно как партнёр. Без колонки rev (миграция не применена) — прежняя запись целиком. */
+const _pt={},_pq={},_svSent=new Set();let rtSubbed=false,pendingRemote={},revOk=true,_svN=0;
+const TAB=Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4); // на каждую загрузку: копия вкладки — уже другое устройство
+function loadRevs(){try{return JSON.parse(localStorage.getItem('cockpit_rev')||'{}')||{};}catch(e){return {};}}
+function getRev(id){const v=loadRevs()[id];return v==null?null:+v;}
+function setRev(id,r){if(r==null)return;const m=loadRevs();m[id]=+r;lsSet('cockpit_rev',JSON.stringify(m));}
+function dropRev(id){const m=loadRevs();if(id in m){delete m[id];lsSet('cockpit_rev',JSON.stringify(m));}}
 function cloudPush(p,now){
   if(!cloudOn||!sb||!p)return;
   // АНТИ-ФАНТОМ: пустой дефолтный проект («Мой проект»/«Новый проект»/без имени, без задач и идей)
   // в облако НЕ публикуем — иначе каждое свежее устройство/Mini App плодит пустышку у всех.
-  // Как только в проекте появится содержимое или своё имя — он засинкается нормально.
   if(!(p.tasks||[]).length && !(p.ideas||[]).length && !p.demo &&
      /^(Мой проект|Новый проект)?$/.test((p.projectName||'').trim())) return;
-  p.updatedAt=Date.now();
-  const row={id:p.id,name:p.projectName,emoji:(reg.list.find(x=>x.id===p.id)||{}).emoji||'📄',data:p,updated_by:me,updated_at:new Date().toISOString()};
-  if(p.id===S.id&&cloudOn&&myProjectAccess()==='view'){pushDenied('Ты наблюдатель в этом проекте — изменения не сохраняются');return;}
-  const doit=async()=>{try{const snap=JSON.stringify(row.data);const {error}=await sb.from('projects').upsert(row);
-    if(error){pushDenied('Не сохранилось в облако: '+(/row-level|permission|policy/i.test(error.message)?'нет прав на правку этого проекта':error.message));return;}
-    saveBase(p.id,snap);}catch(e){console.warn('cloud push',e);pushDenied('Не сохранилось в облако — проверь сеть');}}; /* ROCH #1402: отказ базы больше не тихий */
-  if(now){doit();return;}clearTimeout(_pt[p.id]);_pt[p.id]=setTimeout(doit,700);
+  {const mode=roMode(p.id);if(mode&&!(mode==='comment'&&roAllowed('comment',loadBase(p.id),p))){roToast(mode);rollbackToBase(p.id);return;}}
+  clearTimeout(_pt[p.id]);delete _pt[p.id];
+  if(now){pushNow(p.id);return;}
+  _pt[p.id]=setTimeout(()=>{delete _pt[p.id];pushNow(p.id);},700);
 }
-async function cloudDelete(id){if(!cloudOn||!sb)return;try{const {error}=await sb.from('projects').delete().eq('id',id);if(error)pushDenied('Удалить проект может только владелец или админ');}catch(e){}}
+function pushNow(id){_pq[id]=(_pq[id]||Promise.resolve()).then(()=>pushOnce(id,0)).catch(e=>{console.warn('cloud push',e);pushDenied('Не сохранилось в облако — проверь сеть');});return _pq[id];}
+function flushPushes(){Object.keys(_pt).forEach(id=>{clearTimeout(_pt[id]);delete _pt[id];pushNow(id);});}
+function pushDeny(error){pushDenied('Не сохранилось в облако: '+(/row-level|permission|policy|только|может/i.test(error.message||'')?(/only|только|может/i.test(error.message||'')?error.message:'нет прав на правку этого проекта'):(error.message||error)));}
+async function pushOnce(id,attempt){
+  const p=id===S.id?S:loadProj(id);if(!p)return;
+  p.updatedAt=Date.now();p._sv=TAB+':'+(++_svN);_svSent.add(p._sv);if(_svSent.size>60)_svSent.delete(_svSent.values().next().value);
+  const snap=JSON.stringify(p);lsSet(pkey(id),snap);
+  const row={name:p.projectName,emoji:safeEmoji((reg.list.find(x=>x.id===id)||{}).emoji),data:JSON.parse(snap),updated_by:me,updated_at:new Date().toISOString()};
+  const base=getRev(id);
+  if(!revOk){const {error}=await sb.from('projects').upsert(Object.assign({id},row));if(error)return pushDeny(error);saveBase(id,snap);return;}
+  if(base==null){
+    const {data:ins,error}=await sb.from('projects').insert(Object.assign({id},row)).select('rev').maybeSingle();
+    if(!error&&ins){setRev(id,ins.rev);saveBase(id,snap);return;}
+    if(error&&/rev/.test(error.message||'')&&/column|exist/i.test(error.message||'')){revOk=false;return pushOnce(id,attempt);}
+    if(error&&!/duplicate|23505|already exists/i.test((error.message||'')+(error.code||'')))return pushDeny(error);
+  }else{
+    const {data:up,error}=await sb.from('projects').update(row).eq('id',id).eq('rev',base).select('rev');
+    if(error){if(/rev/.test(error.message||'')&&/column|exist/i.test(error.message||'')){revOk=false;return pushOnce(id,attempt);}return pushDeny(error);}
+    if(up&&up.length){setRev(id,up[0].rev);saveBase(id,snap);return;}
+  }
+  // 0 строк: либо кто-то успел раньше (rev сдвинулся), либо RLS молча не пустил
+  const {data:cur,error:e2}=await sb.from('projects').select('id,name,emoji,data,rev').eq('id',id).maybeSingle();
+  if(e2)return pushDeny(e2);
+  if(!cur){pushDenied('Проект недоступен в облаке — его удалили или закрыли тебе доступ');return;}
+  if(base!=null&&+cur.rev===+base){pushDenied('Не сохранилось в облако: нет прав на правку этого проекта');rollbackToBase(id);return;}
+  if(attempt>=3){pushDenied('Не получилось слить правки с командой — обнови страницу');return;}
+  const local=id===S.id?S:loadProj(id);
+  const merged=mergeProj(loadBase(id),JSON.parse(JSON.stringify(local)),cur.data);
+  saveBase(id,cur.data);setRev(id,cur.rev);
+  adoptLocal(id,merged,cur);announceMerge(id);
+  return pushOnce(id,attempt+1);
+}
+/* слитое кладём на место: S заменяется, открытая карточка задачи остаётся открытой и смотрит в новый S */
+function adoptLocal(id,data,row){
+  lsSet(pkey(id),JSON.stringify(data));
+  let e=reg.list.find(p=>p.id===id);
+  if(e){if(row){e.name=row.name;e.emoji=safeEmoji(row.emoji);}}else reg.list.push({id,name:(row&&row.name)||data.projectName,emoji:safeEmoji(row&&row.emoji)});
+  saveReg();
+  if(id!==S.id){render();return;}
+  S=migrate(data);resetUndo();
+  if(curTask){const t=S.tasks.find(x=>x.id===curTask.id);if(t)curTask=t;else{toast('Задачу удалили, пока она была открыта','🗑');closeDrawer();return;}}
+  render();
+}
+function announceMerge(id){
+  if(id!==S.id){_mergeConflicts=[];return;}
+  if(_mergeConflicts.length){const two=_mergeConflicts.slice(0,2).map(t=>'«'+t.slice(0,40)+'»').join(', ');
+    toast('Вы правили одновременно: '+two+(_mergeConflicts.length>2?' и ещё '+(_mergeConflicts.length-2):'')+' — взял свежую версию, проверь','⚡');}
+  else toast('Слил твои правки с правками команды — ничего не потеряно','🤝');
+  _mergeConflicts=[];}
+/* наблюдателю облако отказало — локальная копия возвращается к согласованной, а не живёт своей жизнью */
+function rollbackToBase(id){const b=loadBase(id);if(!b)return;lsSet(pkey(id),JSON.stringify(b));if(id===S.id){S=migrate(b);resetUndo();setTimeout(render,0);}}
+async function cloudDelete(id){if(!cloudOn||!sb)return;try{const {error}=await sb.from('projects').delete().eq('id',id);if(error){pushDenied('Удалить проект может только владелец или админ');return;}dropRev(id);}catch(e){pushDenied('Не удалил в облаке — проверь сеть');}}
 function subscribeRealtime(){
   if(rtSubbed)return;rtSubbed=true;
   try{sb.channel('cockpit-rt').on('postgres_changes',{event:'*',schema:'public',table:'projects'},payload=>{
-    if(payload.eventType==='DELETE'){const id=payload.old&&payload.old.id;if(!id)return;reg.list=reg.list.filter(p=>p.id!==id);localStorage.removeItem(pkey(id));localStorage.removeItem(bkey(id));
-      if(S.id===id&&reg.list[0]){reg.active=reg.list[0].id;S=migrate(loadProj(reg.active));}saveReg();render();return;}
-    const row=payload.new;if(!row||row.updated_by===me)return;applyRemote(row);
-  }).on('postgres_changes',{event:'*',schema:'public',table:'intake'},onIntakeRealtime).subscribe();}catch(e){console.warn('realtime',e);rtSubbed=false;}
+    if(payload.eventType==='DELETE'){const id=payload.old&&payload.old.id;if(!id)return;reg.list=reg.list.filter(p=>p.id!==id);localStorage.removeItem(pkey(id));localStorage.removeItem(bkey(id));dropRev(id);
+      if(S.id===id&&reg.list[0]){reg.active=reg.list[0].id;S=migrate(loadProj(reg.active));if(curTask)closeDrawer();}saveReg();render();return;}
+    const row=payload.new;if(!row)return;
+    if(row.data&&row.data._sv&&_svSent.has(row.data._sv)){if(row.rev!=null&&(getRev(row.id)==null||+row.rev>getRev(row.id)))setRev(row.id,row.rev);return;} // своя отправка
+    if(row.rev!=null&&getRev(row.id)!=null&&+row.rev<=getRev(row.id))return;   // уже знаем эту версию
+    applyRemote(row);
+  }).on('postgres_changes',{event:'*',schema:'public',table:'intake'},onIntakeRealtime)
+    .subscribe(st=>{if(st==='SUBSCRIBED')cloudCatchUp();});}catch(e){console.warn('realtime',e);rtSubbed=false;}
 }
 function applyRemote(row){
-  {const local=loadProj(row.id),base=loadBase(row.id);
-   if(local&&base&&JSON.stringify(local)!==JSON.stringify(base)){
-     const merged=mergeProj(base,local,row.data);
-     row=Object.assign({},row,{data:merged});cloudPush(merged,true);}
-   else saveBase(row.id,row.data);}
-  localStorage.setItem(pkey(row.id),JSON.stringify(row.data));
-  let e=reg.list.find(p=>p.id===row.id);
-  if(e){e.name=row.name;e.emoji=row.emoji||'📄';}else reg.list.push({id:row.id,name:row.name,emoji:row.emoji||'📄'});
-  saveReg();
-  if(row.id===S.id){
-    if($('#drawer').classList.contains('show')||$('#mDrawer').classList.contains('show')){pendingRemote[row.id]=row.data;toast('Партнёр обновил проект — закрой карточку, чтобы подтянуть','☁️');}
-    else{S=migrate(row.data);render();toast('Обновление от партнёра','☁️');}
-  }else render();
+  const id=row.id;
+  // realtime отдаёт строку без больших полей, если она тяжелее лимита — тогда дочитываем
+  if(!row.data){sb.from('projects').select('*').eq('id',id).maybeSingle().then(({data})=>{if(data&&data.data)applyRemote(data);});return;}
+  const local=loadProj(id),base=loadBase(id);
+  let next=row.data,mine=false;
+  if(local&&base&&JSON.stringify(local)!==JSON.stringify(base)){next=mergeProj(base,local,row.data);mine=true;} // у нас есть неотправленное
+  saveBase(id,row.data);setRev(id,row.rev);
+  const wasOpen=id===S.id;
+  adoptLocal(id,next,row);
+  if(mine){announceMerge(id);cloudPush(id===S.id?S:loadProj(id),true);}
+  else if(wasOpen)toast('Обновление от команды','☁️');
 }
+/* досинк: вернулся в приложение / сеть / канал переподключился — забираем только то, что сдвинулось */
+let _catchAt=0;
+async function cloudCatchUp(){
+  if(!cloudOn||!sb||Date.now()-_catchAt<4000)return;_catchAt=Date.now();
+  flushPushes();
+  try{const {data,error}=await sb.from('projects').select(revOk?'id,rev':'id,updated_at');if(error){if(/rev/.test(error.message||''))revOk=false;return;}
+    if(!revOk)return;
+    const stale=(data||[]).filter(r=>getRev(r.id)!==+r.rev).map(r=>r.id);
+    if(!stale.length)return;
+    const {data:full}=await sb.from('projects').select('*').in('id',stale);
+    (full||[]).forEach(r=>{const known=getRev(r.id);if(known==null&&!loadProj(r.id)){lsSet(pkey(r.id),JSON.stringify(r.data));saveBase(r.id,r.data);setRev(r.id,r.rev);
+      if(!reg.list.find(p=>p.id===r.id)){reg.list.push({id:r.id,name:r.name,emoji:safeEmoji(r.emoji)});saveReg();render();}return;}
+      applyRemote(r);});
+  }catch(e){}
+}
+document.addEventListener('visibilitychange',()=>{if(!cloudOn)return;if(document.hidden)flushPushes();else cloudCatchUp();});
+addEventListener('pagehide',()=>{if(cloudOn)flushPushes();});
 function cloudConnect(){
   const url=prompt('Supabase Project URL (https://xxxx.supabase.co):',(CFG&&CFG.url)||'');
   if(!url)return;const anon=prompt('Supabase anon (public) key:',(CFG&&CFG.anon)||'');
   if(!anon)return;CFG={url:url.trim(),anon:anon.trim()};localStorage.setItem('cockpit_cfg',JSON.stringify(CFG));
   toast('Ключи сохранены, подключаюсь…','☁️');cloudInit();
 }
-async function cloudLogout(){try{await sb.auth.signOut();}catch(e){}cloudOn=false;updateCloudBadge();showGate();}
+async function cloudLogout(){flushPushes();try{await Promise.race([Promise.all(Object.values(_pq)),new Promise(r=>setTimeout(r,2500))]);}catch(e){}try{await sb.auth.signOut();}catch(e){}cloudOn=false;updateCloudBadge();showGate();}
 $('#btnCloud').onclick=()=>{
   if(!CFG||!CFG.url){cloudConnect();return;}
   if(!cloudOn){showGate();return;}
@@ -10130,7 +10332,7 @@ let palItems=[], palFiltered=[], palSel=0;
 function icsFeedLink(){
   let key=localStorage.getItem('cockpit_ics_key')||'';
   if(!/^cpk_/.test(key)){
-    key=(prompt('Вставь свой ключ cpk_… (⌘K → «Подключить Claude» → создать ключ):')||'').trim();
+    key=(prompt('Вставь свой ключ cpk_… (Настройки → «Ключ API» → создать):')||'').trim();
     if(!/^cpk_[A-Za-z0-9_-]{10,}$/.test(key)){if(key)toast('Не похоже на ключ cpk_…','⚠');return;}
     localStorage.setItem('cockpit_ics_key',key);
   }
@@ -10241,8 +10443,8 @@ function buildPaletteIndex(){
   const ACT=[
     // grp: AI | Создать | Планирование | Команда | Делёжка | Настройки
     ['users','Пригласить в команду','ссылка в Telegram — 2 тапа, без писем','Команда',()=>openInvite()],
-    ['sparkles','AI-План проекта','Claude разобьёт цель на задачи','AI',()=>openAiPlan()],
-    ['sparkles','AI-разбор доски','Claude посмотрит риски','AI',()=>aiReview()],
+    ['sparkles','AI-План проекта','Вандо разобьёт цель на задачи','AI',()=>openAiPlan()],
+    ['sparkles','AI-разбор доски','Вандо посмотрит риски','AI',()=>aiReview()],
     ['cal','Бриф на сегодня','что важно прямо сейчас','AI',()=>openBrief()],
     ['clock','История проекта','все закрытые задачи · фильтры · возврат','Планирование',()=>openHistory()],
     ['plus','Новая задача','создать пустую','Создать',()=>{$('#btnNew').click();}],
@@ -10261,7 +10463,7 @@ function buildPaletteIndex(){
     ['zap','Презентация · синк','полноэкранный обзор для созвона','Делёжка',()=>openPresent()],
     ['layers','Ссылка-снимок статуса','read-only для клиента/инвестора','Делёжка',()=>openShare()],
     ['plug','Подключить Telegram','голос, пуши, бриф — 1 тап','Настройки',()=>openTgGate()],
-    ['plug','Подключить Claude','ключ для MCP','Настройки',()=>openConnect()],
+    ['plug','Ключ API','MCP и календарь','Настройки',()=>openConnect()],
     ['sparkles','Цвет проекта','брендинг под клиента','Настройки',()=>openAccent()],
     ['sync','Светлая / тёмная тема','оформление','Настройки',()=>$('#btnTheme').click()],
     ['dots','Настройки и профиль','имя, фото, тема, аккаунт','Настройки',()=>openSettings()],
@@ -10298,7 +10500,7 @@ function palScore(q,it){
 const PAL_GROUPS=[
   ['С чего начать', it=>it.grp==='cockpit'],
   ['Разделы', it=>it.type==='Переход'],
-  ['AI и Claude', it=>it.grp==='AI'],
+  ['Вандо · ИИ', it=>it.grp==='AI'],
   ['Создать', it=>it.grp==='Создать'],
   ['Планирование', it=>it.grp==='Планирование'],
   ['Команда', it=>it.grp==='Команда'],
@@ -10396,7 +10598,7 @@ function crmMoney(n){n=+n||0;return n?fmtMoney(n):'—';}
 function crmDate(d){if(!d)return '';const t=parseD(d),td=parseD(todayISO()),k=Math.round((t-td)/dayMs);
   return k===0?'сегодня':k===1?'завтра':k===-1?'вчера':k<0?(-k)+' дн назад':new Date(t).toLocaleDateString('ru-RU',{day:'numeric',month:'short'});}
 /* ROCH #1421: фото клиента — снимок 160px из cropPhoto, хранится в самой карточке (crm:<id>) */
-const crmPhotoOk=u=>/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(u||'');
+const crmPhotoOk=u=>photoOk(u);
 function crmAv(c,cls){return crmPhotoOk(c.photo)?`<span class="crm-av ph ${cls||''}" style="background-image:url('${c.photo}')"></span>`
   :`<span class="crm-av ${cls||''}">${esc(initials((c.name||'?').trim())||'?')}</span>`;}
 function crmCard(c){const st=crmSt(c.stage),late=crmLate(c),ct=c.contact||{};
@@ -10501,7 +10703,7 @@ function renderClient(){const c=CRM.find(x=>x.id===crmCur);if(!c)return;const st
   const set=(f)=>{f();delete c._draft;clearTimeout(c._t);c._t=setTimeout(()=>crmPush(c),450);};
   $('#cName').oninput=e=>set(()=>{c.name=e.target.value;const a=$('#crmModal .crm-av');if(a&&!crmPhotoOk(c.photo))a.textContent=initials(c.name.trim())||'?';});
   $('#cPhoto').onclick=()=>{const inp=document.createElement('input');inp.type='file';inp.accept='image/*';
-    inp.onchange=()=>{const f=inp.files&&inp.files[0];if(f)cropPhoto(f,d=>{set(()=>{c.photo=d;});renderClient();haptic('ok');});};inp.click();};
+    inp.onchange=()=>{const f=inp.files&&inp.files[0];if(f)cropPhotoUp(f,(d,late)=>{set(()=>{c.photo=d;});if(crmCur===c.id)renderClient();if(!late)haptic('ok');});};inp.click();};
   {const x=$('#cPhotoX');if(x)x.onclick=()=>{const was=c.photo;set(()=>{delete c.photo;});renderClient();
     toast('Фото убрано','🗑','Вернуть',()=>{set(()=>{c.photo=was;});if(crmCur===c.id)renderClient();});};}
   $('#cCompany').oninput=e=>set(()=>c.company=e.target.value);
@@ -10687,6 +10889,12 @@ movePlate(true);syncMnav(view);updateCrmCount();
       x.classList.remove('wake');void x.offsetWidth;x.classList.add('wake');clearTimeout(x._wt);x._wt=setTimeout(()=>x.classList.remove('wake'),1100);});},true);
 })();
 {const bl=$('#brandLogo');if(bl)bl.innerHTML=logoMarkSVG(17,true); /* в HUD — белый знак без плитки (Роч, 28.10) */const gbl=$('#gateBootLogo');if(gbl)gbl.innerHTML=logoMarkSVG(22);}
+/* ROCH #1423: край горизонтальной ленты растворяется только там, куда ещё можно листать */
+{const SEL='#mseg,#toolbar,#capQ,#capWho';
+  const upd=el=>{const m=el.scrollWidth-el.clientWidth;el.classList.toggle('more-l',m>2&&el.scrollLeft>2);el.classList.toggle('more-r',m>2&&m-el.scrollLeft>2);};
+  const scan=()=>document.querySelectorAll(SEL).forEach(el=>{if(!el._ef){el._ef=1;el.classList.add('fadeX');el.addEventListener('scroll',()=>upd(el),{passive:true});}upd(el);});
+  let q=0;const later=()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;scan();});};
+  new MutationObserver(later).observe(document.body,{childList:true,subtree:true});addEventListener('resize',later);later();}
 {const bvl=$('#bootVeilLogo');if(bvl)bvl.innerHTML=logoMarkSVG(40,true);const veil=$('#bootVeil');if(veil){const rm=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;const hide=()=>{veil.classList.add('gone');setTimeout(()=>{try{veil.remove();}catch(e){}},600);};const t=setTimeout(hide, rm?400:1900);setTimeout(()=>veil.addEventListener('pointerdown',()=>{clearTimeout(t);hide();},{once:true}),300);}}
 setFavicon();
 applyTheme();

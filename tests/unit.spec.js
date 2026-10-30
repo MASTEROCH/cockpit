@@ -7,7 +7,7 @@ const FILE = 'file://' + path.resolve(__dirname, '..', 'index.html');
 const BOOT = `localStorage.clear();S=migrate(seed());S.demo=false;
   reg.list=[{id:S.id,name:S.projectName,emoji:'🚀'}];reg.active=S.id;saveReg();
   localStorage.setItem(pkey(S.id),JSON.stringify(S));
-  me=(S.members[0]||{}).id;localStorage.setItem('cockpit_me',me);myEmail='romi4rv23@gmail.com';cloudOn=true;isTeam=true;
+  me=(S.members[0]||{}).id;localStorage.setItem('cockpit_me',me);myEmail='romi4rv23@gmail.com';cloudOn=true;isTeam=true;accessLegacy=true;
   hideGate();showGate=function(){};render();`;
 
 test.use({ viewport: { width: 1280, height: 840 } });
@@ -377,10 +377,12 @@ test('роли в проекте: наблюдатель, комментатор
   const r = await page.evaluate(async () => {
     accessReady = true; isTeam = true;
     teamRows = [{ email: myEmail, role: 'member' }];
-    S.members = [{ id: 'm1', name: 'Я', email: myEmail, access: 'view' }, { id: 'm2', name: 'Икс', email: 'x@local.test' }];
+    // роль приходит из облака — уже сохранённой (как adoptLocal), а не правкой в памяти: точка сохранения наблюдателя откатывает несохранённое
+    const put = () => localStorage.setItem(pkey(S.id), JSON.stringify(S));
+    S.members = [{ id: 'm1', name: 'Я', email: myEmail, access: 'view' }, { id: 'm2', name: 'Икс', email: 'x@local.test' }]; put();
     render(); const view = [myProjectAccess(), document.body.classList.contains('ro'), document.body.classList.contains('rc')];
-    S.members[0].access = 'comment'; render(); const comment = [myProjectAccess(), document.body.classList.contains('ro'), document.body.classList.contains('rc')];
-    S.members[0].access = 'admin'; render(); const admin = [canManageProject(), document.body.classList.contains('ro')];
+    S.members[0].access = 'comment'; put(); render(); const comment = [myProjectAccess(), document.body.classList.contains('ro'), document.body.classList.contains('rc')];
+    S.members[0].access = 'admin'; put(); render(); const admin = [canManageProject(), document.body.classList.contains('ro')];
     teamRows = [{ email: myEmail, role: 'owner' }, { email: 'x@local.test', role: 'member' }];
     S.open = false; matrixSetAccess(S.id, 'x@local.test', 'comment'); const mx = (S.members.find(m => m.email === 'x@local.test') || {}).access;
     aiToken = async () => 'tok'; let sent = null; window.fetch = async (u, o) => { sent = JSON.parse(o.body); return { json: async () => ({ ok: true }) }; };
