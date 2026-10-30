@@ -8,7 +8,7 @@ on:
   workflow_dispatch: {}
 jobs:
   smoke:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # 30.10.2026: ubuntu-latest стал 26.04, Playwright его ещё не поддерживает
     steps:
       - name: Wait for Pages deploy
         run: sleep 100
